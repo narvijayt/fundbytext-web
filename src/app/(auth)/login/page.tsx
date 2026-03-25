@@ -46,7 +46,7 @@ export default function LoginPage() {
     return (
         <div className="w-full max-w-md bg-white rounded-2xl shadow-lg p-8">
             <div className="mb-6 text-center">
-                <h1 className="text-2xl font-bold text-gray-900">
+                <h1 className="text-2xl font-black text-gray-900">
                     Login to your <span className="underline decoration-orange-500">account!</span>
                 </h1>
                 <p className="text-sm text-gray-500 mt-1">
