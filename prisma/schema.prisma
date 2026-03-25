@@ -1,10 +1,10 @@
 generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
+    provider = "prisma-client"
+    output   = "../src/generated/prisma"
 }
 
 datasource db {
-  provider = "postgresql"
+    provider = "postgresql"
 }
 
 // ─────────────────────────────────────────────
@@ -12,73 +12,73 @@ datasource db {
 // ─────────────────────────────────────────────
 
 enum UserRole {
-  admin
-  organizer
-  participant
+    admin
+    organizer
+    participant
 }
 
 enum CampaignType {
-  individual
-  organization
+    individual
+    organization
 }
 
 enum CampaignStatus {
-  draft
-  upcoming
-  active
-  completed
+    draft
+    upcoming
+    active
+    completed
 }
 
 enum GoalType {
-  open_ended // Individual — auto-scales +20% when met
-  fixed // Individual — stops at target amount
-  org_goal // Organization — one shared target
-  participant_goal // Organization — each participant has their own target
+    open_ended // Individual — auto-scales +20% when met
+    fixed // Individual — stops at target amount
+    org_goal // Organization — one shared target
+    participant_goal // Organization — each participant has their own target
 }
 
 enum BackgroundTheme {
-  logo
-  athletic
-  sports
-  trophy_wall
-  geometric
-  abstract
+    logo
+    athletic
+    sports
+    trophy_wall
+    geometric
+    abstract
 }
 
 enum MediaType {
-  profile // profile picture / logo
-  hero // main campaign banner image
-  gallery // up to 2 extra gallery images
+    profile // profile picture / logo
+    hero // main campaign banner image
+    gallery // up to 2 extra gallery images
 }
 
 enum DonorStatus {
-  not_donated
-  contacted
-  donated
+    not_donated
+    contacted
+    donated
 }
 
 enum PaymentMethod {
-  card
-  paypal
-  google_pay
-  amex
+    card
+    paypal
+    google_pay
+    amex
 }
 
 enum PaymentStatus {
-  pending
-  completed
-  failed
-  refunded
+    pending
+    completed
+    failed
+    refunded
 }
 
 enum NotificationType {
-  participant // sent to participants
-  campaign // sent to donors / campaign-wide
+    participant // sent to participants
+    campaign // sent to donors / campaign-wide
 }
 
 enum NotificationStatus {
-  scheduled
-  sent
+    scheduled
+    sent
 }
 
 // ─────────────────────────────────────────────
@@ -86,25 +86,27 @@ enum NotificationStatus {
 // ─────────────────────────────────────────────
 
 model User {
-  id                String   @id @default(uuid()) @db.Uuid
-  first_name        String   @db.VarChar(100)
-  last_name         String   @db.VarChar(100)
-  email             String   @unique @db.VarChar(255)
-  phone             String?  @db.VarChar(20)
-  password_hash     String
-  profile_photo_url String?
-  role              UserRole @default(admin)
-  created_at        DateTime @default(now())
-  updated_at        DateTime @updatedAt
+    id                     String    @id @default(uuid()) @db.Uuid
+    first_name             String    @db.VarChar(100)
+    last_name              String    @db.VarChar(100)
+    email                  String    @unique @db.VarChar(255)
+    phone                  String?   @db.VarChar(20)
+    password_hash          String
+    profile_photo_url      String?
+    role                   UserRole  @default(admin)
+    password_reset_token   String?   @unique @db.VarChar(255)
+    password_reset_expires DateTime?              @db.Timestamptz(3)
+    created_at             DateTime               @default(now()) @db.Timestamptz(3)
+    updated_at             DateTime               @updatedAt @db.Timestamptz(3)
 
-  sessions          UserSession[]
-  organizations     Organization[]        @relation("OrgCreatedBy")
-  org_memberships   OrganizationMember[]  @relation("OrgMemberUser")
-  org_invites_sent  OrganizationMember[]  @relation("OrgInvitedBy")
-  campaigns_created Campaign[]            @relation("CampaignCreatedBy")
-  participations    CampaignParticipant[]
+    sessions          UserSession[]
+    organizations     Organization[]        @relation("OrgCreatedBy")
+    org_memberships   OrganizationMember[]  @relation("OrgMemberUser")
+    org_invites_sent  OrganizationMember[]  @relation("OrgInvitedBy")
+    campaigns_created Campaign[]            @relation("CampaignCreatedBy")
+    participations    CampaignParticipant[]
 
-  @@map("users")
+    @@map("users")
 }
 
 // ─────────────────────────────────────────────
@@ -112,18 +114,18 @@ model User {
 // ─────────────────────────────────────────────
 
 model UserSession {
-  id            String    @id @default(uuid()) @db.Uuid
-  user_id       String    @db.Uuid
-  refresh_token String // stored as bcrypt hash
-  expires_at    DateTime
-  ip_address    String?   @db.VarChar(45) // supports IPv4 and IPv6
-  user_agent    String?   @db.VarChar(500)
-  revoked_at    DateTime? // null = active session
-  created_at    DateTime  @default(now())
+    id         String    @id @default(uuid()) @db.Uuid
+    user_id    String    @db.Uuid
+    expires_at DateTime? @db.Timestamptz(3) // null = never expires (mobile)
+    is_mobile  Boolean   @default(false)
+    ip_address String?   @db.VarChar(45)
+    user_agent String?   @db.VarChar(500)
+    revoked_at DateTime? @db.Timestamptz(3) // null = active session
+    created_at DateTime  @default(now()) @db.Timestamptz(3)
 
-  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+    user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
-  @@map("user_sessions")
+    @@map("user_sessions")
 }
 
 // ─────────────────────────────────────────────
@@ -131,19 +133,19 @@ model UserSession {
 // ─────────────────────────────────────────────
 
 model Organization {
-  id           String   @id @default(uuid()) @db.Uuid
-  name         String   @db.VarChar(50)
-  logo_url     String?
-  invite_token String   @unique @db.VarChar(100) // auto-generated shareable organizer link token
-  created_by   String   @db.Uuid
-  created_at   DateTime @default(now())
-  updated_at   DateTime @updatedAt
+    id           String   @id @default(uuid()) @db.Uuid
+    name         String   @db.VarChar(50)
+    logo_url     String?
+    invite_token String   @unique @db.VarChar(100) // auto-generated shareable organizer link token
+    created_by   String   @db.Uuid
+    created_at   DateTime @default(now()) @db.Timestamptz(3)
+    updated_at   DateTime @updatedAt @db.Timestamptz(3)
 
-  creator   User                 @relation("OrgCreatedBy", fields: [created_by], references: [id])
-  members   OrganizationMember[]
-  campaigns Campaign[]
+    creator   User                 @relation("OrgCreatedBy", fields: [created_by], references: [id])
+    members   OrganizationMember[]
+    campaigns Campaign[]
 
-  @@map("organizations")
+    @@map("organizations")
 }
 
 // ─────────────────────────────────────────────
@@ -151,20 +153,20 @@ model Organization {
 // ─────────────────────────────────────────────
 
 model OrganizationMember {
-  id              String    @id @default(uuid()) @db.Uuid
-  organization_id String    @db.Uuid
-  user_id         String?   @db.Uuid // null until the invite is accepted
-  invited_by      String    @db.Uuid
-  invited_email   String    @db.VarChar(255)
-  joined_at       DateTime?
-  created_at      DateTime  @default(now())
+    id              String    @id @default(uuid()) @db.Uuid
+    organization_id String    @db.Uuid
+    user_id         String?   @db.Uuid // null until the invite is accepted
+    invited_by      String    @db.Uuid
+    invited_email   String    @db.VarChar(255)
+    joined_at       DateTime? @db.Timestamptz(3)
+    created_at      DateTime  @default(now()) @db.Timestamptz(3)
 
-  organization    Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
-  user            User?        @relation("OrgMemberUser", fields: [user_id], references: [id])
-  invited_by_user User         @relation("OrgInvitedBy", fields: [invited_by], references: [id])
+    organization    Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+    user            User?        @relation("OrgMemberUser", fields: [user_id], references: [id])
+    invited_by_user User         @relation("OrgInvitedBy", fields: [invited_by], references: [id])
 
-  @@unique([organization_id, user_id])
-  @@map("organization_members")
+    @@unique([organization_id, user_id])
+    @@map("organization_members")
 }
 
 // ─────────────────────────────────────────────
@@ -172,39 +174,39 @@ model OrganizationMember {
 // ─────────────────────────────────────────────
 
 model Campaign {
-  id                              String          @id @default(uuid()) @db.Uuid
-  organization_id                 String?         @db.Uuid // null = standalone campaign
-  created_by                      String          @db.Uuid
-  campaign_type                   CampaignType
-  name                            String          @db.VarChar(50)
-  slug                            String          @unique @db.VarChar(100)
-  org_display_name                String?         @db.VarChar(100) // free-text display label only
-  story                           String?         @db.Text
-  start_date                      DateTime
-  end_date                        DateTime
-  status                          CampaignStatus  @default(draft)
-  goal_type                       GoalType
-  goal_amount                     Decimal         @db.Decimal(10, 2)
-  current_goal                    Decimal         @db.Decimal(10, 2) // tracks open-ended auto-scale (+20%)
-  donors_per_participant          Int? // Organization campaigns
-  target_contacts_per_participant Int? // Participant goal campaigns
-  allow_participant_photo         Boolean         @default(false)
-  background_theme                BackgroundTheme @default(sports)
-  accent_color                    String?         @db.VarChar(7) // hex e.g. #1565C0
-  thank_you_note                  String?         @db.Text
-  created_at                      DateTime        @default(now())
-  updated_at                      DateTime        @updatedAt
+    id                              String          @id @default(uuid()) @db.Uuid
+    organization_id                 String?         @db.Uuid // null = standalone campaign
+    created_by                      String          @db.Uuid
+    campaign_type                   CampaignType
+    name                            String          @db.VarChar(50)
+    slug                            String          @unique @db.VarChar(100)
+    org_display_name                String?         @db.VarChar(100) // free-text display label only
+    story                           String?         @db.Text
+    start_date                      DateTime        @db.Timestamptz(3)
+    end_date                        DateTime        @db.Timestamptz(3)
+    status                          CampaignStatus  @default(draft)
+    goal_type                       GoalType
+    goal_amount                     Decimal         @db.Decimal(10, 2)
+    current_goal                    Decimal         @db.Decimal(10, 2) // tracks open-ended auto-scale (+20%)
+    donors_per_participant          Int? // Organization campaigns
+    target_contacts_per_participant Int? // Participant goal campaigns
+    allow_participant_photo         Boolean         @default(false)
+    background_theme                BackgroundTheme @default(sports)
+    accent_color                    String?         @db.VarChar(7) // hex e.g. #1565C0
+    thank_you_note                  String?         @db.Text
+    created_at                      DateTime        @default(now()) @db.Timestamptz(3)
+    updated_at                      DateTime        @updatedAt @db.Timestamptz(3)
 
-  organization  Organization?          @relation(fields: [organization_id], references: [id])
-  creator       User                   @relation("CampaignCreatedBy", fields: [created_by], references: [id])
-  media         CampaignMedia[]
-  payout        CampaignPayout?
-  participants  CampaignParticipant[]
-  donors        CampaignDonor[]
-  donations     Donation[]
-  notifications CampaignNotification[]
+    organization  Organization?          @relation(fields: [organization_id], references: [id])
+    creator       User                   @relation("CampaignCreatedBy", fields: [created_by], references: [id])
+    media         CampaignMedia[]
+    payout        CampaignPayout?
+    participants  CampaignParticipant[]
+    donors        CampaignDonor[]
+    donations     Donation[]
+    notifications CampaignNotification[]
 
-  @@map("campaigns")
+    @@map("campaigns")
 }
 
 // ─────────────────────────────────────────────
@@ -212,16 +214,16 @@ model Campaign {
 // ─────────────────────────────────────────────
 
 model CampaignMedia {
-  id          String    @id @default(uuid()) @db.Uuid
-  campaign_id String    @db.Uuid
-  media_type  MediaType
-  url         String
-  sort_order  Int       @default(0)
-  created_at  DateTime  @default(now())
+    id          String    @id @default(uuid()) @db.Uuid
+    campaign_id String    @db.Uuid
+    media_type  MediaType
+    url         String
+    sort_order  Int       @default(0)
+    created_at  DateTime  @default(now()) @db.Timestamptz(3)
 
-  campaign Campaign @relation(fields: [campaign_id], references: [id], onDelete: Cascade)
+    campaign Campaign @relation(fields: [campaign_id], references: [id], onDelete: Cascade)
 
-  @@map("campaign_media")
+    @@map("campaign_media")
 }
 
 // ─────────────────────────────────────────────
@@ -229,22 +231,22 @@ model CampaignMedia {
 // ─────────────────────────────────────────────
 
 model CampaignPayout {
-  id                   String   @id @default(uuid()) @db.Uuid
-  campaign_id          String   @unique @db.Uuid
-  recipient_first_name String   @db.VarChar(100)
-  recipient_last_name  String   @db.VarChar(100)
-  org_name             String?  @db.VarChar(100) // required for Organization campaigns
-  street_address       String   @db.VarChar(255)
-  apt_suite            String?  @db.VarChar(50)
-  city                 String   @db.VarChar(100)
-  state                String   @db.VarChar(50)
-  zip                  String   @db.VarChar(10)
-  created_at           DateTime @default(now())
-  updated_at           DateTime @updatedAt
+    id                   String   @id @default(uuid()) @db.Uuid
+    campaign_id          String   @unique @db.Uuid
+    recipient_first_name String   @db.VarChar(100)
+    recipient_last_name  String   @db.VarChar(100)
+    org_name             String?  @db.VarChar(100) // required for Organization campaigns
+    street_address       String   @db.VarChar(255)
+    apt_suite            String?  @db.VarChar(50)
+    city                 String   @db.VarChar(100)
+    state                String   @db.VarChar(50)
+    zip                  String   @db.VarChar(10)
+    created_at           DateTime @default(now()) @db.Timestamptz(3)
+    updated_at           DateTime @updatedAt @db.Timestamptz(3)
 
-  campaign Campaign @relation(fields: [campaign_id], references: [id], onDelete: Cascade)
+    campaign Campaign @relation(fields: [campaign_id], references: [id], onDelete: Cascade)
 
-  @@map("campaign_payout")
+    @@map("campaign_payout")
 }
 
 // ─────────────────────────────────────────────
@@ -252,21 +254,21 @@ model CampaignPayout {
 // ─────────────────────────────────────────────
 
 model CampaignParticipant {
-  id                String   @id @default(uuid()) @db.Uuid
-  campaign_id       String   @db.Uuid
-  user_id           String   @db.Uuid
-  target_donors     Int      @default(20)
-  profile_photo_url String?
-  created_at        DateTime @default(now())
-  updated_at        DateTime @updatedAt
+    id                String   @id @default(uuid()) @db.Uuid
+    campaign_id       String   @db.Uuid
+    user_id           String   @db.Uuid
+    target_donors     Int      @default(20)
+    profile_photo_url String?
+    created_at        DateTime @default(now()) @db.Timestamptz(3)
+    updated_at        DateTime @updatedAt @db.Timestamptz(3)
 
-  campaign  Campaign        @relation(fields: [campaign_id], references: [id], onDelete: Cascade)
-  user      User            @relation(fields: [user_id], references: [id])
-  donors    CampaignDonor[]
-  donations Donation[]
+    campaign  Campaign        @relation(fields: [campaign_id], references: [id], onDelete: Cascade)
+    user      User            @relation(fields: [user_id], references: [id])
+    donors    CampaignDonor[]
+    donations Donation[]
 
-  @@unique([campaign_id, user_id])
-  @@map("campaign_participants")
+    @@unique([campaign_id, user_id])
+    @@map("campaign_participants")
 }
 
 // ─────────────────────────────────────────────
@@ -274,22 +276,22 @@ model CampaignParticipant {
 // ─────────────────────────────────────────────
 
 model CampaignDonor {
-  id             String      @id @default(uuid()) @db.Uuid
-  campaign_id    String      @db.Uuid
-  participant_id String?     @db.Uuid // which participant this donor is assigned to
-  first_name     String      @db.VarChar(100)
-  last_name      String      @db.VarChar(100)
-  email          String?     @db.VarChar(255)
-  phone          String?     @db.VarChar(20)
-  status         DonorStatus @default(not_donated)
-  created_at     DateTime    @default(now())
-  updated_at     DateTime    @updatedAt
+    id             String      @id @default(uuid()) @db.Uuid
+    campaign_id    String      @db.Uuid
+    participant_id String?     @db.Uuid // which participant this donor is assigned to
+    first_name     String      @db.VarChar(100)
+    last_name      String      @db.VarChar(100)
+    email          String?     @db.VarChar(255)
+    phone          String?     @db.VarChar(20)
+    status         DonorStatus @default(not_donated)
+    created_at     DateTime    @default(now()) @db.Timestamptz(3)
+    updated_at     DateTime    @updatedAt @db.Timestamptz(3)
 
-  campaign    Campaign             @relation(fields: [campaign_id], references: [id], onDelete: Cascade)
-  participant CampaignParticipant? @relation(fields: [participant_id], references: [id])
-  donations   Donation[]
+    campaign    Campaign             @relation(fields: [campaign_id], references: [id], onDelete: Cascade)
+    participant CampaignParticipant? @relation(fields: [participant_id], references: [id])
+    donations   Donation[]
 
-  @@map("campaign_donors")
+    @@map("campaign_donors")
 }
 
 // ─────────────────────────────────────────────
@@ -297,27 +299,27 @@ model CampaignDonor {
 // ─────────────────────────────────────────────
 
 model Donation {
-  id                       String        @id @default(uuid()) @db.Uuid
-  campaign_id              String        @db.Uuid
-  participant_id           String?       @db.Uuid // attribution: which participant gets credit
-  campaign_donor_id        String?       @db.Uuid // the pre-added donor contact, if matched
-  amount                   Decimal       @db.Decimal(10, 2)
-  platform_fee             Decimal       @db.Decimal(10, 2) // 10% of amount
-  net_amount               Decimal       @db.Decimal(10, 2) // amount - platform_fee
-  donor_display_name       String?       @db.VarChar(255) // "Anonymous" or real name for public feed
-  donor_email              String?       @db.VarChar(255)
-  donor_phone              String?       @db.VarChar(20)
-  is_anonymous             Boolean       @default(false)
-  stripe_payment_intent_id String?       @db.VarChar(255)
-  payment_method           PaymentMethod @default(card)
-  payment_status           PaymentStatus @default(pending)
-  created_at               DateTime      @default(now())
+    id                       String        @id @default(uuid()) @db.Uuid
+    campaign_id              String        @db.Uuid
+    participant_id           String?       @db.Uuid // attribution: which participant gets credit
+    campaign_donor_id        String?       @db.Uuid // the pre-added donor contact, if matched
+    amount                   Decimal       @db.Decimal(10, 2)
+    platform_fee             Decimal       @db.Decimal(10, 2) // 10% of amount
+    net_amount               Decimal       @db.Decimal(10, 2) // amount - platform_fee
+    donor_display_name       String?       @db.VarChar(255) // "Anonymous" or real name for public feed
+    donor_email              String?       @db.VarChar(255)
+    donor_phone              String?       @db.VarChar(20)
+    is_anonymous             Boolean       @default(false)
+    stripe_payment_intent_id String?       @db.VarChar(255)
+    payment_method           PaymentMethod @default(card)
+    payment_status           PaymentStatus @default(pending)
+    created_at               DateTime      @default(now()) @db.Timestamptz(3)
 
-  campaign       Campaign             @relation(fields: [campaign_id], references: [id])
-  participant    CampaignParticipant? @relation(fields: [participant_id], references: [id])
-  campaign_donor CampaignDonor?       @relation(fields: [campaign_donor_id], references: [id])
+    campaign       Campaign             @relation(fields: [campaign_id], references: [id])
+    participant    CampaignParticipant? @relation(fields: [participant_id], references: [id])
+    campaign_donor CampaignDonor?       @relation(fields: [campaign_donor_id], references: [id])
 
-  @@map("donations")
+    @@map("donations")
 }
 
 // ─────────────────────────────────────────────
@@ -325,18 +327,18 @@ model Donation {
 // ─────────────────────────────────────────────
 
 model CampaignNotification {
-  id                String             @id @default(uuid()) @db.Uuid
-  campaign_id       String             @db.Uuid
-  notification_type NotificationType
-  trigger_event     String             @db.VarChar(100) // e.g. "signup", "halfway", "24h_out", "goal_hit"
-  message           String             @db.Text
-  helper_text       String?            @db.Text
-  scheduled_at      DateTime?
-  sent_at           DateTime?
-  status            NotificationStatus @default(scheduled)
-  created_at        DateTime           @default(now())
+    id                String             @id @default(uuid()) @db.Uuid
+    campaign_id       String             @db.Uuid
+    notification_type NotificationType
+    trigger_event     String             @db.VarChar(100) // e.g. "signup", "halfway", "24h_out", "goal_hit"
+    message           String             @db.Text
+    helper_text       String?            @db.Text
+    scheduled_at      DateTime?          @db.Timestamptz(3)
+    sent_at           DateTime?          @db.Timestamptz(3)
+    status            NotificationStatus @default(scheduled)
+    created_at        DateTime           @default(now()) @db.Timestamptz(3)
 
-  campaign Campaign @relation(fields: [campaign_id], references: [id], onDelete: Cascade)
+    campaign Campaign @relation(fields: [campaign_id], references: [id], onDelete: Cascade)
 
-  @@map("campaign_notifications")
+    @@map("campaign_notifications")
 }

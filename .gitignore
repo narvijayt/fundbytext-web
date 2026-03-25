@@ -36,8 +36,14 @@ yarn-error.log*
 # vercel
 .vercel
 
-#vscide
+#vscode
 .vscode
+
+#FBT
+FundByText.postman_collection.json
+
+# User uploads — generated at runtime, not committed
+/public/uploads/
 
 # typescript
 *.tsbuildinfo
