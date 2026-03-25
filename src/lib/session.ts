@@ -9,6 +9,7 @@ export type AuthUser = {
     first_name: string;
     last_name: string;
     role: string;
+    phone: string | null;
     profile_photo_url: string | null;
 };
 
@@ -36,6 +37,7 @@ async function verifyAndFetch(token: string): Promise<AuthUser | null> {
             first_name: true,
             last_name: true,
             role: true,
+            phone: true,
             profile_photo_url: true,
         },
     });
