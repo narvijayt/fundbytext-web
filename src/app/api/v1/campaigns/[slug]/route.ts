@@ -1,0 +1,248 @@
+// GET  /api/v1/campaigns/:slug  — fetch campaign (organizer only)
+// PATCH /api/v1/campaigns/:slug  — partial-update campaign (organizer only)
+
+import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
+import { prisma } from "@/lib/prisma";
+import { getAuthUserFromRequest } from "@/lib/session";
+import { Prisma } from "@/generated/prisma/client";
+import {
+    MemberRole,
+    GoalType,
+    BackgroundTheme,
+    MediaType,
+    CampaignStatus,
+} from "@/generated/prisma/enums";
+
+type Ctx = { params: Promise<{ slug: string }> };
+
+async function resolveOrganizerMemberId(
+    slug: string,
+    userId: string
+): Promise<{ campaignId: string; memberId: string } | null> {
+    const campaign = await prisma.campaign.findUnique({
+        where: { slug },
+        select: {
+            id: true,
+            members: {
+                where: { user_id: userId },
+                select: {
+                    id: true,
+                    roles: { select: { role: true } },
+                },
+            },
+        },
+    });
+    if (!campaign) return null;
+    const member = campaign.members[0];
+    if (!member) return null;
+    const isOrganizer = member.roles.some((r) => r.role === MemberRole.organizer);
+    if (!isOrganizer) return null;
+    return { campaignId: campaign.id, memberId: member.id };
+}
+
+// ── GET ──────────────────────────────────────────────────────────────────────
+
+export async function GET(req: NextRequest, ctx: Ctx) {
+    try {
+        const user = await getAuthUserFromRequest(req);
+        if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+        const { slug } = await ctx.params;
+        const ids = await resolveOrganizerMemberId(slug, user.id);
+        if (!ids) return NextResponse.json({ error: "Not found or forbidden" }, { status: 404 });
+
+        const campaign = await prisma.campaign.findUnique({
+            where: { slug },
+            include: {
+                media: { orderBy: { sort_order: "asc" } },
+                payout: true,
+                members: {
+                    include: { roles: { select: { role: true } } },
+                    orderBy: { created_at: "asc" },
+                },
+            },
+        });
+
+        return NextResponse.json({ campaign: JSON.parse(JSON.stringify(campaign)) });
+    } catch (err) {
+        console.error("[GET campaigns/slug]", err);
+        return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    }
+}
+
+// ── PATCH ─────────────────────────────────────────────────────────────────────
+
+// Partial payout — all fields optional so draft saves work with incomplete data.
+// Full validation is enforced on the frontend before advancing to the next step.
+const payoutSchema = z.object({
+    recipient_first_name: z.string().max(100).nullable().optional(),
+    recipient_last_name:  z.string().max(100).nullable().optional(),
+    org_name:             z.string().max(100).nullable().optional(),
+    street_address:       z.string().max(255).nullable().optional(),
+    apt_suite:            z.string().max(50).nullable().optional(),
+    city:                 z.string().max(100).nullable().optional(),
+    state:                z.string().max(50).nullable().optional(),
+    zip:                  z.string().max(10).nullable().optional(),
+});
+
+const mediaItemSchema = z.object({
+    media_type:  z.enum(["profile", "hero", "gallery"]),
+    url:         z.string().min(1),
+    sort_order:  z.number().int().default(0),
+});
+
+const patchSchema = z.object({
+    // Step 2 — Details
+    campaign_type:    z.enum(["individual", "organization"]).optional(),
+    name:             z.string().max(50).optional().nullable(),
+    org_display_name: z.string().max(100).optional().nullable(),
+    story:            z.string().optional().nullable(),
+    start_date:       z.string().optional().nullable(),
+    end_date:         z.string().optional().nullable(),
+
+    // Step 3 — Funding Goal
+    goal_type:             z.nativeEnum(GoalType).optional().nullable(),
+    goal_amount:           z.number().positive().optional().nullable(),
+    donors_per_participant: z.number().int().positive().optional().nullable(),
+    target_contacts:       z.number().int().positive().optional().nullable(),
+    payout:                payoutSchema.optional(),
+
+    // Step 4 — Visual
+    background_theme: z.nativeEnum(BackgroundTheme).optional(),
+    accent_color:     z.string().regex(/^#[0-9a-fA-F]{6}$/).optional().nullable(),
+    secondary_color:  z.string().regex(/^#[0-9a-fA-F]{6}$/).optional().nullable(),
+    media:            z.array(mediaItemSchema).optional(),
+
+    // Step 6 — Thank You
+    thank_you_message: z.string().max(940).optional().nullable(),
+
+    // Wizard resume
+    current_step: z.number().int().min(1).max(5).optional(),
+}).strict();
+
+export async function PATCH(req: NextRequest, ctx: Ctx) {
+    try {
+        const user = await getAuthUserFromRequest(req);
+        if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+        const { slug } = await ctx.params;
+        const ids = await resolveOrganizerMemberId(slug, user.id);
+        if (!ids) return NextResponse.json({ error: "Not found or forbidden" }, { status: 404 });
+
+        const body = await req.json().catch(() => null);
+        if (!body) return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+
+        const parsed = patchSchema.safeParse(body);
+        if (!parsed.success) {
+            return NextResponse.json({ error: z.treeifyError(parsed.error) }, { status: 422 });
+        }
+
+        const { payout, media, ...campaignFields } = parsed.data;
+
+        // Normalise date strings → Date objects (or null)
+        const data: Record<string, unknown> = { ...campaignFields };
+        if ("start_date" in data) {
+            data.start_date = data.start_date ? new Date(data.start_date as string) : null;
+        }
+        if ("end_date" in data) {
+            data.end_date = data.end_date ? new Date(data.end_date as string) : null;
+        }
+
+        // Update campaign fields
+        if (Object.keys(data).length > 0) {
+            await prisma.campaign.update({ where: { id: ids.campaignId }, data });
+        }
+
+        // Upsert payout — required DB columns use "" when cleared (not null)
+        if (payout) {
+            const safeUpdate = {
+                recipient_first_name: payout.recipient_first_name ?? "",
+                recipient_last_name:  payout.recipient_last_name  ?? "",
+                street_address:       payout.street_address        ?? "",
+                city:                 payout.city                  ?? "",
+                state:                payout.state                 ?? "",
+                zip:                  payout.zip                   ?? "",
+                org_name:             payout.org_name  ?? null,
+                apt_suite:            payout.apt_suite ?? null,
+            };
+            await prisma.campaignPayout.upsert({
+                where:  { campaign_id: ids.campaignId },
+                update: safeUpdate,
+                create: { campaign_id: ids.campaignId, ...safeUpdate },
+            });
+        }
+
+        // Replace media per type
+        if (media && media.length > 0) {
+            const types = [...new Set(media.map((m) => m.media_type))];
+            for (const type of types) {
+                await prisma.campaignMedia.deleteMany({
+                    where: { campaign_id: ids.campaignId, media_type: type as MediaType },
+                });
+            }
+            await prisma.campaignMedia.createMany({
+                data: media.map((m) => ({
+                    campaign_id: ids.campaignId,
+                    media_type:  m.media_type as MediaType,
+                    url:         m.url,
+                    sort_order:  m.sort_order,
+                })),
+            });
+        }
+
+        const updated = await prisma.campaign.findUnique({
+            where: { id: ids.campaignId },
+            include: {
+                media: { orderBy: { sort_order: "asc" } },
+                payout: true,
+            },
+        });
+
+        return NextResponse.json({ campaign: JSON.parse(JSON.stringify(updated)) });
+    } catch (err) {
+        if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
+            return NextResponse.json(
+                { error: "A campaign with this name already exists. Please choose a different name.", code: "name_taken" },
+                { status: 409 }
+            );
+        }
+        console.error("[PATCH campaigns/slug]", err);
+        return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    }
+}
+
+// ── DELETE ────────────────────────────────────────────────────────────────────
+// Only draft and upcoming campaigns may be deleted.
+
+export async function DELETE(req: NextRequest, ctx: Ctx) {
+    try {
+        const user = await getAuthUserFromRequest(req);
+        if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+        const { slug } = await ctx.params;
+        const ids = await resolveOrganizerMemberId(slug, user.id);
+        if (!ids) return NextResponse.json({ error: "Not found or forbidden" }, { status: 404 });
+
+        const campaign = await prisma.campaign.findUnique({
+            where: { id: ids.campaignId },
+            select: { status: true },
+        });
+
+        if (!campaign) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+        if (campaign.status !== CampaignStatus.draft && campaign.status !== CampaignStatus.upcoming) {
+            return NextResponse.json(
+                { error: "Only draft or upcoming campaigns can be deleted." },
+                { status: 403 }
+            );
+        }
+
+        await prisma.campaign.delete({ where: { id: ids.campaignId } });
+
+        return NextResponse.json({ ok: true });
+    } catch (err) {
+        console.error("[DELETE campaigns/slug]", err);
+        return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    }
+}

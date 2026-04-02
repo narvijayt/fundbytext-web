@@ -13,8 +13,7 @@ datasource db {
 
 enum UserRole {
     admin
-    organizer
-    participant
+    user
 }
 
 enum CampaignType {
@@ -30,9 +29,9 @@ enum CampaignStatus {
 }
 
 enum GoalType {
-    open_ended // Individual — auto-scales +20% when met
-    fixed // Individual — stops at target amount
-    org_goal // Organization — one shared target
+    open_ended       // Individual — auto-scales +20% when met
+    fixed            // Individual — stops at target amount
+    org_goal         // Organization — one shared target
     participant_goal // Organization — each participant has their own target
 }
 
@@ -47,8 +46,8 @@ enum BackgroundTheme {
 
 enum MediaType {
     profile // profile picture / logo
-    hero // main campaign banner image
-    gallery // up to 2 extra gallery images
+    hero    // main campaign banner image
+    gallery // up to 3 extra gallery images
 }
 
 enum DonorStatus {
@@ -72,13 +71,29 @@ enum PaymentStatus {
 }
 
 enum NotificationType {
-    participant // sent to participants
-    campaign // sent to donors / campaign-wide
+    participant // sent to a specific participant
+    campaign    // sent to donors / campaign-wide
 }
 
 enum NotificationStatus {
     scheduled
     sent
+    failed
+}
+
+enum NotificationChannel {
+    sms
+    email
+    both
+}
+
+// Campaign member roles:
+//   organizer  = the user who created / owns the campaign
+//   participant = a fundraising participant added by the organizer
+// A single member may hold both roles simultaneously (organizer who also raises funds).
+enum MemberRole {
+    organizer
+    participant
 }
 
 // ─────────────────────────────────────────────
@@ -93,35 +108,38 @@ model User {
     phone                  String?   @db.VarChar(20)
     password_hash          String
     profile_photo_url      String?
-    role                   UserRole  @default(admin)
+    // Platform role: admin = full system access | user = standard platform user
+    role                   UserRole  @default(user)
+    is_email_verified      Boolean   @default(false)
+    is_phone_verified      Boolean   @default(false)
     password_reset_token   String?   @unique @db.VarChar(255)
-    password_reset_expires DateTime?              @db.Timestamptz(3)
-    created_at             DateTime               @default(now()) @db.Timestamptz(3)
-    updated_at             DateTime               @updatedAt @db.Timestamptz(3)
+    password_reset_expires DateTime? @db.Timestamptz(3)
+    created_at             DateTime  @default(now()) @db.Timestamptz(3)
+    updated_at             DateTime  @updatedAt @db.Timestamptz(3)
 
-    sessions          UserSession[]
-    organizations     Organization[]        @relation("OrgCreatedBy")
-    org_memberships   OrganizationMember[]  @relation("OrgMemberUser")
-    org_invites_sent  OrganizationMember[]  @relation("OrgInvitedBy")
-    campaigns_created Campaign[]            @relation("CampaignCreatedBy")
-    participations    CampaignParticipant[]
+    sessions      UserSession[]
+    // One org per user — created implicitly on first org-type campaign
+    organization  Organization?    @relation("OrgCreatedBy")
+    memberships   CampaignMember[]
+    donor_account CampaignDonor[]  @relation("DonorUserAccount")
 
     @@map("users")
 }
 
 // ─────────────────────────────────────────────
-// USER SESSIONS  (replaces Redis for auth)
+// USER SESSIONS
 // ─────────────────────────────────────────────
 
 model UserSession {
-    id         String    @id @default(uuid()) @db.Uuid
-    user_id    String    @db.Uuid
-    expires_at DateTime? @db.Timestamptz(3) // null = never expires (mobile)
-    is_mobile  Boolean   @default(false)
-    ip_address String?   @db.VarChar(45)
-    user_agent String?   @db.VarChar(500)
-    revoked_at DateTime? @db.Timestamptz(3) // null = active session
-    created_at DateTime  @default(now()) @db.Timestamptz(3)
+    id          String    @id @default(uuid()) @db.Uuid
+    user_id     String    @db.Uuid
+    is_mobile   Boolean   @default(false)
+    remember_me Boolean   @default(false)
+    expires_at  DateTime? @db.Timestamptz(3) // null = never expires (mobile)
+    ip_address  String?   @db.VarChar(45)
+    user_agent  String?   @db.VarChar(500)
+    revoked_at  DateTime? @db.Timestamptz(3) // null = active session
+    created_at  DateTime  @default(now()) @db.Timestamptz(3)
 
     user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
@@ -130,78 +148,59 @@ model UserSession {
 
 // ─────────────────────────────────────────────
 // ORGANIZATIONS
+// Created implicitly when a user runs their first "organization" campaign.
+// Auto-populated for subsequent org campaigns. No standalone create UI.
 // ─────────────────────────────────────────────
 
 model Organization {
     id           String   @id @default(uuid()) @db.Uuid
-    name         String   @db.VarChar(50)
+    created_by   String   @unique @db.Uuid // one org per user
+    name         String   @db.VarChar(100)
     logo_url     String?
-    invite_token String   @unique @db.VarChar(100) // auto-generated shareable organizer link token
-    created_by   String   @db.Uuid
+    invite_token String   @unique @db.VarChar(64) // shareable link token
     created_at   DateTime @default(now()) @db.Timestamptz(3)
     updated_at   DateTime @updatedAt @db.Timestamptz(3)
 
-    creator   User                 @relation("OrgCreatedBy", fields: [created_by], references: [id])
-    members   OrganizationMember[]
+    creator   User       @relation("OrgCreatedBy", fields: [created_by], references: [id])
     campaigns Campaign[]
 
     @@map("organizations")
 }
 
 // ─────────────────────────────────────────────
-// ORGANIZATION MEMBERS  (Organizers invited by Admin)
-// ─────────────────────────────────────────────
-
-model OrganizationMember {
-    id              String    @id @default(uuid()) @db.Uuid
-    organization_id String    @db.Uuid
-    user_id         String?   @db.Uuid // null until the invite is accepted
-    invited_by      String    @db.Uuid
-    invited_email   String    @db.VarChar(255)
-    joined_at       DateTime? @db.Timestamptz(3)
-    created_at      DateTime  @default(now()) @db.Timestamptz(3)
-
-    organization    Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
-    user            User?        @relation("OrgMemberUser", fields: [user_id], references: [id])
-    invited_by_user User         @relation("OrgInvitedBy", fields: [invited_by], references: [id])
-
-    @@unique([organization_id, user_id])
-    @@map("organization_members")
-}
-
-// ─────────────────────────────────────────────
 // CAMPAIGNS
+// Organizer role is stored in campaign_member_roles (role = organizer),
+// not as a denormalized created_by. Both roles can coexist for the same user.
 // ─────────────────────────────────────────────
 
 model Campaign {
-    id                              String          @id @default(uuid()) @db.Uuid
-    organization_id                 String?         @db.Uuid // null = standalone campaign
-    created_by                      String          @db.Uuid
-    campaign_type                   CampaignType
-    name                            String          @db.VarChar(50)
-    slug                            String          @unique @db.VarChar(100)
-    org_display_name                String?         @db.VarChar(100) // free-text display label only
-    story                           String?         @db.Text
-    start_date                      DateTime        @db.Timestamptz(3)
-    end_date                        DateTime        @db.Timestamptz(3)
-    status                          CampaignStatus  @default(draft)
-    goal_type                       GoalType
-    goal_amount                     Decimal         @db.Decimal(10, 2)
-    current_goal                    Decimal         @db.Decimal(10, 2) // tracks open-ended auto-scale (+20%)
-    donors_per_participant          Int? // Organization campaigns
-    target_contacts_per_participant Int? // Participant goal campaigns
-    allow_participant_photo         Boolean         @default(false)
-    background_theme                BackgroundTheme @default(sports)
-    accent_color                    String?         @db.VarChar(7) // hex e.g. #1565C0
-    thank_you_note                  String?         @db.Text
-    created_at                      DateTime        @default(now()) @db.Timestamptz(3)
-    updated_at                      DateTime        @updatedAt @db.Timestamptz(3)
+    id                     String          @id @default(uuid()) @db.Uuid
+    organization_id        String?         @db.Uuid // null = standalone individual campaign
+    campaign_type          CampaignType
+    name                   String?         @unique @db.VarChar(50)
+    slug                   String          @unique @db.VarChar(100) // auto-generated on creation
+    org_display_name       String?         @db.VarChar(100) // free-text display label (public page)
+    story                  String?         @db.Text
+    start_date             DateTime?       @db.Timestamptz(3)
+    end_date               DateTime?       @db.Timestamptz(3)
+    status                 CampaignStatus  @default(draft)
+    goal_type              GoalType?
+    goal_amount            Decimal?        @db.Decimal(10, 2)
+    total_raised           Decimal         @default(0) @db.Decimal(10, 2)
+    donors_per_participant Int?            // Organization campaigns: donors per participant
+    target_contacts        Int?            // Participant-goal campaigns: contacts per participant
+    background_theme       BackgroundTheme @default(sports)
+    accent_color           String?         @db.VarChar(7) // hex e.g. #1565C0 (primary)
+    secondary_color        String?         @db.VarChar(7) // hex e.g. #374151 (secondary)
+    thank_you_message      String?         @db.Text // max 940 chars
+    current_step           Int             @default(1) // wizard resume: 1–5
+    created_at             DateTime        @default(now()) @db.Timestamptz(3)
+    updated_at             DateTime        @updatedAt @db.Timestamptz(3)
 
     organization  Organization?          @relation(fields: [organization_id], references: [id])
-    creator       User                   @relation("CampaignCreatedBy", fields: [created_by], references: [id])
     media         CampaignMedia[]
     payout        CampaignPayout?
-    participants  CampaignParticipant[]
+    members       CampaignMember[]
     donors        CampaignDonor[]
     donations     Donation[]
     notifications CampaignNotification[]
@@ -250,46 +249,80 @@ model CampaignPayout {
 }
 
 // ─────────────────────────────────────────────
-// CAMPAIGN PARTICIPANTS
+// CAMPAIGN MEMBERS
+// All campaign participants (organizers and/or participants) live here.
+// user_id is null while the invite is pending (no account yet).
+// first_name/last_name/email are stored for pending invitees; once they
+// accept and create an account user_id is set and joined_at is recorded.
 // ─────────────────────────────────────────────
 
-model CampaignParticipant {
-    id                String   @id @default(uuid()) @db.Uuid
-    campaign_id       String   @db.Uuid
-    user_id           String   @db.Uuid
-    target_donors     Int      @default(20)
+model CampaignMember {
+    id                String    @id @default(uuid()) @db.Uuid
+    campaign_id       String    @db.Uuid
+    user_id           String?   @db.Uuid // null = invite pending
+    first_name        String    @db.VarChar(100)
+    last_name         String    @db.VarChar(100)
+    email             String    @db.VarChar(255)
+    phone             String?   @db.VarChar(20)
     profile_photo_url String?
-    created_at        DateTime @default(now()) @db.Timestamptz(3)
-    updated_at        DateTime @updatedAt @db.Timestamptz(3)
+    can_upload_photo  Boolean   @default(false)
+    target_donors     Int       @default(20) // participant fundraising target
+    invite_token      String?   @unique @db.VarChar(100)
+    joined_at         DateTime? @db.Timestamptz(3) // set when invite accepted
+    created_at        DateTime  @default(now()) @db.Timestamptz(3)
+    updated_at        DateTime  @updatedAt @db.Timestamptz(3)
 
-    campaign  Campaign        @relation(fields: [campaign_id], references: [id], onDelete: Cascade)
-    user      User            @relation(fields: [user_id], references: [id])
-    donors    CampaignDonor[]
-    donations Donation[]
+    campaign              Campaign               @relation(fields: [campaign_id], references: [id], onDelete: Cascade)
+    user                  User?                  @relation(fields: [user_id], references: [id])
+    roles                 CampaignMemberRole[]
+    donors                CampaignDonor[]
+    donations             Donation[]
+    received_notifications CampaignNotification[]
 
-    @@unique([campaign_id, user_id])
-    @@map("campaign_participants")
+    // Unique per campaign on email (supports pending invites where user_id is null)
+    @@unique([campaign_id, email])
+    @@map("campaign_members")
 }
 
 // ─────────────────────────────────────────────
-// CAMPAIGN DONORS  (contacts added by participants/organizers)
+// CAMPAIGN MEMBER ROLES  (junction: member ↔ role)
+// A member may hold both organizer and participant roles simultaneously.
+// ─────────────────────────────────────────────
+
+model CampaignMemberRole {
+    id        String     @id @default(uuid()) @db.Uuid
+    member_id String     @db.Uuid
+    role      MemberRole
+
+    member CampaignMember @relation(fields: [member_id], references: [id], onDelete: Cascade)
+
+    @@unique([member_id, role])
+    @@map("campaign_member_roles")
+}
+
+// ─────────────────────────────────────────────
+// CAMPAIGN DONORS  (contacts added by members)
 // ─────────────────────────────────────────────
 
 model CampaignDonor {
-    id             String      @id @default(uuid()) @db.Uuid
-    campaign_id    String      @db.Uuid
-    participant_id String?     @db.Uuid // which participant this donor is assigned to
-    first_name     String      @db.VarChar(100)
-    last_name      String      @db.VarChar(100)
-    email          String?     @db.VarChar(255)
-    phone          String?     @db.VarChar(20)
-    status         DonorStatus @default(not_donated)
-    created_at     DateTime    @default(now()) @db.Timestamptz(3)
-    updated_at     DateTime    @updatedAt @db.Timestamptz(3)
+    id                String      @id @default(uuid()) @db.Uuid
+    campaign_id       String      @db.Uuid
+    assigned_member_id String?    @db.Uuid // which member this donor is assigned to
+    user_id           String?     @db.Uuid // linked if donor later creates an account
+    first_name        String      @db.VarChar(100)
+    last_name         String      @db.VarChar(100)
+    email             String?     @db.VarChar(255)
+    phone             String?     @db.VarChar(20)
+    email_valid       Boolean     @default(true)
+    status            DonorStatus @default(not_donated)
+    last_contacted_at DateTime?   @db.Timestamptz(3)
+    created_at        DateTime    @default(now()) @db.Timestamptz(3)
+    updated_at        DateTime    @updatedAt @db.Timestamptz(3)
 
-    campaign    Campaign             @relation(fields: [campaign_id], references: [id], onDelete: Cascade)
-    participant CampaignParticipant? @relation(fields: [participant_id], references: [id])
-    donations   Donation[]
+    campaign         Campaign        @relation(fields: [campaign_id], references: [id], onDelete: Cascade)
+    assigned_member  CampaignMember? @relation(fields: [assigned_member_id], references: [id])
+    user             User?           @relation("DonorUserAccount", fields: [user_id], references: [id])
+    donations        Donation[]
 
     @@map("campaign_donors")
 }
@@ -301,23 +334,27 @@ model CampaignDonor {
 model Donation {
     id                       String        @id @default(uuid()) @db.Uuid
     campaign_id              String        @db.Uuid
-    participant_id           String?       @db.Uuid // attribution: which participant gets credit
-    campaign_donor_id        String?       @db.Uuid // the pre-added donor contact, if matched
+    campaign_donor_id        String?       @db.Uuid // pre-added donor contact, if matched
+    member_id                String?       @db.Uuid // attributed participant
     amount                   Decimal       @db.Decimal(10, 2)
     platform_fee             Decimal       @db.Decimal(10, 2) // 10% of amount
     net_amount               Decimal       @db.Decimal(10, 2) // amount - platform_fee
+    donor_first_name         String        @db.VarChar(100)
+    donor_last_name          String        @db.VarChar(100)
     donor_display_name       String?       @db.VarChar(255) // "Anonymous" or real name for public feed
     donor_email              String?       @db.VarChar(255)
     donor_phone              String?       @db.VarChar(20)
+    donor_country            String?       @db.VarChar(100)
+    donor_zip                String?       @db.VarChar(10)
     is_anonymous             Boolean       @default(false)
-    stripe_payment_intent_id String?       @db.VarChar(255)
+    stripe_payment_intent_id String?       @unique @db.VarChar(255)
     payment_method           PaymentMethod @default(card)
     payment_status           PaymentStatus @default(pending)
     created_at               DateTime      @default(now()) @db.Timestamptz(3)
 
-    campaign       Campaign             @relation(fields: [campaign_id], references: [id])
-    participant    CampaignParticipant? @relation(fields: [participant_id], references: [id])
-    campaign_donor CampaignDonor?       @relation(fields: [campaign_donor_id], references: [id])
+    campaign       Campaign        @relation(fields: [campaign_id], references: [id])
+    campaign_donor CampaignDonor?  @relation(fields: [campaign_donor_id], references: [id])
+    member         CampaignMember? @relation(fields: [member_id], references: [id])
 
     @@map("donations")
 }
@@ -327,18 +364,21 @@ model Donation {
 // ─────────────────────────────────────────────
 
 model CampaignNotification {
-    id                String             @id @default(uuid()) @db.Uuid
-    campaign_id       String             @db.Uuid
-    notification_type NotificationType
-    trigger_event     String             @db.VarChar(100) // e.g. "signup", "halfway", "24h_out", "goal_hit"
-    message           String             @db.Text
-    helper_text       String?            @db.Text
-    scheduled_at      DateTime?          @db.Timestamptz(3)
-    sent_at           DateTime?          @db.Timestamptz(3)
-    status            NotificationStatus @default(scheduled)
-    created_at        DateTime           @default(now()) @db.Timestamptz(3)
+    id                  String              @id @default(uuid()) @db.Uuid
+    campaign_id         String              @db.Uuid
+    recipient_member_id String?             @db.Uuid // null = campaign-wide broadcast
+    notification_type   NotificationType
+    trigger_event       String              @db.VarChar(100) // e.g. "signup", "halfway", "goal_hit"
+    message             String              @db.Text
+    helper_text         String?             @db.Text
+    channel             NotificationChannel @default(both)
+    scheduled_at        DateTime?           @db.Timestamptz(3)
+    sent_at             DateTime?           @db.Timestamptz(3)
+    status              NotificationStatus  @default(scheduled)
+    created_at          DateTime            @default(now()) @db.Timestamptz(3)
 
-    campaign Campaign @relation(fields: [campaign_id], references: [id], onDelete: Cascade)
+    campaign         Campaign        @relation(fields: [campaign_id], references: [id], onDelete: Cascade)
+    recipient_member CampaignMember? @relation(fields: [recipient_member_id], references: [id])
 
     @@map("campaign_notifications")
 }

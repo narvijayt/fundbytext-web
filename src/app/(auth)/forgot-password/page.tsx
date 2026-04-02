@@ -98,9 +98,9 @@ export default function ForgotPasswordPage() {
 
             {!submitted && (
                 <p className="text-center text-sm text-gray-500 mt-6">
-                    New to FundbyText?{" "}
-                    <Link href="/signup" className="text-orange-500 font-semibold hover:underline">
-                        Sign Up
+                    Want to start a fundraiser?{" "}
+                    <Link href="/campaigns/create" className="text-orange-500 font-semibold hover:underline">
+                        Create a Campaign
                     </Link>
                 </p>
             )}

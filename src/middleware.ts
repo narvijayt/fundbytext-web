@@ -1,15 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { extractToken, verifyToken } from "@/lib/auth";
 
-const AUTH_API_ROUTES = [
-    "/api/v1/auth/signup",
+// Routes that never require auth
+const PUBLIC_API_ROUTES = [
     "/api/v1/auth/login",
     "/api/v1/auth/forgot-password",
     "/api/v1/auth/reset-password",
-    "/api/v1/upload/profile-photo", // used during signup before a session exists
+    "/api/v1/upload/profile-photo", // used before session exists
+    "/api/v1/campaigns/init",       // public campaign creation (Step 1)
 ];
 
-const GUEST_ONLY_PAGES = ["/login", "/signup", "/forgot-password", "/reset-password"];
+// Pages that redirect logged-in users away to dashboard
+const GUEST_ONLY_PAGES = ["/login", "/forgot-password", "/reset-password"];
 
 export async function middleware(req: NextRequest) {
     const { pathname } = req.nextUrl;
@@ -26,14 +28,16 @@ export async function middleware(req: NextRequest) {
         return NextResponse.next();
     }
 
-    // Public auth API routes — always allow
-    if (AUTH_API_ROUTES.some((r) => pathname.startsWith(r))) {
+    // Public API routes — always allow
+    if (PUBLIC_API_ROUTES.some((r) => pathname.startsWith(r))) {
         return NextResponse.next();
     }
 
-    // Protect /api/v1/* and /dashboard/*
+    // Protect /api/v1/* and /dashboard/* and /campaigns/*/create|edit
     const isProtectedApi = pathname.startsWith("/api/v1/");
-    const isProtectedPage = pathname.startsWith("/dashboard");
+    const isProtectedPage =
+        pathname.startsWith("/dashboard") ||
+        /^\/campaigns\/[^/]+\/(create|edit)$/.test(pathname);
 
     if (!isProtectedApi && !isProtectedPage) {
         return NextResponse.next();
@@ -58,10 +62,11 @@ export async function middleware(req: NextRequest) {
 export const config = {
     matcher: [
         "/login",
-        "/signup",
         "/forgot-password",
         "/reset-password",
         "/dashboard/:path*",
+        "/campaigns/:slug/create",
+        "/campaigns/:slug/edit",
         "/api/v1/:path*",
     ],
 };
