@@ -23,7 +23,9 @@ type Props = {
     fieldErrors: Record<string, string>;
     clearFE: (key: string) => void;
     isLaunched: boolean;
+    isUpcoming: boolean;
     isActive: boolean;
+    isCompleted: boolean;
 };
 
 export default function StepDetails({
@@ -35,7 +37,7 @@ export default function StepDetails({
     startDate, setStartDate,
     endDate, setEndDate,
     fieldErrors, clearFE,
-    isLaunched, isActive,
+    isLaunched, isUpcoming, isActive, isCompleted,
 }: Props) {
     const typeDisabled = campaignTypeReadOnly || isLaunched;
     return (
@@ -172,19 +174,27 @@ export default function StepDetails({
             </Field>
 
             <div className="grid grid-cols-2 gap-4">
-                <Field label={`Start Date & Time${isLaunched ? " (locked)" : ""}`}>
-                    <input
-                        type="datetime-local"
-                        value={startDate}
-                        onChange={(e) => setStartDate(e.target.value)}
-                        disabled={isLaunched}
-                        className={`${inputCls} disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed`}
-                    />
-                </Field>
+                <div>
+                    <Field label={`Start Date & Time${isCompleted ? " (locked)" : ""}`}>
+                        <input
+                            type="datetime-local"
+                            value={startDate}
+                            onChange={(e) => setStartDate(e.target.value)}
+                            disabled={isCompleted}
+                            className={`${inputCls} disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed`}
+                        />
+                    </Field>
+                    {isActive && (
+                        <p className="text-[10px] text-blue-500 mt-1">
+                            Setting a future start date will revert this campaign to Upcoming.
+                        </p>
+                    )}
+                </div>
                 <Field label="End Date & Time" required error={fieldErrors.end_date}>
                     <input
                         type="datetime-local"
                         value={endDate}
+                        min={startDate || undefined}
                         onChange={(e) => { setEndDate(e.target.value); clearFE("end_date"); }}
                         className={fieldErrors.end_date ? inputErrCls : inputCls}
                     />

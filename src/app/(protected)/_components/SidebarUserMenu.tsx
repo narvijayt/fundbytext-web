@@ -9,10 +9,14 @@ export default function SidebarUserMenu({
     firstName,
     lastName,
     photoUrl,
+    orgName,
+    role,
 }: {
     firstName: string;
-    lastName: string;
-    photoUrl: string | null;
+    lastName:  string;
+    photoUrl:  string | null;
+    orgName:   string | null;
+    role?:     string | null;
 }) {
     const [open, setOpen] = useState(false);
     const [imgError, setImgError] = useState(false);
@@ -61,6 +65,9 @@ export default function SidebarUserMenu({
                         </div>
                         <div className="min-w-0">
                             <p className="text-sm font-semibold text-gray-900 truncate">{fullName}</p>
+                            {orgName && (
+                                <p className="text-xs text-gray-400 truncate">{orgName}</p>
+                            )}
                         </div>
                         <svg className="ml-auto w-4 h-4 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -105,9 +112,9 @@ export default function SidebarUserMenu({
             {/* Trigger */}
             <button
                 onClick={() => setOpen((o) => !o)}
-                className="w-full flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white/10 transition-colors"
+                className="w-full flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-[#0268c0]/10 transition-colors"
             >
-                <div className="w-9 h-9 rounded-full bg-blue-200 flex items-center justify-center overflow-hidden shrink-0">
+                <div className="w-9 h-9 rounded-full bg-blue-700 border border-blue-500/40 flex items-center justify-center overflow-hidden shrink-0">
                     {photoUrl && !imgError ? (
                         <Image
                             src={photoUrl}
@@ -118,13 +125,15 @@ export default function SidebarUserMenu({
                             onError={() => setImgError(true)}
                         />
                     ) : (
-                        <span className="text-sm font-bold text-blue-700">{initial}</span>
+                        <span className="text-sm font-bold text-white">{initial}</span>
                     )}
                 </div>
-                <span className="text-sm font-medium text-white truncate">
-                    {firstName} {lastName[0]}.
-                </span>
-                <svg className="ml-auto w-4 h-4 text-white/60 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <div className="flex-1 min-w-0 text-left">
+                    <p className="text-sm font-semibold text-[#0268c0] truncate leading-tight">
+                        {firstName} {lastName}.
+                    </p>
+                </div>
+                <svg className="w-4 h-4 text-[#0268c0]/50 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
             </button>

@@ -7,11 +7,21 @@ import { prisma } from "@/lib/prisma";
 import { getAuthUserFromRequest } from "@/lib/session";
 import { Prisma } from "@/generated/prisma/client";
 import {
+    notifyCampaignExtended,
+    broadcastCampaignExtended,
+    notifyCampaignReactivated,
+    notifyDonationsPaused,
+    notifyDonationsResumed,
+    notifyStartDateChanged,
+} from "@/lib/notifications";
+import { publishControlsChanged } from "@/lib/ably";
+import {
     MemberRole,
     GoalType,
     BackgroundTheme,
     MediaType,
     CampaignStatus,
+    CampaignVisibility,
 } from "@/generated/prisma/enums";
 
 type Ctx = { params: Promise<{ slug: string }> };
@@ -105,7 +115,6 @@ const patchSchema = z.object({
     goal_type:             z.nativeEnum(GoalType).optional().nullable(),
     goal_amount:           z.number().positive().optional().nullable(),
     donors_per_participant: z.number().int().positive().optional().nullable(),
-    target_contacts:       z.number().int().positive().optional().nullable(),
     payout:                payoutSchema.optional(),
 
     // Step 4 — Visual
@@ -119,6 +128,11 @@ const patchSchema = z.object({
 
     // Wizard resume
     current_step: z.number().int().min(1).max(5).optional(),
+
+    // Campaign controls
+    visibility:                  z.nativeEnum(CampaignVisibility).optional(),
+    donations_enabled:           z.boolean().optional(),
+    donations_disabled_message:  z.string().max(300).nullable().optional(),
 }).strict();
 
 export async function PATCH(req: NextRequest, ctx: Ctx) {
@@ -147,6 +161,95 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
         }
         if ("end_date" in data) {
             data.end_date = data.end_date ? new Date(data.end_date as string) : null;
+        }
+
+        // One consolidated read — used for all transition/notification logic below.
+        const current = await prisma.campaign.findUnique({
+            where:  { id: ids.campaignId },
+            select: {
+                status:            true,
+                start_date:        true,
+                end_date:          true,
+                campaign_type:     true,
+                donations_enabled: true,
+                visibility:        true,
+                initial_goal_amount: true,
+                goal_type:         true,
+                members: {
+                    where:  { roles: { some: { role: "participant" } } },
+                    select: { id: true },
+                },
+            },
+        });
+
+        const now        = new Date();
+        const memberIds  = current?.members.map((m) => m.id) ?? [];
+        const notifTasks: Promise<unknown>[] = [];
+
+        // ── Start date change: future start on active campaign → revert to upcoming.
+        //    Also notify when start date actually changes on a live campaign.
+        if ("start_date" in data && data.start_date instanceof Date && data.start_date > now) {
+            if (current?.status === CampaignStatus.active) {
+                data.status = CampaignStatus.upcoming;
+            }
+            const startDateChanged = !current?.start_date ||
+                current.start_date.getTime() !== (data.start_date as Date).getTime();
+            if (startDateChanged && (current?.status === CampaignStatus.active || current?.status === CampaignStatus.upcoming)) {
+                notifTasks.push(notifyStartDateChanged(ids.campaignId, data.start_date));
+            }
+        }
+
+        // ── End date change on completed → reactivate.
+        //    End date pushed forward on active/upcoming → extension notification.
+        if ("end_date" in data && data.end_date instanceof Date && data.end_date > now) {
+            if (current?.status === CampaignStatus.completed) {
+                data.status = current.start_date && current.start_date > now
+                    ? CampaignStatus.upcoming
+                    : CampaignStatus.active;
+                notifTasks.push(notifyCampaignReactivated(ids.campaignId));
+            }
+            const isExtension =
+                (current?.status === CampaignStatus.active || current?.status === CampaignStatus.upcoming) &&
+                (!current.end_date || data.end_date > current.end_date);
+            if (isExtension) {
+                notifTasks.push(notifyCampaignExtended(ids.campaignId, data.end_date));
+                if (current?.campaign_type === "organization" && memberIds.length > 0) {
+                    notifTasks.push(broadcastCampaignExtended(ids.campaignId, memberIds, data.end_date));
+                }
+            }
+        }
+
+        // ── Donations paused / resumed.
+        if ("donations_enabled" in data && typeof data.donations_enabled === "boolean" &&
+            current?.donations_enabled !== data.donations_enabled) {
+            notifTasks.push(
+                data.donations_enabled
+                    ? notifyDonationsResumed(ids.campaignId)
+                    : notifyDonationsPaused(ids.campaignId)
+            );
+        }
+
+        if (notifTasks.length > 0) Promise.allSettled(notifTasks).catch(console.error);
+
+        // ── Publish controls_changed to marketing page subscribers when visibility
+        //    or donations_enabled actually changes (fire-and-forget).
+        const visibilityChanged =
+            "visibility" in data && data.visibility !== current?.visibility;
+        const donationsEnabledChanged =
+            "donations_enabled" in data &&
+            typeof data.donations_enabled === "boolean" &&
+            current?.donations_enabled !== data.donations_enabled;
+        if (visibilityChanged || donationsEnabledChanged) {
+            publishControlsChanged(slug).catch(console.error);
+        }
+
+        // ── Auto-set initial_goal_amount the first time goal_amount is saved
+        //    (only for open_ended campaigns; never overwritten after first set)
+        if ("goal_amount" in data && data.goal_amount != null) {
+            const effectiveGoalType = (data.goal_type as string | undefined) ?? current?.goal_type;
+            if (effectiveGoalType === "open_ended" && !current?.initial_goal_amount) {
+                data.initial_goal_amount = data.goal_amount;
+            }
         }
 
         // Update campaign fields
@@ -236,6 +339,18 @@ export async function DELETE(req: NextRequest, ctx: Ctx) {
                 { error: "Only draft or upcoming campaigns can be deleted." },
                 { status: 403 }
             );
+        }
+
+        if (campaign.status === CampaignStatus.upcoming) {
+            const donationCount = await prisma.donation.count({
+                where: { campaign_id: ids.campaignId, payment_status: "completed" },
+            });
+            if (donationCount > 0) {
+                return NextResponse.json(
+                    { error: "This campaign has already received donations and cannot be deleted." },
+                    { status: 403 }
+                );
+            }
         }
 
         await prisma.campaign.delete({ where: { id: ids.campaignId } });

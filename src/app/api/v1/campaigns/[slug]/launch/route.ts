@@ -9,7 +9,8 @@ import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { getAuthUserFromRequest } from "@/lib/session";
 import { MemberRole, CampaignStatus } from "@/generated/prisma/enums";
-import { sendParticipantCredentialsEmail, sendParticipantInviteEmail } from "@/lib/mail";
+import { sendParticipantCredentialsEmail, sendParticipantInviteEmail, sendDonorInviteEmail } from "@/lib/mail";
+import { notifyCampaignLaunched, notifyCampaignActive } from "@/lib/notifications";
 
 function generatePassword(): string {
     const chars = "ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz0123456789!@#$%^&*";
@@ -81,9 +82,18 @@ export async function POST(req: NextRequest, ctx: Ctx) {
 
         const updated = await prisma.campaign.update({
             where: { id: campaign.id },
-            data: { status: newStatus },
+            data: {
+                status:     newStatus,
+                visibility: "public",
+            },
             select: { slug: true, status: true },
         });
+
+        // ── Notifications ────────────────────────────────────────────────────
+        notifyCampaignLaunched(campaign.id).catch(console.error);
+        if (newStatus === CampaignStatus.active) {
+            notifyCampaignActive(campaign.id).catch(console.error);
+        }
 
         // ── Create accounts for participants who don't have one, then email ──
         const organizerName = myMember
@@ -102,22 +112,31 @@ export async function POST(req: NextRequest, ctx: Ctx) {
 
         const participantsWithCreds = await Promise.all(
             participants.map(async (p) => {
-                if (p.user_id) {
-                    // Already has an account — don't reset password
-                    return { ...p, generatedPassword: null as string | null, skipEmail: p.user_id === organizerUserId };
+                // No email → can't send anything
+                if (!p.email) {
+                    return { ...p, generatedPassword: null as string | null, sendCredentials: false, sendInvite: false };
                 }
 
-                // Check if a user already exists for this email (edge case)
+                if (p.user_id) {
+                    // Already has a linked account — no credentials email needed, but still send invite
+                    // Exception: don't email the organizer themselves
+                    const isOrganizer = p.user_id === organizerUserId;
+                    return { ...p, generatedPassword: null as string | null, sendCredentials: false, sendInvite: !isOrganizer };
+                }
+
+                // Check if a user already exists for this email (edge case: account exists but not linked)
                 const existing = await prisma.user.findUnique({ where: { email: p.email } });
                 if (existing) {
                     await prisma.campaignMember.update({
                         where: { id: p.id },
                         data:  { user_id: existing.id, joined_at: new Date() },
                     });
-                    return { ...p, generatedPassword: null as string | null, skipEmail: existing.id === organizerUserId };
+                    const isOrganizer = existing.id === organizerUserId;
+                    // Existing user — they know their password, just send the invite
+                    return { ...p, generatedPassword: null as string | null, sendCredentials: false, sendInvite: !isOrganizer };
                 }
 
-                // Create a new account with a generated password
+                // Brand-new user — create account, generate password, send both emails
                 const password      = generatePassword();
                 const password_hash = await bcrypt.hash(password, 12);
                 const newUser = await prisma.user.create({
@@ -132,22 +151,30 @@ export async function POST(req: NextRequest, ctx: Ctx) {
                     where: { id: p.id },
                     data:  { user_id: newUser.id, joined_at: new Date() },
                 });
-                return { ...p, generatedPassword: password, skipEmail: false };
+                return { ...p, generatedPassword: password, sendCredentials: true, sendInvite: true };
             })
         );
 
-        await Promise.allSettled(
-            participantsWithCreds
-                .filter((p) => !p.skipEmail)
-                .flatMap((p) => [
-                    // Email 1: login credentials
+        const emailTasks: Promise<void>[] = [];
+
+        for (const p of participantsWithCreds) {
+            if (!p.email) continue;
+
+            // Credentials email — only for brand-new users
+            if (p.sendCredentials) {
+                emailTasks.push(
                     sendParticipantCredentialsEmail({
                         to:        p.email,
                         firstName: p.first_name,
                         password:  p.generatedPassword,
                         loginUrl,
-                    }),
-                    // Email 2: campaign welcome + login page link
+                    })
+                );
+            }
+
+            // Campaign participation email — all participants with an email except the organizer
+            if (p.sendInvite) {
+                emailTasks.push(
                     sendParticipantInviteEmail({
                         to:             p.email,
                         firstName:      p.first_name,
@@ -158,9 +185,45 @@ export async function POST(req: NextRequest, ctx: Ctx) {
                         endDate:        campaign.end_date?.toISOString() ?? null,
                         loginUrl,
                         campaignUrl:    `${APP_URL}/campaigns/${slug}`,
-                    }),
-                ])
-        );
+                    })
+                );
+            }
+        }
+
+        await Promise.allSettled(emailTasks);
+
+        // ── Send donor invite emails to all pre-added donors ─────────────────
+        const donors = await prisma.campaignDonor.findMany({
+            where:  { campaign_id: campaign.id, email: { not: null } },
+            select: {
+                first_name:      true,
+                email:           true,
+                invite_token:    true,
+                assigned_member: { select: { invite_token: true, first_name: true, last_name: true } },
+            },
+        });
+
+        const donorEmailTasks = donors.map((d) => {
+            if (!d.email) return Promise.resolve();
+            const senderName = d.assigned_member
+                ? `${d.assigned_member.first_name} ${d.assigned_member.last_name}`
+                : organizerName;
+            const refPart = d.assigned_member?.invite_token
+                ? `?ref=${d.assigned_member.invite_token}&donor=${d.invite_token}`
+                : `?donor=${d.invite_token}`;
+            return sendDonorInviteEmail({
+                to:           d.email,
+                firstName:    d.first_name,
+                campaignName: campaign.name ?? "a fundraising campaign",
+                senderName,
+                story:        campaign.story,
+                goalAmount:   campaign.goal_amount ? Number(campaign.goal_amount) : null,
+                endDate:      campaign.end_date?.toISOString() ?? null,
+                campaignUrl:  `${APP_URL}/campaigns/${slug}${refPart}`,
+            }).catch((err) => console.error("[sendDonorInviteEmail]", err));
+        });
+
+        await Promise.allSettled(donorEmailTasks);
 
         return NextResponse.json({ campaign: updated });
     } catch (err) {

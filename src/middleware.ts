@@ -8,6 +8,9 @@ const PUBLIC_API_ROUTES = [
     "/api/v1/auth/reset-password",
     "/api/v1/upload/profile-photo", // used before session exists
     "/api/v1/campaigns/init",       // public campaign creation (Step 1)
+    "/api/v1/payments/intent",      // public donors can create & update payment intents
+    "/api/v1/payments/record",      // public donors record completed payments
+    "/api/v1/payments/webhook",     // Stripe webhook — no session
 ];
 
 // Pages that redirect logged-in users away to dashboard

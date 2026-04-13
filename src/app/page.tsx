@@ -2,19 +2,23 @@ import Link from "next/link";
 import Image from "next/image";
 import { prisma } from "@/lib/prisma";
 import { getAuthUser } from "@/lib/session";
+import CountdownBadge from "@/components/CountdownBadge";
 
-// ── Fetch a handful of active campaigns for the hero carousel ───────────────
+// ── Fetch active + upcoming campaigns for the hero carousel ─────────────────
 async function getFeaturedCampaigns() {
     try {
         return await prisma.campaign.findMany({
-            where: { status: "active" },
+            where: { status: { in: ["active", "upcoming"] }, visibility: "public" },
             take: 6,
-            orderBy: { created_at: "desc" },
+            orderBy: [{ status: "asc" }, { created_at: "desc" }],
             select: {
-                slug: true,
-                name: true,
+                slug:       true,
+                name:       true,
+                status:     true,
                 campaign_type: true,
                 goal_amount: true,
+                start_date: true,
+                end_date:   true,
                 media: { where: { media_type: "hero" }, take: 1, select: { url: true } },
             },
         });
@@ -22,15 +26,6 @@ async function getFeaturedCampaigns() {
         return [];
     }
 }
-
-// ── Placeholder cards used when no live campaigns exist ─────────────────────
-const PLACEHOLDER_CARDS = [
-    { slug: "#", name: "Help Charlie with Vet Bills",         img: null, goal: "$5,000",  type: "SPORTS"   },
-    { slug: "#", name: "Colorado Sparkler Softball Trip",      img: null, goal: "$4,500",  type: "TRAVEL"   },
-    { slug: "#", name: "Spring Fundraiser for Cowboys Baseball",img: null, goal: "$10,000", type: "SPORTS"   },
-    { slug: "#", name: "Help Fund Travel to Nationals",        img: null, goal: "$6,500",  type: "SPORTS"   },
-    { slug: "#", name: "Summer Mission Trip Abroad",           img: null, goal: "$8,000",  type: "MISSION"  },
-];
 
 const STEPS = [
     { n: 1, title: "Create a campaign",       desc: "Simply fill in the campaign details to tell us about yourself or your organization. Setup takes only minutes." },
@@ -47,11 +42,6 @@ const STATS = [
     { value: "$5.2M+",label: "Raised & Counting"  },
 ];
 
-const STORIES = [
-    { tag: "",            title: "Fund to Fix My Car After Hit and Run",  img: null },
-    { tag: "SPORTS",      title: "Colorado Sparkler Softball Trip",        img: null },
-    { tag: "RAISING HOPE",title: "Raising Funds for a New Chair",          img: null },
-];
 
 // ── Gradient hero background ─────────────────────────────────────────────────
 const heroBg = "linear-gradient(175deg,#e8f4fd 0%,#c5e3f7 30%,#7dc4f0 65%,#2d8fd5 100%)";
@@ -60,15 +50,15 @@ const blueBg = "linear-gradient(160deg,#1a6fbf 0%,#1565C0 50%,#0d4fa8 100%)";
 export default async function HomePage() {
     const [liveCampaigns, user] = await Promise.all([getFeaturedCampaigns(), getAuthUser()]);
 
-    const cards = liveCampaigns.length
-        ? liveCampaigns.map((c) => ({
-              slug:  `/campaigns/${c.slug}`,
-              name:  c.name ?? "Untitled Campaign",
-              img:   c.media[0]?.url ?? null,
-              goal:  c.goal_amount ? `$${Number(c.goal_amount).toLocaleString()}` : null,
-              type:  c.campaign_type === "organization" ? "ORG" : "SPORTS",
-          }))
-        : PLACEHOLDER_CARDS;
+    const cards = liveCampaigns.map((c) => ({
+        slug:       `/campaigns/${c.slug}`,
+        name:       c.name ?? "Untitled Campaign",
+        img:        c.media[0]?.url ?? null,
+        goal:       c.goal_amount ? `$${Number(c.goal_amount).toLocaleString()}` : null,
+        status:     c.status,
+        start_date: c.start_date,
+        end_date:   c.end_date,
+    }));
 
     return (
         <div className="font-sans text-gray-900 overflow-x-hidden">
@@ -139,39 +129,58 @@ export default async function HomePage() {
                     </div>
                 </div>
 
-                {/* Campaign cards row */}
-                <div className="relative z-10 overflow-x-auto pb-8">
-                    <div className="flex gap-4 px-8 w-max mx-auto">
-                        {cards.map((c, i) => (
-                            <Link
-                                key={i}
-                                href={c.slug}
-                                className="flex-none w-44 bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow group"
-                            >
-                                <div className="relative h-28 bg-linear-to-br from-blue-200 to-blue-400">
-                                    {c.img ? (
-                                        <Image src={c.img} alt={c.name} fill className="object-cover" />
-                                    ) : (
-                                        <div className="absolute inset-0 flex items-center justify-center">
-                                            <svg className="w-10 h-10 text-blue-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                                        </div>
-                                    )}
-                                    <span className="absolute top-2 left-2 px-2 py-0.5 rounded text-white text-[10px] font-bold" style={{ background: "#22c55e" }}>
-                                        ACTIVE
-                                    </span>
-                                </div>
-                                <div className="p-3">
-                                    <p className="text-xs font-bold text-gray-800 leading-snug line-clamp-2 group-hover:text-blue-700 transition-colors mb-2">{c.name}</p>
-                                    {c.goal && (
-                                        <span className="inline-block px-2 py-0.5 rounded-full text-white text-[10px] font-semibold" style={{ background: "#22c55e" }}>
-                                            {c.goal} Goal
+                {/* Campaign cards row — only shown when real campaigns exist */}
+                {cards.length > 0 && (
+                    <div className="relative z-10 overflow-x-auto pb-8">
+                        <div className="flex gap-4 px-8 w-max mx-auto">
+                            {cards.map((c, i) => (
+                                <Link
+                                    key={i}
+                                    href={c.slug}
+                                    className="flex-none w-44 bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow group"
+                                >
+                                    <div className="relative h-28 bg-linear-to-br from-blue-200 to-blue-400">
+                                        {c.img ? (
+                                            <Image src={c.img} alt={c.name} fill className="object-cover" />
+                                        ) : (
+                                            <div className="absolute inset-0 flex items-center justify-center">
+                                                <svg className="w-10 h-10 text-blue-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                            </div>
+                                        )}
+                                        <span
+                                            className="absolute top-2 left-2 px-2 py-0.5 rounded text-white text-[10px] font-bold"
+                                            style={{ background: c.status === "upcoming" ? "#2563eb" : "#22c55e" }}
+                                        >
+                                            {c.status === "upcoming" ? "UPCOMING" : "ACTIVE"}
                                         </span>
-                                    )}
-                                </div>
-                            </Link>
-                        ))}
+                                    </div>
+                                    <div className="p-3">
+                                        <p className="text-xs font-bold text-gray-800 leading-snug line-clamp-2 group-hover:text-blue-700 transition-colors mb-2">{c.name}</p>
+                                        {c.goal && (
+                                            <span className="inline-block px-2 py-0.5 rounded-full text-white text-[10px] font-semibold mb-1.5" style={{ background: "#22c55e" }}>
+                                                {c.goal} Goal
+                                            </span>
+                                        )}
+                                        {c.status === "active" && c.end_date && (
+                                            <CountdownBadge
+                                                date={c.end_date}
+                                                mode="left"
+                                                className="text-[10px] font-bold text-red-500 uppercase tracking-wide"
+                                            />
+                                        )}
+                                        {c.status === "upcoming" && c.start_date && (
+                                            <CountdownBadge
+                                                date={c.start_date}
+                                                mode="toStart"
+                                                className="text-[10px] font-bold text-blue-600 uppercase tracking-wide"
+                                            />
+                                        )}
+                                    </div>
+                                </Link>
+                            ))}
+                        </div>
                     </div>
-                </div>
+                )}
             </section>
 
             {/* ── Stats bar ──────────────────────────────────────────────── */}
@@ -305,43 +314,6 @@ export default async function HomePage() {
                                 </div>
                             </div>
                         ))}
-                    </div>
-                </div>
-            </section>
-
-            {/* ── How People Use FundByText ──────────────────────────────── */}
-            <section className="py-20 px-6" style={{ background: "linear-gradient(175deg, #f0f7ff 0%, #dbeeff 50%, #b8d9f5 100%)" }}>
-                <div className="max-w-5xl mx-auto">
-                    <p className="text-xs font-bold text-orange-500 uppercase tracking-widest text-center mb-3">Real Stories</p>
-                    <h2 className="text-3xl sm:text-4xl font-extrabold text-blue-900 text-center mb-12">How people use FundByText</h2>
-
-                    <div className="grid sm:grid-cols-3 gap-6">
-                        {STORIES.map((s, i) => (
-                            <div key={i} className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-                                <div className="h-36 bg-linear-to-br from-blue-100 to-blue-200 flex items-center justify-center relative">
-                                    <svg className="w-12 h-12 text-blue-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                                    {s.tag && (
-                                        <span className="absolute top-2 left-2 px-2 py-0.5 rounded text-white text-[10px] font-bold" style={{ background: "#22c55e" }}>{s.tag}</span>
-                                    )}
-                                </div>
-                                <div className="p-4">
-                                    <p className="text-sm font-bold text-gray-800 mb-2">{s.title}</p>
-                                    <p className="text-xs text-gray-400 line-clamp-2">Lorem ipsum dolor sit amet consectetur adipiscing elit. Quam adipiscing elit aliqua ut enim aliquam.</p>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-
-                    <div className="text-center mt-10">
-                        <Link href="/campaigns" className="text-blue-700 text-sm font-semibold hover:text-blue-800 underline underline-offset-2 transition-colors">
-                            View all campaigns →
-                        </Link>
-                    </div>
-
-                    {/* Pagination dots */}
-                    <div className="flex items-center justify-center gap-2 mt-6">
-                        <div className="w-2 h-2 rounded-full bg-blue-600" />
-                        <div className="w-2 h-2 rounded-full bg-blue-200" />
                     </div>
                 </div>
             </section>

@@ -248,6 +248,71 @@ export async function sendParticipantInviteEmail({
     });
 }
 
+// ── Donor thank-you (sent after a completed donation) ────────────────────────
+
+export async function sendDonorThankYouEmail({
+    to,
+    donorFirstName,
+    campaignName,
+    campaignUrl,
+    amount,
+    organizerName,
+    orgDisplayName,
+    thankYouMessage,
+}: {
+    to: string;
+    donorFirstName: string;
+    campaignName: string;
+    campaignUrl: string;
+    amount: number;
+    organizerName: string;
+    orgDisplayName?: string | null;
+    thankYouMessage: string;
+}) {
+    const formattedAmount = new Intl.NumberFormat("en-US", {
+        style: "currency", currency: "USD",
+    }).format(amount);
+
+    const senderLine = orgDisplayName
+        ? `${organizerName} &mdash; <strong>${orgDisplayName}</strong>`
+        : `<strong>${organizerName}</strong>`;
+
+    await transporter.sendMail({
+        from,
+        to,
+        subject: `Thank you for supporting ${campaignName}!`,
+        html: emailLayout(`
+            <h2 style="margin:0 0 6px;font-size:22px;font-weight:700;color:#1e293b">Thank you, ${donorFirstName}! 🙏</h2>
+            <p style="margin:0 0 20px;font-size:15px;color:#475569;line-height:1.6">
+                Your donation of <strong style="color:#16a34a">${formattedAmount}</strong> to
+                <strong>${campaignName}</strong> has been received. We truly appreciate your generosity.
+            </p>
+
+            <!-- Thank you message -->
+            <table cellpadding="0" cellspacing="0" width="100%" style="margin-bottom:24px">
+              <tr>
+                <td style="background:#f8fafc;border-left:4px solid #f97316;border-radius:0 8px 8px 0;padding:20px 24px">
+                    <p style="margin:0 0 12px;font-size:15px;color:#374151;line-height:1.7">${thankYouMessage.replace(/\n/g, "<br>")}</p>
+                    <p style="margin:0 0 2px;font-size:14px;font-weight:600;color:#1e293b">Thank you so much,</p>
+                    <p style="margin:0;font-size:13px;color:#6b7280">${senderLine}</p>
+                </td>
+              </tr>
+            </table>
+
+            <!-- CTA -->
+            <table cellpadding="0" cellspacing="0" width="100%"><tr><td align="center" style="padding:0 0 20px">
+                <a href="${campaignUrl}" style="display:inline-block;padding:13px 32px;background:#f97316;color:#ffffff;text-decoration:none;border-radius:8px;font-weight:700;font-size:14px;letter-spacing:0.2px">
+                    View Campaign
+                </a>
+            </td></tr></table>
+
+            <p style="margin:0;font-size:13px;color:#94a3b8;line-height:1.6;border-top:1px solid #f1f5f9;padding-top:16px;text-align:center">
+                Your support makes a real difference. Share this campaign to help reach the goal!
+            </p>
+        `),
+    });
+}
+
 // ── Donor invite (sent when a donor contact is added to a campaign) ─────────
 
 export async function sendDonorInviteEmail({

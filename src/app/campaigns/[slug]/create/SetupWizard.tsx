@@ -34,18 +34,27 @@ export default function SetupWizard({
     initialStep = 1,
     isEditMode = false,
     defaultOrgDisplayName,
+    hasDonations = false,
+    organizerInfo,
 }: {
     campaign: Campaign;
     slug: string;
     initialStep?: number;
     isEditMode?: boolean;
     defaultOrgDisplayName?: string | null;
+    hasDonations?: boolean;
+    organizerInfo?: { first_name: string; last_name: string; email: string; phone: string };
 }) {
     const router = useRouter();
 
     const isLaunched = campaign.status !== "draft";
+    const isUpcoming = campaign.status === "upcoming";
     const isActive   = campaign.status === "active" || campaign.status === "completed";
-    const orgDisplayNameLocked = !!(campaign.org_display_name) || !!(defaultOrgDisplayName);
+    // Lock when: campaign already launched with an org name, OR a previous org
+    // campaign exists (defaultOrgDisplayName) — so 2nd+ campaigns are pre-filled & locked.
+    const orgDisplayNameLocked =
+        (!!(campaign.org_display_name) && isLaunched) ||
+        !!defaultOrgDisplayName;
 
     // ── Step 1 — Details
     const [campaignType, setCampaignType] = useState<"individual" | "organization">(campaign.campaign_type);
@@ -63,9 +72,6 @@ export default function SetupWizard({
     const [goalAmount, setGoalAmount] = useState(campaign.goal_amount ?? "");
     const [donorsPerParticipant, setDonorsPerParticipant] = useState(
         campaign.donors_per_participant?.toString() ?? ""
-    );
-    const [targetContacts, setTargetContacts] = useState(
-        campaign.target_contacts?.toString() ?? ""
     );
     const [payout, setPayout] = useState<Payout>({
         recipient_first_name: campaign.payout?.recipient_first_name ?? "",
@@ -95,7 +101,6 @@ export default function SetupWizard({
     const [addLast, setAddLast]   = useState("");
     const [addEmail, setAddEmail] = useState("");
     const [addPhone, setAddPhone] = useState("");
-    const [addCanUpload, setAddCanUpload] = useState(false);
     const [addingMember, setAddingMember] = useState(false);
 
     const [donors, setDonors]   = useState<Donor[]>(campaign.donors);
@@ -194,7 +199,8 @@ export default function SetupWizard({
         const errs: Record<string, string> = {};
         if (!name.trim()) errs.name     = "Campaign name is required.";
         if (isOrg && !orgDisplayName.trim()) errs.org_display_name = "Organization display name is required.";
-        if (!endDate)     errs.end_date = "End date is required.";
+        if (!endDate)                                    errs.end_date = "End date is required.";
+        else if (startDate && endDate <= startDate)      errs.end_date = "End date must be after the start date.";
         if (Object.keys(errs).length) { setFieldErrors(errs); showToast("Please fill in all required fields."); return; }
         setFieldErrors({});
         const ok = await patch({
@@ -228,9 +234,6 @@ export default function SetupWizard({
         };
         if (isOrg) {
             data.donors_per_participant = donorsPerParticipant ? Number(donorsPerParticipant) : null;
-            if (goalType === "participant_goal") {
-                data.target_contacts = targetContacts ? Number(targetContacts) : null;
-            }
         }
         data.payout = {
             recipient_first_name: payout.recipient_first_name,
@@ -248,11 +251,14 @@ export default function SetupWizard({
     }
 
     async function saveVisual() {
-        if (!heroUrl) { setFieldErrors({ hero: "A campaign photo is required." }); return; }
+        const errs: Record<string, string> = {};
+        if (!profileUrl) errs.profile = `${isOrg ? "Organization logo" : "Profile photo"} is required.`;
+        if (!heroUrl)    errs.hero    = "A campaign photo is required.";
+        if (Object.keys(errs).length) { setFieldErrors(errs); return; }
         setFieldErrors({});
         const media: { media_type: string; url: string; sort_order: number }[] = [];
         if (profileUrl) media.push({ media_type: "profile", url: profileUrl, sort_order: 0 });
-        media.push({ media_type: "hero", url: heroUrl, sort_order: 0 });
+        media.push({ media_type: "hero", url: heroUrl!, sort_order: 0 });
         galleryUrls.forEach((u, i) => media.push({ media_type: "gallery", url: u, sort_order: i }));
         const ok = await patch({
             background_theme: bgTheme,
@@ -328,9 +334,6 @@ export default function SetupWizard({
         if (isOrg) {
             data.org_display_name        = orgDisplayName.trim() || null;
             data.donors_per_participant  = donorsPerParticipant ? Number(donorsPerParticipant) : null;
-            if (safeGoalType === "participant_goal") {
-                data.target_contacts = targetContacts ? Number(targetContacts) : null;
-            }
         }
         data.payout = {
             recipient_first_name: safePayout.recipient_first_name?.trim() || null,
@@ -370,7 +373,10 @@ export default function SetupWizard({
         if      (step === 1) await saveDetails();
         else if (step === 2) await saveFundingGoal();
         else if (step === 3) await saveVisual();
-        else if (step === 4) advance();
+        else if (step === 4) {
+            const ok = await patch({ current_step: 5 });
+            if (ok) advance();
+        }
     }
 
     async function launch() {
@@ -385,6 +391,7 @@ export default function SetupWizard({
         if (!payout.city)                 errs.pay_city    = "Payout city is required.";
         if (!payout.state)                errs.pay_state   = "Payout state is required.";
         if (!payout.zip)                  errs.pay_zip     = "Payout ZIP is required.";
+        if (!profileUrl)                  errs.profile     = `${isOrg ? "Organization logo" : "Profile photo"} is required.`;
         if (!heroUrl)                     errs.hero        = "A campaign photo is required.";
         if (!thankYou.trim())             errs.thank_you   = "Thank you message is required.";
         if (Object.keys(errs).length) {
@@ -413,8 +420,8 @@ export default function SetupWizard({
     // ── Participant / Donor API calls ──────────────────────────────────────
 
     async function addParticipant() {
-        if (!addFirst || !addLast || !addEmail) {
-            showToast("First name, last name, and email are required.");
+        if (!addFirst || !addLast || (!addEmail && !addPhone)) {
+            showToast("First name, last name, and email or phone are required.");
             return;
         }
         setAddingMember(true);
@@ -424,8 +431,7 @@ export default function SetupWizard({
                 headers: { "Content-Type": "application/json" },
                 body:    JSON.stringify({
                     first_name: addFirst.trim(), last_name: addLast.trim(),
-                    email: addEmail.trim(), phone: addPhone.trim() || null,
-                    can_upload_photo: addCanUpload,
+                    email: addEmail.trim() || null, phone: addPhone.trim() || null,
                 }),
             });
             const json = await res.json();
@@ -440,7 +446,7 @@ export default function SetupWizard({
                 }
                 return [...prev, json.member];
             });
-            setAddFirst(""); setAddLast(""); setAddEmail(""); setAddPhone(""); setAddCanUpload(false);
+            setAddFirst(""); setAddLast(""); setAddEmail(""); setAddPhone("");
         } catch {
             showToast("Network error.");
         } finally {
@@ -460,6 +466,10 @@ export default function SetupWizard({
 
     async function addDonor() {
         if (!dFirst || !dLast || !dEmail) { showToast("First name, last name, and email are required."); return; }
+        if (donors.some((d) => d.email?.toLowerCase() === dEmail.trim().toLowerCase())) {
+            showToast("A donor with this email has already been added.");
+            return;
+        }
         setAddingDonor(true);
         try {
             const res  = await fetch(`/api/v1/campaigns/${slug}/donors`, {
@@ -545,7 +555,8 @@ export default function SetupWizard({
                             startDate={startDate} setStartDate={setStartDate}
                             endDate={endDate} setEndDate={setEndDate}
                             fieldErrors={fieldErrors} clearFE={clearFE}
-                            isLaunched={isLaunched} isActive={isActive}
+                            isLaunched={isLaunched} isUpcoming={isUpcoming} isActive={isActive}
+                            isCompleted={campaign.status === "completed"}
                         />
                     )}
                     {step === 2 && (
@@ -554,11 +565,10 @@ export default function SetupWizard({
                             goalType={goalType} setGoalType={setGoalType}
                             goalAmount={goalAmount} setGoalAmount={setGoalAmount}
                             donorsPerParticipant={donorsPerParticipant} setDonorsPerParticipant={setDonorsPerParticipant}
-                            targetContacts={targetContacts} setTargetContacts={setTargetContacts}
                             payout={payout} setPayout={setPayout}
                             orgDisplayName={orgDisplayName}
                             fieldErrors={fieldErrors} clearFE={clearFE}
-                            isLaunched={isLaunched} isActive={isActive}
+                            isLaunched={isLaunched}
                         />
                     )}
                     {step === 3 && (
@@ -585,7 +595,6 @@ export default function SetupWizard({
                             addLast={addLast} setAddLast={setAddLast}
                             addEmail={addEmail} setAddEmail={setAddEmail}
                             addPhone={addPhone} setAddPhone={setAddPhone}
-                            addCanUpload={addCanUpload} setAddCanUpload={setAddCanUpload}
                             addingMember={addingMember}
                             onAddParticipant={addParticipant}
                             onRemoveParticipant={removeParticipant}
@@ -597,6 +606,7 @@ export default function SetupWizard({
                             addingDonor={addingDonor}
                             onAddDonor={addDonor}
                             onRemoveDonor={removeDonor}
+                            organizerInfo={organizerInfo}
                         />
                     )}
                     {step === 5 && (
@@ -610,7 +620,7 @@ export default function SetupWizard({
                 </div>
 
                 {/* Delete — below the card, only for draft/upcoming */}
-                {(campaign.status === "draft" || campaign.status === "upcoming") && (
+                {(campaign.status === "draft" || (campaign.status === "upcoming" && !hasDonations)) && (
                     <div className="mt-6 text-center">
                         <DeleteCampaignButton
                             slug={slug}

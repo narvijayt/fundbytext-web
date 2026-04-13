@@ -3,16 +3,18 @@
 import { type Donor, type Member } from "./types";
 import { SectionTitle, inputCls } from "./ui";
 
+type OrganizerInfo = { first_name: string; last_name: string; email: string; phone: string };
+
 type Props = {
     isOrg: boolean;
     isLaunched: boolean;
+    organizerInfo?: OrganizerInfo;
     // Org participants
     members: Member[];
     addFirst: string; setAddFirst: (v: string) => void;
     addLast: string;  setAddLast:  (v: string) => void;
     addEmail: string; setAddEmail: (v: string) => void;
     addPhone: string; setAddPhone: (v: string) => void;
-    addCanUpload: boolean; setAddCanUpload: (v: boolean) => void;
     addingMember: boolean;
     onAddParticipant: () => void;
     onRemoveParticipant: (id: string) => void;
@@ -28,13 +30,12 @@ type Props = {
 };
 
 export default function StepParticipants({
-    isOrg, isLaunched,
+    isOrg, isLaunched, organizerInfo,
     members,
     addFirst, setAddFirst,
     addLast, setAddLast,
     addEmail, setAddEmail,
     addPhone, setAddPhone,
-    addCanUpload, setAddCanUpload,
     addingMember,
     onAddParticipant,
     onRemoveParticipant,
@@ -47,6 +48,25 @@ export default function StepParticipants({
     onAddDonor,
     onRemoveDonor,
 }: Props) {
+    function fillMyselfParticipant() {
+        if (!organizerInfo) return;
+        setAddFirst(organizerInfo.first_name);
+        setAddLast(organizerInfo.last_name);
+        setAddEmail(organizerInfo.email);
+        setAddPhone(organizerInfo.phone);
+    }
+
+    const myselfAlreadyDonor = !!organizerInfo &&
+        donors.some((d) => d.email?.toLowerCase() === organizerInfo.email?.toLowerCase());
+
+    function fillMyselfDonor() {
+        if (!organizerInfo) return;
+        setDFirst(organizerInfo.first_name);
+        setDLast(organizerInfo.last_name);
+        setDEmail(organizerInfo.email);
+        setDPhone(organizerInfo.phone);
+    }
+
     if (!isOrg) {
         return (
             <div className="space-y-6">
@@ -97,15 +117,27 @@ export default function StepParticipants({
 
                 {!isLaunched && (
                     <div className="border border-gray-200 rounded-xl p-4 space-y-3">
-                        <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                            Add Donor
-                        </p>
+                        <div className="flex items-center justify-between">
+                            <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Add Donor</p>
+                            {organizerInfo && !myselfAlreadyDonor && (
+                                <button
+                                    type="button"
+                                    onClick={fillMyselfDonor}
+                                    className="flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-blue-700 px-2.5 py-1 rounded-lg bg-blue-50 hover:bg-blue-100 transition-colors"
+                                >
+                                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                    </svg>
+                                    Add Myself
+                                </button>
+                            )}
+                        </div>
                         <div className="grid grid-cols-2 gap-3">
                             <input value={dFirst} onChange={(e) => setDFirst(e.target.value)} placeholder="First name" className={inputCls} />
                             <input value={dLast}  onChange={(e) => setDLast(e.target.value)}  placeholder="Last name"  className={inputCls} />
                         </div>
-                        <input type="email" value={dEmail} onChange={(e) => setDEmail(e.target.value)} placeholder="Email address *" className={inputCls} />
-                        <input type="tel"   value={dPhone} onChange={(e) => setDPhone(e.target.value)} placeholder="Phone (optional)"          className={inputCls} />
+                        <input type="email" value={dEmail} onChange={(e) => setDEmail(e.target.value)} placeholder="Email address" className={inputCls} />
+                        <input type="tel"   value={dPhone} onChange={(e) => setDPhone(e.target.value)} placeholder="Phone (optional)" className={inputCls} />
                         <button
                             type="button"
                             onClick={onAddDonor}
@@ -122,7 +154,8 @@ export default function StepParticipants({
 
     // Organization view
     const participants = members.filter((m) => m.roles.some((r) => r.role === "participant"));
-    const hasOrganizerRole = (m: Member) => m.roles.some((r) => r.role === "organizer");
+    const isOrganizerOnly = (m: Member) =>
+        m.roles.some((r) => r.role === "organizer") && !m.roles.some((r) => r.role === "participant");
 
     return (
         <div className="space-y-6">
@@ -153,9 +186,10 @@ export default function StepParticipants({
                                 <p className="text-sm font-semibold text-gray-800">
                                     {m.first_name} {m.last_name}
                                 </p>
-                                <p className="text-xs text-gray-500">{m.email}</p>
+                                <p className="text-xs text-gray-500">{m.email ?? m.phone ?? "No contact info"}</p>
                             </div>
-                            {!isLaunched && !hasOrganizerRole(m) && (
+                            {/* Allow removal for everyone with participant role, including the organizer themselves */}
+                            {!isLaunched && !isOrganizerOnly(m) && (
                                 <button
                                     type="button"
                                     onClick={() => onRemoveParticipant(m.id)}
@@ -171,14 +205,26 @@ export default function StepParticipants({
 
             {!isLaunched && (
                 <div className="border border-gray-200 rounded-xl p-4 space-y-3">
-                    <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                        Add Participant
-                    </p>
+                    <div className="flex items-center justify-between">
+                        <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Add Participant</p>
+                        {organizerInfo && (
+                            <button
+                                type="button"
+                                onClick={fillMyselfParticipant}
+                                className="flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-blue-700 px-2.5 py-1 rounded-lg bg-blue-50 hover:bg-blue-100 transition-colors"
+                            >
+                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                </svg>
+                                Add Myself
+                            </button>
+                        )}
+                    </div>
                     <div className="grid grid-cols-2 gap-3">
                         <input value={addFirst} onChange={(e) => setAddFirst(e.target.value)} placeholder="First name" className={inputCls} />
                         <input value={addLast}  onChange={(e) => setAddLast(e.target.value)}  placeholder="Last name"  className={inputCls} />
                     </div>
-                    <input type="email" value={addEmail} onChange={(e) => setAddEmail(e.target.value)} placeholder="Email address"    className={inputCls} />
+                    <input type="email" value={addEmail} onChange={(e) => setAddEmail(e.target.value)} placeholder="Email address" className={inputCls} />
                     <input type="tel"   value={addPhone} onChange={(e) => setAddPhone(e.target.value)} placeholder="Phone (optional)" className={inputCls} />
                     <button
                         type="button"

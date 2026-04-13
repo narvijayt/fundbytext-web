@@ -1,8 +1,8 @@
 import Image from "next/image";
-import Link from "next/link";
 import { CampaignStatus, MemberRole } from "@/generated/prisma/enums";
 import CampaignNavLink from "./CampaignNavLink";
 import DeleteCampaignButton from "./DeleteCampaignButton";
+import CountdownBadge from "@/components/CountdownBadge";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -23,18 +23,7 @@ function fmtDate(iso: string | null) {
     return new Date(iso).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
 }
 
-function daysLeft(endDate: string | Date | null): number | null {
-    if (!endDate) return null;
-    const diff = new Date(endDate).getTime() - Date.now();
-    return Math.max(0, Math.ceil(diff / 86_400_000));
-}
 
-function daysToStart(startDate: string | Date | null): number | null {
-    if (!startDate) return null;
-    const diff = new Date(startDate).getTime() - Date.now();
-    if (diff <= 0) return 0;
-    return Math.ceil(diff / 86_400_000);
-}
 
 const WIZARD_STEPS = [
     { num: 1, label: "Campaign Details"  },
@@ -59,7 +48,9 @@ export type CampaignCardData = {
     status: string;
     campaign_type: string;
     current_step: number;
+    goal_type: string | null;
     goal_amount: { toString(): string } | null;
+    initial_goal_amount: { toString(): string } | null;
     total_raised: { toString(): string };
     start_date: Date | null;
     end_date: Date | null;
@@ -77,16 +68,22 @@ export default function CampaignCard({ campaign }: { campaign: CampaignCardData 
     const isOrganizer = campaign.myRoles.includes(MemberRole.organizer);
     const heroUrl     = campaign.media.find((m) => m.media_type === "hero")?.url ?? null;
     const location    = campaign.payout ? `${campaign.payout.city}, ${campaign.payout.state}` : null;
-    const goalAmt     = campaign.goal_amount ? parseFloat(campaign.goal_amount.toString()) : 0;
-    const raisedAmt   = parseFloat(campaign.total_raised.toString());
-    const pct         = goalAmt > 0 ? Math.min(100, Math.round((raisedAmt / goalAmt) * 100)) : null;
-    const canDelete   = isOrganizer && (status === CampaignStatus.draft || status === CampaignStatus.upcoming);
+    const goalAmt        = campaign.goal_amount         ? parseFloat(campaign.goal_amount.toString())         : 0;
+    const initialGoalAmt = campaign.initial_goal_amount ? parseFloat(campaign.initial_goal_amount.toString()) : null;
+    const raisedAmt      = parseFloat(campaign.total_raised.toString());
+    const splitGoal      = initialGoalAmt ?? (goalAmt || null);
+    const scale          = goalAmt > 0 ? Math.max(raisedAmt, goalAmt) : raisedAmt || 1;
+    const greenPct       = splitGoal ? Math.min(100, Math.min(raisedAmt, splitGoal) / scale * 100) : (goalAmt > 0 ? Math.min(100, raisedAmt / scale * 100) : 100);
+    const goldPct        = splitGoal && raisedAmt > splitGoal ? Math.min(100 - greenPct, (raisedAmt - splitGoal) / scale * 100) : 0;
+    const isScaled       = initialGoalAmt != null && goalAmt > 0 && initialGoalAmt !== goalAmt;
+    const canDelete   = isOrganizer && (
+        status === CampaignStatus.draft ||
+        (status === CampaignStatus.upcoming && campaign._count.donations === 0)
+    );
     const cardHref    = status === CampaignStatus.draft
         ? `/campaigns/${campaign.slug}/create`
         : `/dashboard/campaigns/${campaign.slug}`;
     const draftStep   = status === CampaignStatus.draft ? currentDraftStep(campaign) : null;
-    const left        = status === CampaignStatus.active   ? daysLeft(campaign.end_date)      : null;
-    const toStart     = status === CampaignStatus.upcoming  ? daysToStart(campaign.start_date) : null;
 
     return (
         <div className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow flex flex-col border border-gray-100">
@@ -166,18 +163,34 @@ export default function CampaignCard({ campaign }: { campaign: CampaignCardData 
                 {/* Active: days left + progress */}
                 {status === CampaignStatus.active && (
                     <div className="space-y-2">
-                        {left !== null && (
-                            <p className="text-xs font-bold text-red-500 uppercase tracking-wide">
-                                {left === 0 ? "Last day!" : `${left} day${left !== 1 ? "s" : ""} left!`}
-                            </p>
-                        )}
+                        <CountdownBadge
+                            date={campaign.end_date}
+                            mode="left"
+                            className="text-xs font-bold text-red-500 uppercase tracking-wide"
+                        />
                         <div>
-                            <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                                <div className="h-full bg-green-500 rounded-full transition-all" style={{ width: `${pct ?? 0}%` }} />
+                            <div className="h-3 bg-gray-100 rounded-full overflow-hidden flex">
+                                {greenPct > 0 && (
+                                    <div className="h-full" style={{
+                                        width: `${greenPct}%`,
+                                        background: "repeating-linear-gradient(-45deg,#22c55e,#22c55e 6px,#16a34a 6px,#16a34a 12px)",
+                                        borderRadius: goldPct > 0 ? "9999px 0 0 9999px" : "9999px",
+                                    }} />
+                                )}
+                                {goldPct > 0 && (
+                                    <div className="h-full rounded-r-full" style={{
+                                        width: `${goldPct}%`,
+                                        background: "repeating-linear-gradient(-45deg,#f59e0b,#f59e0b 6px,#d97706 6px,#d97706 12px)",
+                                    }} />
+                                )}
                             </div>
                             <div className="flex items-center justify-between mt-1.5 text-xs text-gray-500">
                                 <span className="font-semibold text-gray-700">{fmt(raisedAmt)} raised</span>
-                                <span>{campaign._count.donations} donation{campaign._count.donations !== 1 ? "s" : ""}</span>
+                                {isScaled ? (
+                                    <span>{fmt(initialGoalAmt)} <span className="text-gray-400">initial</span> · <span className="text-amber-500 font-semibold">{fmt(goalAmt)} scaled</span></span>
+                                ) : (
+                                    <span>{campaign._count.donations} donation{campaign._count.donations !== 1 ? "s" : ""}</span>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -186,17 +199,24 @@ export default function CampaignCard({ campaign }: { campaign: CampaignCardData 
                 {/* Upcoming: days to start + stats */}
                 {status === CampaignStatus.upcoming && (
                     <div className="space-y-2">
-                        {toStart !== null && (
-                            <p className="text-xs font-bold text-orange-500 uppercase tracking-wide">
-                                {toStart === 0 ? "Starting today!" : `${toStart} day${toStart !== 1 ? "s" : ""} to start`}
-                            </p>
-                        )}
+                        <CountdownBadge
+                            date={campaign.start_date}
+                            mode="toStart"
+                            className="text-xs font-bold text-orange-500 uppercase tracking-wide"
+                        />
                         <div className="flex items-center gap-3 text-xs text-gray-500 flex-wrap">
                             {goalAmt > 0 && (
-                                <span>Campaign Goal: <span className="font-semibold text-gray-700">{fmt(goalAmt)}</span></span>
+                                <span>
+                                    Campaign Goal:{" "}
+                                    <span className="font-semibold text-gray-700">
+                                        {fmt(campaign.goal_type === "open_ended" && initialGoalAmt ? initialGoalAmt : goalAmt)}
+                                    </span>
+                                </span>
                             )}
                             <span>Donors added: <span className="font-semibold text-gray-700">{campaign._count.donors}</span></span>
-                            <span>Participants: <span className="font-semibold text-gray-700">{campaign._count.members}</span></span>
+                            {campaign.campaign_type === "organization" && (
+                                <span>Participants: <span className="font-semibold text-gray-700">{campaign._count.members}</span></span>
+                            )}
                         </div>
                     </div>
                 )}
@@ -204,11 +224,27 @@ export default function CampaignCard({ campaign }: { campaign: CampaignCardData 
                 {/* Completed */}
                 {status === CampaignStatus.completed && goalAmt > 0 && (
                     <div className="space-y-1">
-                        <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                            <div className="h-full bg-purple-400 rounded-full" style={{ width: `${pct ?? 100}%` }} />
+                        <div className="h-3 bg-gray-100 rounded-full overflow-hidden flex">
+                            {greenPct > 0 && (
+                                <div className="h-full" style={{
+                                    width: `${greenPct}%`,
+                                    background: "repeating-linear-gradient(-45deg,#a78bfa,#a78bfa 6px,#7c3aed 6px,#7c3aed 12px)",
+                                    borderRadius: goldPct > 0 ? "9999px 0 0 9999px" : "9999px",
+                                }} />
+                            )}
+                            {goldPct > 0 && (
+                                <div className="h-full rounded-r-full" style={{
+                                    width: `${goldPct}%`,
+                                    background: "repeating-linear-gradient(-45deg,#f59e0b,#f59e0b 6px,#d97706 6px,#d97706 12px)",
+                                }} />
+                            )}
                         </div>
                         <p className="text-xs text-gray-500">
-                            <span className="font-semibold text-gray-700">{fmt(raisedAmt)}</span> raised of {fmt(goalAmt)}
+                            <span className="font-semibold text-gray-700">{fmt(raisedAmt)}</span> raised
+                            {isScaled
+                                ? <> · {fmt(initialGoalAmt)} <span className="text-gray-400">initial</span> · <span className="text-amber-500 font-semibold">{fmt(goalAmt)} scaled</span></>
+                                : <> of {fmt(goalAmt)}</>
+                            }
                         </p>
                     </div>
                 )}

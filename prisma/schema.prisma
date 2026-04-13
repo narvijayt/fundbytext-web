@@ -96,6 +96,16 @@ enum MemberRole {
     participant
 }
 
+// Controls who can reach and find the campaign page:
+//   private  = nobody outside the org can access the URL (404)
+//   unlisted = accessible via direct link, not shown in marketing pages
+//   public   = accessible + listed in marketing/discovery pages
+enum CampaignVisibility {
+    private
+    unlisted
+    public
+}
+
 // ─────────────────────────────────────────────
 // USERS
 // ─────────────────────────────────────────────
@@ -186,14 +196,17 @@ model Campaign {
     status                 CampaignStatus  @default(draft)
     goal_type              GoalType?
     goal_amount            Decimal?        @db.Decimal(10, 2)
+    initial_goal_amount    Decimal?        @db.Decimal(10, 2) // locked at first save; goal_amount auto-scales
     total_raised           Decimal         @default(0) @db.Decimal(10, 2)
     donors_per_participant Int?            // Organization campaigns: donors per participant
-    target_contacts        Int?            // Participant-goal campaigns: contacts per participant
     background_theme       BackgroundTheme @default(sports)
     accent_color           String?         @db.VarChar(7) // hex e.g. #1565C0 (primary)
     secondary_color        String?         @db.VarChar(7) // hex e.g. #374151 (secondary)
     thank_you_message      String?         @db.Text // max 940 chars
-    current_step           Int             @default(1) // wizard resume: 1–5
+    visibility         CampaignVisibility @default(private)  // access control (see enum)
+    donations_enabled           Boolean  @default(true)  // organizer can pause donations independently
+    donations_disabled_message  String?  @db.Text         // shown to visitors when donations are paused
+    current_step       Int                @default(1)       // wizard resume: 1–5
     created_at             DateTime        @default(now()) @db.Timestamptz(3)
     updated_at             DateTime        @updatedAt @db.Timestamptz(3)
 
@@ -262,7 +275,7 @@ model CampaignMember {
     user_id           String?   @db.Uuid // null = invite pending
     first_name        String    @db.VarChar(100)
     last_name         String    @db.VarChar(100)
-    email             String    @db.VarChar(255)
+    email             String?   @db.VarChar(255)
     phone             String?   @db.VarChar(20)
     profile_photo_url String?
     can_upload_photo  Boolean   @default(false)
@@ -315,6 +328,7 @@ model CampaignDonor {
     phone             String?     @db.VarChar(20)
     email_valid       Boolean     @default(true)
     status            DonorStatus @default(not_donated)
+    invite_token      String?     @unique @db.VarChar(100)
     last_contacted_at DateTime?   @db.Timestamptz(3)
     created_at        DateTime    @default(now()) @db.Timestamptz(3)
     updated_at        DateTime    @updatedAt @db.Timestamptz(3)
@@ -350,6 +364,10 @@ model Donation {
     stripe_payment_intent_id String?       @unique @db.VarChar(255)
     payment_method           PaymentMethod @default(card)
     payment_status           PaymentStatus @default(pending)
+    card_brand               String?       @db.VarChar(50)   // e.g. "visa", "mastercard"
+    card_last4               String?       @db.VarChar(4)
+    card_exp_month           Int?
+    card_exp_year            Int?
     created_at               DateTime      @default(now()) @db.Timestamptz(3)
 
     campaign       Campaign        @relation(fields: [campaign_id], references: [id])

@@ -18,15 +18,18 @@ export default async function CampaignSetupPage({
     const user = await getAuthUser();
     if (!user) redirect(`/login?from=/campaigns/${slug}/create`);
 
-    const campaign = await prisma.campaign.findUnique({
-        where: { slug },
-        include: {
-            media:   { orderBy: { sort_order: "asc" } },
-            payout:  true,
-            members: { include: { roles: { select: { role: true } } }, orderBy: { created_at: "asc" } },
-            donors:  { orderBy: { created_at: "asc" }, select: { id: true, first_name: true, last_name: true, email: true, phone: true } },
-        },
-    });
+    const [campaign, donationCount] = await Promise.all([
+        prisma.campaign.findUnique({
+            where: { slug },
+            include: {
+                media:   { orderBy: { sort_order: "asc" } },
+                payout:  true,
+                members: { include: { roles: { select: { role: true } } }, orderBy: { created_at: "asc" } },
+                donors:  { orderBy: { created_at: "asc" }, select: { id: true, first_name: true, last_name: true, email: true, phone: true } },
+            },
+        }),
+        prisma.donation.count({ where: { campaign: { slug }, payment_status: "completed" } }),
+    ]);
 
     if (!campaign) redirect("/dashboard");
 
@@ -76,5 +79,19 @@ export default async function CampaignSetupPage({
     // If a specific step was requested via ?step= use it, otherwise find first incomplete
     const initialStep = requestedStep > 1 ? requestedStep : firstIncompleteStep();
 
-    return <SetupWizard campaign={campaignData} slug={slug} initialStep={Math.min(initialStep, 5)} defaultOrgDisplayName={defaultOrgDisplayName} />;
+    return (
+        <SetupWizard
+            campaign={campaignData}
+            slug={slug}
+            initialStep={Math.min(initialStep, 5)}
+            defaultOrgDisplayName={defaultOrgDisplayName}
+            hasDonations={donationCount > 0}
+            organizerInfo={{
+                first_name: myMember!.first_name,
+                last_name:  myMember!.last_name,
+                email:      myMember!.email ?? "",
+                phone:      myMember!.phone ?? "",
+            }}
+        />
+    );
 }

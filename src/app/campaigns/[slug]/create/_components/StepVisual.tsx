@@ -155,13 +155,14 @@ export default function StepVisual({
 
                 <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
                     {isOrg ? "Organization Logo / Profile Photo" : "Profile Picture / Logo"} &nbsp;
-                    <span className="normal-case font-normal text-gray-400">ⓘ</span>
+                    <span className="text-red-500">*</span>
                 </p>
                 <UploadBox
                     url={profileUrl}
                     type="profile"
                     onUploaded={(url) => {
                         setProfileUrl(url);
+                        clearFE("profile");
                         if (colorMode === "logo") {
                             extractColorsFromUrl(url).then(([c1, c2]) => {
                                 setExtractedColors([c1, c2]);
@@ -171,10 +172,11 @@ export default function StepVisual({
                         }
                     }}
                     onRemoved={() => setProfileUrl(null)}
-                    className="h-20 w-28 mb-4"
+                    className={`h-20 w-28 mb-1${fieldErrors.profile ? " ring-2 ring-red-400 rounded-xl" : ""}`}
                     uploadingPhoto={uploadingPhoto}
                     uploadPhoto={uploadPhoto}
                 />
+                {fieldErrors.profile && <p className="text-xs text-red-500 mb-3">{fieldErrors.profile}</p>}
 
                 <div className="flex gap-3">
                     <div className="flex-none w-36">

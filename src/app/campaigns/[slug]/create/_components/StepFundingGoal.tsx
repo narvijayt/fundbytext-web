@@ -11,15 +11,12 @@ type Props = {
     setGoalAmount: (v: string) => void;
     donorsPerParticipant: string;
     setDonorsPerParticipant: (v: string) => void;
-    targetContacts: string;
-    setTargetContacts: (v: string) => void;
     payout: Payout;
     setPayout: (p: Payout) => void;
     orgDisplayName: string;
     fieldErrors: Record<string, string>;
     clearFE: (key: string) => void;
     isLaunched: boolean;
-    isActive: boolean;
 };
 
 export default function StepFundingGoal({
@@ -27,11 +24,10 @@ export default function StepFundingGoal({
     goalType, setGoalType,
     goalAmount, setGoalAmount,
     donorsPerParticipant, setDonorsPerParticipant,
-    targetContacts, setTargetContacts,
     payout, setPayout,
     orgDisplayName,
     fieldErrors, clearFE,
-    isLaunched, isActive,
+    isLaunched,
 }: Props) {
     const indGoalTypes = [
         { value: "open_ended",  label: "Open-Ended Goal",   desc: "Auto-scales 20% higher each time it's reached" },
@@ -52,7 +48,7 @@ export default function StepFundingGoal({
                     <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M12 3a9 9 0 110 18A9 9 0 0112 3z" />
                     </svg>
-                    Goal structure is locked after launch. Only the mailing address can be updated.
+                    Goal type is locked after launch. Goal amounts and donor targets can still be updated.
                 </div>
             )}
 
@@ -89,26 +85,36 @@ export default function StepFundingGoal({
             </Field>
 
             {/* Goal amount */}
-            <Field label={`Fundraising Goal ($)${isActive ? " (locked)" : ""}`} required error={fieldErrors.goal_amount}>
-                <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">$</span>
-                    <input
-                        type="number"
-                        min={1}
-                        value={goalAmount}
-                        onChange={(e) => { setGoalAmount(e.target.value); clearFE("goal_amount"); }}
-                        placeholder="5000"
-                        disabled={isActive}
-                        className={`${fieldErrors.goal_amount ? inputErrCls : inputCls} pl-7 disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed`}
-                    />
-                </div>
-            </Field>
+            {(() => {
+                const locked = goalType === "open_ended" && isLaunched;
+                return (
+                    <Field
+                        label={locked ? "Fundraising Goal (auto-scaling)" : "Fundraising Goal ($)"}
+                        required
+                        error={fieldErrors.goal_amount}
+                        hint={locked ? "Open-ended goals auto-scale 20% higher each time the target is reached and cannot be manually edited." : undefined}
+                    >
+                        <div className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">$</span>
+                            <input
+                                type="number"
+                                min={1}
+                                value={goalAmount}
+                                onChange={(e) => { if (!locked) { setGoalAmount(e.target.value); clearFE("goal_amount"); } }}
+                                placeholder="5000"
+                                disabled={locked}
+                                className={`${fieldErrors.goal_amount ? inputErrCls : inputCls} pl-7 disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed`}
+                            />
+                        </div>
+                    </Field>
+                );
+            })()}
 
             {/* Org-only fields */}
             {isOrg && (
                 <>
                     <Field
-                        label={`Donors per Participant${isLaunched ? " (locked)" : ""}`}
+                        label="Donors per Participant"
                         required
                         error={fieldErrors.donors_per_participant}
                         hint="How many donors should each participant aim to recruit?"
@@ -119,28 +125,12 @@ export default function StepFundingGoal({
                             value={donorsPerParticipant}
                             onChange={(e) => { setDonorsPerParticipant(e.target.value); clearFE("donors_per_participant"); }}
                             placeholder="20"
-                            disabled={isLaunched}
-                            className={`${fieldErrors.donors_per_participant ? inputErrCls : inputCls} disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed`}
+                            className={fieldErrors.donors_per_participant ? inputErrCls : inputCls}
                         />
                     </Field>
 
-                    {goalType === "participant_goal" && (
-                        <Field
-                            label={`Target Contacts per Participant${isLaunched ? " (locked)" : ""}`}
-                            hint="How many contacts should each participant reach out to?"
-                        >
-                            <input
-                                type="number"
-                                min={1}
-                                value={targetContacts}
-                                onChange={(e) => setTargetContacts(e.target.value)}
-                                placeholder="30"
-                                disabled={isLaunched}
-                                className={`${inputCls} disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed`}
-                            />
-                        </Field>
-                    )}
                 </>
+
             )}
 
             {/* Payout / mailing address */}

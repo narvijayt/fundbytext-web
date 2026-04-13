@@ -12,9 +12,8 @@ export type Member = {
     id: string;
     first_name: string;
     last_name: string;
-    email: string;
+    email: string | null;
     phone: string | null;
-    can_upload_photo: boolean;
     roles: MemberRole[];
 };
 
@@ -48,7 +47,6 @@ export type Campaign = {
     goal_type: string | null;
     goal_amount: string | null;
     donors_per_participant: number | null;
-    target_contacts: number | null;
     background_theme: string;
     accent_color: string | null;
     secondary_color: string | null;

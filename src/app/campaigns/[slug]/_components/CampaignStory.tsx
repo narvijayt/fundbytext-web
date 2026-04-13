@@ -4,17 +4,17 @@ import { useState } from "react";
 import Image from "next/image";
 
 type Props = {
-    story:            string;
-    organizerName:    string | null;
+    story:             string;
+    organizerName:     string | null;
     organizerPhotoUrl: string | null;
 };
 
-const COLLAPSE_AT = 400; // characters before "Read more"
-
 export default function CampaignStory({ story, organizerName, organizerPhotoUrl }: Props) {
     const [expanded, setExpanded] = useState(false);
-    const isLong    = story.length > COLLAPSE_AT;
-    const displayed = !isLong || expanded ? story : story.slice(0, COLLAPSE_AT) + "…";
+
+    // Strip HTML tags to estimate real text length
+    const textLength = story.replace(/<[^>]*>/g, "").length;
+    const isLong     = textLength > 400;
 
     return (
         <div className="bg-white rounded-2xl shadow-sm p-6 space-y-4">
@@ -22,7 +22,17 @@ export default function CampaignStory({ story, organizerName, organizerPhotoUrl 
 
             {story ? (
                 <>
-                    <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-line">{displayed}</p>
+                    <div
+                        className={`relative overflow-hidden transition-all duration-300 ${!expanded && isLong ? "max-h-36" : ""}`}
+                    >
+                        <div
+                            className="text-sm text-gray-600 story-content"
+                            dangerouslySetInnerHTML={{ __html: story }}
+                        />
+                        {!expanded && isLong && (
+                            <div className="absolute bottom-0 left-0 right-0 h-12 bg-linear-to-t from-white to-transparent pointer-events-none" />
+                        )}
+                    </div>
                     {isLong && (
                         <button
                             onClick={() => setExpanded((v) => !v)}

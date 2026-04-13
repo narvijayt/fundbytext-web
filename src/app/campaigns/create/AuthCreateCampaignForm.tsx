@@ -79,7 +79,7 @@ export default function AuthCreateCampaignForm() {
                                         type="radio"
                                         value={type}
                                         checked={selectedType === type}
-                                        onChange={() => setValue("campaign_type", type)}
+                                        onChange={() => setValue("campaign_type", type, { shouldValidate: true })}
                                         className="sr-only"
                                     />
                                     {type === "individual" ? (
