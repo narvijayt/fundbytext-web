@@ -55,11 +55,19 @@ export async function publishStatusChange(campaignSlug: string, status: string) 
     }
 }
 
-export async function publishControlsChanged(campaignSlug: string) {
+// Typed payload lets the client decide whether to refresh or update state in-place.
+// "donations" → client updates UI directly (no server round-trip, scales to any audience size)
+// "visibility"→ client must refresh (full page change), with jitter to prevent thundering herd
+export type ControlsChangedPayload =
+    | { change: "visibility" }
+    | { change: "donations"; donations_enabled: boolean; donations_disabled_message: string | null }
+    | { change: "settings" };  // start/end date or other campaign field changes — triggers a full refresh
+
+export async function publishControlsChanged(campaignSlug: string, payload: ControlsChangedPayload) {
     try {
         const rest    = getAblyRest();
         const channel = rest.channels.get(campaignChannel(campaignSlug));
-        await channel.publish("controls_changed", {});
+        await channel.publish("controls_changed", payload);
     } catch (err) {
         console.error("[ably] publishControlsChanged failed:", err);
     }

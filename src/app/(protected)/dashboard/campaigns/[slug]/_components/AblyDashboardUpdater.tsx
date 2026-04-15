@@ -13,24 +13,27 @@ export default function AblyDashboardUpdater({ campaignSlug }: { campaignSlug: s
         const key = process.env.NEXT_PUBLIC_ABLY_API_KEY;
         if (!key) return;
 
-        const client        = new Ably.Realtime({ key });
-        const donationCh    = client.channels.get(`campaign:${campaignSlug}`);
-        const dashboardCh   = client.channels.get(`dashboard:campaign:${campaignSlug}`);
+        const client = new Ably.Realtime({ key });
+        const donationCh  = client.channels.get(`campaign:${campaignSlug}`);
+        const dashboardCh = client.channels.get(`dashboard:campaign:${campaignSlug}`);
 
         const onDonation = () => {
             refreshRef.current();
             window.dispatchEvent(new CustomEvent("dashboard:donation"));
         };
-        const onStatus = () => refreshRef.current();
-        donationCh.subscribe("donation", onDonation);
-        dashboardCh.subscribe("status_changed", onStatus);
+        const onControls = () => refreshRef.current();
+        const onStatus   = () => refreshRef.current();
+        donationCh.subscribe("donation",          onDonation).catch(() => {});
+        donationCh.subscribe("controls_changed",  onControls).catch(() => {});
+        dashboardCh.subscribe("status_changed",   onStatus).catch(() => {});
 
         return () => {
-            donationCh.unsubscribe("donation", onDonation);
-            dashboardCh.unsubscribe("status_changed", onStatus);
+            donationCh.unsubscribe("donation",         onDonation);
+            donationCh.unsubscribe("controls_changed", onControls);
+            dashboardCh.unsubscribe("status_changed",  onStatus);
             const state = client.connection.state;
             if (state !== "closed" && state !== "closing" && state !== "failed") {
-                client.close();
+                try { client.close(); } catch { /* best-effort */ }
             }
         };
     }, [campaignSlug]);

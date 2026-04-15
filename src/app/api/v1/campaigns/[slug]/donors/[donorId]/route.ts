@@ -18,6 +18,7 @@ async function getCtx(req: NextRequest, ctx: Ctx) {
         where:  { slug },
         select: {
             id:      true,
+            status:  true,
             members: {
                 where:  { user_id: user.id },
                 select: { id: true, roles: { select: { role: true } } },
@@ -47,6 +48,7 @@ export async function GET(req: NextRequest, ctx: Ctx) {
         },
         include: {
             assigned_member: { select: { id: true, first_name: true, last_name: true } },
+            added_by_member: { select: { id: true, first_name: true, last_name: true, roles: { select: { role: true } } } },
             donations: {
                 where:  { payment_status: "completed" },
                 select: { amount: true, created_at: true },
@@ -115,6 +117,13 @@ export async function DELETE(req: NextRequest, ctx: Ctx) {
         const { campaign, member, donorId } = c;
         const isOrganizer = member.roles.some((r) => r.role === MemberRole.organizer);
         if (!isOrganizer) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+
+        if (campaign.status === "completed") {
+            return NextResponse.json(
+                { error: "Donors cannot be removed from a completed campaign." },
+                { status: 422 }
+            );
+        }
 
         // Block delete if donor has completed donations
         const hasDonations = await prisma.donation.findFirst({

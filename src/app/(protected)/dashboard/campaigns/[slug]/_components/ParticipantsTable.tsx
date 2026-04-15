@@ -19,17 +19,18 @@ export type ParticipantRow = {
 };
 
 type Props = {
-    participants:         ParticipantRow[];
-    isOrganizer:          boolean;
-    campaignSlug:         string;
-    goalAmount?:          number | null;
-    myMemberId?:          string;
+    participants:          ParticipantRow[];
+    isOrganizer:           boolean;
+    campaignSlug:          string;
+    goalAmount?:           number | null;
+    myMemberId?:           string;
     donorsPerParticipant?: number | null;
+    isCompleted?:          boolean;
 };
 
 const PAGE_SIZE = 10;
 
-export default function ParticipantsTable({ participants, isOrganizer, campaignSlug, goalAmount, myMemberId, donorsPerParticipant }: Props) {
+export default function ParticipantsTable({ participants, isOrganizer, campaignSlug, goalAmount, myMemberId, donorsPerParticipant, isCompleted }: Props) {
     const [search,       setSearch]       = useState("");
     const [page,         setPage]         = useState(1);
     const [addOpen,      setAddOpen]      = useState(false);
@@ -65,7 +66,7 @@ export default function ParticipantsTable({ participants, isOrganizer, campaignS
                     <span className="text-xs font-semibold bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">
                         {filtered.length}
                     </span>
-                    {isOrganizer && (
+                    {isOrganizer && !isCompleted && (
                         <button
                             onClick={() => setAddOpen(true)}
                             className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-500 hover:bg-orange-600 text-white text-xs font-semibold rounded-lg transition-colors"
@@ -136,7 +137,7 @@ export default function ParticipantsTable({ participants, isOrganizer, campaignS
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
                         </svg>
                         <p className="text-sm text-gray-400">{search ? "No participants match your search" : "No participants yet"}</p>
-                        {isOrganizer && !search && (
+                        {isOrganizer && !isCompleted && !search && (
                             <button
                                 onClick={() => setAddOpen(true)}
                                 className="mt-3 inline-flex items-center gap-1.5 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white text-xs font-semibold rounded-lg transition-colors"
@@ -260,6 +261,7 @@ export default function ParticipantsTable({ participants, isOrganizer, campaignS
                     campaignSlug={campaignSlug}
                     isOrganizer={isOrganizer}
                     raised={viewedParticipant?.raised ?? 0}
+                    isCompleted={isCompleted}
                     onClose={() => setViewMemberId(null)}
                 />
             )}

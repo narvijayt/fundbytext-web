@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { getAuthUser } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
-import { CampaignStatus } from "@/generated/prisma/enums";
+import { CampaignStatus, MemberRole } from "@/generated/prisma/enums";
 import LaunchSuccessToast from "./_components/LaunchSuccessToast";
 import StatusTabs, { type TabKey } from "./_components/StatusTabs";
 import CampaignCard, { type CampaignCardData } from "./_components/CampaignCard";
@@ -21,13 +21,19 @@ export default async function DashboardPage({
     const memberships = await prisma.campaignMember.findMany({
         where: { user_id: user.id },
         select: {
-            roles: { select: { role: true } },
+            id:     true,
+            _count: { select: { donors: true } }, // donors assigned to this member
+            roles:  { select: { role: true } },
             campaign: {
                 include: {
                     media:  { select: { media_type: true, url: true }, orderBy: { sort_order: "asc" } },
                     payout: { select: { city: true, state: true } },
                     _count: {
-                        select: { members: true, donors: true, donations: true },
+                        select: {
+                            members:   { where: { roles: { some: { role: MemberRole.participant } } } },
+                            donors:    true,
+                            donations: true,
+                        },
                     },
                 },
             },
@@ -37,7 +43,8 @@ export default async function DashboardPage({
 
     const allCampaigns: CampaignCardData[] = memberships.map((m) => ({
         ...m.campaign,
-        myRoles: m.roles.map((r) => r.role),
+        myRoles:      m.roles.map((r) => r.role),
+        myDonorCount: m._count.donors,
     }));
 
     const counts = {

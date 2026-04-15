@@ -14,6 +14,7 @@ import { CampaignStatus, MemberRole } from "@/generated/prisma/enums";
 import {
     notifyCampaignActive,
     notifyCampaignCompleted,
+    broadcastCampaignActive,
     broadcastCampaignCompleted,
 } from "@/lib/notifications";
 import { publishStatusChange } from "@/lib/ably";
@@ -38,7 +39,14 @@ export async function GET(req: NextRequest) {
                 { start_date: null },
             ],
         },
-        select: { id: true, slug: true },
+        select: {
+            id:   true,
+            slug: true,
+            members: {
+                where:  { roles: { some: { role: MemberRole.participant } } },
+                select: { id: true },
+            },
+        },
     });
 
     // ── Find campaigns to complete ────────────────────────────────────────────
@@ -79,6 +87,7 @@ export async function GET(req: NextRequest) {
     // ── Fire notifications + Ably status events (non-fatal) ──────────────────
     const notifTasks: Promise<unknown>[] = [
         ...toActivate.map((c) => notifyCampaignActive(c.id).catch(console.error)),
+        ...toActivate.map((c) => broadcastCampaignActive(c.id, c.members.map((m) => m.id)).catch(console.error)),
         ...toActivate.map((c) => publishStatusChange(c.slug, "active")),
         ...toComplete.flatMap((c) => [
             notifyCampaignCompleted(c.id).catch(console.error),

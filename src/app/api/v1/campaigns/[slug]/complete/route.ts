@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { getAuthUserFromRequest } from "@/lib/session";
 import { MemberRole, CampaignStatus } from "@/generated/prisma/enums";
 import { notifyCampaignEndedEarly, broadcastCampaignCompleted } from "@/lib/notifications";
+import { publishStatusChange } from "@/lib/ably";
 
 type Ctx = { params: Promise<{ slug: string }> };
 
@@ -57,6 +58,7 @@ export async function POST(req: NextRequest, ctx: Ctx) {
         Promise.all([
             notifyCampaignEndedEarly(campaign.id),
             broadcastCampaignCompleted(campaign.id, participantIds),
+            publishStatusChange(slug, "completed"),
         ]).catch(console.error);
 
         return NextResponse.json({ campaign: updated });

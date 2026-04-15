@@ -27,6 +27,28 @@ async function getFeaturedCampaigns() {
     }
 }
 
+// ── Fetch recently completed campaigns ───────────────────────────────────────
+async function getCompletedCampaigns() {
+    try {
+        return await prisma.campaign.findMany({
+            where: { status: "completed", visibility: "public" },
+            take: 6,
+            orderBy: { end_date: "desc" },
+            select: {
+                slug:          true,
+                name:          true,
+                campaign_type: true,
+                goal_amount:   true,
+                total_raised:  true,
+                end_date:      true,
+                media: { where: { media_type: "hero" }, take: 1, select: { url: true } },
+            },
+        });
+    } catch {
+        return [];
+    }
+}
+
 const STEPS = [
     { n: 1, title: "Create a campaign",       desc: "Simply fill in the campaign details to tell us about yourself or your organization. Setup takes only minutes." },
     { n: 2, title: "Enter donor information", desc: "Add your donors and participants so they receive campaign outreach automatically." },
@@ -48,7 +70,7 @@ const heroBg = "linear-gradient(175deg,#e8f4fd 0%,#c5e3f7 30%,#7dc4f0 65%,#2d8fd
 const blueBg = "linear-gradient(160deg,#1a6fbf 0%,#1565C0 50%,#0d4fa8 100%)";
 
 export default async function HomePage() {
-    const [liveCampaigns, user] = await Promise.all([getFeaturedCampaigns(), getAuthUser()]);
+    const [liveCampaigns, completedCampaigns, user] = await Promise.all([getFeaturedCampaigns(), getCompletedCampaigns(), getAuthUser()]);
 
     const cards = liveCampaigns.map((c) => ({
         slug:       `/campaigns/${c.slug}`,
@@ -260,6 +282,65 @@ export default async function HomePage() {
                     </div>
                 </div>
             </section>
+
+            {/* ── Recently Funded ────────────────────────────────────────── */}
+            {completedCampaigns.length > 0 && (
+                <section className="bg-gray-50 py-20 px-6">
+                    <div className="max-w-5xl mx-auto">
+                        <p className="text-xs font-bold text-green-600 uppercase tracking-widest text-center mb-3">Success Stories</p>
+                        <h2 className="text-3xl sm:text-4xl font-extrabold text-blue-900 text-center mb-3">Recently Funded Campaigns</h2>
+                        <p className="text-gray-500 text-sm text-center mb-10 max-w-md mx-auto">These campaigns hit their goals. See what's possible with FundByText.</p>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                            {completedCampaigns.map((c) => {
+                                const raised = Number(c.total_raised);
+                                const goal   = c.goal_amount ? Number(c.goal_amount) : null;
+                                const pct    = goal && goal > 0 ? Math.min(100, Math.round((raised / goal) * 100)) : null;
+                                return (
+                                    <Link
+                                        key={c.slug}
+                                        href={`/campaigns/${c.slug}`}
+                                        className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow group border border-gray-100"
+                                    >
+                                        <div className="relative h-36 bg-linear-to-br from-green-100 to-green-300">
+                                            {c.media[0]?.url ? (
+                                                <Image src={c.media[0].url} alt={c.name ?? ""} fill className="object-cover" />
+                                            ) : (
+                                                <div className="absolute inset-0 flex items-center justify-center">
+                                                    <svg className="w-10 h-10 text-green-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                                </div>
+                                            )}
+                                            <span className="absolute top-2 left-2 px-2 py-0.5 rounded text-white text-[10px] font-bold bg-green-600">
+                                                FUNDED
+                                            </span>
+                                            <span className="absolute top-2 right-2 px-2 py-0.5 rounded bg-black/40 text-white text-[10px] font-semibold capitalize">
+                                                {c.campaign_type}
+                                            </span>
+                                        </div>
+                                        <div className="p-4">
+                                            <p className="text-sm font-bold text-gray-800 leading-snug line-clamp-2 group-hover:text-blue-700 transition-colors mb-3">
+                                                {c.name}
+                                            </p>
+                                            <p className="text-lg font-extrabold text-green-700">
+                                                ${raised.toLocaleString()}
+                                                <span className="text-xs font-normal text-gray-400 ml-1">raised</span>
+                                            </p>
+                                            {goal && (
+                                                <>
+                                                    <div className="mt-2 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                                                        <div className="h-full bg-green-500 rounded-full" style={{ width: `${pct}%` }} />
+                                                    </div>
+                                                    <p className="text-[11px] text-gray-400 mt-1">{pct}% of ${goal.toLocaleString()} goal</p>
+                                                </>
+                                            )}
+                                        </div>
+                                    </Link>
+                                );
+                            })}
+                        </div>
+                    </div>
+                </section>
+            )}
 
             {/* ── Partners bar ───────────────────────────────────────────── */}
             <section className="py-8 px-6 bg-white">

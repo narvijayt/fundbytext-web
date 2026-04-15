@@ -9,12 +9,16 @@ import { Prisma } from "@/generated/prisma/client";
 import {
     notifyCampaignExtended,
     broadcastCampaignExtended,
+    broadcastStartDateChanged,
     notifyCampaignReactivated,
+    broadcastCampaignReactivated,
     notifyDonationsPaused,
     notifyDonationsResumed,
+    broadcastDonationsPaused,
+    broadcastDonationsResumed,
     notifyStartDateChanged,
 } from "@/lib/notifications";
-import { publishControlsChanged } from "@/lib/ably";
+import { publishControlsChanged, publishStatusChange } from "@/lib/ably";
 import {
     MemberRole,
     GoalType,
@@ -171,9 +175,10 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
                 start_date:        true,
                 end_date:          true,
                 campaign_type:     true,
-                donations_enabled: true,
-                visibility:        true,
-                initial_goal_amount: true,
+                donations_enabled:           true,
+                donations_disabled_message:  true,
+                visibility:                  true,
+                initial_goal_amount:         true,
                 goal_type:         true,
                 members: {
                     where:  { roles: { some: { role: "participant" } } },
@@ -196,6 +201,9 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
                 current.start_date.getTime() !== (data.start_date as Date).getTime();
             if (startDateChanged && (current?.status === CampaignStatus.active || current?.status === CampaignStatus.upcoming)) {
                 notifTasks.push(notifyStartDateChanged(ids.campaignId, data.start_date));
+                if (memberIds.length > 0) {
+                    notifTasks.push(broadcastStartDateChanged(ids.campaignId, memberIds, data.start_date));
+                }
             }
         }
 
@@ -203,17 +211,31 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
         //    End date pushed forward on active/upcoming → extension notification.
         if ("end_date" in data && data.end_date instanceof Date && data.end_date > now) {
             if (current?.status === CampaignStatus.completed) {
-                data.status = current.start_date && current.start_date > now
+                const newStatus = current.start_date && current.start_date > now
                     ? CampaignStatus.upcoming
                     : CampaignStatus.active;
+                data.status = newStatus;
+                // Clear deduplication records so completion notifications fire fresh if ended again
+                notifTasks.push(
+                    prisma.campaignNotification.deleteMany({
+                        where: {
+                            campaign_id:   ids.campaignId,
+                            trigger_event: { in: ["campaign_completed_broadcast", "campaign_completed"] },
+                        },
+                    })
+                );
                 notifTasks.push(notifyCampaignReactivated(ids.campaignId));
+                if (memberIds.length > 0) {
+                    notifTasks.push(broadcastCampaignReactivated(ids.campaignId, memberIds));
+                }
+                publishStatusChange(slug, newStatus).catch(console.error);
             }
             const isExtension =
                 (current?.status === CampaignStatus.active || current?.status === CampaignStatus.upcoming) &&
                 (!current.end_date || data.end_date > current.end_date);
             if (isExtension) {
                 notifTasks.push(notifyCampaignExtended(ids.campaignId, data.end_date));
-                if (current?.campaign_type === "organization" && memberIds.length > 0) {
+                if (memberIds.length > 0) {
                     notifTasks.push(broadcastCampaignExtended(ids.campaignId, memberIds, data.end_date));
                 }
             }
@@ -225,22 +247,55 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
             notifTasks.push(
                 data.donations_enabled
                     ? notifyDonationsResumed(ids.campaignId)
-                    : notifyDonationsPaused(ids.campaignId)
+                    : notifyDonationsPaused(ids.campaignId),
+                ...(memberIds.length > 0
+                    ? [data.donations_enabled
+                        ? broadcastDonationsResumed(ids.campaignId, memberIds)
+                        : broadcastDonationsPaused(ids.campaignId, memberIds)]
+                    : [])
             );
         }
 
         if (notifTasks.length > 0) Promise.allSettled(notifTasks).catch(console.error);
 
-        // ── Publish controls_changed to marketing page subscribers when visibility
-        //    or donations_enabled actually changes (fire-and-forget).
+        // ── Publish controls_changed with typed payloads so the marketing page can
+        //    decide whether to update client-side state or do a full refresh.
         const visibilityChanged =
             "visibility" in data && data.visibility !== current?.visibility;
         const donationsEnabledChanged =
             "donations_enabled" in data &&
             typeof data.donations_enabled === "boolean" &&
             current?.donations_enabled !== data.donations_enabled;
-        if (visibilityChanged || donationsEnabledChanged) {
-            publishControlsChanged(slug).catch(console.error);
+
+        const startDateChanged =
+            "start_date" in data &&
+            data.start_date instanceof Date &&
+            (!current?.start_date || current.start_date.getTime() !== data.start_date.getTime());
+        const endDateChanged =
+            "end_date" in data &&
+            (data.end_date instanceof Date || data.end_date === null) &&
+            (current?.end_date?.getTime() ?? null) !== (data.end_date instanceof Date ? data.end_date.getTime() : null);
+
+        if (visibilityChanged) {
+            // Client will refresh with jitter — no data needed in payload
+            publishControlsChanged(slug, { change: "visibility" }).catch(console.error);
+        }
+        if (startDateChanged || endDateChanged) {
+            publishControlsChanged(slug, { change: "settings" }).catch(console.error);
+        }
+        if (donationsEnabledChanged) {
+            // Carry the new values so the client updates state without a server round-trip
+            const newEnabled = data.donations_enabled as boolean;
+            const newMessage = (
+                "donations_disabled_message" in data && data.donations_disabled_message !== undefined
+                    ? data.donations_disabled_message as string | null
+                    : current?.donations_disabled_message ?? null
+            );
+            publishControlsChanged(slug, {
+                change:                      "donations",
+                donations_enabled:           newEnabled,
+                donations_disabled_message:  newMessage,
+            }).catch(console.error);
         }
 
         // ── Auto-set initial_goal_amount the first time goal_amount is saved

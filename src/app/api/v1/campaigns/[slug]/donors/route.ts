@@ -13,6 +13,16 @@ type Ctx = { params: Promise<{ slug: string }> };
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 
+async function generateShortCode(): Promise<string> {
+    for (let i = 0; i < 10; i++) {
+        const code = randomBytes(4).toString("hex"); // 8 hex chars
+        const existing = await prisma.campaignDonor.findUnique({ where: { short_code: code }, select: { id: true } });
+        if (!existing) return code;
+    }
+    // Fallback: use first 8 chars of a UUID-style random
+    return randomBytes(8).toString("hex").slice(0, 8);
+}
+
 const postSchema = z.object({
     first_name:         z.string().min(1).max(100),
     last_name:          z.string().min(1).max(100),
@@ -30,10 +40,11 @@ export async function GET(req: NextRequest, ctx: Ctx) {
 
         const { slug } = await ctx.params;
         const { searchParams } = new URL(req.url);
-        const skip   = Math.max(0, parseInt(searchParams.get("skip") ?? "0", 10));
-        const take   = Math.min(100, Math.max(1, parseInt(searchParams.get("take") ?? "5", 10)));
-        const search = searchParams.get("search")?.trim() ?? "";
-        const status = searchParams.get("status") ?? "all";
+        const skip            = Math.max(0, parseInt(searchParams.get("skip") ?? "0", 10));
+        const take            = Math.min(100, Math.max(1, parseInt(searchParams.get("take") ?? "5", 10)));
+        const search          = searchParams.get("search")?.trim() ?? "";
+        const status          = searchParams.get("status") ?? "all";
+        const participantView = searchParams.get("participant_view") === "1";
 
         const campaign = await prisma.campaign.findUnique({
             where:  { slug },
@@ -50,11 +61,15 @@ export async function GET(req: NextRequest, ctx: Ctx) {
         const member = campaign.members[0];
         if (!member)  return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
-        const isOrganizer = member.roles.some((r) => r.role === MemberRole.organizer);
+        const isOrganizer   = member.roles.some((r) => r.role === MemberRole.organizer);
+        const isParticipant = member.roles.some((r) => r.role === MemberRole.participant);
+        // Force participant-scoped results when the client explicitly requests it
+        // (e.g. an organizer who also has the participant role viewing their own donor list)
+        const scopeToMember = !isOrganizer || (participantView && isParticipant);
 
         const where = {
             campaign_id: campaign.id,
-            ...(!isOrganizer ? { assigned_member_id: member.id } : {}),
+            ...(scopeToMember ? { assigned_member_id: member.id } : {}),
             ...(status !== "all" ? { status } : {}),
             ...(search ? {
                 OR: [
@@ -80,9 +95,13 @@ export async function GET(req: NextRequest, ctx: Ctx) {
                     status:       true,
                     email_valid:  true,
                     invite_token: true,
+                    short_code:   true,
                     created_at:   true,
                     assigned_member: {
-                        select: { id: true, first_name: true, last_name: true },
+                        select: { id: true, first_name: true, last_name: true, invite_token: true },
+                    },
+                    added_by_member: {
+                        select: { id: true, first_name: true, last_name: true, roles: { select: { role: true } } },
                     },
                     donations: {
                         where:   { payment_status: "completed" },
@@ -154,6 +173,11 @@ export async function POST(req: NextRequest, ctx: Ctx) {
             return NextResponse.json({ error: "Forbidden" }, { status: 403 });
         }
 
+        // Completed campaigns are locked — no new donors
+        if (campaign.status === "completed") {
+            return NextResponse.json({ error: "Donors cannot be added to a completed campaign." }, { status: 422 });
+        }
+
         const body = await req.json().catch(() => null);
         if (!body) return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
 
@@ -183,16 +207,19 @@ export async function POST(req: NextRequest, ctx: Ctx) {
             : member.id;
 
         const donorInviteToken = randomBytes(32).toString("hex");
+        const shortCode = await generateShortCode();
 
         const donor = await prisma.campaignDonor.create({
             data: {
                 campaign_id:        campaign.id,
                 assigned_member_id: resolvedMemberId,
+                added_by_member_id: member.id,
                 first_name,
                 last_name,
                 email:        email || null,
                 phone:        phone || null,
                 invite_token: donorInviteToken,
+                short_code:   shortCode,
             },
         });
 

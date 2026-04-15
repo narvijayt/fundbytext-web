@@ -10,17 +10,21 @@ type Donor = {
     phone:             string | null;
     status:            string;
     email_valid:       boolean;
+    short_code:        string | null;
     assigned_member:   { id: string; first_name: string; last_name: string } | null;
+    added_by_member:   { id: string; first_name: string; last_name: string; roles: { role: string }[] } | null;
     donations:         { amount: { toString(): string }; created_at: string }[];
 };
 
 type Props = {
-    donorId:      string;
-    campaignSlug: string;
-    isOrganizer:  boolean;
-    participants: { id: string; first_name: string; last_name: string }[];
-    onClose:      () => void;
-    onRefresh?:   () => void;
+    donorId:         string;
+    campaignSlug:    string;
+    isOrganizer:     boolean;
+    currentMemberId: string;
+    participants:    { id: string; first_name: string; last_name: string }[];
+    isCompleted?:    boolean;
+    onClose:         () => void;
+    onRefresh?:      () => void;
 };
 
 function fmt(n: number) {
@@ -33,15 +37,18 @@ const STATUS_BADGE: Record<string, string> = {
     not_donated: "bg-gray-100 text-gray-500",
 };
 
-export default function DonorDetailModal({ donorId, campaignSlug, isOrganizer, participants, onClose, onRefresh }: Props) {
+export default function DonorDetailModal({ donorId, campaignSlug, isOrganizer, currentMemberId, participants, isCompleted, onClose, onRefresh }: Props) {
     const [donor,       setDonor]       = useState<Donor | null>(null);
     const [loading,     setLoading]     = useState(true);
     const [editing,     setEditing]     = useState(false);
     const [saving,      setSaving]      = useState(false);
-    const [assigning,   setAssigning]   = useState(false);
-    const [deleting,    setDeleting]    = useState(false);
-    const [confirmDel,  setConfirmDel]  = useState(false);
-    const [error,       setError]       = useState<string | null>(null);
+    const [assigning,     setAssigning]     = useState(false);
+    const [assignSuccess, setAssignSuccess] = useState(false);
+    const [assignError,   setAssignError]   = useState<string | null>(null);
+    const [deleting,      setDeleting]      = useState(false);
+    const [confirmDel,    setConfirmDel]    = useState(false);
+    const [error,         setError]         = useState<string | null>(null);
+    const [copied,        setCopied]        = useState(false);
 
     // Name edit fields
     const [firstName, setFirstName] = useState("");
@@ -97,7 +104,8 @@ export default function DonorDetailModal({ donorId, campaignSlug, isOrganizer, p
 
     async function handleAssign() {
         setAssigning(true);
-        setError(null);
+        setAssignError(null);
+        setAssignSuccess(false);
         const res = await fetch(`/api/v1/campaigns/${campaignSlug}/donors/${donorId}`, {
             method:  "PUT",
             headers: { "Content-Type": "application/json" },
@@ -110,9 +118,11 @@ export default function DonorDetailModal({ donorId, campaignSlug, isOrganizer, p
                 ...d,
                 assigned_member: p ? { id: p.id, first_name: p.first_name, last_name: p.last_name } : null,
             } : d);
+            setAssignSuccess(true);
+            setTimeout(() => setAssignSuccess(false), 3000);
         } else {
             const j = await res.json().catch(() => ({}));
-            setError(j.error ?? "Assignment failed.");
+            setAssignError(j.error ?? "Assignment failed.");
         }
         setAssigning(false);
     }
@@ -122,17 +132,40 @@ export default function DonorDetailModal({ donorId, campaignSlug, isOrganizer, p
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.45)" }}>
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
-                <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md flex flex-col" style={{ maxHeight: "calc(100vh - 4rem)" }}>
+                <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 shrink-0">
                     <h2 className="font-bold text-gray-900">Donor Details</h2>
-                    <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-400">
-                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/>
-                        </svg>
-                    </button>
+                    <div className="flex items-center gap-1">
+                        {donor?.short_code && (donor.email || donor.phone) && (
+                            <button
+                                title={copied ? "Copied!" : "Copy donor link"}
+                                onClick={() => {
+                                    navigator.clipboard.writeText(`${window.location.origin}/d/${donor.short_code}`);
+                                    setCopied(true);
+                                    setTimeout(() => setCopied(false), 2000);
+                                }}
+                                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-400"
+                            >
+                                {copied ? (
+                                    <svg className="w-4 h-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7"/>
+                                    </svg>
+                                ) : (
+                                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
+                                    </svg>
+                                )}
+                            </button>
+                        )}
+                        <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-400">
+                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
+                        </button>
+                    </div>
                 </div>
 
-                <div className="p-6">
+                <div className="p-6 overflow-y-auto">
                     {loading && <p className="text-center text-sm text-gray-400 py-8">Loading…</p>}
                     {error   && <p className="text-sm text-red-500 bg-red-50 rounded-lg px-3 py-2 mb-4">{error}</p>}
 
@@ -181,14 +214,44 @@ export default function DonorDetailModal({ donorId, campaignSlug, isOrganizer, p
                                         <span className="text-gray-400">Phone</span>
                                         <span className="font-medium">{donor.phone ?? "—"}</span>
                                     </div>
-                                    {isOrganizer && !hasDonated && participants.length > 0 ? (
+                                    {donor.added_by_member && (() => {
+                                        const addedByMe       = donor.added_by_member.id === currentMemberId;
+                                        const adderIsOrg      = donor.added_by_member.roles.some(r => r.role === "organizer");
+                                        const adderIsParticip = donor.added_by_member.roles.some(r => r.role === "participant");
+                                        const addedByPureOrg  = adderIsOrg && !adderIsParticip;
+                                        if (isOrganizer && addedByMe)
+                                            return (
+                                                <div className="flex items-center justify-between py-2 border-b border-gray-50">
+                                                    <span className="text-gray-400">Added by</span>
+                                                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-orange-50 text-orange-600">Me</span>
+                                                </div>
+                                            );
+                                        if (!isOrganizer && addedByPureOrg)
+                                            return (
+                                                <div className="flex items-center justify-between py-2 border-b border-gray-50">
+                                                    <span className="text-gray-400">Added by</span>
+                                                    <div className="flex items-center gap-1.5">
+                                                        <span className="text-sm font-medium text-gray-700">
+                                                            {donor.added_by_member.first_name} {donor.added_by_member.last_name}
+                                                        </span>
+                                                        <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-blue-50 text-blue-600">Organizer</span>
+                                                    </div>
+                                                </div>
+                                            );
+                                        return null;
+                                    })()}
+                                    {isOrganizer && !hasDonated && !isCompleted && participants.length > 0 ? (
                                         <div className="py-2 border-b border-gray-50">
                                             <p className="text-xs font-semibold text-gray-400 mb-1.5">Assign to Participant</p>
                                             <div className="flex gap-2">
                                                 <select
                                                     value={assignTo}
-                                                    onChange={(e) => setAssignTo(e.target.value)}
-                                                    className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+                                                    onChange={(e) => { setAssignTo(e.target.value); setAssignSuccess(false); setAssignError(null); }}
+                                                    className={`flex-1 px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 transition-colors ${
+                                                        assignSuccess ? "border-green-300 focus:ring-green-300" :
+                                                        assignError   ? "border-red-300 focus:ring-red-300"    :
+                                                                        "border-gray-200 focus:ring-orange-400"
+                                                    }`}
                                                 >
                                                     <option value="">Unassigned</option>
                                                     {participants.map((p) => (
@@ -199,12 +262,45 @@ export default function DonorDetailModal({ donorId, campaignSlug, isOrganizer, p
                                                 </select>
                                                 <button
                                                     onClick={handleAssign}
-                                                    disabled={assigning}
-                                                    className="px-3 py-2 bg-orange-500 hover:bg-orange-600 text-white text-xs font-semibold rounded-lg disabled:opacity-50 shrink-0"
+                                                    disabled={assigning || assignSuccess}
+                                                    className={`px-3 py-2 text-white text-xs font-semibold rounded-lg disabled:opacity-60 shrink-0 transition-colors ${
+                                                        assignSuccess ? "bg-green-500" : "bg-orange-500 hover:bg-orange-600"
+                                                    }`}
                                                 >
-                                                    {assigning ? "Saving…" : "Assign"}
+                                                    {assigning ? (
+                                                        <span className="flex items-center gap-1.5">
+                                                            <svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
+                                                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                                                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 00-8 8h4z"/>
+                                                            </svg>
+                                                            Saving…
+                                                        </span>
+                                                    ) : assignSuccess ? (
+                                                        <span className="flex items-center gap-1.5">
+                                                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7"/>
+                                                            </svg>
+                                                            Saved
+                                                        </span>
+                                                    ) : "Assign"}
                                                 </button>
                                             </div>
+                                            {assignSuccess && (
+                                                <p className="mt-1.5 text-xs font-semibold text-green-600 flex items-center gap-1">
+                                                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7"/>
+                                                    </svg>
+                                                    {assignTo ? `Assigned to ${participants.find(p => p.id === assignTo)?.first_name ?? "participant"}` : "Removed from participant"}
+                                                </p>
+                                            )}
+                                            {assignError && (
+                                                <p className="mt-1.5 text-xs font-semibold text-red-500 flex items-center gap-1">
+                                                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                                    </svg>
+                                                    {assignError}
+                                                </p>
+                                            )}
                                         </div>
                                     ) : donor.assigned_member ? (
                                         <div className="flex items-center justify-between py-2 border-b border-gray-50">
@@ -252,27 +348,31 @@ export default function DonorDetailModal({ donorId, campaignSlug, isOrganizer, p
                                         </div>
                                     ) : (
                                         <div className="flex gap-3 pt-3">
-                                            <button
-                                                onClick={() => setEditing(true)}
-                                                className="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors"
-                                            >
-                                                Edit Name
-                                            </button>
-                                            {hasDonated ? (
+                                            {!isCompleted && (
                                                 <button
-                                                    disabled
-                                                    title="Cannot remove a donor who has donated"
-                                                    className="flex-1 py-2.5 rounded-xl border border-gray-200 text-gray-400 text-sm font-semibold cursor-not-allowed"
+                                                    onClick={() => setEditing(true)}
+                                                    className="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors"
                                                 >
-                                                    Remove
+                                                    Edit Name
                                                 </button>
-                                            ) : (
-                                                <button
-                                                    onClick={() => setConfirmDel(true)}
-                                                    className="flex-1 py-2.5 rounded-xl border border-red-200 text-red-600 text-sm font-semibold hover:bg-red-50 transition-colors"
-                                                >
-                                                    Remove
-                                                </button>
+                                            )}
+                                            {!isCompleted && (
+                                                hasDonated ? (
+                                                    <button
+                                                        disabled
+                                                        title="Cannot remove a donor who has donated"
+                                                        className="flex-1 py-2.5 rounded-xl border border-gray-200 text-gray-400 text-sm font-semibold cursor-not-allowed"
+                                                    >
+                                                        Remove
+                                                    </button>
+                                                ) : (
+                                                    <button
+                                                        onClick={() => setConfirmDel(true)}
+                                                        className="flex-1 py-2.5 rounded-xl border border-red-200 text-red-600 text-sm font-semibold hover:bg-red-50 transition-colors"
+                                                    >
+                                                        Remove
+                                                    </button>
+                                                )
                                             )}
                                         </div>
                                     )}

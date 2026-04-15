@@ -13,6 +13,7 @@ type Props = {
     accent:                   string;
     donationsEnabled:         boolean;
     donationsDisabledMessage: string | null;
+    maxDonationCents:         number | null;
     endDate:                  Date | null;
     startDate:                Date | null;
     status:                   string;
@@ -37,7 +38,7 @@ function getCountdown(target: Date) {
 
 export default function ProgressPanel({
     totalRaised, goalAmount, initialGoalAmount, pct, donorCount, recentDonations,
-    accent, donationsEnabled, donationsDisabledMessage,
+    accent, donationsEnabled, donationsDisabledMessage, maxDonationCents,
     endDate, startDate, status, onDonate,
 }: Props) {
     // ── Animated progress bar ──────────────────────────────────────────────
@@ -256,6 +257,10 @@ export default function ProgressPanel({
                     {isCompleted ? (
                         <button disabled className="w-full py-3 rounded-xl bg-gray-100 text-gray-400 text-sm font-bold cursor-not-allowed">
                             Campaign Ended
+                        </button>
+                    ) : maxDonationCents === 0 ? (
+                        <button disabled className="w-full py-3 rounded-xl bg-green-50 text-green-600 text-sm font-bold cursor-not-allowed">
+                            Goal Fully Funded
                         </button>
                     ) : donationsEnabled && !isUpcoming ? (
                         <button

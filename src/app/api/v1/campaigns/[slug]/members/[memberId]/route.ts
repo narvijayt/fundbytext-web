@@ -18,6 +18,7 @@ async function getCtx(req: NextRequest, ctx: Ctx) {
         where:  { slug },
         select: {
             id:      true,
+            status:  true,
             members: {
                 select: { id: true, user_id: true, roles: { select: { role: true } } },
             },
@@ -102,13 +103,20 @@ export async function DELETE(req: NextRequest, ctx: Ctx) {
         const isOrganizer = c.myMember.roles.some((r) => r.role === MemberRole.organizer);
         if (!isOrganizer) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
+        if (c.campaign.status === "completed") {
+            return NextResponse.json(
+                { error: "Participants cannot be removed from a completed campaign." },
+                { status: 422 }
+            );
+        }
+
         const target = c.campaign.members.find((m) => m.id === c.memberId);
         if (!target) return NextResponse.json({ error: "Member not found" }, { status: 404 });
 
         const targetIsOrganizer  = target.roles.some((r) => r.role === MemberRole.organizer);
         const targetIsParticipant = target.roles.some((r) => r.role === MemberRole.participant);
 
-        // Block if they have donations attributed to them
+        // Block if they have completed donations attributed to them
         const hasDonations = await prisma.donation.findFirst({
             where:  { member_id: c.memberId, payment_status: "completed" },
             select: { id: true },
@@ -120,15 +128,37 @@ export async function DELETE(req: NextRequest, ctx: Ctx) {
             );
         }
 
+        // Block if they have any donors assigned to them
+        const hasAssignedDonors = await prisma.campaignDonor.findFirst({
+            where:  { assigned_member_id: c.memberId, campaign_id: c.campaign.id },
+            select: { id: true },
+        });
+        if (hasAssignedDonors) {
+            return NextResponse.json(
+                { error: "Cannot remove a participant who has donors assigned to them." },
+                { status: 409 }
+            );
+        }
+
         if (targetIsOrganizer && targetIsParticipant) {
             // Organizer removing their own participant role — keep member record, just drop the role
-            await prisma.campaignMemberRole.deleteMany({
-                where: { member_id: c.memberId, role: MemberRole.participant },
-            });
+            await prisma.$transaction([
+                prisma.campaignNotification.deleteMany({
+                    where: { campaign_id: c.campaign.id, recipient_member_id: c.memberId },
+                }),
+                prisma.campaignMemberRole.deleteMany({
+                    where: { member_id: c.memberId, role: MemberRole.participant },
+                }),
+            ]);
         } else if (targetIsOrganizer) {
             return NextResponse.json({ error: "Cannot remove a campaign organizer." }, { status: 422 });
         } else {
-            await prisma.campaignMember.delete({ where: { id: c.memberId } });
+            await prisma.$transaction([
+                prisma.campaignNotification.deleteMany({
+                    where: { campaign_id: c.campaign.id, recipient_member_id: c.memberId },
+                }),
+                prisma.campaignMember.delete({ where: { id: c.memberId } }),
+            ]);
         }
 
         return new NextResponse(null, { status: 204 });

@@ -35,6 +35,7 @@ type Props = {
     donorPrefill?:            DonorPrefill | null;
     donationsEnabled:         boolean;
     donationsDisabledMessage: string | null;
+    maxDonationCents:         number | null;
 };
 
 function fmt(n: number) {
@@ -44,21 +45,23 @@ function fmt(n: number) {
 // ── Donation form (inside Stripe Elements) ─────────────────────────────────────
 
 type FormProps = {
-    campaignSlug:   string;
-    campaignName:   string;
-    campaignStory:  string | null;
-    heroUrl:        string | null;
-    accent:         string;
-    participants:   ModalParticipant[];
-    targetMember:   ModalParticipant | null;
-    onClose:        () => void;
-    onSuccess:      (amount: number) => void;
-    donorPrefill?:  DonorPrefill | null;
+    campaignSlug:     string;
+    campaignName:     string;
+    campaignStory:    string | null;
+    heroUrl:          string | null;
+    accent:           string;
+    participants:     ModalParticipant[];
+    targetMember:     ModalParticipant | null;
+    onClose:          () => void;
+    onSuccess:        (amount: number) => void;
+    donorPrefill?:    DonorPrefill | null;
+    maxDonationCents: number | null;
 };
 
 function DonateForm({
     campaignSlug, campaignName, campaignStory, heroUrl, accent,
     participants, targetMember: initialTargetMember, onClose, onSuccess, donorPrefill,
+    maxDonationCents,
 }: FormProps) {
     const stripe   = useStripe();
     const elements = useElements();
@@ -86,9 +89,12 @@ function DonateForm({
         `${p.first_name} ${p.last_name}`.toLowerCase().includes(memberSearch.toLowerCase())
     );
 
+    const exceedsMax = maxDonationCents !== null && cents > maxDonationCents;
+
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
-        if (cents < 100)             { setError("Please enter at least $1."); return; }
+        if (cents < 100)  { setError("Please enter at least $1."); return; }
+        if (exceedsMax)   return; // inline error already shown under the amount input
         if (!firstName || !lastName) { setError("Please enter your first and last name."); return; }
         if (!email && !phone)        { setError("Please provide at least an email or phone number."); return; }
         if (!agreeTerms)             { setError("Please accept the terms."); return; }
@@ -175,7 +181,18 @@ function DonateForm({
 
                 {/* Amount */}
                 <div>
-                    <p className="text-sm font-bold text-gray-900 mb-2">Donation Amount</p>
+                    <div className="flex items-baseline justify-between mb-2">
+                        <p className="text-sm font-bold text-gray-900">Donation Amount</p>
+                        {maxDonationCents !== null && maxDonationCents > 0 && (
+                            <button
+                                type="button"
+                                onClick={() => setRaw(String(maxDonationCents / 100))}
+                                className="text-xs text-blue-600 hover:underline"
+                            >
+                                Max: {fmt(maxDonationCents / 100)}
+                            </button>
+                        )}
+                    </div>
                     <div className="relative mb-3">
                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold text-xl">$</span>
                         <input
@@ -187,11 +204,16 @@ function DonateForm({
                                 const v = e.target.value;
                                 if (v === "" || /^\d*\.?\d{0,2}$/.test(v)) setRaw(v);
                             }}
-                            className="w-full pl-9 pr-4 py-3 border-2 border-gray-200 rounded-xl text-2xl font-bold text-gray-900 placeholder-gray-200 focus:outline-none focus:border-blue-500"
+                            className={`w-full pl-9 pr-4 py-3 border-2 rounded-xl text-2xl font-bold text-gray-900 placeholder-gray-200 focus:outline-none ${exceedsMax ? "border-red-400 focus:border-red-500" : "border-gray-200 focus:border-blue-500"}`}
                             autoComplete="off"
                             autoFocus
                         />
                     </div>
+                    {exceedsMax && (
+                        <p className="text-xs text-red-500 -mt-2 mb-1">
+                            Exceeds remaining goal of {fmt(maxDonationCents! / 100)}
+                        </p>
+                    )}
                 </div>
 
                 {/* Stripe PaymentElement */}
@@ -256,7 +278,7 @@ function DonateForm({
 
                 <button
                     type="submit"
-                    disabled={submitting || !stripe || cents < 100}
+                    disabled={submitting || !stripe || cents < 100 || exceedsMax}
                     className="w-full py-4 rounded-xl text-white font-bold text-sm uppercase tracking-widest transition-opacity hover:opacity-90 disabled:opacity-50"
                     style={{ background: "#f97316" }}
                 >
@@ -364,7 +386,7 @@ export default function DonateModal({
     isOpen, onClose, onDonationSuccess,
     campaignSlug, campaignName, campaignStory, heroUrl,
     accent, participants, targetMemberId, donorPrefill,
-    donationsEnabled, donationsDisabledMessage,
+    donationsEnabled, donationsDisabledMessage, maxDonationCents,
 }: Props) {
     const overlayRef = useRef<HTMLDivElement>(null);
     const [isSuccess, setIsSuccess] = useState(false);
@@ -467,6 +489,7 @@ export default function DonateModal({
                                 onClose={onClose}
                                 onSuccess={(amt) => { setIsSuccess(true); onDonationSuccess?.(amt); }}
                                 donorPrefill={donorPrefill}
+                                maxDonationCents={maxDonationCents}
                             />
                         </Elements>
                     </div>

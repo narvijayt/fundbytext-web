@@ -55,7 +55,8 @@ export type CampaignCardData = {
     start_date: Date | null;
     end_date: Date | null;
     created_at: Date;
-    myRoles: string[];
+    myRoles:      string[];
+    myDonorCount: number;
     media: { media_type: string; url: string }[];
     payout: { city: string; state: string } | null;
     _count: { members: number; donors: number; donations: number };
@@ -207,14 +208,21 @@ export default function CampaignCard({ campaign }: { campaign: CampaignCardData 
                         <div className="flex items-center gap-3 text-xs text-gray-500 flex-wrap">
                             {goalAmt > 0 && (
                                 <span>
-                                    Campaign Goal:{" "}
+                                    {campaign.goal_type === "participant_goal" ? "Per Participant Goal" : "Campaign Goal"}:{" "}
                                     <span className="font-semibold text-gray-700">
                                         {fmt(campaign.goal_type === "open_ended" && initialGoalAmt ? initialGoalAmt : goalAmt)}
                                     </span>
                                 </span>
                             )}
-                            <span>Donors added: <span className="font-semibold text-gray-700">{campaign._count.donors}</span></span>
                             {campaign.campaign_type === "organization" && (
+                                <span>
+                                    Donors added:{" "}
+                                    <span className="font-semibold text-gray-700">
+                                        {isOrganizer ? campaign._count.donors : campaign.myDonorCount}
+                                    </span>
+                                </span>
+                            )}
+                            {campaign.campaign_type === "organization" && isOrganizer && (
                                 <span>Participants: <span className="font-semibold text-gray-700">{campaign._count.members}</span></span>
                             )}
                         </div>

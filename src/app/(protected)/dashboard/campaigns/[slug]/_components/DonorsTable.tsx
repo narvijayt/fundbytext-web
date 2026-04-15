@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import AddDonorModal from "./AddDonorModal";
 import DonorDetailModal from "./DonorDetailModal";
 
@@ -13,8 +14,10 @@ export type DonorRow = {
     status:           string;
     email_valid:      boolean;
     invite_token:     string | null;   // null = walk-in (paid via ref link, never pre-added)
+    short_code:       string | null;
     created_at:       number;          // timestamp — when donor was added ("Last Contacted")
-    assigned_member:  { id: string; first_name: string; last_name: string } | null;
+    assigned_member:  { id: string; first_name: string; last_name: string; invite_token: string | null } | null;
+    added_by_member:  { id: string; first_name: string; last_name: string; roles: { role: string }[] } | null;
     donations:        { amount: number; donated_at: number; is_anonymous: boolean }[];
 };
 
@@ -54,6 +57,7 @@ const PAGE_SIZE = 5;
 type FetchParams = { page: number; search: string; status: string };
 
 export default function DonorsTable({ donors: initialDonors, initialTotal, campaignSlug, isOrganizer, participants, myMemberId, isCompleted }: Props) {
+    const router = useRouter();
     const showAssignment = isOrganizer && participants.length > 0;
     const [donors,       setDonors]       = useState<DonorRow[]>(initialDonors);
     const [total,        setTotal]        = useState(initialTotal ?? initialDonors.length);
@@ -63,6 +67,7 @@ export default function DonorsTable({ donors: initialDonors, initialTotal, campa
     const [loading,      setLoading]      = useState(false);
     const [addOpen,      setAddOpen]      = useState(false);
     const [viewDonorId,  setViewDonorId]  = useState<string | null>(null);
+    const [copiedId,     setCopiedId]     = useState<string | null>(null);
     const searchTimer   = useRef<ReturnType<typeof setTimeout> | null>(null);
     const fetchStateRef = useRef({ page: 1, search: "", status: "all" });
 
@@ -77,6 +82,7 @@ export default function DonorsTable({ donors: initialDonors, initialTotal, campa
                 take:   String(PAGE_SIZE),
                 search: q,
                 status: s,
+                ...(!isOrganizer ? { participant_view: "1" } : {}),
             });
             const res  = await fetch(`/api/v1/campaigns/${campaignSlug}/donors?${params}`);
             const data = await res.json() as { donors: DonorRow[]; total: number };
@@ -197,7 +203,6 @@ export default function DonorsTable({ donors: initialDonors, initialTotal, campa
                     >
                         <option value="all">All Statuses</option>
                         <option value="not_donated">Not Donated</option>
-                        <option value="contacted">Contacted</option>
                         <option value="donated">Donated</option>
                     </select>
                 </div>
@@ -209,15 +214,17 @@ export default function DonorsTable({ donors: initialDonors, initialTotal, campa
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
                         </svg>
                         <p className="text-sm text-gray-400">No donors yet</p>
-                        <button
-                            onClick={() => setAddOpen(true)}
-                            className="mt-3 inline-flex items-center gap-1.5 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white text-xs font-semibold rounded-lg transition-colors"
-                        >
-                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4"/>
-                            </svg>
-                            Add First Donor
-                        </button>
+                        {!isCompleted && (
+                            <button
+                                onClick={() => setAddOpen(true)}
+                                className="mt-3 inline-flex items-center gap-1.5 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white text-xs font-semibold rounded-lg transition-colors"
+                            >
+                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4"/>
+                                </svg>
+                                Add First Donor
+                            </button>
+                        )}
                     </div>
                 ) : (
                     <div className="overflow-x-auto relative">
@@ -238,7 +245,7 @@ export default function DonorsTable({ donors: initialDonors, initialTotal, campa
                                     <th className="text-left px-6 py-3 text-xs font-semibold uppercase tracking-wide text-gray-400">Last Contacted</th>
                                     <th className="text-left px-6 py-3 text-xs font-semibold uppercase tracking-wide text-gray-400">Date Donated</th>
                                     <th className="text-right px-6 py-3 text-xs font-semibold uppercase tracking-wide text-gray-400">Donated</th>
-                                    <th className="px-6 py-3" />
+                                    <th className="text-right px-6 py-3 text-xs font-semibold uppercase tracking-wide text-gray-400">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -266,9 +273,22 @@ export default function DonorsTable({ donors: initialDonors, initialTotal, campa
                                                                 </span>
                                                             )}
                                                         </div>
-                                                        {!d.email_valid && (
-                                                            <span className="text-[10px] text-red-500">Invalid email</span>
-                                                        )}
+                                                        <div className="flex items-center gap-1.5 mt-0.5">
+                                                            {!d.email_valid && (
+                                                                <span className="text-[10px] text-red-500">Invalid email</span>
+                                                            )}
+                                                            {d.added_by_member && (() => {
+                                                                const addedByMe       = d.added_by_member.id === myMemberId;
+                                                                const adderIsOrg      = d.added_by_member.roles.some(r => r.role === "organizer");
+                                                                const adderIsParticip = d.added_by_member.roles.some(r => r.role === "participant");
+                                                                const addedByPureOrg  = adderIsOrg && !adderIsParticip;
+                                                                if (isOrganizer && addedByMe && d.assigned_member?.id !== myMemberId)
+                                                                    return <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded whitespace-nowrap bg-orange-50 text-orange-600">Added by me</span>;
+                                                                if (!isOrganizer && addedByPureOrg)
+                                                                    return <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded whitespace-nowrap bg-blue-50 text-blue-600">Pre-assigned by organizer</span>;
+                                                                return null;
+                                                            })()}
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </td>
@@ -305,12 +325,36 @@ export default function DonorsTable({ donors: initialDonors, initialTotal, campa
                                                 {donated > 0 ? fmt(donated) : <span className="text-gray-300">—</span>}
                                             </td>
                                             <td className="px-6 py-3.5 text-right">
-                                                <button
-                                                    onClick={() => setViewDonorId(d.id)}
-                                                    className="px-3 py-1.5 text-xs font-semibold text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
-                                                >
-                                                    View
-                                                </button>
+                                                <div className="flex items-center justify-end gap-1">
+                                                    {d.short_code && (d.email || d.phone) && (
+                                                        <button
+                                                            title={copiedId === d.id ? "Copied!" : "Copy donor link"}
+                                                            onClick={() => {
+                                                                const url = `${window.location.origin}/d/${d.short_code}`;
+                                                                navigator.clipboard.writeText(url);
+                                                                setCopiedId(d.id);
+                                                                setTimeout(() => setCopiedId(null), 2000);
+                                                            }}
+                                                            className="p-1.5 rounded-lg transition-colors hover:bg-gray-100"
+                                                        >
+                                                            {copiedId === d.id ? (
+                                                                <svg className="w-4 h-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7"/>
+                                                                </svg>
+                                                            ) : (
+                                                                <svg className="w-4 h-4 text-gray-400 hover:text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
+                                                                </svg>
+                                                            )}
+                                                        </button>
+                                                    )}
+                                                    <button
+                                                        onClick={() => setViewDonorId(d.id)}
+                                                        className="px-3 py-1.5 text-xs font-semibold text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
+                                                    >
+                                                        View
+                                                    </button>
+                                                </div>
                                             </td>
                                         </tr>
                                     );
@@ -359,6 +403,7 @@ export default function DonorsTable({ donors: initialDonors, initialTotal, campa
                         setStatusFilter("all");
                         setPage(1);
                         fetchPage({ page: 1, search: "", status: "all" });
+                        router.refresh();
                     }}
                 />
             )}
@@ -368,7 +413,9 @@ export default function DonorsTable({ donors: initialDonors, initialTotal, campa
                     donorId={viewDonorId}
                     campaignSlug={campaignSlug}
                     isOrganizer={isOrganizer}
+                    currentMemberId={myMemberId ?? ""}
                     participants={participants}
+                    isCompleted={isCompleted}
                     onClose={() => setViewDonorId(null)}
                     onRefresh={() => fetchPage({ page, search, status: statusFilter })}
                 />

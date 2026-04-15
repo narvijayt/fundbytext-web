@@ -97,7 +97,7 @@ export default function LiveDonationFeed({ donations, totalCount, campaignSlug, 
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden sticky top-6">
                 <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                        {!isCompleted && <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />}
                         <h2 className="text-sm font-bold text-gray-900">
                             {isCompleted ? "All Donations" : "Live Donation Feed"}
                         </h2>

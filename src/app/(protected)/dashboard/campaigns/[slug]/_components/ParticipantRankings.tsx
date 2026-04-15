@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 
-const PREVIEW_LIMIT = 8;
+const PREVIEW_LIMIT = 5;
+const MODAL_PAGE    = 10;
 
 const fmtUSD = (n: number) =>
     new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(n);
@@ -40,29 +41,43 @@ function RankRow({ p, rank, isMe }: { p: Participant; rank: number; isMe: boolea
 }
 
 export default function ParticipantRankings({ participants, myMemberId }: Props) {
-    const [showAll, setShowAll] = useState(false);
-    const hasMore = participants.length > PREVIEW_LIMIT;
-    const preview = hasMore ? participants.slice(0, PREVIEW_LIMIT) : participants;
+    const [showAll,     setShowAll]     = useState(false);
+    const [modalShown,  setModalShown]  = useState(MODAL_PAGE);
+
+    const total   = participants.length;
+    const hasMore = total > PREVIEW_LIMIT;
+    const preview = participants.slice(0, PREVIEW_LIMIT);
+
+    const modalItems  = participants.slice(0, modalShown);
+    const canLoadMore = modalShown < total;
+
+    function openModal() {
+        setModalShown(MODAL_PAGE);
+        setShowAll(true);
+    }
 
     return (
         <>
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
                 <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
                     <h3 className="text-sm font-bold text-gray-900">Participant Rankings</h3>
-                    {hasMore && (
-                        <button
-                            onClick={() => setShowAll(true)}
-                            className="text-xs font-semibold text-blue-600 hover:text-blue-700 transition-colors"
-                        >
-                            See All
-                        </button>
-                    )}
+                    <div className="flex items-center gap-3">
+                        <span className="text-xs text-gray-400">{total} total</span>
+                        {hasMore && (
+                            <button
+                                onClick={openModal}
+                                className="text-xs font-semibold text-blue-600 hover:text-blue-700 transition-colors"
+                            >
+                                See All
+                            </button>
+                        )}
+                    </div>
                 </div>
                 <div className="divide-y divide-gray-50">
                     {preview.map((p, i) => (
                         <RankRow key={p.id} p={p} rank={i + 1} isMe={p.id === myMemberId} />
                     ))}
-                    {participants.length === 0 && (
+                    {total === 0 && (
                         <p className="text-xs text-gray-400 text-center py-4">No participants yet</p>
                     )}
                 </div>
@@ -75,13 +90,14 @@ export default function ParticipantRankings({ participants, myMemberId }: Props)
                     onClick={() => setShowAll(false)}
                 >
                     <div
-                        className="bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[80vh] flex flex-col"
+                        className="bg-white rounded-2xl shadow-xl w-full max-w-md flex flex-col"
+                        style={{ height: "80vh" }}
                         onClick={(e) => e.stopPropagation()}
                     >
                         <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between shrink-0">
                             <h2 className="text-sm font-bold text-gray-900">
                                 All Participants
-                                <span className="ml-1 text-gray-400 font-normal">({participants.length})</span>
+                                <span className="ml-1 text-gray-400 font-normal">({total})</span>
                             </h2>
                             <button
                                 onClick={() => setShowAll(false)}
@@ -92,11 +108,23 @@ export default function ParticipantRankings({ participants, myMemberId }: Props)
                                 </svg>
                             </button>
                         </div>
-                        <div className="overflow-y-auto divide-y divide-gray-50">
-                            {participants.map((p, i) => (
+
+                        <div className="overflow-y-auto flex-1 divide-y divide-gray-50">
+                            {modalItems.map((p, i) => (
                                 <RankRow key={p.id} p={p} rank={i + 1} isMe={p.id === myMemberId} />
                             ))}
                         </div>
+
+                        {canLoadMore && (
+                            <div className="px-5 py-3 border-t border-gray-100 shrink-0">
+                                <button
+                                    onClick={() => setModalShown((n) => n + MODAL_PAGE)}
+                                    className="w-full py-2 text-sm font-semibold text-blue-600 hover:text-blue-700 transition-colors"
+                                >
+                                    Load More
+                                </button>
+                            </div>
+                        )}
                     </div>
                 </div>
             )}

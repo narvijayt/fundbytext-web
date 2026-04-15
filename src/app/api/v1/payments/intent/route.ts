@@ -94,7 +94,11 @@ export async function POST(req: NextRequest) {
 
         const campaign = await prisma.campaign.findUnique({
             where:  { slug: campaign_slug },
-            select: { id: true, name: true, status: true },
+            select: {
+                id: true, name: true, status: true,
+                goal_type: true, campaign_type: true,
+                goal_amount: true, total_raised: true,
+            },
         });
 
         if (!campaign || campaign.status === "draft") {
@@ -103,6 +107,27 @@ export async function POST(req: NextRequest) {
 
         if (campaign.status === "completed") {
             return NextResponse.json({ error: "This campaign has ended and is no longer accepting donations." }, { status: 403 });
+        }
+
+        // Fixed-goal individual campaigns cannot receive donations beyond the remaining amount.
+        if (campaign.goal_type === "fixed" && campaign.campaign_type === "individual" && campaign.goal_amount) {
+            const goalCents      = Math.round(Number(campaign.goal_amount)  * 100);
+            const raisedCents    = Math.round(Number(campaign.total_raised) * 100);
+            const remainingCents = Math.max(0, goalCents - raisedCents);
+            if (remainingCents === 0) {
+                return NextResponse.json(
+                    { error: "This campaign has reached its goal and is no longer accepting donations." },
+                    { status: 403 }
+                );
+            }
+            if (amount_cents > remainingCents) {
+                const fmt = (n: number) =>
+                    new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(n / 100);
+                return NextResponse.json(
+                    { error: `Donation exceeds the remaining goal. Maximum: ${fmt(remainingCents)}.`, max_cents: remainingCents },
+                    { status: 422 }
+                );
+            }
         }
 
         const displayName = is_anonymous

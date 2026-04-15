@@ -28,19 +28,20 @@ type MemberDetail = {
 };
 
 type Props = {
-    memberId:    string;
-    myMemberId?: string;
+    memberId:     string;
+    myMemberId?:  string;
     campaignSlug: string;
-    isOrganizer: boolean;
-    raised: number;
-    onClose: () => void;
+    isOrganizer:  boolean;
+    raised:       number;
+    isCompleted?: boolean;
+    onClose:      () => void;
 };
 
 function fmt(n: number) {
     return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(n);
 }
 
-export default function ParticipantDetailModal({ memberId, myMemberId, campaignSlug, isOrganizer, raised, onClose }: Props) {
+export default function ParticipantDetailModal({ memberId, myMemberId, campaignSlug, isOrganizer, raised, isCompleted, onClose }: Props) {
     const router = useRouter();
     const [member,           setMember]           = useState<MemberDetail | null>(null);
     const [loading,          setLoading]          = useState(true);
@@ -87,8 +88,8 @@ export default function ParticipantDetailModal({ memberId, myMemberId, campaignS
     return (
         <>
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.45)" }}>
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
-                <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md flex flex-col" style={{ maxHeight: "calc(100vh - 4rem)" }}>
+                <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 shrink-0">
                     <h2 className="font-bold text-gray-900">Participant Details</h2>
                     <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-400">
                         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -97,7 +98,7 @@ export default function ParticipantDetailModal({ memberId, myMemberId, campaignS
                     </button>
                 </div>
 
-                <div className="p-6">
+                <div className="p-6 overflow-y-auto">
                     {loading && <p className="text-center text-sm text-gray-400 py-8">Loading…</p>}
                     {error && <p className="text-sm text-red-500 bg-red-50 rounded-lg px-3 py-2 mb-4">{error}</p>}
 
@@ -143,7 +144,11 @@ export default function ParticipantDetailModal({ memberId, myMemberId, campaignS
                                 {member.joined_at && (
                                     <div className="flex items-center justify-between py-2 border-b border-gray-50">
                                         <span className="text-gray-400">Joined</span>
-                                        <span className="font-medium">{new Date(member.joined_at).toLocaleDateString()}</span>
+                                        <span className="font-medium">
+                                            {new Date(member.joined_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                                            {" · "}
+                                            {new Date(member.joined_at).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}
+                                        </span>
                                     </div>
                                 )}
                             </div>
@@ -157,14 +162,23 @@ export default function ParticipantDetailModal({ memberId, myMemberId, campaignS
                                         <div className="space-y-2">
                                             {visible.map((d) => {
                                                 const name = d.is_anonymous
-                                                    ? "Anonymous"
+                                                    ? `${d.donor_first_name} ${d.donor_last_name}`
                                                     : (d.donor_display_name ?? `${d.donor_first_name} ${d.donor_last_name}`);
                                                 return (
                                                     <div key={d.id} className="flex items-center justify-between py-2 px-3 bg-gray-50 rounded-xl">
                                                         <div>
-                                                            <p className="text-sm font-semibold text-gray-800">{name}</p>
+                                                            <div className="flex items-center gap-1.5">
+                                                                <p className="text-sm font-semibold text-gray-800">{name}</p>
+                                                                {d.is_anonymous && (
+                                                                    <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-gray-200 text-gray-500 whitespace-nowrap">
+                                                                        Anonymous
+                                                                    </span>
+                                                                )}
+                                                            </div>
                                                             <p className="text-xs text-gray-400">
                                                                 {new Date(d.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                                                                {" · "}
+                                                                {new Date(d.created_at).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}
                                                             </p>
                                                         </div>
                                                         <span className="text-sm font-bold text-green-600">
@@ -188,7 +202,7 @@ export default function ParticipantDetailModal({ memberId, myMemberId, campaignS
                                 );
                             })()}
 
-                            {isOrganizer && canRemove && (
+                            {isOrganizer && canRemove && !isCompleted && (
                                 <div className="pt-1">
                                     {confirmRemove ? (
                                         <div className="rounded-xl border border-red-200 bg-red-50 p-4 space-y-3">
@@ -240,7 +254,7 @@ export default function ParticipantDetailModal({ memberId, myMemberId, campaignS
 
         {/* Toast — bottom right */}
         {toast && (
-            <div className="fixed bottom-6 right-6 z-[200] flex items-start gap-3 px-4 py-3 bg-red-600 text-white text-sm font-medium rounded-xl shadow-lg max-w-xs">
+            <div className="fixed bottom-6 right-6 z-200 flex items-start gap-3 px-4 py-3 bg-red-600 text-white text-sm font-medium rounded-xl shadow-lg max-w-xs">
                 <svg className="w-4 h-4 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
                 </svg>

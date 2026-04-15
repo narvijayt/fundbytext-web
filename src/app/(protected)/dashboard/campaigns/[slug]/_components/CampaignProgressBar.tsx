@@ -31,9 +31,10 @@ type Props = {
     startDate:      Date | null;
     daysLeft:       number | null;
     status:         string;
+    goalType?:      string | null;
 };
 
-export default function CampaignProgressBar({ raisedAmt, goalAmt, initialGoalAmt, donationCount, endDate, status }: Props) {
+export default function CampaignProgressBar({ raisedAmt, goalAmt, initialGoalAmt, donationCount, endDate, status, goalType }: Props) {
     const [countdown,    setCountdown]    = useState<ReturnType<typeof getCountdown> | null>(null);
     const [animGreenPct, setAnimGreenPct] = useState(0);
     const [animGoldPct,  setAnimGoldPct]  = useState(0);
@@ -55,7 +56,7 @@ export default function CampaignProgressBar({ raisedAmt, goalAmt, initialGoalAmt
     // green = raised up to initial (or current) goal; gold = raised beyond initial goal
     const splitGoal      = initialGoalAmt ?? goalAmt;
     const scale          = goalAmt && goalAmt > 0 ? Math.max(raisedAmt, goalAmt) : raisedAmt || 1;
-    const targetGreenPct = splitGoal ? Math.min(raisedAmt, splitGoal) / scale * 100 : 100;
+    const targetGreenPct = splitGoal ? Math.min(raisedAmt, splitGoal) / scale * 100 : (raisedAmt > 0 ? 100 : 0);
     const targetGoldPct  = splitGoal && raisedAmt > splitGoal ? (raisedAmt - splitGoal) / scale * 100 : 0;
 
     // Animate bar — runs on mount and when raised/goal changes
@@ -174,6 +175,66 @@ export default function CampaignProgressBar({ raisedAmt, goalAmt, initialGoalAmt
                         )}
                     </div>
                 );
+            })()}
+
+            {/* Goal status banners — skip for open-ended/org_goal (scaling markers handle it), participant_goal (individual banners handle it), and no-goal campaigns */}
+            {(() => {
+                const isScalingGoal = goalType === "open_ended" || goalType === "org_goal"
+                    || (initialGoalAmt !== null && goalAmt !== null && initialGoalAmt !== goalAmt);
+                if (!goalAmt || goalAmt <= 0 || isScalingGoal || goalType === "participant_goal") return null;
+                const goalReached = raisedAmt >= goalAmt;
+                const pct         = Math.min(100, Math.round((raisedAmt / goalAmt) * 100));
+                const remaining   = goalAmt - raisedAmt;
+
+                // Active + goal reached
+                if (!isCompleted && goalReached) return (
+                    <div className="mt-3 flex items-center gap-2 px-4 py-2.5 bg-green-50 border border-green-200 rounded-xl">
+                        <svg className="w-4 h-4 text-green-600 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+                        </svg>
+                        <p className="text-sm font-semibold text-green-700">Goal Reached!</p>
+                        <p className="text-xs text-green-600 ml-auto">{fmtUSD(raisedAmt)} of {fmtUSD(goalAmt)}</p>
+                    </div>
+                );
+
+                // Active + goal not yet reached
+                if (!isCompleted && !isUpcoming && !goalReached) return (
+                    <div className="mt-3 flex items-center gap-2 px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl">
+                        <svg className="w-4 h-4 text-gray-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                        </svg>
+                        <p className="text-sm text-gray-500">
+                            <span className="font-semibold text-gray-700">{pct}%</span> of goal
+                        </p>
+                        <p className="text-xs text-gray-400 ml-auto">{fmtUSD(remaining)} remaining</p>
+                    </div>
+                );
+
+                // Completed + goal fully funded
+                if (isCompleted && goalReached) return (
+                    <div className="mt-3 flex items-center gap-2 px-4 py-2.5 bg-green-50 border border-green-200 rounded-xl">
+                        <svg className="w-4 h-4 text-green-600 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+                        </svg>
+                        <p className="text-sm font-semibold text-green-700">Goal Fully Funded!</p>
+                        <p className="text-xs text-green-600 ml-auto">{fmtUSD(raisedAmt)} raised</p>
+                    </div>
+                );
+
+                // Completed + goal not met
+                if (isCompleted && !goalReached) return (
+                    <div className="mt-3 flex items-center gap-2 px-4 py-2.5 bg-amber-50 border border-amber-200 rounded-xl">
+                        <svg className="w-4 h-4 text-amber-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                        </svg>
+                        <p className="text-sm text-amber-700">
+                            Campaign ended · <span className="font-semibold">{pct}%</span> of goal raised
+                        </p>
+                        <p className="text-xs text-amber-600 ml-auto">{fmtUSD(raisedAmt)} of {fmtUSD(goalAmt)}</p>
+                    </div>
+                );
+
+                return null;
             })()}
 
             {/* Bottom row — hidden for upcoming and completed */}

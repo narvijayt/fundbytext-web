@@ -10,7 +10,8 @@ import { prisma } from "@/lib/prisma";
 import { getAuthUserFromRequest } from "@/lib/session";
 import { MemberRole, CampaignStatus } from "@/generated/prisma/enums";
 import { sendParticipantCredentialsEmail, sendParticipantInviteEmail, sendDonorInviteEmail } from "@/lib/mail";
-import { notifyCampaignLaunched, notifyCampaignActive } from "@/lib/notifications";
+import { notifyCampaignLaunched, notifyCampaignActive, notifyParticipantAdded, broadcastCampaignActive } from "@/lib/notifications";
+import { publishStatusChange } from "@/lib/ably";
 
 function generatePassword(): string {
     const chars = "ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz0123456789!@#$%^&*";
@@ -89,11 +90,16 @@ export async function POST(req: NextRequest, ctx: Ctx) {
             select: { slug: true, status: true },
         });
 
-        // ── Notifications ────────────────────────────────────────────────────
+        // ── Notifications + real-time signal ────────────────────────────────
         notifyCampaignLaunched(campaign.id).catch(console.error);
         if (newStatus === CampaignStatus.active) {
             notifyCampaignActive(campaign.id).catch(console.error);
+            const participantIds = participants.map((p) => p.id);
+            broadcastCampaignActive(campaign.id, participantIds).catch(console.error);
         }
+        // Notify the marketing page (draft preview + any future visitors) that
+        // the campaign is now live so it can refresh immediately.
+        publishStatusChange(slug, newStatus).catch(console.error);
 
         // ── Create accounts for participants who don't have one, then email ──
         const organizerName = myMember
@@ -191,6 +197,18 @@ export async function POST(req: NextRequest, ctx: Ctx) {
         }
 
         await Promise.allSettled(emailTasks);
+
+        // ── Notify all participants that they've been added ──────────────────
+        // Participants added during the draft phase never received this notification
+        // (the members route skips it for drafts). Fire it now on launch.
+        for (const p of participants) {
+            notifyParticipantAdded(
+                campaign.id,
+                p.id,
+                organizerName,
+                campaign.name ?? "the campaign",
+            ).catch(console.error);
+        }
 
         // ── Send donor invite emails to all pre-added donors ─────────────────
         const donors = await prisma.campaignDonor.findMany({

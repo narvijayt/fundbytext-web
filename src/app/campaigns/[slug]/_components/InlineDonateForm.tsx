@@ -23,14 +23,15 @@ function fmt(n: number) {
 // ── Inner payment form (inside Elements) ──────────────────────────────────────
 
 type FormProps = {
-    campaignSlug: string;
-    accent:       string;
-    targetMember: ModalParticipant | null;
-    donorPrefill: DonorPrefill | null;
-    onSuccess:    (amountCents: number) => void;
+    campaignSlug:     string;
+    accent:           string;
+    targetMember:     ModalParticipant | null;
+    donorPrefill:     DonorPrefill | null;
+    maxDonationCents: number | null;
+    onSuccess:        (amountCents: number) => void;
 };
 
-function InlinePaymentForm({ campaignSlug, accent, targetMember, donorPrefill, onSuccess }: FormProps) {
+function InlinePaymentForm({ campaignSlug, accent, targetMember, donorPrefill, maxDonationCents, onSuccess }: FormProps) {
     const stripe   = useStripe();
     const elements = useElements();
 
@@ -55,9 +56,12 @@ function InlinePaymentForm({ campaignSlug, accent, targetMember, donorPrefill, o
     const INPUT        = "w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm text-gray-800 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400";
     const INPUT_LOCKED = "w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm text-gray-600 bg-gray-50 cursor-not-allowed select-none";
 
+    const exceedsMax = maxDonationCents !== null && cents > maxDonationCents;
+
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
-        if (cents < 100)             { setError("Please enter at least $1."); return; }
+        if (cents < 100)  { setError("Please enter at least $1."); return; }
+        if (exceedsMax)   return; // inline error already shown under the amount input
         if (!firstName || !lastName) { setError("Please enter your first and last name."); return; }
         if (!email && !phone)        { setError("Please provide at least an email or phone number."); return; }
         if (!agreeTerms)             { setError("Please accept the terms."); return; }
@@ -137,7 +141,18 @@ function InlinePaymentForm({ campaignSlug, accent, targetMember, donorPrefill, o
         <form onSubmit={handleSubmit} className="space-y-4">
             {/* Amount input */}
             <div>
-                <p className="text-sm font-bold text-gray-900 mb-2">Donation Amount</p>
+                <div className="flex items-baseline justify-between mb-2">
+                    <p className="text-sm font-bold text-gray-900">Donation Amount</p>
+                    {maxDonationCents !== null && maxDonationCents > 0 && (
+                        <button
+                            type="button"
+                            onClick={() => setRaw(String(maxDonationCents / 100))}
+                            className="text-xs text-blue-600 hover:underline"
+                        >
+                            Max: {fmt(maxDonationCents / 100)}
+                        </button>
+                    )}
+                </div>
                 <div className="relative mb-3">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold text-lg">$</span>
                     <input
@@ -149,11 +164,16 @@ function InlinePaymentForm({ campaignSlug, accent, targetMember, donorPrefill, o
                             const v = e.target.value;
                             if (v === "" || /^\d*\.?\d{0,2}$/.test(v)) setRaw(v);
                         }}
-                        className="w-full pl-8 pr-4 py-3 border-2 border-gray-200 rounded-xl text-xl font-bold text-gray-900 placeholder-gray-200 focus:outline-none focus:border-blue-500"
+                        className={`w-full pl-8 pr-4 py-3 border-2 rounded-xl text-xl font-bold text-gray-900 placeholder-gray-200 focus:outline-none ${exceedsMax ? "border-red-400 focus:border-red-500" : "border-gray-200 focus:border-blue-500"}`}
                         autoComplete="off"
                         autoFocus
                     />
                 </div>
+                {exceedsMax && (
+                    <p className="text-xs text-red-500 -mt-2 mb-1">
+                        Exceeds remaining goal of {fmt(maxDonationCents! / 100)}
+                    </p>
+                )}
             </div>
 
             {/* Card */}
@@ -222,7 +242,7 @@ function InlinePaymentForm({ campaignSlug, accent, targetMember, donorPrefill, o
 
             <button
                 type="submit"
-                disabled={submitting || !stripe || cents < 100}
+                disabled={submitting || !stripe || cents < 100 || exceedsMax}
                 className="w-full py-3.5 rounded-xl text-white font-bold text-sm uppercase tracking-widest disabled:opacity-50 transition-opacity hover:opacity-90"
                 style={{ background: accent }}
             >
@@ -246,13 +266,14 @@ type Props = {
     donorPrefill:             DonorPrefill | null;
     donationsEnabled:         boolean;
     donationsDisabledMessage: string | null;
+    maxDonationCents:         number | null;
     onDonationSuccess:        () => void;
 };
 
 export default function InlineDonateForm({
     totalRaised, goalAmount, pct, daysLeft, donorCount,
     campaignSlug, accent, targetMember, donorPrefill,
-    donationsEnabled, donationsDisabledMessage, onDonationSuccess,
+    donationsEnabled, donationsDisabledMessage, maxDonationCents, onDonationSuccess,
 }: Props) {
     const [isSuccess,    setIsSuccess]    = useState(false);
     const [donatedCents, setDonatedCents] = useState(0);
@@ -283,8 +304,21 @@ export default function InlineDonateForm({
 
             {/* Donate card */}
             <div className="bg-white rounded-2xl shadow-sm p-5">
+                {/* Goal fully funded */}
+                {maxDonationCents === 0 && (
+                    <div className="text-center py-4">
+                        <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4">
+                            <svg className="w-6 h-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                        <h3 className="text-base font-extrabold text-gray-900 mb-1">Goal Fully Funded!</h3>
+                        <p className="text-gray-500 text-sm">This campaign has reached its goal. Thank you to everyone who donated!</p>
+                    </div>
+                )}
+
                 {/* Donations paused state */}
-                {!donationsEnabled && (
+                {maxDonationCents !== 0 && !donationsEnabled && (
                     <div className="text-center py-4">
                         <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center mx-auto mb-4">
                             <svg className="w-6 h-6 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
@@ -301,7 +335,7 @@ export default function InlineDonateForm({
                 )}
 
                 {/* Participant banner */}
-                {donationsEnabled && targetMember && !isSuccess && (
+                {maxDonationCents !== 0 && donationsEnabled && targetMember && !isSuccess && (
                     <div className="flex items-center gap-2.5 mb-5 px-3 py-2.5 bg-orange-50 rounded-xl border border-orange-100">
                         <div className="w-8 h-8 rounded-full overflow-hidden bg-orange-100 flex items-center justify-center shrink-0">
                             {targetMember.profile_photo_url
@@ -317,7 +351,7 @@ export default function InlineDonateForm({
                     </div>
                 )}
 
-                {donationsEnabled && !isSuccess ? (
+                {maxDonationCents !== 0 && donationsEnabled && !isSuccess ? (
                     <Elements
                         stripe={stripePromise}
                         options={{
@@ -333,6 +367,7 @@ export default function InlineDonateForm({
                             accent={accent}
                             targetMember={targetMember}
                             donorPrefill={donorPrefill}
+                            maxDonationCents={maxDonationCents}
                             onSuccess={(cents) => {
                                 setDonatedCents(cents);
                                 setIsSuccess(true);
@@ -340,7 +375,7 @@ export default function InlineDonateForm({
                             }}
                         />
                     </Elements>
-                ) : donationsEnabled && isSuccess ? (
+                ) : maxDonationCents !== 0 && donationsEnabled && isSuccess ? (
                     <div className="text-center py-4">
                         <div className="w-14 h-14 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4">
                             <svg className="w-7 h-7 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">

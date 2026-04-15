@@ -152,6 +152,38 @@ export function notifyDonationsResumed(campaignId: string) {
     );
 }
 
+/** P_paused — Donations paused. (broadcast to all participants) */
+export async function broadcastDonationsPaused(campaignId: string, memberIds: string[]) {
+    if (memberIds.length === 0) return;
+    await prisma.campaignNotification.createMany({
+        data: memberIds.map((memberId) => ({
+            campaign_id:         campaignId,
+            recipient_member_id: memberId,
+            notification_type:   NotificationType.participant,
+            trigger_event:       "donations_paused",
+            message:             "Donations have been paused for this campaign.",
+            status:              NotificationStatus.sent,
+            sent_at:             ts(),
+        })),
+    });
+}
+
+/** P_resumed — Donations resumed. (broadcast to all participants) */
+export async function broadcastDonationsResumed(campaignId: string, memberIds: string[]) {
+    if (memberIds.length === 0) return;
+    await prisma.campaignNotification.createMany({
+        data: memberIds.map((memberId) => ({
+            campaign_id:         campaignId,
+            recipient_member_id: memberId,
+            notification_type:   NotificationType.participant,
+            trigger_event:       "donations_resumed",
+            message:             "Donations have been resumed for this campaign.",
+            status:              NotificationStatus.sent,
+            sent_at:             ts(),
+        })),
+    });
+}
+
 /** C12 — Campaign start date updated to [date]. */
 export function notifyStartDateChanged(campaignId: string, newStartDate: Date) {
     const formatted = newStartDate.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })
@@ -174,6 +206,25 @@ export function notifyCampaignExtended(campaignId: string, newEndDate: Date) {
         "campaign_extended",
         `Campaign end date extended to ${formatted}.`,
     );
+}
+
+/** P_start — Campaign start date updated. (broadcast to all participants) */
+export async function broadcastStartDateChanged(campaignId: string, memberIds: string[], newStartDate: Date) {
+    if (memberIds.length === 0) return;
+    const formatted = newStartDate.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })
+        + " at "
+        + newStartDate.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+    await prisma.campaignNotification.createMany({
+        data: memberIds.map((memberId) => ({
+            campaign_id:         campaignId,
+            recipient_member_id: memberId,
+            notification_type:   NotificationType.participant,
+            trigger_event:       "start_date_changed",
+            message:             `Campaign start date has been updated to ${formatted}.`,
+            status:              NotificationStatus.sent,
+            sent_at:             new Date(),
+        })),
+    });
 }
 
 /** P6 — Campaign end date extended to [date] at [time]. (broadcast to all participants) */
@@ -227,14 +278,46 @@ export function notifyParticipantDonationReceived(
     );
 }
 
-/** P3 — You have completed your funding goal. */
+/** P3 — You have completed your fundraising goal. */
 export function notifyParticipantOwnGoalCompleted(campaignId: string, memberId: string) {
     return createParticipantNotifOnce(
         campaignId,
         memberId,
         "participant_goal_completed",
-        "You have completed your funding goal.",
+        "You have completed your fundraising goal.",
     );
+}
+
+/** P_reactivated — Campaign has been reactivated. (broadcast to all participants) */
+export async function broadcastCampaignReactivated(campaignId: string, memberIds: string[]) {
+    if (memberIds.length === 0) return;
+    await prisma.campaignNotification.createMany({
+        data: memberIds.map((memberId) => ({
+            campaign_id:         campaignId,
+            recipient_member_id: memberId,
+            notification_type:   NotificationType.participant,
+            trigger_event:       "campaign_reactivated_broadcast",
+            message:             "This campaign has been reactivated.",
+            status:              NotificationStatus.sent,
+            sent_at:             ts(),
+        })),
+    });
+}
+
+/** P_active — Campaign is now active. (broadcast to all participants) */
+export async function broadcastCampaignActive(campaignId: string, memberIds: string[]) {
+    if (memberIds.length === 0) return;
+    await prisma.campaignNotification.createMany({
+        data: memberIds.map((memberId) => ({
+            campaign_id:         campaignId,
+            recipient_member_id: memberId,
+            notification_type:   NotificationType.participant,
+            trigger_event:       "campaign_now_active_broadcast",
+            message:             "The campaign is now live — time to start fundraising!",
+            status:              NotificationStatus.sent,
+            sent_at:             ts(),
+        })),
+    });
 }
 
 /** P4 — Campaign has completed its goal. (broadcast to all participants) */

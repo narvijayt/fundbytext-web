@@ -35,6 +35,7 @@ type Props = {
     endDate:                  Date | null;
     startDate:                Date | null;
     status:                   string;
+    isFixedGoal:              boolean;
     donorPrefill?:            DonorPrefill | null;
 };
 
@@ -58,6 +59,7 @@ export default function CampaignDonateShell({
     endDate,
     startDate,
     status,
+    isFixedGoal,
     donorPrefill,
 }: Props) {
     const router = useRouter();
@@ -65,6 +67,34 @@ export default function CampaignDonateShell({
     const [targetMember, setTargetMember] = useState<string | null>(null);
     const [extraRaised,  setExtraRaised]  = useState(0);
     const [extraDonors,  setExtraDonors]  = useState(0);
+
+    // Max donation in cents for fixed-goal individual campaigns.
+    // Recomputed whenever totalRaised or extraRaised changes so the cap stays accurate.
+    const maxDonationCents = (isFixedGoal && goalAmount !== null)
+        ? Math.max(0, Math.round((goalAmount - (totalRaised + extraRaised)) * 100))
+        : null;
+
+    // Live donations state — updated instantly from Ably without a server round-trip
+    const [liveDonationsEnabled,         setLiveDonationsEnabled]         = useState(donationsEnabled);
+    const [liveDonationsDisabledMessage, setLiveDonationsDisabledMessage] = useState(donationsDisabledMessage);
+
+    // Keep in sync when server data refreshes (e.g. after router.refresh())
+    useEffect(() => {
+        setLiveDonationsEnabled(donationsEnabled);
+        setLiveDonationsDisabledMessage(donationsDisabledMessage);
+    }, [donationsEnabled, donationsDisabledMessage]);
+
+    // Instant client-side update from Ably — no server round-trip needed
+    useEffect(() => {
+        const handler = (e: Event) => {
+            const { donationsEnabled: enabled, donationsDisabledMessage: msg } =
+                (e as CustomEvent<{ donationsEnabled: boolean; donationsDisabledMessage: string | null }>).detail;
+            setLiveDonationsEnabled(enabled);
+            setLiveDonationsDisabledMessage(msg);
+        };
+        window.addEventListener("campaign:donations_toggle", handler);
+        return () => window.removeEventListener("campaign:donations_toggle", handler);
+    }, []);
 
     // When server data refreshes (totalRaised prop changes), the new donation is
     // already included — clear the optimistic delta to avoid double-counting.
@@ -128,8 +158,9 @@ export default function CampaignDonateShell({
                 accent={accent}
                 targetMember={resolvedTarget}
                 donorPrefill={donorPrefill ?? null}
-                donationsEnabled={donationsEnabled}
-                donationsDisabledMessage={donationsDisabledMessage}
+                donationsEnabled={liveDonationsEnabled}
+                donationsDisabledMessage={liveDonationsDisabledMessage}
+                maxDonationCents={maxDonationCents}
                 onDonationSuccess={() => router.refresh()}
             />
         );
@@ -146,8 +177,9 @@ export default function CampaignDonateShell({
                 donorCount={donorCount + extraDonors}
                 recentDonations={recentDonations}
                 accent={accent}
-                donationsEnabled={donationsEnabled}
-                donationsDisabledMessage={donationsDisabledMessage}
+                donationsEnabled={liveDonationsEnabled}
+                donationsDisabledMessage={liveDonationsDisabledMessage}
+                maxDonationCents={maxDonationCents}
                 endDate={endDate}
                 startDate={startDate}
                 status={status}
@@ -171,8 +203,9 @@ export default function CampaignDonateShell({
                 accent={accent}
                 participants={modalParticipants}
                 targetMemberId={targetMember}
-                donationsEnabled={donationsEnabled}
-                donationsDisabledMessage={donationsDisabledMessage}
+                donationsEnabled={liveDonationsEnabled}
+                donationsDisabledMessage={liveDonationsDisabledMessage}
+                maxDonationCents={maxDonationCents}
                 donorPrefill={donorPrefill ?? null}
             />
         </>

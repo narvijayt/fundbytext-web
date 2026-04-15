@@ -110,6 +110,14 @@ export default function SidebarCampaignsDropdown({ campaigns }: { campaigns: Cam
         <div className="space-y-0.5">
             {campaigns.map((c) => {
                 const isActive = activeCampaignSlug === c.slug;
+
+                // A pure participant always sees participant view.
+                // A dual-role user sees participant view only when actively on that campaign with ?view=participant.
+                // An organizer-only user always sees organizer view.
+                const viewingAsParticipant =
+                    !c.isOrganizer ||
+                    (c.isParticipant && isActive && isParticipantView);
+
                 return (
                     <div key={c.slug}>
                         {/* Campaign header row */}
@@ -144,11 +152,9 @@ export default function SidebarCampaignsDropdown({ campaigns }: { campaigns: Cam
                         {openSlugs.has(c.slug) && (
                             <div className="ml-2 space-y-0.5 mb-2">
                                 {CAMPAIGN_LINKS.filter((link) => {
-                                    const viewingAsParticipant = !c.isOrganizer ||
-                                        (isActive && isParticipantView && c.isParticipant);
-                                    if (link.organizerOnly && viewingAsParticipant) return false;
-                                    if (link.participantOnly && !viewingAsParticipant) return false;
-                                    if (link.orgOnly && c.campaign_type !== "organization") return false;
+                                    if (link.organizerOnly  && viewingAsParticipant)               return false;
+                                    if (link.participantOnly && !viewingAsParticipant)              return false;
+                                    if (link.orgOnly        && c.campaign_type !== "organization") return false;
                                     return true;
                                 }).map((link) => (
                                     <a
@@ -161,19 +167,21 @@ export default function SidebarCampaignsDropdown({ campaigns }: { campaigns: Cam
                                     </a>
                                 ))}
 
-                                {/* Edit Campaign button */}
-                                <div className="pt-2 px-1">
-                                    <CampaignNavLink
-                                        href={`/campaigns/${c.slug}/edit`}
-                                        overlayText="Loading…"
-                                        className="flex items-center justify-center gap-2 w-full py-2 rounded-lg bg-[#f97316] hover:bg-[#ea6c0a] text-white text-xs font-semibold transition-colors"
-                                    >
-                                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                        </svg>
-                                        Edit Campaign
-                                    </CampaignNavLink>
-                                </div>
+                                {/* Edit Campaign — organizers only */}
+                                {c.isOrganizer && (
+                                    <div className="pt-2 px-1">
+                                        <CampaignNavLink
+                                            href={`/campaigns/${c.slug}/edit`}
+                                            overlayText="Loading…"
+                                            className="flex items-center justify-center gap-2 w-full py-2 rounded-lg bg-[#f97316] hover:bg-[#ea6c0a] text-white text-xs font-semibold transition-colors"
+                                        >
+                                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                            </svg>
+                                            Edit Campaign
+                                        </CampaignNavLink>
+                                    </div>
+                                )}
                             </div>
                         )}
                     </div>

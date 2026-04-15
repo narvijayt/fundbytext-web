@@ -126,8 +126,10 @@ export default async function CampaignDetailPage({
                 status:          true,
                 email_valid:     true,
                 invite_token:    true,
+                short_code:      true,
                 created_at:      true,
-                assigned_member: { select: { id: true, first_name: true, last_name: true } },
+                assigned_member: { select: { id: true, first_name: true, last_name: true, invite_token: true } },
+                added_by_member: { select: { id: true, first_name: true, last_name: true, roles: { select: { role: true } } } },
                 donations: {
                     where:  { payment_status: "completed" },
                     select: { amount: true, created_at: true, is_anonymous: true },
@@ -429,7 +431,145 @@ export default async function CampaignDetailPage({
                             startDate={campaign.start_date}
                             daysLeft={daysLeft}
                             status={campaign.status}
+                            goalType={campaign.goal_type}
                         />
+
+                        {!campaign.donations_enabled && campaign.status === CampaignStatus.active && (
+                            <div className="flex items-center gap-3 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl">
+                                <svg className="w-4 h-4 shrink-0 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+                                </svg>
+                                <p className="text-sm text-amber-700">
+                                    <span className="font-semibold">Donations are currently paused.</span>
+                                    {campaign.donations_disabled_message
+                                        ? <> {campaign.donations_disabled_message}</>
+                                        : " Please check back later or contact the organizer."}
+                                </p>
+                            </div>
+                        )}
+
+                        {campaign.goal_type !== "participant_goal" && myRaised > 0 && (() => {
+                            const fmt = (n: number) => new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(n);
+                            const pct = raisedAmt > 0 ? parseFloat(((myRaised / raisedAmt) * 100).toFixed(2)) : 0;
+                            const rank = participants.findIndex((p) => p.id === myMembership.id) + 1;
+                            const rankColors =
+                                rank === 1 ? "bg-amber-50 text-amber-700 border-amber-200" :
+                                rank === 2 ? "bg-gray-100 text-gray-600 border-gray-200" :
+                                rank === 3 ? "bg-orange-50 text-orange-700 border-orange-200" :
+                                             "bg-gray-50 text-gray-500 border-gray-100";
+                            return (
+                                <div className="flex items-center gap-2 px-4 py-2.5 bg-blue-50 border border-blue-100 rounded-xl text-sm text-blue-700">
+                                    <svg className="w-4 h-4 shrink-0 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                    </svg>
+                                    <span>
+                                        You&apos;ve personally raised{" "}
+                                        <span className="font-bold">{fmt(myRaised)}</span>
+                                        {pct > 0 && (
+                                            <> — <span className="font-semibold">{pct}%</span> of the total raised</>
+                                        )}
+                                    </span>
+                                    {rank > 0 && participants.length >= 2 && (
+                                        <span className={`ml-auto inline-flex items-center text-xs font-bold px-2.5 py-1 rounded-full border ${rankColors}`}>
+                                            #{rank} in Rankings
+                                        </span>
+                                    )}
+                                </div>
+                            );
+                        })()}
+
+                        {campaign.goal_type === "participant_goal" && goalAmt && myRaised < goalAmt && campaign.status === CampaignStatus.active && (() => {
+                            const fmt = (n: number) => new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(n);
+                            const pct       = Math.min(100, Math.round((myRaised / goalAmt) * 100));
+                            const remaining = goalAmt - myRaised;
+                            return (
+                                <div className="px-5 py-4 bg-white border border-gray-100 rounded-2xl shadow-sm space-y-3">
+                                    <div className="flex items-center justify-between">
+                                        <p className="text-sm font-bold text-gray-900">Your Fundraising Goal</p>
+                                        <div className="flex items-center gap-2">
+                                            {(() => {
+                                                const rank = participants.findIndex((p) => p.id === myMembership.id) + 1;
+                                                if (rank === 0 || participants.length < 2) return null;
+                                                const colors =
+                                                    rank === 1 ? "bg-amber-50 text-amber-700 border-amber-200" :
+                                                    rank === 2 ? "bg-gray-100 text-gray-600 border-gray-200" :
+                                                    rank === 3 ? "bg-orange-50 text-orange-700 border-orange-200" :
+                                                                 "bg-gray-50 text-gray-500 border-gray-100";
+                                                return (
+                                                    <span className={`inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full border ${colors}`}>
+                                                        #{rank} in Rankings
+                                                    </span>
+                                                );
+                                            })()}
+                                            <span className="text-xs font-semibold text-gray-500">{fmt(myRaised)} of {fmt(goalAmt)}</span>
+                                        </div>
+                                    </div>
+                                    <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
+                                        <div className="h-full bg-orange-500 rounded-full transition-all" style={{ width: `${pct}%` }} />
+                                    </div>
+                                    <p className="text-xs text-gray-500">
+                                        <span className="font-semibold text-gray-700">{pct}%</span> of your goal reached
+                                        {" · "}
+                                        <span className="font-semibold text-orange-600">{fmt(remaining)}</span> remaining
+                                    </p>
+                                </div>
+                            );
+                        })()}
+
+                        {campaign.goal_type === "participant_goal" && goalAmt && myRaised >= goalAmt && (campaign.status === CampaignStatus.active || campaign.status === CampaignStatus.completed) && (
+                            <div className="flex items-center gap-4 px-5 py-4 bg-green-50 border border-green-200 rounded-2xl shadow-sm">
+                                <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center shrink-0">
+                                    <svg className="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+                                    </svg>
+                                </div>
+                                <div className="flex-1">
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                        <p className="text-sm font-bold text-green-800">You&apos;ve reached your fundraising goal!</p>
+                                        {(() => {
+                                            const rank = participants.findIndex((p) => p.id === myMembership.id) + 1;
+                                            if (rank === 0 || participants.length < 2) return null;
+                                            const colors =
+                                                rank === 1 ? "bg-amber-50 text-amber-700 border-amber-200" :
+                                                rank === 2 ? "bg-gray-100 text-gray-600 border-gray-200" :
+                                                rank === 3 ? "bg-orange-50 text-orange-700 border-orange-200" :
+                                                             "bg-gray-50 text-gray-500 border-gray-100";
+                                            return (
+                                                <span className={`inline-flex items-center text-xs font-bold px-2 py-0.5 rounded-full border ${colors}`}>
+                                                    #{rank} in Rankings
+                                                </span>
+                                            );
+                                        })()}
+                                    </div>
+                                    <p className="text-xs text-green-600 mt-0.5">
+                                        You&apos;ve raised{" "}
+                                        <span className="font-semibold">
+                                            {new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(myRaised)}
+                                        </span>{" "}
+                                        of your{" "}
+                                        <span className="font-semibold">
+                                            {new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(goalAmt)}
+                                        </span>{" "}
+                                        goal. Keep going — every extra donation counts!
+                                    </p>
+                                </div>
+                            </div>
+                        )}
+
+                        {campaign.status === CampaignStatus.completed && (
+                            <>
+                                <div className="rounded-2xl overflow-hidden shadow-sm">
+                                    <img
+                                        src="/congratulations.png"
+                                        alt="Congratulations! Campaign completed."
+                                        className="w-full object-cover"
+                                    />
+                                </div>
+                                <div id="statistics" className="scroll-mt-6">
+                                    <CampaignStatsBars {...participantStats} />
+                                </div>
+                            </>
+                        )}
 
                         <div id="fundraising-goal" className="flex gap-6 items-start scroll-mt-6">
                             {/* Left — chart + notifications */}
@@ -448,7 +588,7 @@ export default async function CampaignDetailPage({
 
                             {/* Right — live feed + rankings */}
                             <div className="w-80 shrink-0 space-y-4">
-                                <LiveDonationFeed donations={feedDonations} totalCount={donationTotal} campaignSlug={slug} />
+                                <LiveDonationFeed donations={feedDonations} totalCount={donationTotal} campaignSlug={slug} isCompleted={campaign.status === CampaignStatus.completed} />
                                 <ParticipantRankings
                                     participants={participants}
                                     myMemberId={myMembership.id}
@@ -458,7 +598,23 @@ export default async function CampaignDetailPage({
 
                         {/* My Donor Outreach — full width, above donors table */}
                         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-                            <h2 className="text-base font-bold text-gray-900 mb-4">My Donor Outreach</h2>
+                            <div className="flex items-center justify-between mb-4">
+                                <h2 className="text-base font-bold text-gray-900">My Donor Outreach</h2>
+                                {(() => {
+                                    const rank = participants.findIndex((p) => p.id === myMembership.id) + 1;
+                                    if (rank === 0 || participants.length < 2) return null;
+                                    const colors =
+                                        rank === 1 ? "bg-amber-50 text-amber-700 border-amber-200" :
+                                        rank === 2 ? "bg-gray-100 text-gray-600 border-gray-200" :
+                                        rank === 3 ? "bg-orange-50 text-orange-700 border-orange-200" :
+                                                     "bg-gray-50 text-gray-500 border-gray-100";
+                                    return (
+                                        <span className={`inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full border ${colors}`}>
+                                            #{rank} in Rankings
+                                        </span>
+                                    );
+                                })()}
+                            </div>
                             <div className="grid grid-cols-3 gap-4 mb-5">
                                 <div className="text-center">
                                     <p className="text-2xl font-extrabold text-gray-900">{myAdded}</p>
@@ -501,9 +657,11 @@ export default async function CampaignDetailPage({
                         />
                         </div>
 
-                        <div id="statistics" className="scroll-mt-6">
-                        <CampaignStatsBars {...participantStats} />
-                        </div>
+                        {campaign.status !== CampaignStatus.completed && (
+                            <div id="statistics" className="scroll-mt-6">
+                                <CampaignStatsBars {...participantStats} />
+                            </div>
+                        )}
                     </>
                 );
             })()}
@@ -520,6 +678,7 @@ export default async function CampaignDetailPage({
                         startDate={campaign.start_date}
                         daysLeft={daysLeft}
                         status={campaign.status}
+                        goalType={campaign.goal_type}
                     />
 
                     {campaign.status === CampaignStatus.completed && (() => {
@@ -558,6 +717,7 @@ export default async function CampaignDetailPage({
                                     goalAmount={effectiveGoalAmt}
                                     myMemberId={myMembership.id}
                                     donorsPerParticipant={campaign.donors_per_participant}
+                                    isCompleted={campaign.status === CampaignStatus.completed}
                                 />
                                 </div>
                             )}
@@ -577,6 +737,7 @@ export default async function CampaignDetailPage({
                         initialTotal={donors.length}
                         campaignSlug={slug}
                         isOrganizer={isOrganizer}
+                        myMemberId={myMembership.id}
                         participants={participants.map((p) => {
                             const [first_name, ...rest] = p.name.split(" ");
                             return { id: p.id, first_name, last_name: rest.join(" ") };

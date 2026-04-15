@@ -46,7 +46,7 @@ export default async function Sidebar({ user }: { user: AuthUser }) {
 
     return (
         <aside
-            className="w-56 shrink-0 flex flex-col h-screen sticky top-0 overflow-hidden"
+            className="w-56 shrink-0 flex flex-col h-screen sticky top-0 z-10"
             style={{ background: "linear-gradient(to bottom, #0268c0 0%, #ffffff 30%, #ffffff 100%)" }}
         >
             {/* Logo */}

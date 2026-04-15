@@ -113,6 +113,20 @@ export async function POST(req: NextRequest, ctx: Ctx) {
                         organizerName,
                         campaign.name ?? "the campaign",
                     ).catch(console.error);
+
+                    if (existing.email) {
+                        sendParticipantInviteEmail({
+                            to:             existing.email,
+                            firstName:      first_name,
+                            campaignName:   campaign.name ?? "a campaign",
+                            organizerName,
+                            orgDisplayName: campaign.org_display_name,
+                            goalAmount:     campaign.goal_amount ? Number(campaign.goal_amount) : null,
+                            endDate:        campaign.end_date?.toISOString() ?? null,
+                            loginUrl:       `${APP_URL}/login`,
+                            campaignUrl:    `${APP_URL}/campaigns/${slug}`,
+                        }).catch(console.error);
+                    }
                 }
 
                 return NextResponse.json({ member: JSON.parse(JSON.stringify(updated)) }, { status: 201 });
