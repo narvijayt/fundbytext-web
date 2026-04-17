@@ -17,7 +17,7 @@ type Participant = {
 
 type Props = {
     participants: Participant[];
-    myMemberId:   string;
+    myMemberId:   string | null;
 };
 
 function RankRow({ p, rank, isMe }: { p: Participant; rank: number; isMe: boolean }) {

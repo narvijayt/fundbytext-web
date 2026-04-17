@@ -6,7 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { signToken, setAuthCookie } from "@/lib/auth";
 
 const schema = z.object({
-    email: z.string().email(),
+    email: z.string().email().transform(s => s.toLowerCase().trim()),
     password: z.string().min(1),
     remember_me: z.boolean().optional().default(false),
 });
@@ -28,6 +28,20 @@ export async function POST(req: NextRequest) {
     const user = await prisma.user.findUnique({ where: { email } });
     if (!user || !(await bcrypt.compare(password, user.password_hash))) {
         return NextResponse.json({ error: "Invalid email or password" }, { status: 401 });
+    }
+
+    if (user.deleted_at !== null) {
+        return NextResponse.json(
+            { error: "This account no longer exists." },
+            { status: 403 }
+        );
+    }
+
+    if (user.is_suspended) {
+        return NextResponse.json(
+            { error: user.suspension_message?.trim() || "Your account has been suspended. Please contact support for assistance." },
+            { status: 403 }
+        );
     }
 
     // Determine expiry

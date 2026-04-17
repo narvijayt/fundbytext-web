@@ -65,7 +65,7 @@ export async function GET(req: NextRequest, ctx: Ctx) {
 const putSchema = z.object({
     first_name:         z.string().min(1).max(100).optional(),
     last_name:          z.string().min(1).max(100).optional(),
-    email:              z.string().email().max(255).optional().nullable(),
+    email:              z.string().email().max(255).transform(s => s.toLowerCase().trim()).nullable().optional(),
     phone:              z.string().max(20).optional().nullable(),
     assigned_member_id: z.string().uuid().optional().nullable(),
 });

@@ -6,7 +6,7 @@ import { getAuthUserFromRequest } from "@/lib/session";
 const schema = z.object({
     first_name: z.string().min(1).max(100).optional(),
     last_name: z.string().min(1).max(100).optional(),
-    email: z.email().max(255).optional(),
+    email: z.email().max(255).transform(s => s.toLowerCase().trim()).optional(),
     phone: z.string().max(20).nullable().optional(),
     profile_photo_url: z.string().nullable().optional(),
 });

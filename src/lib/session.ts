@@ -39,10 +39,14 @@ async function verifyAndFetch(token: string): Promise<AuthUser | null> {
             role: true,
             phone: true,
             profile_photo_url: true,
+            is_suspended: true,
+            deleted_at:   true,
         },
     });
 
-    return user ?? null;
+    if (!user || user.is_suspended || user.deleted_at !== null) return null;
+
+    return user;
 }
 
 /**

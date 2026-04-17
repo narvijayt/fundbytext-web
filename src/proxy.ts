@@ -4,6 +4,7 @@ import { extractToken, verifyToken } from "@/lib/auth";
 // Routes that never require auth
 const PUBLIC_API_ROUTES = [
     "/api/v1/auth/login",
+    "/api/v1/auth/logout",
     "/api/v1/auth/forgot-password",
     "/api/v1/auth/reset-password",
     "/api/v1/upload/profile-photo", // used before session exists
@@ -16,7 +17,7 @@ const PUBLIC_API_ROUTES = [
 // Pages that redirect logged-in users away to dashboard
 const GUEST_ONLY_PAGES = ["/login", "/forgot-password", "/reset-password"];
 
-export async function middleware(req: NextRequest) {
+export async function proxy(req: NextRequest) {
     const { pathname } = req.nextUrl;
 
     // JWT-only check — no DB (Edge runtime compatible)

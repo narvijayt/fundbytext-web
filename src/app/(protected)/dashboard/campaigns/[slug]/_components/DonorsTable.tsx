@@ -278,13 +278,11 @@ export default function DonorsTable({ donors: initialDonors, initialTotal, campa
                                                                 <span className="text-[10px] text-red-500">Invalid email</span>
                                                             )}
                                                             {d.added_by_member && (() => {
-                                                                const addedByMe       = d.added_by_member.id === myMemberId;
-                                                                const adderIsOrg      = d.added_by_member.roles.some(r => r.role === "organizer");
-                                                                const adderIsParticip = d.added_by_member.roles.some(r => r.role === "participant");
-                                                                const addedByPureOrg  = adderIsOrg && !adderIsParticip;
-                                                                if (isOrganizer && addedByMe && d.assigned_member?.id !== myMemberId)
+                                                                const addedByMe  = d.added_by_member.id === myMemberId;
+                                                                const adderIsOrg = d.added_by_member.roles.some(r => r.role === "organizer");
+                                                                if (isOrganizer && addedByMe)
                                                                     return <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded whitespace-nowrap bg-orange-50 text-orange-600">Added by me</span>;
-                                                                if (!isOrganizer && addedByPureOrg)
+                                                                if (!isOrganizer && adderIsOrg)
                                                                     return <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded whitespace-nowrap bg-blue-50 text-blue-600">Pre-assigned by organizer</span>;
                                                                 return null;
                                                             })()}

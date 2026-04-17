@@ -38,8 +38,8 @@ export async function POST(req: NextRequest) {
 
     try {
         const amount      = pi.amount / 100;          // cents → dollars
-        const platformFee = parseFloat((amount * 0.1).toFixed(2));
-        const netAmount   = parseFloat((amount - platformFee).toFixed(2));
+        const platformFee = 0;
+        const netAmount   = amount;
 
         // Idempotent — skip if already recorded
         const existing = await prisma.donation.findUnique({
@@ -60,7 +60,7 @@ export async function POST(req: NextRequest) {
             ? await prisma.campaignDonor.findFirst({
                 where: {
                     campaign_id:        m.campaign_id,
-                    email:              m.donor_email,
+                    email:              m.donor_email?.toLowerCase(),
                     assigned_member_id: resolvedMemberId,
                 },
               })
@@ -78,7 +78,7 @@ export async function POST(req: NextRequest) {
                     donor_first_name:        m.donor_first_name,
                     donor_last_name:         m.donor_last_name,
                     donor_display_name:      displayName,
-                    donor_email:             m.donor_email || null,
+                    donor_email:             m.donor_email?.toLowerCase() || null,
                     donor_phone:             m.donor_phone || null,
                     donor_country:           m.donor_country || null,
                     donor_zip:               m.donor_zip || null,

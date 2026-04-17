@@ -1,3 +1,12 @@
+export type CsvRow = {
+    first_name: string;
+    last_name:  string;
+    email:      string;
+    phone:      string;
+};
+
+export type ImportResult = { added: number; skipped: number };
+
 export type Donor = {
     id: string;
     first_name: string;

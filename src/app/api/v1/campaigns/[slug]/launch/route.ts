@@ -81,14 +81,45 @@ export async function POST(req: NextRequest, ctx: Ctx) {
                 ? CampaignStatus.upcoming
                 : CampaignStatus.active;
 
+        // ── Organization record — create once on first org campaign launch ─────
+        let organizationId: string | undefined;
+        if (campaign.campaign_type === "organization" && campaign.org_display_name) {
+            const existingOrg = await prisma.organization.findUnique({
+                where:  { created_by: user.id },
+                select: { id: true },
+            });
+            if (existingOrg) {
+                organizationId = existingOrg.id;
+            } else {
+                const newOrg = await prisma.organization.create({
+                    data: {
+                        created_by:   user.id,
+                        name:         campaign.org_display_name,
+                        invite_token: crypto.randomBytes(32).toString("hex"),
+                    },
+                });
+                organizationId = newOrg.id;
+            }
+        }
+
         const updated = await prisma.campaign.update({
             where: { id: campaign.id },
             data: {
-                status:     newStatus,
-                visibility: "public",
+                status:          newStatus,
+                visibility:      "public",
+                ...(organizationId ? { organization_id: organizationId } : {}),
             },
             select: { slug: true, status: true },
         });
+
+        // ── Create accounts for participants who don't have one, then email ──
+        const organizerName = myMember
+            ? `${myMember.first_name} ${myMember.last_name}`
+            : "Campaign Organizer";
+
+        const participants = campaign.members.filter(
+            (m) => m.roles.some((r) => r.role === MemberRole.participant)
+        );
 
         // ── Notifications + real-time signal ────────────────────────────────
         notifyCampaignLaunched(campaign.id).catch(console.error);
@@ -100,15 +131,6 @@ export async function POST(req: NextRequest, ctx: Ctx) {
         // Notify the marketing page (draft preview + any future visitors) that
         // the campaign is now live so it can refresh immediately.
         publishStatusChange(slug, newStatus).catch(console.error);
-
-        // ── Create accounts for participants who don't have one, then email ──
-        const organizerName = myMember
-            ? `${myMember.first_name} ${myMember.last_name}`
-            : "Campaign Organizer";
-
-        const participants = campaign.members.filter(
-            (m) => m.roles.some((r) => r.role === MemberRole.participant)
-        );
 
         const goalAmount = campaign.goal_amount ? Number(campaign.goal_amount) : null;
         const loginUrl   = `${APP_URL}/login`;

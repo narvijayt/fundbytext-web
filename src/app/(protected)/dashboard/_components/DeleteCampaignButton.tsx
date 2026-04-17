@@ -69,7 +69,7 @@ export default function DeleteCampaignButton({
                         className="absolute inset-0 bg-black/40 backdrop-blur-sm"
                     />
                     {/* Modal */}
-                    <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 z-10">
+                    <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 z-10 max-h-[calc(100vh-2rem)] overflow-y-auto">
                         <div className="flex items-center justify-center w-12 h-12 rounded-full bg-red-100 mx-auto mb-4">
                             <svg className="w-6 h-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />

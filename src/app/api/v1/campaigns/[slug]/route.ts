@@ -384,7 +384,7 @@ export async function DELETE(req: NextRequest, ctx: Ctx) {
 
         const campaign = await prisma.campaign.findUnique({
             where: { id: ids.campaignId },
-            select: { status: true },
+            select: { status: true, organization_id: true },
         });
 
         if (!campaign) return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -409,6 +409,18 @@ export async function DELETE(req: NextRequest, ctx: Ctx) {
         }
 
         await prisma.campaign.delete({ where: { id: ids.campaignId } });
+
+        // ── Clean up Organization if this was its only campaign ───────────────
+        if (campaign.organization_id) {
+            const remaining = await prisma.campaign.count({
+                where: { organization_id: campaign.organization_id },
+            });
+            if (remaining === 0) {
+                await prisma.organization.delete({
+                    where: { id: campaign.organization_id },
+                }).catch(console.error); // non-fatal — FK may already be null
+            }
+        }
 
         return NextResponse.json({ ok: true });
     } catch (err) {

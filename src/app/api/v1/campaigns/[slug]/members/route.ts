@@ -25,7 +25,7 @@ type Ctx = { params: Promise<{ slug: string }> };
 const schema = z.object({
     first_name: z.string().min(1).max(100),
     last_name:  z.string().min(1).max(100),
-    email:      z.string().email().max(255).optional().nullable(),
+    email:      z.string().email().max(255).transform(s => s.toLowerCase().trim()).nullable().optional(),
     phone:      z.string().max(20).optional().nullable(),
 }).refine((d) => d.email || d.phone, { message: "Email or phone is required" });
 

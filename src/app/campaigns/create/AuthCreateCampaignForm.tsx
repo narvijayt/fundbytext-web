@@ -37,7 +37,10 @@ export default function AuthCreateCampaignForm() {
             }),
             new Promise((r) => setTimeout(r, 800)),
         ]);
-        const json = await res.json();
+        const contentType = res.headers.get("content-type") ?? "";
+        const json = contentType.includes("application/json")
+            ? await res.json()
+            : { error: "An unexpected error occurred. Please try again." };
         if (res.status === 409 && json.code === "name_taken") {
             setNameTaken(true);
             return;

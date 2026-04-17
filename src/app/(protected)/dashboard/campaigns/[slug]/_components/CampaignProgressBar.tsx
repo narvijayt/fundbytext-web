@@ -177,9 +177,47 @@ export default function CampaignProgressBar({ raisedAmt, goalAmt, initialGoalAmt
                 );
             })()}
 
-            {/* Goal status banners — skip for open-ended/org_goal (scaling markers handle it), participant_goal (individual banners handle it), and no-goal campaigns */}
+            {/* Open-ended initial goal milestone banner */}
+            {goalType === "open_ended" && initialGoalAmt && initialGoalAmt > 0 && !isUpcoming && (() => {
+                const initialReached = raisedAmt >= initialGoalAmt;
+                const pct            = Math.min(100, Math.round((raisedAmt / initialGoalAmt) * 100));
+                const remaining      = initialGoalAmt - raisedAmt;
+
+                if (initialReached) return (
+                    <div className="mt-3 flex items-center gap-2 px-4 py-2.5 bg-green-50 border border-green-200 rounded-xl">
+                        <svg className="w-4 h-4 text-green-600 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+                        </svg>
+                        <div>
+                            <p className="text-sm font-semibold text-green-700">Initial goal reached!</p>
+                            <p className="text-xs text-green-600">{fmtUSD(initialGoalAmt)} goal · keep going!</p>
+                        </div>
+                        {goalAmt && goalAmt > initialGoalAmt && (
+                            <p className="text-xs text-green-600 ml-auto">
+                                New goal: {fmtUSD(goalAmt)}
+                            </p>
+                        )}
+                    </div>
+                );
+
+                if (!isCompleted) return (
+                    <div className="mt-3 flex items-center gap-2 px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl">
+                        <svg className="w-4 h-4 text-gray-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                        </svg>
+                        <p className="text-sm text-gray-500">
+                            <span className="font-semibold text-gray-700">{pct}%</span> of initial {fmtUSD(initialGoalAmt)} goal
+                        </p>
+                        <p className="text-xs text-gray-400 ml-auto">{fmtUSD(remaining)} remaining</p>
+                    </div>
+                );
+
+                return null;
+            })()}
+
+            {/* Goal status banners — skip for open-ended (scaling markers + initial-goal banner handle it), participant_goal (individual banners handle it), and no-goal campaigns */}
             {(() => {
-                const isScalingGoal = goalType === "open_ended" || goalType === "org_goal"
+                const isScalingGoal = goalType === "open_ended"
                     || (initialGoalAmt !== null && goalAmt !== null && initialGoalAmt !== goalAmt);
                 if (!goalAmt || goalAmt <= 0 || isScalingGoal || goalType === "participant_goal") return null;
                 const goalReached = raisedAmt >= goalAmt;

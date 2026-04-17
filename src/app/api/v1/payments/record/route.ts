@@ -59,8 +59,8 @@ export async function POST(req: NextRequest) {
         if (existing) return NextResponse.json({ ok: true });
 
         const amount      = pi.amount / 100;
-        const platformFee = parseFloat((amount * 0.1).toFixed(2));
-        const netAmount   = parseFloat((amount - platformFee).toFixed(2));
+        const platformFee = 0;
+        const netAmount   = amount;
 
         // Extract card details from the expanded payment method
         const pm   = pi.payment_method as import("stripe").Stripe.PaymentMethod | null;
@@ -92,7 +92,7 @@ export async function POST(req: NextRequest) {
             ? await prisma.campaignDonor.findFirst({
                 where: {
                     campaign_id:        m.campaign_id,
-                    email:              m.donor_email,
+                    email:              m.donor_email?.toLowerCase(),
                     assigned_member_id: resolvedMemberId,
                 },
               })
@@ -106,7 +106,7 @@ export async function POST(req: NextRequest) {
                     assigned_member_id: resolvedMemberId,
                     first_name:         m.donor_first_name || "Guest",
                     last_name:          m.donor_last_name  || "Donor",
-                    email:              m.donor_email      || null,
+                    email:              m.donor_email?.toLowerCase() || null,
                     phone:              m.donor_phone      || null,
                     status:             "donated",
                 },
@@ -125,7 +125,7 @@ export async function POST(req: NextRequest) {
                     donor_first_name:         m.donor_first_name  || "Guest",
                     donor_last_name:          m.donor_last_name   || "Donor",
                     donor_display_name:       displayName,
-                    donor_email:              m.donor_email   || null,
+                    donor_email:              m.donor_email?.toLowerCase() || null,
                     donor_phone:              m.donor_phone   || null,
                     donor_country:            m.donor_country || null,
                     donor_zip:                m.donor_zip     || null,

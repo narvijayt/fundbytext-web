@@ -6,7 +6,7 @@ import { randomBytes } from "crypto";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getAuthUserFromRequest } from "@/lib/session";
-import { MemberRole } from "@/generated/prisma/enums";
+import { MemberRole, DonorStatus, PaymentStatus } from "@/generated/prisma/enums";
 import { sendDonorInviteEmail } from "@/lib/mail";
 
 type Ctx = { params: Promise<{ slug: string }> };
@@ -26,7 +26,7 @@ async function generateShortCode(): Promise<string> {
 const postSchema = z.object({
     first_name:         z.string().min(1).max(100),
     last_name:          z.string().min(1).max(100),
-    email:              z.string().email().max(255).optional().or(z.literal("")).optional(),
+    email:              z.string().email().max(255).transform(s => s.toLowerCase().trim()).optional().or(z.literal("")).optional(),
     phone:              z.string().max(20).optional().or(z.literal("")).optional(),
     assigned_member_id: z.string().uuid().optional().nullable(), // organizer can assign
 });
@@ -70,7 +70,7 @@ export async function GET(req: NextRequest, ctx: Ctx) {
         const where = {
             campaign_id: campaign.id,
             ...(scopeToMember ? { assigned_member_id: member.id } : {}),
-            ...(status !== "all" ? { status } : {}),
+            ...(status !== "all" ? { status: status as DonorStatus } : {}),
             ...(search ? {
                 OR: [
                     { first_name: { contains: search, mode: "insensitive" as const } },
@@ -104,7 +104,7 @@ export async function GET(req: NextRequest, ctx: Ctx) {
                         select: { id: true, first_name: true, last_name: true, roles: { select: { role: true } } },
                     },
                     donations: {
-                        where:   { payment_status: "completed" },
+                        where:   { payment_status: PaymentStatus.completed },
                         select:  { amount: true, created_at: true, is_anonymous: true },
                         orderBy: { created_at: "desc" },
                     },

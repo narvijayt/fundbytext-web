@@ -125,21 +125,26 @@ export default function CampaignDonateShell({
         ? (modalParticipants.find((p) => p.id === defaultTargetMemberId) ?? null)
         : null;
 
+    // Fixed-goal campaign with nothing left to raise — modal is pointless
+    const goalFullyFunded = isFixedGoal && maxDonationCents === 0;
+
     // Listen for the event fired by DonateNavButton (lives inside the server <nav>)
     useEffect(() => {
         const handler = (e: Event) => {
+            if (goalFullyFunded) return;
             const memberId = (e as CustomEvent<{ memberId: string | null }>).detail.memberId;
             setTargetMember(memberId);
             setModalOpen(true);
         };
         window.addEventListener(DONATE_EVENT, handler);
         return () => window.removeEventListener(DONATE_EVENT, handler);
-    }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [goalFullyFunded]);
 
     // Auto-open modal for donor invite links — pre-select the assigned participant
-    // Do not open if campaign is upcoming (donations not yet open)
+    // Do not open if campaign is upcoming, completed, or fixed-goal fully funded
     useEffect(() => {
-        if (isDonorInvite && status !== "upcoming" && status !== "completed") {
+        if (isDonorInvite && status !== "upcoming" && status !== "completed" && !goalFullyFunded) {
             if (defaultTargetMemberId) setTargetMember(defaultTargetMemberId);
             setModalOpen(true);
         }
@@ -183,7 +188,7 @@ export default function CampaignDonateShell({
                 endDate={endDate}
                 startDate={startDate}
                 status={status}
-                onDonate={() => { setTargetMember(null); setModalOpen(true); }}
+                onDonate={() => { if (!goalFullyFunded) { setTargetMember(null); setModalOpen(true); } }}
             />
 
             {/* Donate modal */}

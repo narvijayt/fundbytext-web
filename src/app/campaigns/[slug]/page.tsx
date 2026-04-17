@@ -69,16 +69,21 @@ export default async function CampaignPublicPage({
     const isOrganizer = authUser && campaign.members.some(
         (m) => m.user_id === authUser.id && m.roles.some((r) => r.role === MemberRole.organizer)
     );
+    const isParticipant = authUser && campaign.members.some(
+        (m) => m.user_id === authUser.id && m.roles.some((r) => r.role === MemberRole.participant)
+    );
+    const isMember = isOrganizer || isParticipant;
 
     // Draft: non-organizers always get a hard 404 (draft → launch is a separate flow)
     if (campaign.status === "draft" && !isOrganizer) {
         notFound();
     }
 
-    // Private: render a "not available" page but keep CampaignUpdater alive so
-    // when visibility flips back to public the controls_changed event triggers
-    // router.refresh() and the full page is served without the visitor needing to reload.
-    if (campaign.visibility === "private" && !isOrganizer) {
+    // Private: members (organizer + participants) can always see their campaign.
+    // Everyone else — including anonymous visitors and donors with direct links — gets
+    // the "not available" page. Keep CampaignUpdater alive so when visibility flips
+    // back, the controls_changed event triggers router.refresh() automatically.
+    if (campaign.visibility === "private" && !isMember) {
         return (
             <div className="min-h-screen bg-gray-50 font-sans flex flex-col">
                 <CampaignUpdater campaignSlug={slug} status={campaign.status} />
@@ -200,6 +205,17 @@ export default async function CampaignPublicPage({
                     </button>
                 </div>
             </nav>
+
+            {/* ── Private campaign banner — visible to members only ─────── */}
+            {campaign.visibility === "private" && isMember && (
+                <div className="bg-gray-800 px-6 py-2.5 flex items-center gap-2">
+                    <svg className="w-4 h-4 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    </svg>
+                    <span className="text-sm font-semibold text-gray-200">Private Campaign</span>
+                    <span className="text-sm text-gray-400">— Only campaign members can see this page. It is not visible to the public.</span>
+                </div>
+            )}
 
             {/* ── Draft preview banner ─────────────────────────────────── */}
             {isDraft && (

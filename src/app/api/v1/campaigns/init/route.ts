@@ -24,7 +24,7 @@ const schema = z.object({
     // first_name + last_name + email only required for guests
     first_name:    z.string().min(1).max(100).optional(),
     last_name:     z.string().min(1).max(100).optional(),
-    email:         z.string().email().max(255).optional(),
+    email:         z.string().email().max(255).transform(s => s.toLowerCase().trim()).optional(),
 });
 
 function nameToSlug(name: string): string {
@@ -86,7 +86,10 @@ export async function POST(req: NextRequest) {
                 );
             }
 
-            const existing = await prisma.user.findUnique({ where: { email } });
+            const existing = await prisma.user.findFirst({
+                where: { email, deleted_at: null },
+                select: { id: true },
+            });
 
             if (existing) {
                 return NextResponse.json(
@@ -101,6 +104,13 @@ export async function POST(req: NextRequest) {
             const chars = "ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz0123456789!@#$%^&*";
             generatedPassword = Array.from(crypto.randomBytes(16)).map((b) => chars[(b as number) % chars.length]).join("");
             const password_hash = await bcrypt.hash(generatedPassword, 12);
+
+            // If an old soft-deleted record still holds this email (pre-mangling),
+            // mangle it now so the unique constraint doesn't block the new create.
+            await prisma.user.updateMany({
+                where: { email, deleted_at: { not: null } },
+                data:  { email: `deleted_legacy_${Date.now()}@deleted.local` },
+            });
 
             const newUser = await prisma.user.create({
                 data: { first_name, last_name, email, password_hash, role: UserRole.user },

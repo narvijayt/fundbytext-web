@@ -4,7 +4,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 
 const schema = z.object({
-    email: z.string().email(),
+    email: z.string().email().transform(s => s.toLowerCase().trim()),
     token: z.string().min(1),
     password: z.string().min(6),
 });

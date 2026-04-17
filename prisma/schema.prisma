@@ -120,6 +120,10 @@ model User {
     profile_photo_url      String?
     // Platform role: admin = full system access | user = standard platform user
     role                   UserRole  @default(user)
+    is_suspended           Boolean   @default(false)
+    suspension_message     String?   @db.Text
+    deleted_at             DateTime? @db.Timestamptz(3)
+    deleted_email          String?   @db.VarChar(255) // original email saved on soft-delete
     is_email_verified      Boolean   @default(false)
     is_phone_verified      Boolean   @default(false)
     password_reset_token   String?   @unique @db.VarChar(255)
@@ -372,6 +376,8 @@ model Donation {
     card_last4               String?       @db.VarChar(4)
     card_exp_month           Int?
     card_exp_year            Int?
+    is_flagged               Boolean       @default(false)
+    flag_note                String?       @db.Text
     created_at               DateTime      @default(now()) @db.Timestamptz(3)
 
     campaign       Campaign        @relation(fields: [campaign_id], references: [id])

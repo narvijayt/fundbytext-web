@@ -3,7 +3,7 @@
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import DeleteCampaignButton from "@/app/(protected)/dashboard/_components/DeleteCampaignButton";
-import { type Campaign, type Payout, type Member, type Donor } from "./_components/types";
+import { type Campaign, type Payout, type Member, type Donor, type CsvRow, type ImportResult } from "./_components/types";
 import { ProgressBar, BottomNav } from "./_components/WizardNav";
 import StepDetails      from "./_components/StepDetails";
 import StepFundingGoal  from "./_components/StepFundingGoal";
@@ -501,6 +501,74 @@ export default function SetupWizard({
         }
     }
 
+    async function importDonors(rows: CsvRow[]): Promise<ImportResult> {
+        let added = 0, skipped = 0;
+        for (const row of rows) {
+            if (row.email && donors.some((d) => d.email?.toLowerCase() === row.email.toLowerCase())) {
+                skipped++;
+                continue;
+            }
+            try {
+                const res = await fetch(`/api/v1/campaigns/${slug}/donors`, {
+                    method:  "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body:    JSON.stringify({
+                        first_name: row.first_name,
+                        last_name:  row.last_name,
+                        email:      row.email  || undefined,
+                        phone:      row.phone  || undefined,
+                    }),
+                });
+                if (res.ok) {
+                    const json = await res.json();
+                    setDonors((prev) => [...prev, json.donor]);
+                    added++;
+                } else {
+                    skipped++;
+                }
+            } catch {
+                skipped++;
+            }
+        }
+        return { added, skipped };
+    }
+
+    async function importParticipants(rows: CsvRow[]): Promise<ImportResult> {
+        let added = 0, skipped = 0;
+        for (const row of rows) {
+            try {
+                const res = await fetch(`/api/v1/campaigns/${slug}/members`, {
+                    method:  "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body:    JSON.stringify({
+                        first_name: row.first_name,
+                        last_name:  row.last_name,
+                        email:      row.email || null,
+                        phone:      row.phone || null,
+                    }),
+                });
+                if (res.ok) {
+                    const json = await res.json();
+                    setMembers((prev) => {
+                        const idx = prev.findIndex((m) => m.id === json.member.id);
+                        if (idx >= 0) {
+                            const updated = [...prev];
+                            updated[idx] = json.member;
+                            return updated;
+                        }
+                        return [...prev, json.member];
+                    });
+                    added++;
+                } else {
+                    skipped++;
+                }
+            } catch {
+                skipped++;
+            }
+        }
+        return { added, skipped };
+    }
+
     // ── Render ─────────────────────────────────────────────────────────────
 
     return (
@@ -598,6 +666,7 @@ export default function SetupWizard({
                             addingMember={addingMember}
                             onAddParticipant={addParticipant}
                             onRemoveParticipant={removeParticipant}
+                            onImportParticipants={importParticipants}
                             donors={donors}
                             dFirst={dFirst} setDFirst={setDFirst}
                             dLast={dLast} setDLast={setDLast}
@@ -606,6 +675,7 @@ export default function SetupWizard({
                             addingDonor={addingDonor}
                             onAddDonor={addDonor}
                             onRemoveDonor={removeDonor}
+                            onImportDonors={importDonors}
                             organizerInfo={organizerInfo}
                         />
                     )}

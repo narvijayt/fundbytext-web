@@ -16,7 +16,7 @@ const schema = z.object({
     campaign_donor_id: z.string().uuid().nullable().optional(),  // specific invited donor record
     donor_first_name:  z.string().min(1).max(100),
     donor_last_name:   z.string().min(1).max(100),
-    donor_email:       z.string().email().max(255).optional().nullable(),
+    donor_email:       z.string().email().max(255).transform(s => s.toLowerCase().trim()).nullable().optional(),
     donor_phone:       z.string().max(20).optional().nullable(),
     is_anonymous:      z.boolean().default(false),
     donor_country:     z.string().max(100).optional().nullable(),
@@ -36,7 +36,7 @@ export async function PATCH(req: NextRequest) {
             member_id:        z.string().uuid().nullable().optional(),
             donor_first_name: z.string().min(1).max(100),
             donor_last_name:  z.string().min(1).max(100),
-            donor_email:      z.string().email().max(255).optional().nullable(),
+            donor_email:      z.string().email().max(255).transform(s => s.toLowerCase().trim()).nullable().optional(),
             donor_phone:      z.string().max(20).optional().nullable(),
             is_anonymous:     z.boolean(),
         }).safeParse(body);

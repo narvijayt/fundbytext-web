@@ -375,6 +375,68 @@ export async function broadcastCampaignCompleted(campaignId: string, memberIds: 
     });
 }
 
+// ── Admin-action notifications ────────────────────────────────────────────────
+
+/** CA1 — Campaign visibility changed by an admin. (organizer only) */
+export function notifyAdminVisibilityChanged(campaignId: string, visibility: string) {
+    const label = visibility.charAt(0).toUpperCase() + visibility.slice(1);
+    return createCampaignNotif(
+        campaignId,
+        "admin_visibility_changed",
+        `Campaign visibility changed to ${label} by an admin.`,
+    );
+}
+
+/** CA2 — Donations paused by an admin. (organizer only) */
+export function notifyAdminDonationsPaused(campaignId: string) {
+    return createCampaignNotif(
+        campaignId,
+        "admin_donations_paused",
+        "Donations have been paused by an admin.",
+    );
+}
+
+/** CA3 — Donations resumed by an admin. (organizer only) */
+export function notifyAdminDonationsResumed(campaignId: string) {
+    return createCampaignNotif(
+        campaignId,
+        "admin_donations_resumed",
+        "Donations have been resumed by an admin.",
+    );
+}
+
+/** PA1 — Donations paused by an admin. (broadcast to all participants) */
+export async function broadcastAdminDonationsPaused(campaignId: string, memberIds: string[]) {
+    if (memberIds.length === 0) return;
+    await prisma.campaignNotification.createMany({
+        data: memberIds.map((memberId) => ({
+            campaign_id:         campaignId,
+            recipient_member_id: memberId,
+            notification_type:   NotificationType.participant,
+            trigger_event:       "admin_donations_paused",
+            message:             "Donations for this campaign have been paused by an admin.",
+            status:              NotificationStatus.sent,
+            sent_at:             ts(),
+        })),
+    });
+}
+
+/** PA2 — Donations resumed by an admin. (broadcast to all participants) */
+export async function broadcastAdminDonationsResumed(campaignId: string, memberIds: string[]) {
+    if (memberIds.length === 0) return;
+    await prisma.campaignNotification.createMany({
+        data: memberIds.map((memberId) => ({
+            campaign_id:         campaignId,
+            recipient_member_id: memberId,
+            notification_type:   NotificationType.participant,
+            trigger_event:       "admin_donations_resumed",
+            message:             "Donations for this campaign have been resumed by an admin.",
+            status:              NotificationStatus.sent,
+            sent_at:             ts(),
+        })),
+    });
+}
+
 // ── Post-donation goal checks ─────────────────────────────────────────────────
 // Call this after every successfully recorded donation.
 
