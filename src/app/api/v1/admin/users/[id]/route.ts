@@ -14,6 +14,7 @@ const editSchema = z.object({
     first_name: z.string().min(1).max(100),
     last_name:  z.string().min(1).max(100),
     email:      z.string().email().max(255).transform(s => s.toLowerCase().trim()),
+    username:   z.string().min(1).max(30).regex(/^[a-z0-9_.]+$/, "Username may only contain lowercase letters, numbers, dots, and underscores.").optional().nullable(),
     phone:      z.string().max(20).optional().nullable(),
     role:       z.enum(["user", "admin"]),
     password:   z.string().min(8).max(100).optional().nullable(),
@@ -38,7 +39,7 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
                 return NextResponse.json({ error: parsed.error.flatten() }, { status: 422 });
             }
 
-            const { first_name, last_name, email, phone, role, password } = parsed.data;
+            const { first_name, last_name, email, username, phone, role, password } = parsed.data;
 
             const target = await prisma.user.findUnique({
                 where:  { id },
@@ -89,7 +90,18 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
                     return NextResponse.json({ error: "A user with this email already exists." }, { status: 409 });
                 }
 
-                updateData = { first_name, last_name, email, phone: phone ?? null, role };
+                // Check username uniqueness if provided
+                if (username) {
+                    const uConflict = await prisma.user.findFirst({
+                        where: { username, id: { not: id } },
+                        select: { id: true },
+                    });
+                    if (uConflict) {
+                        return NextResponse.json({ error: "This username is already taken." }, { status: 409 });
+                    }
+                }
+
+                updateData = { first_name, last_name, email, phone: phone ?? null, role, username: username ?? undefined };
                 if (password) {
                     updateData.password_hash = await bcrypt.hash(password, 12);
                 }

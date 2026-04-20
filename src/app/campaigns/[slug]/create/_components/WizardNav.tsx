@@ -3,7 +3,17 @@
 import { STEPS } from "./types";
 import { StepBubble } from "./ui";
 
-export function ProgressBar({ step, isOrg }: { step: number; isOrg: boolean }) {
+export function ProgressBar({
+    step,
+    maxStep,
+    isOrg,
+    onStepClick,
+}: {
+    step: number;
+    maxStep: number;
+    isOrg: boolean;
+    onStepClick?: (num: number) => void;
+}) {
     const steps = STEPS.map((s) =>
         s.num === 4 ? { ...s, label: isOrg ? "Participants" : "Donors" } : s
     );
@@ -15,7 +25,18 @@ export function ProgressBar({ step, isOrg }: { step: number; isOrg: boolean }) {
                     const status =
                         num < step ? "done" :
                         num === step ? "current" : "pending";
-                    return <StepBubble key={num} num={num} label={label} status={status} />;
+                    // Clickable if previously reached (num <= maxStep) and not the current step
+                    const clickable = num <= maxStep && num !== step;
+                    return (
+                        <StepBubble
+                            key={num}
+                            num={num}
+                            label={label}
+                            status={status}
+                            clickable={clickable}
+                            onClick={clickable ? () => onStepClick?.(num) : undefined}
+                        />
+                    );
                 })}
             </div>
         </div>

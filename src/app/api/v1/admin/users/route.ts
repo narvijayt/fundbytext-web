@@ -7,6 +7,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getAuthUserFromRequest } from "@/lib/session";
 import { sendParticipantCredentialsEmail } from "@/lib/mail";
+import { generateUsername } from "@/lib/username";
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 
@@ -50,12 +51,14 @@ export async function POST(req: NextRequest) {
 
         const plainPassword  = parsed.data.password || generatePassword();
         const password_hash  = await bcrypt.hash(plainPassword, 12);
+        const username       = await generateUsername(first_name, last_name);
 
         const user = await prisma.user.create({
             data: {
                 first_name,
                 last_name,
                 email,
+                username,
                 phone:             phone ?? null,
                 password_hash,
                 role,

@@ -3,7 +3,7 @@
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import DeleteCampaignButton from "@/app/(protected)/dashboard/_components/DeleteCampaignButton";
-import { type Campaign, type Payout, type Member, type Donor, type CsvRow, type ImportResult } from "./_components/types";
+import { type Campaign, type Payout, type Member, type Donor, type CsvRow, type ImportResult, STEPS } from "./_components/types";
 import { ProgressBar, BottomNav } from "./_components/WizardNav";
 import StepDetails      from "./_components/StepDetails";
 import StepFundingGoal  from "./_components/StepFundingGoal";
@@ -114,7 +114,9 @@ export default function SetupWizard({
     const [thankYou, setThankYou] = useState(campaign.thank_you_message ?? "");
 
     // ── Wizard state
-    const [step, setStep]           = useState(initialStep);
+    const [step,    setStep]    = useState(initialStep);
+    // Launched campaigns have all steps complete — unlock all tabs immediately
+    const [maxStep, setMaxStep] = useState(isLaunched ? STEPS.length + 1 : initialStep);
     const [saving, setSaving]       = useState(false);
     const [launching, setLaunching] = useState(false);
     const [toast, setToast]         = useState<string | null>(null);
@@ -185,11 +187,19 @@ export default function SetupWizard({
     }
 
     function advance() {
-        setStep((s) => s + 1);
+        setStep((s) => {
+            const next = s + 1;
+            setMaxStep((m) => Math.max(m, next));
+            return next;
+        });
         topRef.current?.scrollIntoView({ behavior: "smooth" });
     }
     function back() {
         setStep((s) => s - 1);
+        topRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+    function goToStep(num: number) {
+        setStep(num);
         topRef.current?.scrollIntoView({ behavior: "smooth" });
     }
 
@@ -596,7 +606,7 @@ export default function SetupWizard({
                     </p>
                 </div>
 
-                <ProgressBar step={step} isOrg={isOrg} />
+                <ProgressBar step={step} maxStep={maxStep} isOrg={isOrg} onStepClick={goToStep} />
 
                 {/* Fullscreen launch loader */}
                 {launching && (

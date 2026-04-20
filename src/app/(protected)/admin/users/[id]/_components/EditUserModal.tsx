@@ -18,6 +18,7 @@ interface Props {
         first_name: string;
         last_name:  string;
         email:      string;
+        username:   string | null;
         phone:      string | null;
         role:       "user" | "admin";
     };
@@ -34,6 +35,7 @@ export default function EditUserModal({ userId, isSelf, initial, onClose, onSave
     const [firstName, setFirstName] = useState(initial.first_name);
     const [lastName,  setLastName]  = useState(initial.last_name);
     const [email,     setEmail]     = useState(initial.email);
+    const [username,  setUsername]  = useState(initial.username ?? "");
     const [phone,     setPhone]     = useState(initial.phone ?? "");
     const [role,      setRole]      = useState<"user" | "admin">(initial.role);
     const [password,  setPassword]  = useState("");
@@ -44,6 +46,7 @@ export default function EditUserModal({ userId, isSelf, initial, onClose, onSave
         firstName?: string;
         lastName?:  string;
         email?:     string;
+        username?:  string;
         password?:  string;
         general?:   string;
     }>({});
@@ -57,6 +60,8 @@ export default function EditUserModal({ userId, isSelf, initial, onClose, onSave
         if (!email.trim())              e.email     = "Email is required.";
         else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()))
                                         e.email     = "Enter a valid email address.";
+        if (username && !/^[a-z0-9_.]+$/.test(username))
+                                        e.username  = "Only lowercase letters, numbers, dots, and underscores allowed.";
         if (password && password.length < 8)
                                         e.password  = "Password must be at least 8 characters.";
         return e;
@@ -77,6 +82,7 @@ export default function EditUserModal({ userId, isSelf, initial, onClose, onSave
                 first_name: firstName.trim(),
                 last_name:  lastName.trim(),
                 email:      email.trim(),
+                username:   username.trim() || null,
                 phone:      phone.trim() || null,
                 role,
                 password:   password || null,
@@ -90,8 +96,9 @@ export default function EditUserModal({ userId, isSelf, initial, onClose, onSave
         } else {
             const j = await res.json().catch(() => ({}));
             const msg = typeof j.error === "string" ? j.error : "Failed to save changes.";
-            if (res.status === 409) setErrors({ email: msg });
-            else                    setErrors({ general: msg });
+            if (res.status === 409 && msg.toLowerCase().includes("username")) setErrors({ username: msg });
+            else if (res.status === 409) setErrors({ email: msg });
+            else                         setErrors({ general: msg });
         }
         setSaving(false);
     }
@@ -150,6 +157,23 @@ export default function EditUserModal({ userId, isSelf, initial, onClose, onSave
                             {errors.lastName && <p className="mt-1 text-xs text-red-500">{errors.lastName}</p>}
                         </div>
                     </div>
+
+                    {!isAdminAccount && (
+                        <div>
+                            <label className="block text-xs font-semibold text-gray-500 mb-1">Username</label>
+                            <div className="relative">
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-medium select-none">@</span>
+                                <input
+                                    value={username}
+                                    onChange={(e) => { setUsername(e.target.value.toLowerCase()); setErrors((p) => ({ ...p, username: undefined })); }}
+                                    className={`${INPUT} pl-7 ${errors.username ? "border-red-300" : "border-gray-200"}`}
+                                    placeholder="john.smith"
+                                    maxLength={30}
+                                />
+                            </div>
+                            {errors.username && <p className="mt-1 text-xs text-red-500">{errors.username}</p>}
+                        </div>
+                    )}
 
                     <div>
                         <label className="block text-xs font-semibold text-gray-500 mb-1">Email *</label>

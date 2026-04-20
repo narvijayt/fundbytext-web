@@ -10,6 +10,7 @@ interface Props {
         first_name: string;
         last_name:  string;
         email:      string;
+        username:   string | null;
         phone:      string | null;
         role:       "user" | "admin";
     };

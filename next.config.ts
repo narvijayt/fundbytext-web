@@ -6,6 +6,9 @@ const nextConfig: NextConfig = {
             { pathname: "/uploads/**" },
         ],
     },
+    experimental: {
+        webpackMemoryOptimizations: true,
+    },
 };
 
 export default nextConfig;

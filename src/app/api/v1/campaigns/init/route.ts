@@ -17,6 +17,7 @@ import { UserRole, CampaignStatus, CampaignType, MemberRole } from "@/generated/
 import { signToken, setAuthCookie } from "@/lib/auth";
 import { getAuthUserFromRequest } from "@/lib/session";
 import { sendParticipantCredentialsEmail } from "@/lib/mail";
+import { generateUsername } from "@/lib/username";
 
 const schema = z.object({
     campaign_type: z.enum(["individual", "organization"]),
@@ -112,8 +113,9 @@ export async function POST(req: NextRequest) {
                 data:  { email: `deleted_legacy_${Date.now()}@deleted.local` },
             });
 
+            const username = await generateUsername(first_name, last_name);
             const newUser = await prisma.user.create({
-                data: { first_name, last_name, email, password_hash, role: UserRole.user },
+                data: { first_name, last_name, email, username, password_hash, role: UserRole.user },
                 select: { id: true },
             });
 
