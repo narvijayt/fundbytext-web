@@ -14,6 +14,7 @@ const schema = z.object({
     amount_cents:      z.number().int().min(100),                // minimum $1.00
     member_id:         z.string().uuid().nullable().optional(),  // participant attribution
     campaign_donor_id: z.string().uuid().nullable().optional(),  // specific invited donor record
+    donor_source:      z.enum(["link_self"]).nullable().optional(), // link visitor paying as new entry
     donor_first_name:  z.string().min(1).max(100),
     donor_last_name:   z.string().min(1).max(100),
     donor_email:       z.string().email().max(255).transform(s => s.toLowerCase().trim()).nullable().optional(),
@@ -87,7 +88,7 @@ export async function POST(req: NextRequest) {
         }
 
         const {
-            campaign_slug, amount_cents, member_id, campaign_donor_id,
+            campaign_slug, amount_cents, member_id, campaign_donor_id, donor_source,
             donor_first_name, donor_last_name, donor_email, donor_phone,
             is_anonymous, donor_country, donor_zip,
         } = parsed.data;
@@ -143,6 +144,7 @@ export async function POST(req: NextRequest) {
                 campaign_slug,
                 member_id:         member_id         ?? "",
                 campaign_donor_id: campaign_donor_id ?? "",
+                donor_source:      donor_source      ?? "",
                 donor_first_name,
                 donor_last_name,
                 donor_email:       donor_email  ?? "",

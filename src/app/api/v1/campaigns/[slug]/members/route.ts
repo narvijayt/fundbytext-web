@@ -10,6 +10,7 @@ import { getAuthUserFromRequest } from "@/lib/session";
 import { MemberRole } from "@/generated/prisma/enums";
 import { sendParticipantCredentialsEmail, sendParticipantInviteEmail } from "@/lib/mail";
 import { notifyParticipantAdded } from "@/lib/notifications";
+import { generateUsername } from "@/lib/username";
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 
@@ -183,8 +184,9 @@ export async function POST(req: NextRequest, ctx: Ctx) {
                         // Create a new account
                         generatedPassword = generatePassword();
                         const password_hash = await bcrypt.hash(generatedPassword, 12);
+                        const username = await generateUsername(first_name, last_name);
                         const newUser = await prisma.user.create({
-                            data: { first_name, last_name, email, password_hash },
+                            data: { first_name, last_name, email, password_hash, username },
                         });
                         await prisma.campaignMember.update({
                             where: { id: member.id },

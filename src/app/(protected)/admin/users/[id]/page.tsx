@@ -73,6 +73,7 @@ export default async function AdminUserDetailPage({ params, searchParams }: Ctx)
                 first_name:         true,
                 last_name:          true,
                 email:              true,
+                username:           true,
                 phone:              true,
                 role:               true,
                 is_suspended:       true,
@@ -234,6 +235,9 @@ export default async function AdminUserDetailPage({ params, searchParams }: Ctx)
                             <h1 className="mt-3 text-lg font-bold text-gray-900 text-center">
                                 {user.first_name} {user.last_name}
                             </h1>
+                            {user.username && (
+                                <p className="text-sm text-blue-500 font-medium mt-0.5">@{user.username}</p>
+                            )}
                             <div className="flex items-center justify-center gap-1.5 mt-1.5 flex-wrap">
                                 {user.id === currentAdmin?.id && (
                                     <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-50 text-[#0268c0] border border-[#0268c0]/20 uppercase tracking-wide">You</span>
@@ -358,6 +362,7 @@ export default async function AdminUserDetailPage({ params, searchParams }: Ctx)
                                             first_name: user.first_name,
                                             last_name:  user.last_name,
                                             email:      displayEmail,
+                                            username:   user.username ?? null,
                                             phone:      user.phone ?? null,
                                             role:       user.role as "user" | "admin",
                                         }}

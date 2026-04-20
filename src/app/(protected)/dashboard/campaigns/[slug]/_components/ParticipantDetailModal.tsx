@@ -25,6 +25,7 @@ type MemberDetail = {
     roles: { role: string }[];
     donations: DonationRow[];
     _count: { donors: number };
+    user: { profile_photo_url: string | null; username: string | null } | null;
 };
 
 type Props = {
@@ -50,6 +51,11 @@ export default function ParticipantDetailModal({ memberId, myMemberId, campaignS
     const [error,            setError]            = useState<string | null>(null);
     const [toast,            setToast]            = useState<string | null>(null);
     const [showAllDonations, setShowAllDonations] = useState(false);
+    const [editingName,      setEditingName]      = useState(false);
+    const [editFirst,        setEditFirst]        = useState("");
+    const [editLast,         setEditLast]         = useState("");
+    const [savingName,       setSavingName]       = useState(false);
+    const [nameError,        setNameError]        = useState<string | null>(null);
     const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     function showToast(msg: string) {
@@ -79,6 +85,37 @@ export default function ParticipantDetailModal({ memberId, myMemberId, campaignS
         setConfirmRemove(false);
     }
 
+    function startEditName() {
+        if (!member) return;
+        setEditFirst(member.first_name);
+        setEditLast(member.last_name);
+        setNameError(null);
+        setEditingName(true);
+    }
+
+    async function saveName() {
+        if (!editFirst.trim() || !editLast.trim()) {
+            setNameError("First and last name are required.");
+            return;
+        }
+        setSavingName(true);
+        const res = await fetch(`/api/v1/campaigns/${campaignSlug}/members/${memberId}`, {
+            method:  "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body:    JSON.stringify({ first_name: editFirst.trim(), last_name: editLast.trim() }),
+        });
+        if (res.ok) {
+            setMember((m) => m ? { ...m, first_name: editFirst.trim(), last_name: editLast.trim() } : m);
+            setEditingName(false);
+            router.refresh();
+            showToast("Name updated.");
+        } else {
+            const j = await res.json().catch(() => ({}));
+            setNameError(j.error ?? "Failed to save.");
+        }
+        setSavingName(false);
+    }
+
     const isTargetParticipant = member?.roles.some((r) => r.role === "participant");
     const hasDonations = raised > 0;
     // Allow remove when: organizer viewing another participant (not also an organizer),
@@ -105,22 +142,70 @@ export default function ParticipantDetailModal({ memberId, myMemberId, campaignS
                     {member && !loading && (
                         <div className="space-y-4">
                             {/* Avatar + name */}
-                            <div className="flex items-center gap-3">
+                            <div className="flex items-start gap-3">
                                 <div className="w-14 h-14 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 font-bold text-lg shrink-0 overflow-hidden">
-                                    {member.profile_photo_url
+                                    {(member.user?.profile_photo_url ?? member.profile_photo_url)
                                         // eslint-disable-next-line @next/next/no-img-element
-                                        ? <img src={member.profile_photo_url} alt={member.first_name} className="w-full h-full object-cover" />
+                                        ? <img src={(member.user?.profile_photo_url ?? member.profile_photo_url)!} alt={member.first_name} className="w-full h-full object-cover" />
                                         : `${member.first_name[0]}${member.last_name[0]}`
                                     }
                                 </div>
-                                <div>
-                                    <p className="font-bold text-gray-900">{member.first_name} {member.last_name}</p>
-                                    <p className="text-xs text-gray-400">{member.email ?? "—"}</p>
-                                    <div className="flex gap-1 mt-1">
-                                        {member.roles.map((r) => (
-                                            <span key={r.role} className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-blue-50 text-blue-600 capitalize">{r.role}</span>
-                                        ))}
-                                    </div>
+                                <div className="flex-1 min-w-0">
+                                    {editingName ? (
+                                        <div className="space-y-2">
+                                            <div className="flex gap-2">
+                                                <input
+                                                    value={editFirst}
+                                                    onChange={(e) => { setEditFirst(e.target.value); setNameError(null); }}
+                                                    placeholder="First name"
+                                                    className="flex-1 min-w-0 px-2.5 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-300"
+                                                />
+                                                <input
+                                                    value={editLast}
+                                                    onChange={(e) => { setEditLast(e.target.value); setNameError(null); }}
+                                                    placeholder="Last name"
+                                                    className="flex-1 min-w-0 px-2.5 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-300"
+                                                />
+                                            </div>
+                                            {nameError && <p className="text-xs text-red-500">{nameError}</p>}
+                                            <p className="text-[10px] text-gray-400">This only updates their name in this campaign, not their account.</p>
+                                            <div className="flex gap-2">
+                                                <button onClick={() => setEditingName(false)} className="flex-1 py-1.5 text-xs font-semibold border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">Cancel</button>
+                                                <button onClick={saveName} disabled={savingName} className="flex-1 py-1.5 text-xs font-semibold bg-orange-500 hover:bg-orange-600 text-white rounded-lg disabled:opacity-50 transition-colors">
+                                                    {savingName ? "Saving…" : "Save"}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="flex items-start justify-between gap-2">
+                                            <div>
+                                                <div className="flex items-center gap-1.5">
+                                                    <p className="font-bold text-gray-900">{member.first_name} {member.last_name}</p>
+                                                    {isSelf && (
+                                                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-50 text-[#0268c0] border border-[#0268c0]/20 uppercase tracking-wide">You</span>
+                                                    )}
+                                                </div>
+                                                {member.user?.username && (
+                                                    <p className="text-xs text-blue-500 font-medium">@{member.user.username}</p>
+                                                )}
+                                                {member.email && (
+                                                    <p className="text-xs text-gray-400">{member.email}</p>
+                                                )}
+                                                <div className="flex gap-1 mt-1">
+                                                    {member.roles.map((r) => (
+                                                        <span key={r.role} className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-blue-50 text-blue-600 capitalize">{r.role}</span>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                            {isOrganizer && !isCompleted && (
+                                                <button onClick={startEditName} className="shrink-0 p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors" title="Edit name">
+                                                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                                    </svg>
+                                                </button>
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 

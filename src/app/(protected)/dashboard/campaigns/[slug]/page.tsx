@@ -57,6 +57,9 @@ export default async function CampaignDetailPage({
                     _count: {
                         select: { donors: true },
                     },
+                    user: {
+                        select: { profile_photo_url: true, username: true },
+                    },
                 },
                 orderBy: { created_at: "asc" },
             },
@@ -124,6 +127,7 @@ export default async function CampaignDetailPage({
                 email:           true,
                 phone:           true,
                 status:          true,
+                source:          true,
                 email_valid:     true,
                 invite_token:    true,
                 short_code:      true,
@@ -202,6 +206,11 @@ export default async function CampaignDetailPage({
         })),
     }));
 
+    const topDonorId = donors.reduce<{ id: string; total: number } | null>((top, d) => {
+        const total = d.donations.reduce((s, don) => s + don.amount, 0);
+        return total > 0 && (!top || total > top.total) ? { id: d.id, total } : top;
+    }, null)?.id ?? null;
+
     // ── Derived stats ────────────────────────────────────────────────────────
 
     const raisedAmt       = parseFloat(campaign.total_raised.toString());
@@ -216,13 +225,15 @@ export default async function CampaignDetailPage({
     const participants = campaign.members
         .filter((m) => m.roles.some((r) => r.role === MemberRole.participant))
         .map((m) => ({
-            id:           m.id,
-            name:         `${m.first_name} ${m.last_name}`,
-            email:        m.email,
-            donorsAdded:  m._count.donors,
-            targetDonors: m.target_donors,
-            raised:       m.donations.reduce((sum, d) => sum + parseFloat(d.amount.toString()), 0),
-            isOrganizer:  m.roles.some((r) => r.role === MemberRole.organizer),
+            id:              m.id,
+            name:            `${m.first_name} ${m.last_name}`,
+            email:           m.email,
+            donorsAdded:     m._count.donors,
+            targetDonors:    m.target_donors,
+            raised:          m.donations.reduce((sum, d) => sum + parseFloat(d.amount.toString()), 0),
+            isOrganizer:     m.roles.some((r) => r.role === MemberRole.organizer),
+            profilePhotoUrl: m.user?.profile_photo_url ?? null,
+            username:        m.user?.username ?? null,
         }))
         .sort((a, b) => b.raised - a.raised);
 
@@ -692,6 +703,7 @@ export default async function CampaignDetailPage({
                             isOrganizer={false}
                             participants={[]}
                             myMemberId={myMembership.id}
+                            topDonorId={topDonorId}
                             isCompleted={campaign.status === CampaignStatus.completed}
                         />
                         </div>
@@ -777,6 +789,7 @@ export default async function CampaignDetailPage({
                         campaignSlug={slug}
                         isOrganizer={isOrganizer}
                         myMemberId={myMembership.id}
+                        topDonorId={topDonorId}
                         participants={participants.map((p) => {
                             const [first_name, ...rest] = p.name.split(" ");
                             return { id: p.id, first_name, last_name: rest.join(" ") };

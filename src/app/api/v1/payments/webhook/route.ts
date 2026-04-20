@@ -52,10 +52,15 @@ export async function POST(req: NextRequest) {
         const displayName      = isAnonymous ? "Anonymous" : (m.donor_display_name || `${m.donor_first_name} ${m.donor_last_name}`);
         const notifName        = isAnonymous ? `${m.donor_first_name} ${m.donor_last_name} (Anonymous)` : displayName;
 
+        const donorSource = (m.donor_source as "link_self" | "") || null;
+
         // Prefer campaign_donor_id (set when donor used their unique invite link).
+        // link_self: skip matching — always create new entry.
         // Fall back to email + member match for organic / walk-up donations.
-        const campaignDonor = m.campaign_donor_id
+        let campaignDonor = m.campaign_donor_id
             ? await prisma.campaignDonor.findUnique({ where: { id: m.campaign_donor_id } })
+            : donorSource === "link_self"
+            ? null
             : m.donor_email
             ? await prisma.campaignDonor.findFirst({
                 where: {
@@ -65,6 +70,22 @@ export async function POST(req: NextRequest) {
                 },
               })
             : null;
+
+        // No matching contact — create one (mirrors record route logic).
+        if (!campaignDonor) {
+            campaignDonor = await prisma.campaignDonor.create({
+                data: {
+                    campaign_id:        m.campaign_id,
+                    assigned_member_id: resolvedMemberId,
+                    first_name:         m.donor_first_name || "Guest",
+                    last_name:          m.donor_last_name  || "Donor",
+                    email:              m.donor_email?.toLowerCase() || null,
+                    phone:              m.donor_phone || null,
+                    status:             "donated",
+                    source:             donorSource === "link_self" ? "link_self" : "walk_in",
+                },
+            });
+        }
 
         const [newDonation, updatedCampaign] = await prisma.$transaction([
             prisma.donation.create({

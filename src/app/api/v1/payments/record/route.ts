@@ -54,9 +54,10 @@ export async function POST(req: NextRequest) {
 
         // Idempotent — already recorded (e.g. webhook fired first)
         const existing = await prisma.donation.findUnique({
-            where: { stripe_payment_intent_id: pi.id },
+            where:  { stripe_payment_intent_id: pi.id },
+            select: { card_brand: true, card_last4: true },
         });
-        if (existing) return NextResponse.json({ ok: true });
+        if (existing) return NextResponse.json({ ok: true, card_brand: existing.card_brand, card_last4: existing.card_last4 });
 
         const amount      = pi.amount / 100;
         const platformFee = 0;
@@ -80,14 +81,19 @@ export async function POST(req: NextRequest) {
 
         const resolvedMemberId = m.member_id || null;
 
+        const donorSource = (m.donor_source as "link_self" | "") || null;
+
         // Resolve the donor record in priority order:
         // 1. campaign_donor_id in metadata → exact donor invited via unique link
-        // 2. email + member assignment match → walk-up or direct donation with same email
-        // 3. No match → create a new contact (covers anonymous / organic donations)
+        // 2. link_self source → always create new (skip email match; donor came via link but paying separately)
+        // 3. email + member assignment match → walk-up or direct donation with same email
+        // 4. No match → create a new contact (covers anonymous / organic donations)
         let campaignDonor = m.campaign_donor_id
             ? await prisma.campaignDonor.findUnique({
                 where: { id: m.campaign_donor_id },
               })
+            : donorSource === "link_self"
+            ? null  // skip matching — new entry will be created below
             : m.donor_email
             ? await prisma.campaignDonor.findFirst({
                 where: {
@@ -109,6 +115,7 @@ export async function POST(req: NextRequest) {
                     email:              m.donor_email?.toLowerCase() || null,
                     phone:              m.donor_phone      || null,
                     status:             "donated",
+                    source:             donorSource === "link_self" ? "link_self" : "walk_in",
                 },
             });
         }
@@ -217,7 +224,7 @@ export async function POST(req: NextRequest) {
             }
         }
 
-        return NextResponse.json({ ok: true });
+        return NextResponse.json({ ok: true, card_brand: cardBrand, card_last4: cardLast4 });
     } catch (err) {
         console.error("[POST /payments/record]", err);
         return NextResponse.json({ error: "Internal server error" }, { status: 500 });

@@ -11,6 +11,7 @@ import {
 import Link from "next/link";
 import type { DonorPrefill } from "./CampaignDonateShell";
 import type { ModalParticipant } from "./DonateModal";
+import DonationSuccess from "./DonationSuccess";
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
 
@@ -28,7 +29,7 @@ type FormProps = {
     targetMember:     ModalParticipant | null;
     donorPrefill:     DonorPrefill | null;
     maxDonationCents: number | null;
-    onSuccess:        (amountCents: number) => void;
+    onSuccess:        (amountCents: number, cardBrand: string | null, cardLast4: string | null) => void;
 };
 
 function InlinePaymentForm({ campaignSlug, accent, targetMember, donorPrefill, maxDonationCents, onSuccess }: FormProps) {
@@ -89,6 +90,7 @@ function InlinePaymentForm({ campaignSlug, accent, targetMember, donorPrefill, m
                     amount_cents:      cents,
                     member_id:         targetMember?.id ?? null,
                     campaign_donor_id: donorPrefill?.donorId ?? null,
+                    donor_source:      donorPrefill && !donorPrefill.donorId ? "link_self" : null,
                     donor_first_name:  firstName,
                     donor_last_name:   lastName,
                     donor_email:       email || null,
@@ -128,12 +130,13 @@ function InlinePaymentForm({ campaignSlug, accent, targetMember, donorPrefill, m
             setSubmitting(false);
         } else {
             const intentId = clientSecret.split("_secret_")[0];
-            await fetch("/api/v1/payments/record", {
+            const recordRes = await fetch("/api/v1/payments/record", {
                 method:  "POST",
                 headers: { "Content-Type": "application/json" },
                 body:    JSON.stringify({ payment_intent_id: intentId }),
-            }).catch(() => {});
-            onSuccess(cents);
+            }).catch(() => null);
+            const recordJson = await recordRes?.json().catch(() => ({})) ?? {};
+            onSuccess(cents, recordJson.card_brand ?? null, recordJson.card_last4 ?? null);
         }
     }
 
@@ -261,6 +264,9 @@ type Props = {
     daysLeft:                 number | null;
     donorCount:               number;
     campaignSlug:             string;
+    campaignName:             string;
+    campaignStory:            string | null;
+    heroUrl:                  string | null;
     accent:                   string;
     targetMember:             ModalParticipant | null;
     donorPrefill:             DonorPrefill | null;
@@ -272,13 +278,18 @@ type Props = {
 
 export default function InlineDonateForm({
     totalRaised, goalAmount, pct, daysLeft, donorCount,
-    campaignSlug, accent, targetMember, donorPrefill,
+    campaignSlug, campaignName, campaignStory, heroUrl,
+    accent, targetMember, donorPrefill,
     donationsEnabled, donationsDisabledMessage, maxDonationCents, onDonationSuccess,
 }: Props) {
-    const [isSuccess,    setIsSuccess]    = useState(false);
-    const [donatedCents, setDonatedCents] = useState(0);
+    const [successData, setSuccessData] = useState<{
+        amountCents: number;
+        cardBrand:   string | null;
+        cardLast4:   string | null;
+    } | null>(null);
 
     return (
+        <>
         <div className="space-y-4 lg:sticky lg:top-20">
             {/* Campaign progress summary */}
             <div className="bg-white rounded-2xl shadow-sm p-5">
@@ -335,7 +346,7 @@ export default function InlineDonateForm({
                 )}
 
                 {/* Participant banner */}
-                {maxDonationCents !== 0 && donationsEnabled && targetMember && !isSuccess && (
+                {maxDonationCents !== 0 && donationsEnabled && targetMember && !successData && (
                     <div className="flex items-center gap-2.5 mb-5 px-3 py-2.5 bg-orange-50 rounded-xl border border-orange-100">
                         <div className="w-8 h-8 rounded-full overflow-hidden bg-orange-100 flex items-center justify-center shrink-0">
                             {targetMember.profile_photo_url
@@ -351,7 +362,7 @@ export default function InlineDonateForm({
                     </div>
                 )}
 
-                {maxDonationCents !== 0 && donationsEnabled && !isSuccess ? (
+                {maxDonationCents !== 0 && donationsEnabled && (
                     <Elements
                         stripe={stripePromise}
                         options={{
@@ -368,32 +379,38 @@ export default function InlineDonateForm({
                             targetMember={targetMember}
                             donorPrefill={donorPrefill}
                             maxDonationCents={maxDonationCents}
-                            onSuccess={(cents) => {
-                                setDonatedCents(cents);
-                                setIsSuccess(true);
+                            onSuccess={(cents, cardBrand, cardLast4) => {
+                                setSuccessData({ amountCents: cents, cardBrand, cardLast4 });
                                 onDonationSuccess();
                             }}
                         />
                     </Elements>
-                ) : maxDonationCents !== 0 && donationsEnabled && isSuccess ? (
-                    <div className="text-center py-4">
-                        <div className="w-14 h-14 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4">
-                            <svg className="w-7 h-7 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7"/>
-                            </svg>
-                        </div>
-                        <h3 className="text-xl font-extrabold text-gray-900 mb-1">Thank You!</h3>
-                        <p className="text-gray-500 text-sm mb-1">
-                            Your donation of{" "}
-                            <span className="font-bold text-gray-800">
-                                {new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(donatedCents / 100)}
-                            </span>{" "}
-                            has been received.
-                        </p>
-                        <p className="text-gray-400 text-xs">A receipt will be sent to your email.</p>
-                    </div>
-                ) : null}
+                )}
             </div>
         </div>
+
+            {/* Success overlay */}
+            {successData && (
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center p-4"
+                    style={{ background: "rgba(0,0,0,0.55)", backdropFilter: "blur(2px)" }}
+                >
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden max-h-[90vh] overflow-y-auto">
+                        <DonationSuccess
+                            amount={successData.amountCents / 100}
+                            cardBrand={successData.cardBrand}
+                            cardLast4={successData.cardLast4}
+                            participant={targetMember}
+                            campaignSlug={campaignSlug}
+                            campaignName={campaignName}
+                            campaignStory={campaignStory}
+                            heroUrl={heroUrl}
+                            accent={accent}
+                            onClose={() => setSuccessData(null)}
+                        />
+                    </div>
+                </div>
+            )}
+        </>
     );
 }

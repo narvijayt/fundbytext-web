@@ -29,6 +29,7 @@ const postSchema = z.object({
     email:              z.string().email().max(255).transform(s => s.toLowerCase().trim()).optional().or(z.literal("")).optional(),
     phone:              z.string().max(20).optional().or(z.literal("")).optional(),
     assigned_member_id: z.string().uuid().optional().nullable(), // organizer can assign
+    participant_view:   z.boolean().optional(),                  // true = added while in participant view
 });
 
 // ── GET ───────────────────────────────────────────────────────────────────────
@@ -44,6 +45,10 @@ export async function GET(req: NextRequest, ctx: Ctx) {
         const take            = Math.min(100, Math.max(1, parseInt(searchParams.get("take") ?? "5", 10)));
         const search          = searchParams.get("search")?.trim() ?? "";
         const status          = searchParams.get("status") ?? "all";
+        const memberFilter    = searchParams.get("member_id") ?? "all";   // UUID | "unassigned" | "all"
+        const sourceFilter    = searchParams.get("source")    ?? "all";   // DonorSource | "all"
+        const emailValid      = searchParams.get("email_valid") ?? "all"; // "valid" | "invalid" | "all"
+        const sort            = searchParams.get("sort") ?? "date_desc";  // date_desc|date_asc|amount_desc|name_asc
         const participantView = searchParams.get("participant_view") === "1";
 
         const campaign = await prisma.campaign.findUnique({
@@ -69,21 +74,36 @@ export async function GET(req: NextRequest, ctx: Ctx) {
 
         const where = {
             campaign_id: campaign.id,
-            ...(scopeToMember ? { assigned_member_id: member.id } : {}),
+            ...(scopeToMember
+                ? { assigned_member_id: member.id }
+                : memberFilter === "unassigned"
+                ? { assigned_member_id: null }
+                : memberFilter !== "all"
+                ? { assigned_member_id: memberFilter }
+                : {}),
             ...(status !== "all" ? { status: status as DonorStatus } : {}),
+            ...(sourceFilter !== "all" ? { source: sourceFilter as "invited" | "self_added" | "walk_in" | "link_self" } : {}),
+            ...(emailValid === "valid"   ? { email_valid: true,  email: { not: null } } : {}),
+            ...(emailValid === "invalid" ? { email_valid: false } : {}),
             ...(search ? {
                 OR: [
                     { first_name: { contains: search, mode: "insensitive" as const } },
                     { last_name:  { contains: search, mode: "insensitive" as const } },
                     { email:      { contains: search, mode: "insensitive" as const } },
+                    { phone:      { contains: search, mode: "insensitive" as const } },
                 ],
             } : {}),
         };
 
+        const orderBy =
+            sort === "date_asc"    ? { created_at: "asc"  as const } :
+            sort === "name_asc"    ? [{ first_name: "asc" as const }, { last_name: "asc" as const }] :
+            /* date_desc default */  { created_at: "desc" as const };
+
         const [donors, total] = await Promise.all([
             prisma.campaignDonor.findMany({
                 where,
-                orderBy: { created_at: "desc" },
+                orderBy,
                 skip,
                 take,
                 select: {
@@ -93,6 +113,7 @@ export async function GET(req: NextRequest, ctx: Ctx) {
                     email:        true,
                     phone:        true,
                     status:       true,
+                    source:       true,
                     email_valid:  true,
                     invite_token: true,
                     short_code:   true,
@@ -113,7 +134,7 @@ export async function GET(req: NextRequest, ctx: Ctx) {
             prisma.campaignDonor.count({ where }),
         ]);
 
-        const mapped = donors.map((d) => ({
+        let mapped = donors.map((d) => ({
             ...d,
             created_at: d.created_at.getTime(),
             donations:  d.donations.map((don) => ({
@@ -123,7 +144,26 @@ export async function GET(req: NextRequest, ctx: Ctx) {
             })),
         }));
 
-        return NextResponse.json({ donors: mapped, total });
+        if (sort === "amount_desc") {
+            mapped.sort((a, b) => {
+                const ta = a.donations.reduce((s, d) => s + d.amount, 0);
+                const tb = b.donations.reduce((s, d) => s + d.amount, 0);
+                return tb - ta;
+            });
+        }
+
+        // Top donor is campaign-wide (scope-respecting) — ignore search/status filters
+        const scopeWhere = { campaign_id: campaign.id, ...(scopeToMember ? { assigned_member_id: member.id } : {}) };
+        const allDonorTotals = await prisma.campaignDonor.findMany({
+            where:  { ...scopeWhere, status: DonorStatus.donated },
+            select: { id: true, donations: { where: { payment_status: PaymentStatus.completed }, select: { amount: true } } },
+        });
+        const topDonorId = allDonorTotals.reduce<{ id: string; total: number } | null>((top, d) => {
+            const total = d.donations.reduce((s, don) => s + parseFloat(don.amount.toString()), 0);
+            return total > 0 && (!top || total > top.total) ? { id: d.id, total } : top;
+        }, null)?.id ?? null;
+
+        return NextResponse.json({ donors: mapped, total, topDonorId });
     } catch (err) {
         console.error("[GET donors]", err);
         return NextResponse.json({ error: "Internal server error" }, { status: 500 });
@@ -186,7 +226,7 @@ export async function POST(req: NextRequest, ctx: Ctx) {
             return NextResponse.json({ error: "Invalid data" }, { status: 422 });
         }
 
-        const { first_name, last_name, email, phone, assigned_member_id } = parsed.data;
+        const { first_name, last_name, email, phone, assigned_member_id, participant_view } = parsed.data;
 
         // Validate that assigned_member_id (if provided) belongs to this campaign
         if (isOrganizer && assigned_member_id) {
@@ -220,6 +260,7 @@ export async function POST(req: NextRequest, ctx: Ctx) {
                 phone:        phone || null,
                 invite_token: donorInviteToken,
                 short_code:   shortCode,
+                source:       participant_view ? "self_added" : "invited",
             },
         });
 

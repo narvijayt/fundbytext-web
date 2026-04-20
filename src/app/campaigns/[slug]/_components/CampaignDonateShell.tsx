@@ -9,7 +9,7 @@ import InlineDonateForm from "./InlineDonateForm";
 import type { RecentDonation, ParticipantRow } from "../page";
 
 export type DonorPrefill = {
-    donorId:   string;   // CampaignDonor.id — used to link payment back to the exact donor record
+    donorId:   string | null; // CampaignDonor.id — null when name/email prefill only (no donor record link)
     firstName: string;
     lastName:  string;
     email:     string;
@@ -63,10 +63,11 @@ export default function CampaignDonateShell({
     donorPrefill,
 }: Props) {
     const router = useRouter();
-    const [modalOpen,    setModalOpen]    = useState(false);
-    const [targetMember, setTargetMember] = useState<string | null>(null);
-    const [extraRaised,  setExtraRaised]  = useState(0);
-    const [extraDonors,  setExtraDonors]  = useState(0);
+    const [modalOpen,          setModalOpen]          = useState(false);
+    const [targetMember,       setTargetMember]       = useState<string | null>(null);
+    const [activeDonorPrefill, setActiveDonorPrefill] = useState<DonorPrefill | null>(donorPrefill ?? null);
+    const [extraRaised,        setExtraRaised]        = useState(0);
+    const [extraDonors,        setExtraDonors]        = useState(0);
 
     // Max donation in cents for fixed-goal individual campaigns.
     // Recomputed whenever totalRaised or extraRaised changes so the cap stays accurate.
@@ -133,6 +134,7 @@ export default function CampaignDonateShell({
         const handler = (e: Event) => {
             if (goalFullyFunded) return;
             const memberId = (e as CustomEvent<{ memberId: string | null }>).detail.memberId;
+            setActiveDonorPrefill(donorPrefill ? { ...donorPrefill, donorId: null } : null);
             setTargetMember(memberId);
             setModalOpen(true);
         };
@@ -146,6 +148,7 @@ export default function CampaignDonateShell({
     useEffect(() => {
         if (isDonorInvite && status !== "upcoming" && status !== "completed" && !goalFullyFunded) {
             if (defaultTargetMemberId) setTargetMember(defaultTargetMemberId);
+            setActiveDonorPrefill(donorPrefill ?? null);
             setModalOpen(true);
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -160,6 +163,9 @@ export default function CampaignDonateShell({
                 daysLeft={daysLeft}
                 donorCount={donorCount}
                 campaignSlug={campaignSlug}
+                campaignName={campaignName}
+                campaignStory={campaignStory}
+                heroUrl={heroUrl}
                 accent={accent}
                 targetMember={resolvedTarget}
                 donorPrefill={donorPrefill ?? null}
@@ -188,7 +194,7 @@ export default function CampaignDonateShell({
                 endDate={endDate}
                 startDate={startDate}
                 status={status}
-                onDonate={() => { if (!goalFullyFunded) { setTargetMember(null); setModalOpen(true); } }}
+                onDonate={() => { if (!goalFullyFunded) { setActiveDonorPrefill(donorPrefill ? { ...donorPrefill, donorId: null } : null); setTargetMember(null); setModalOpen(true); } }}
             />
 
             {/* Donate modal */}
@@ -196,7 +202,6 @@ export default function CampaignDonateShell({
                 isOpen={modalOpen}
                 onClose={() => setModalOpen(false)}
                 onDonationSuccess={(amt) => {
-                    setModalOpen(false);
                     setExtraRaised((r) => r + amt);
                     setExtraDonors((d) => d + 1);
                     router.refresh();
@@ -211,7 +216,7 @@ export default function CampaignDonateShell({
                 donationsEnabled={liveDonationsEnabled}
                 donationsDisabledMessage={liveDonationsDisabledMessage}
                 maxDonationCents={maxDonationCents}
-                donorPrefill={donorPrefill ?? null}
+                donorPrefill={activeDonorPrefill}
             />
         </>
     );

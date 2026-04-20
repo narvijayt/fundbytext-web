@@ -12,6 +12,7 @@ export type DonorRow = {
     email:            string | null;
     phone:            string | null;
     status:           string;
+    source:           string;
     email_valid:      boolean;
     invite_token:     string | null;   // null = walk-in (paid via ref link, never pre-added)
     short_code:       string | null;
@@ -30,6 +31,7 @@ type Props = {
     isOrganizer:   boolean;
     participants:  Participant[];
     myMemberId?:   string;
+    topDonorId?:   string | null;
     isCompleted?:  boolean;
 };
 
@@ -54,40 +56,55 @@ function fmtDateTime(ts: number | null | undefined): { date: string; time: strin
 
 const PAGE_SIZE = 5;
 
-type FetchParams = { page: number; search: string; status: string };
+type FetchParams = { page: number; search: string; status: string; member: string; source: string; emailValid: string; sort: string };
 
-export default function DonorsTable({ donors: initialDonors, initialTotal, campaignSlug, isOrganizer, participants, myMemberId, isCompleted }: Props) {
+export default function DonorsTable({ donors: initialDonors, initialTotal, campaignSlug, isOrganizer, participants, myMemberId, topDonorId: initialTopDonorId, isCompleted }: Props) {
     const router = useRouter();
     const showAssignment = isOrganizer && participants.length > 0;
     const [donors,       setDonors]       = useState<DonorRow[]>(initialDonors);
     const [total,        setTotal]        = useState(initialTotal ?? initialDonors.length);
+    const [topDonorId,   setTopDonorId]   = useState<string | null>(initialTopDonorId ?? null);
+
+    // Keep in sync when server prop changes (e.g. after router.refresh())
+    useEffect(() => {
+        setTopDonorId(initialTopDonorId ?? null);
+    }, [initialTopDonorId]);
     const [search,       setSearch]       = useState("");
-    const [statusFilter, setStatusFilter] = useState<string>("all");
+    const [statusFilter, setStatusFilter] = useState("all");
+    const [memberFilter, setMemberFilter] = useState("all");
+    const [sourceFilter, setSourceFilter] = useState("all");
+    const [emailValid,   setEmailValid]   = useState("all");
+    const [sort,         setSort]         = useState("date_desc");
     const [page,         setPage]         = useState(1);
     const [loading,      setLoading]      = useState(false);
     const [addOpen,      setAddOpen]      = useState(false);
     const [viewDonorId,  setViewDonorId]  = useState<string | null>(null);
     const [copiedId,     setCopiedId]     = useState<string | null>(null);
     const searchTimer   = useRef<ReturnType<typeof setTimeout> | null>(null);
-    const fetchStateRef = useRef({ page: 1, search: "", status: "all" });
+    const fetchStateRef = useRef<FetchParams>({ page: 1, search: "", status: "all", member: "all", source: "all", emailValid: "all", sort: "date_desc" });
 
     // Keep ref in sync so the event listener below always has current values
-    fetchStateRef.current = { page, search, status: statusFilter };
+    fetchStateRef.current = { page, search, status: statusFilter, member: memberFilter, source: sourceFilter, emailValid, sort };
 
-    async function fetchPage({ page: p, search: q, status: s }: FetchParams) {
+    async function fetchPage({ page: p, search: q, status: s, member: m, source: src, emailValid: ev, sort: srt }: FetchParams) {
         setLoading(true);
         try {
             const params = new URLSearchParams({
-                skip:   String((p - 1) * PAGE_SIZE),
-                take:   String(PAGE_SIZE),
-                search: q,
-                status: s,
+                skip:        String((p - 1) * PAGE_SIZE),
+                take:        String(PAGE_SIZE),
+                search:      q,
+                status:      s,
+                member_id:   m,
+                source:      src,
+                email_valid: ev,
+                sort:        srt,
                 ...(!isOrganizer ? { participant_view: "1" } : {}),
             });
             const res  = await fetch(`/api/v1/campaigns/${campaignSlug}/donors?${params}`);
-            const data = await res.json() as { donors: DonorRow[]; total: number };
+            const data = await res.json() as { donors: DonorRow[]; total: number; topDonorId?: string | null };
             setDonors(data.donors);
             setTotal(data.total);
+            if (data.topDonorId !== undefined) setTopDonorId(data.topDonorId);
         } finally {
             setLoading(false);
         }
@@ -96,36 +113,45 @@ export default function DonorsTable({ donors: initialDonors, initialTotal, campa
     // Re-fetch current page when a donation arrives via Ably
     useEffect(() => {
         const handler = () => {
-            const { page: p, search: q, status: s } = fetchStateRef.current;
-            fetchPage({ page: p, search: q, status: s });
+            const f = fetchStateRef.current;
+            fetchPage(f);
         };
         window.addEventListener("dashboard:donation", handler);
         return () => window.removeEventListener("dashboard:donation", handler);
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [campaignSlug]);
 
+    function currentFilters(): FetchParams {
+        return { page, search, status: statusFilter, member: memberFilter, source: sourceFilter, emailValid, sort };
+    }
+
     function handleSearchChange(q: string) {
         setSearch(q);
         if (searchTimer.current) clearTimeout(searchTimer.current);
         searchTimer.current = setTimeout(() => {
             setPage(1);
-            fetchPage({ page: 1, search: q, status: statusFilter });
+            fetchPage({ ...currentFilters(), page: 1, search: q });
         }, 300);
     }
 
-    function handleStatusChange(s: string) {
-        setStatusFilter(s);
+    function handleFilterChange(updates: Partial<FetchParams>) {
+        const next = { ...currentFilters(), ...updates, page: 1 };
+        if ("status"      in updates) setStatusFilter(updates.status!);
+        if ("member"      in updates) setMemberFilter(updates.member!);
+        if ("source"      in updates) setSourceFilter(updates.source!);
+        if ("emailValid"  in updates) setEmailValid(updates.emailValid!);
+        if ("sort"        in updates) setSort(updates.sort!);
         setPage(1);
-        fetchPage({ page: 1, search, status: s });
+        fetchPage(next);
     }
 
     function goToPage(p: number) {
         setPage(p);
-        fetchPage({ page: p, search, status: statusFilter });
+        fetchPage({ ...currentFilters(), page: p });
     }
 
     async function handleExport() {
-        const params = new URLSearchParams({ skip: "0", take: "10000", search, status: statusFilter });
+        const params = new URLSearchParams({ skip: "0", take: "10000", search, status: statusFilter, member_id: memberFilter, source: sourceFilter, email_valid: emailValid, sort });
         const res  = await fetch(`/api/v1/campaigns/${campaignSlug}/donors?${params}`);
         const data = await res.json() as { donors: DonorRow[] };
         const rows = [
@@ -188,22 +214,56 @@ export default function DonorsTable({ donors: initialDonors, initialTotal, campa
                 </div>
 
                 {/* Filters */}
-                <div className="px-6 py-3 border-b border-gray-50 flex flex-wrap gap-3">
+                <div className="px-6 py-3 border-b border-gray-50 flex flex-wrap gap-2">
                     <input
                         type="text"
-                        placeholder="Search by name or email…"
+                        placeholder="Search by name, email or phone…"
                         value={search}
                         onChange={(e) => handleSearchChange(e.target.value)}
                         className="flex-1 min-w-48 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-300"
                     />
                     <select
                         value={statusFilter}
-                        onChange={(e) => handleStatusChange(e.target.value)}
+                        onChange={(e) => handleFilterChange({ status: e.target.value })}
                         className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-300"
                     >
                         <option value="all">All Statuses</option>
                         <option value="not_donated">Not Donated</option>
+                        <option value="contacted">Contacted</option>
                         <option value="donated">Donated</option>
+                    </select>
+                    {showAssignment && (
+                        <select
+                            value={memberFilter}
+                            onChange={(e) => handleFilterChange({ member: e.target.value })}
+                            className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-300"
+                        >
+                            <option value="all">All Participants</option>
+                            <option value="unassigned">Unassigned</option>
+                            {participants.map((p) => (
+                                <option key={p.id} value={p.id}>{p.first_name} {p.last_name}</option>
+                            ))}
+                        </select>
+                    )}
+                    <select
+                        value={sourceFilter}
+                        onChange={(e) => handleFilterChange({ source: e.target.value })}
+                        className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-300"
+                    >
+                        <option value="all">All Sources</option>
+                        <option value="invited">Assigned by organizer</option>
+                        <option value="self_added">Added by participant</option>
+                        <option value="walk_in">Walk-in</option>
+                    </select>
+                    <select
+                        value={sort}
+                        onChange={(e) => handleFilterChange({ sort: e.target.value })}
+                        className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-300"
+                    >
+                        <option value="date_desc">Newest first</option>
+                        <option value="date_asc">Oldest first</option>
+                        <option value="amount_desc">Most donated</option>
+                        <option value="name_asc">Name A–Z</option>
                     </select>
                 </div>
 
@@ -277,12 +337,13 @@ export default function DonorsTable({ donors: initialDonors, initialTotal, campa
                                                             {!d.email_valid && (
                                                                 <span className="text-[10px] text-red-500">Invalid email</span>
                                                             )}
-                                                            {d.added_by_member && (() => {
+                                                            {d.added_by_member && d.source !== "link_self" && d.source !== "self_added" && (() => {
                                                                 const addedByMe  = d.added_by_member.id === myMemberId;
                                                                 const adderIsOrg = d.added_by_member.roles.some(r => r.role === "organizer");
+                                                                if (!adderIsOrg) return null;
                                                                 if (isOrganizer && addedByMe)
                                                                     return <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded whitespace-nowrap bg-orange-50 text-orange-600">Added by me</span>;
-                                                                if (!isOrganizer && adderIsOrg)
+                                                                if (!isOrganizer)
                                                                     return <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded whitespace-nowrap bg-blue-50 text-blue-600">Pre-assigned by organizer</span>;
                                                                 return null;
                                                             })()}
@@ -310,6 +371,12 @@ export default function DonorsTable({ donors: initialDonors, initialTotal, campa
                                                     <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${sb.cls}`}>{sb.label}</span>
                                                     {isAnonymous && (
                                                         <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-gray-100 text-gray-500 whitespace-nowrap">Anonymous</span>
+                                                    )}
+                                                    {topDonorId === d.id && (
+                                                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-yellow-50 text-yellow-700 whitespace-nowrap flex items-center gap-0.5">
+                                                            <svg className="w-2.5 h-2.5 fill-yellow-500" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                                                            Top Donor
+                                                        </span>
                                                     )}
                                                 </div>
                                             </td>
@@ -393,6 +460,7 @@ export default function DonorsTable({ donors: initialDonors, initialTotal, campa
                     campaignSlug={campaignSlug}
                     participants={participants}
                     isOrganizer={isOrganizer}
+                    participantView={!isOrganizer}
                     myMemberId={myMemberId}
                     onClose={() => setAddOpen(false)}
                     onSuccess={() => {
@@ -400,7 +468,7 @@ export default function DonorsTable({ donors: initialDonors, initialTotal, campa
                         setSearch("");
                         setStatusFilter("all");
                         setPage(1);
-                        fetchPage({ page: 1, search: "", status: "all" });
+                        fetchPage({ page: 1, search: "", status: "all", member: memberFilter, source: sourceFilter, emailValid, sort });
                         router.refresh();
                     }}
                 />
@@ -415,7 +483,7 @@ export default function DonorsTable({ donors: initialDonors, initialTotal, campa
                     participants={participants}
                     isCompleted={isCompleted}
                     onClose={() => setViewDonorId(null)}
-                    onRefresh={() => fetchPage({ page, search, status: statusFilter })}
+                    onRefresh={() => fetchPage(currentFilters())}
                 />
             )}
         </>

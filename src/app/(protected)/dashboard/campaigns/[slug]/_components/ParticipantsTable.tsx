@@ -9,13 +9,15 @@ function fmt(n: number) {
 }
 
 export type ParticipantRow = {
-    id:            string;
-    name:          string;
-    email:         string | null;
-    donorsAdded:   number;
-    targetDonors:  number;
-    raised:        number;
-    isOrganizer:   boolean;
+    id:              string;
+    name:            string;
+    email:           string | null;
+    donorsAdded:     number;
+    targetDonors:    number;
+    raised:          number;
+    isOrganizer:     boolean;
+    profilePhotoUrl: string | null;
+    username:        string | null;
 };
 
 type Props = {
@@ -177,12 +179,24 @@ export default function ParticipantsTable({ participants, isOrganizer, campaignS
                                             </td>
                                             <td className="px-6 py-3.5">
                                                 <div className="flex items-center gap-2.5">
-                                                    <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 font-bold text-xs shrink-0">
-                                                        {p.name.split(" ").map((n) => n[0]).join("").slice(0, 2)}
+                                                    <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 font-bold text-xs shrink-0 overflow-hidden">
+                                                        {p.profilePhotoUrl ? (
+                                                            // eslint-disable-next-line @next/next/no-img-element
+                                                            <img src={p.profilePhotoUrl} alt={p.name} className="w-full h-full object-cover" />
+                                                        ) : (
+                                                            p.name.split(" ").map((n) => n[0]).join("").slice(0, 2)
+                                                        )}
                                                     </div>
                                                     <div>
-                                                        <p className="font-semibold text-gray-900">{p.name}</p>
-                                                        <p className="text-xs text-gray-400">{p.email}</p>
+                                                        <div className="flex items-center gap-1.5">
+                                                            <p className="font-semibold text-gray-900">{p.name}</p>
+                                                            {p.id === myMemberId && (
+                                                                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-50 text-[#0268c0] border border-[#0268c0]/20 uppercase tracking-wide">You</span>
+                                                            )}
+                                                        </div>
+                                                        {p.email && (
+                                                            <p className="text-xs text-gray-400">{p.email}</p>
+                                                        )}
                                                     </div>
                                                 </div>
                                             </td>

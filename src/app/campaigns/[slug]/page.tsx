@@ -132,10 +132,9 @@ export default async function CampaignPublicPage({
     const galleryMedia = campaign.media.filter((m) => m.media_type === "gallery");
     const profileMedia = campaign.media.find((m) => m.media_type === "profile");
 
-    const goalAmount        = campaign.goal_amount         ? Number(campaign.goal_amount)         : null;
-    const initialGoalAmount = campaign.initial_goal_amount ? Number(campaign.initial_goal_amount) : null;
+    const rawGoalAmount        = campaign.goal_amount         ? Number(campaign.goal_amount)         : null;
+    const rawInitialGoalAmount = campaign.initial_goal_amount ? Number(campaign.initial_goal_amount) : null;
     const totalRaised = Number(campaign.total_raised);
-    const pct         = goalAmount && goalAmount > 0 ? Math.min(100, (totalRaised / goalAmount) * 100) : 0;
 
     const daysLeft = campaign.end_date
         ? Math.max(0, Math.ceil((campaign.end_date.getTime() - Date.now()) / 86_400_000))
@@ -155,6 +154,13 @@ export default async function CampaignPublicPage({
             total_raised:      m.donations.reduce((s, d) => s + Number(d.amount), 0),
         }))
         .sort((a, b) => b.total_raised - a.total_raised);
+
+    // For org campaigns, goal_amount is stored per-participant — scale up for display
+    const isOrgCampaign = campaign.campaign_type === "organization";
+    const participantScale = isOrgCampaign && participants.length > 0 ? participants.length : 1;
+    const goalAmount        = rawGoalAmount        != null ? rawGoalAmount        * participantScale : null;
+    const initialGoalAmount = rawInitialGoalAmount != null ? rawInitialGoalAmount * participantScale : null;
+    const pct = goalAmount && goalAmount > 0 ? Math.min(100, (totalRaised / goalAmount) * 100) : 0;
 
     const recentDonations: RecentDonation[] = campaign.donations.map((d) => ({
         display_name: d.is_anonymous

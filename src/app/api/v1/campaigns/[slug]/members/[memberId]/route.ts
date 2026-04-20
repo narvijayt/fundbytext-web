@@ -57,6 +57,7 @@ export async function GET(req: NextRequest, ctx: Ctx) {
                 },
             },
             _count:    { select: { donors: true } },
+            user:      { select: { profile_photo_url: true, username: true } },
         },
     });
     if (!member) return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -67,6 +68,8 @@ export async function GET(req: NextRequest, ctx: Ctx) {
 
 const patchSchema = z.object({
     target_donors: z.number().int().min(0).optional(),
+    first_name:    z.string().min(1).max(100).optional(),
+    last_name:     z.string().min(1).max(100).optional(),
 });
 
 export async function PATCH(req: NextRequest, ctx: Ctx) {
@@ -84,6 +87,8 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
 
     const updateData: Record<string, unknown> = {};
     if (parsed.data.target_donors !== undefined) updateData.target_donors = parsed.data.target_donors;
+    if (parsed.data.first_name    !== undefined) updateData.first_name    = parsed.data.first_name.trim();
+    if (parsed.data.last_name     !== undefined) updateData.last_name     = parsed.data.last_name.trim();
 
     await prisma.campaignMember.updateMany({
         where: { id: c.memberId, campaign_id: c.campaign.id },

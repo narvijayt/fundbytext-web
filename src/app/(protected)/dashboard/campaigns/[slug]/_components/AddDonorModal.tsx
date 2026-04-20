@@ -6,12 +6,13 @@ type Props = {
     campaignSlug: string;
     participants: { id: string; first_name: string; last_name: string }[];
     isOrganizer: boolean;
+    participantView?: boolean;
     myMemberId?: string; // pre-assign to self when in participant view
     onClose: () => void;
     onSuccess?: () => void;
 };
 
-export default function AddDonorModal({ campaignSlug, participants, isOrganizer, myMemberId, onClose, onSuccess }: Props) {
+export default function AddDonorModal({ campaignSlug, participants, isOrganizer, participantView, myMemberId, onClose, onSuccess }: Props) {
     const [firstName, setFirstName] = useState("");
     const [lastName, setLastName] = useState("");
     const [email, setEmail] = useState("");
@@ -38,6 +39,7 @@ export default function AddDonorModal({ campaignSlug, participants, isOrganizer,
                 email: email || undefined,
                 phone: phone || undefined,
                 assigned_member_id: assignedMemberId || undefined,
+                participant_view: participantView ?? false,
             }),
         });
 

@@ -64,6 +64,7 @@ export default async function AdminUsersPage({
                 first_name: true,
                 last_name: true,
                 email: true,
+                username: true,
                 role: true,
                 is_suspended: true,
                 deleted_at: true,
@@ -171,6 +172,9 @@ export default async function AdminUsersPage({
                                                     <span className="ml-1.5 text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-50 text-[#0268c0] border border-[#0268c0]/20 uppercase tracking-wide">You</span>
                                                 )}
                                             </p>
+                                            {u.username && (
+                                                <p className="text-xs text-blue-500 font-medium">@{u.username}</p>
+                                            )}
                                         </div>
                                     </div>
                                 </td>

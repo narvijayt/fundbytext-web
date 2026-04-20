@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { loadStripe } from "@stripe/stripe-js";
 import type { DonorPrefill } from "./CampaignDonateShell";
+import DonationSuccess, { type DonationSuccessData } from "./DonationSuccess";
 import {
     Elements,
     PaymentElement,
@@ -53,7 +54,7 @@ type FormProps = {
     participants:     ModalParticipant[];
     targetMember:     ModalParticipant | null;
     onClose:          () => void;
-    onSuccess:        (amount: number) => void;
+    onSuccess:        (data: DonationSuccessData) => void;
     donorPrefill?:    DonorPrefill | null;
     maxDonationCents: number | null;
 };
@@ -122,6 +123,7 @@ function DonateForm({
                     amount_cents:      cents,
                     member_id:         attributedTo ?? null,
                     campaign_donor_id: donorPrefill?.donorId ?? null,
+                    donor_source:      donorPrefill && !donorPrefill.donorId ? "link_self" : null,
                     donor_first_name:  firstName,
                     donor_last_name:   lastName,
                     donor_email:       email || null,
@@ -161,12 +163,21 @@ function DonateForm({
             setSubmitting(false);
         } else {
             const intentId = clientSecret.split("_secret_")[0];
-            await fetch("/api/v1/payments/record", {
+            const recordRes = await fetch("/api/v1/payments/record", {
                 method:  "POST",
                 headers: { "Content-Type": "application/json" },
                 body:    JSON.stringify({ payment_intent_id: intentId }),
-            }).catch(() => {});
-            onSuccess(parseFloat(raw) || 0);
+            }).catch(() => null);
+            const recordJson = await recordRes?.json().catch(() => ({})) ?? {};
+            const resolvedParticipant = initialTargetMember
+                ?? participants.find((p) => p.id === attributedTo)
+                ?? null;
+            onSuccess({
+                amount:      parseFloat(raw) || 0,
+                cardBrand:   recordJson.card_brand  ?? null,
+                cardLast4:   recordJson.card_last4  ?? null,
+                participant: resolvedParticipant,
+            });
         }
     }
 
@@ -175,7 +186,33 @@ function DonateForm({
     const INPUT_LOCKED = "w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm text-gray-600 bg-gray-50 cursor-not-allowed select-none";
 
     return (
-        <form onSubmit={handleSubmit} className="contents">
+        <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
+            {/* Header */}
+            <div className="flex items-center gap-3 px-6 py-4 border-b border-gray-100 shrink-0">
+                {initialTargetMember && (
+                    <div className="w-9 h-9 rounded-full overflow-hidden bg-blue-100 shrink-0 flex items-center justify-center">
+                        {initialTargetMember.profile_photo_url
+                            // eslint-disable-next-line @next/next/no-img-element
+                            ? <img src={initialTargetMember.profile_photo_url} alt={initialTargetMember.first_name} className="w-full h-full object-cover" />
+                            : <span className="text-blue-600 font-bold text-sm">{initialTargetMember.first_name[0]}</span>
+                        }
+                    </div>
+                )}
+                <h2 className="flex-1 text-base font-bold text-gray-900">
+                    {initialTargetMember
+                        ? `Donate to ${initialTargetMember.first_name} ${initialTargetMember.last_name}'s Campaign`
+                        : "Donate to this campaign"}
+                </h2>
+                <button type="button" onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors">
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+
+            {/* 2-col body */}
+            <div className="flex-1 overflow-hidden grid lg:grid-cols-[1fr_340px] divide-x divide-gray-100 min-h-0">
+
             {/* Left column */}
             <div className="overflow-y-auto min-h-0 p-6 sm:p-8 space-y-5">
 
@@ -376,6 +413,7 @@ function DonateForm({
                     )}
                 </div>
             </div>
+            </div>{/* end 2-col grid */}
         </form>
     );
 }
@@ -389,14 +427,14 @@ export default function DonateModal({
     donationsEnabled, donationsDisabledMessage, maxDonationCents,
 }: Props) {
     const overlayRef = useRef<HTMLDivElement>(null);
-    const [isSuccess, setIsSuccess] = useState(false);
+    const [successData, setSuccessData] = useState<DonationSuccessData | null>(null);
 
     const targetMember = targetMemberId
         ? (participants.find((p) => p.id === targetMemberId) ?? null)
         : null;
 
     useEffect(() => {
-        if (isOpen) setIsSuccess(false);
+        if (isOpen) setSuccessData(null);
     }, [isOpen]);
 
     useEffect(() => {
@@ -419,102 +457,69 @@ export default function DonateModal({
             style={{ background: "rgba(0,0,0,0.55)", backdropFilter: "blur(2px)" }}
             onClick={(e) => { e.stopPropagation(); }}
         >
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
-                {/* Header */}
-                <div className="flex items-center gap-3 px-6 py-4 border-b border-gray-100 shrink-0">
-                    {targetMember && (
-                        <div className="w-9 h-9 rounded-full overflow-hidden bg-blue-100 shrink-0 flex items-center justify-center">
-                            {targetMember.profile_photo_url
-                                // eslint-disable-next-line @next/next/no-img-element
-                                ? <img src={targetMember.profile_photo_url} alt={targetMember.first_name} className="w-full h-full object-cover" />
-                                : <span className="text-blue-600 font-bold text-sm">{targetMember.first_name[0]}</span>
-                            }
+            {!donationsEnabled ? (
+                <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-10">
+                    <div className="text-center">
+                        <div className="w-14 h-14 rounded-full bg-amber-100 flex items-center justify-center mx-auto mb-5">
+                            <svg className="w-7 h-7 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                            </svg>
                         </div>
-                    )}
-                    <h2 className="flex-1 text-base font-bold text-gray-900">
-                        {targetMember
-                            ? `Donate to ${targetMember.first_name} ${targetMember.last_name}'s Campaign`
-                            : "Donate to this campaign"}
-                    </h2>
-                    <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors">
-                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/>
-                        </svg>
-                    </button>
-                </div>
-
-                {/* Body */}
-                {!donationsEnabled ? (
-                    <div className="flex-1 flex items-center justify-center p-10">
-                        <div className="text-center max-w-sm">
-                            <div className="w-14 h-14 rounded-full bg-amber-100 flex items-center justify-center mx-auto mb-5">
-                                <svg className="w-7 h-7 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                                </svg>
-                            </div>
-                            <h3 className="text-xl font-extrabold text-gray-900 mb-2">Donations Paused</h3>
-                            <p className="text-gray-500 text-sm mb-8">
-                                {donationsDisabledMessage?.trim()
-                                    ? donationsDisabledMessage
-                                    : "This campaign is temporarily not accepting donations. Please check back soon."}
-                            </p>
-                            <button
-                                onClick={onClose}
-                                className="w-full py-3 rounded-xl font-bold text-sm border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors"
-                            >
-                                Close
-                            </button>
-                        </div>
-                    </div>
-                ) : !isSuccess ? (
-                    <div className="flex-1 overflow-hidden grid lg:grid-cols-[1fr_340px] divide-x divide-gray-100 min-h-0">
-                        <Elements
-                            stripe={stripePromise}
-                            options={{
-                                mode:               "payment",
-                                amount:             100,
-                                currency:           "usd",
-                                paymentMethodTypes: ["card"],
-                                appearance:         { theme: "stripe" },
-                            }}
+                        <h3 className="text-xl font-extrabold text-gray-900 mb-2">Donations Paused</h3>
+                        <p className="text-gray-500 text-sm mb-8">
+                            {donationsDisabledMessage?.trim()
+                                ? donationsDisabledMessage
+                                : "This campaign is temporarily not accepting donations. Please check back soon."}
+                        </p>
+                        <button
+                            onClick={onClose}
+                            className="w-full py-3 rounded-xl font-bold text-sm border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors"
                         >
-                            <DonateForm
-                                campaignSlug={campaignSlug}
-                                campaignName={campaignName}
-                                campaignStory={campaignStory}
-                                heroUrl={heroUrl}
-                                accent={accent}
-                                participants={participants}
-                                targetMember={targetMember}
-                                onClose={onClose}
-                                onSuccess={(amt) => { setIsSuccess(true); onDonationSuccess?.(amt); }}
-                                donorPrefill={donorPrefill}
-                                maxDonationCents={maxDonationCents}
-                            />
-                        </Elements>
+                            Close
+                        </button>
                     </div>
-                ) : (
-                    <div className="flex-1 flex items-center justify-center p-10">
-                        <div className="text-center max-w-sm">
-                            <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-5">
-                                <svg className="w-8 h-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7"/>
-                                </svg>
-                            </div>
-                            <h3 className="text-2xl font-extrabold text-gray-900 mb-2">Thank You!</h3>
-                            <p className="text-gray-500 text-sm mb-1">Your donation has been received.</p>
-                            <p className="text-gray-400 text-xs mb-8">A receipt will be sent to your email.</p>
-                            <button
-                                onClick={onClose}
-                                className="w-full py-3 rounded-xl text-white font-bold text-sm"
-                                style={{ background: accent }}
-                            >
-                                Back to Campaign
-                            </button>
-                        </div>
-                    </div>
-                )}
-            </div>
+                </div>
+            ) : !successData ? (
+                <Elements
+                    stripe={stripePromise}
+                    options={{
+                        mode:               "payment",
+                        amount:             100,
+                        currency:           "usd",
+                        paymentMethodTypes: ["card"],
+                        appearance:         { theme: "stripe" },
+                    }}
+                >
+                    <DonateForm
+                        campaignSlug={campaignSlug}
+                        campaignName={campaignName}
+                        campaignStory={campaignStory}
+                        heroUrl={heroUrl}
+                        accent={accent}
+                        participants={participants}
+                        targetMember={targetMember}
+                        onClose={onClose}
+                        onSuccess={(data) => {
+                            setSuccessData(data);
+                            onDonationSuccess?.(data.amount);
+                        }}
+                        donorPrefill={donorPrefill}
+                        maxDonationCents={maxDonationCents}
+                    />
+                </Elements>
+            ) : (
+                <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden max-h-[90vh] overflow-y-auto">
+                    <DonationSuccess
+                        {...successData}
+                        campaignSlug={campaignSlug}
+                        campaignName={campaignName}
+                        campaignStory={campaignStory}
+                        heroUrl={heroUrl}
+                        accent={accent}
+                        onClose={onClose}
+                    />
+                </div>
+            )}
         </div>
     );
 }
