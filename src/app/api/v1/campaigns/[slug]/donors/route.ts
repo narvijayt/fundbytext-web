@@ -188,6 +188,7 @@ export async function POST(req: NextRequest, ctx: Ctx) {
                 story:    true,
                 goal_amount: true,
                 end_date: true,
+                timezone: true,
                 members: {
                     where:  { user_id: user.id },
                     select: {
@@ -289,6 +290,7 @@ export async function POST(req: NextRequest, ctx: Ctx) {
                 story:        campaign.story,
                 goalAmount:   campaign.goal_amount ? Number(campaign.goal_amount) : null,
                 endDate:      campaign.end_date?.toISOString() ?? null,
+                timezone:     campaign.timezone,
                 campaignUrl:  `${APP_URL}/campaigns/${slug}${refPart}`,
             }).catch((err) => console.error("[sendDonorInviteEmail]", err));
         }

@@ -1,20 +1,22 @@
-function fmtDateTime(d: Date | null) {
+function fmtDateTime(d: Date | null, tz: string) {
     if (!d) return { date: "—", time: null };
     return {
-        date: d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
-        time: d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }),
+        date: new Intl.DateTimeFormat("en-US", { timeZone: tz, month: "short", day: "numeric", year: "numeric" }).format(d),
+        time: new Intl.DateTimeFormat("en-US", { timeZone: tz, hour: "numeric", minute: "2-digit" }).format(d),
     };
 }
 
 type Props = {
     startDate: Date | null;
-    endDate: Date | null;
-    daysLeft: number | null;
+    endDate:   Date | null;
+    daysLeft:  number | null;
+    timezone:  string | null;
 };
 
-export default function CampaignDatesBar({ startDate, endDate, daysLeft }: Props) {
-    const start = fmtDateTime(startDate);
-    const end   = fmtDateTime(endDate);
+export default function CampaignDatesBar({ startDate, endDate, daysLeft, timezone }: Props) {
+    const tz = timezone ?? "America/New_York";
+    const start = fmtDateTime(startDate, tz);
+    const end   = fmtDateTime(endDate, tz);
 
     return (
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm px-6 py-4 flex flex-wrap items-center gap-6">

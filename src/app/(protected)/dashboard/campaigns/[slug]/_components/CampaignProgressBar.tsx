@@ -5,9 +5,9 @@ import { useEffect, useRef, useState } from "react";
 const fmtUSD = (n: number) =>
     new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(n);
 
-function fmtDate(d: Date | null) {
+function fmtDate(d: Date | null, tz: string) {
     if (!d) return null;
-    return d.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+    return new Intl.DateTimeFormat("en-US", { timeZone: tz, month: "long", day: "numeric", year: "numeric" }).format(d);
 }
 
 function pad(n: number) { return String(n).padStart(2, "0"); }
@@ -32,9 +32,11 @@ type Props = {
     daysLeft:       number | null;
     status:         string;
     goalType?:      string | null;
+    timezone?:      string | null;
 };
 
-export default function CampaignProgressBar({ raisedAmt, goalAmt, initialGoalAmt, donationCount, endDate, status, goalType }: Props) {
+export default function CampaignProgressBar({ raisedAmt, goalAmt, initialGoalAmt, donationCount, endDate, status, goalType, timezone }: Props) {
+    const tz = timezone ?? "America/New_York";
     const [countdown,    setCountdown]    = useState<ReturnType<typeof getCountdown> | null>(null);
     const [animGreenPct, setAnimGreenPct] = useState(0);
     const [animGoldPct,  setAnimGoldPct]  = useState(0);
@@ -101,37 +103,48 @@ export default function CampaignProgressBar({ raisedAmt, goalAmt, initialGoalAmt
 
             {/* Animated progress bar */}
             <div className="relative" onMouseLeave={() => setTip(null)}>
-                <div className="flex h-7 rounded-full overflow-hidden bg-gray-100 cursor-pointer">
+                <style>{`@keyframes pb-shimmer{0%{transform:translateX(-120%)}100%{transform:translateX(400%)}}`}</style>
+                <div className="relative h-7 rounded-full overflow-hidden cursor-pointer" style={{ background: "#e5e7eb" }}>
                     {animGreenPct > 0 && (
-                        <div
-                            className="h-full"
-                            style={{
-                                width: `${animGreenPct}%`,
-                                background: "repeating-linear-gradient(-45deg,#22c55e,#22c55e 8px,#16a34a 8px,#16a34a 16px)",
-                                borderRadius: animGoldPct > 0 ? "9999px 0 0 9999px" : "9999px",
-                                transition: "width 0ms",
-                            }}
-                            onMouseEnter={() => setTip({ text: `${fmtUSD(Math.min(raisedAmt, splitGoal ?? raisedAmt))} raised`, pct: animGreenPct / 2 })}
-                        />
+                        <div className="absolute inset-y-0 left-0" style={{
+                            width: `${animGreenPct}%`,
+                            background: "repeating-linear-gradient(-45deg,#22c55e,#22c55e 6px,#16a34a 6px,#16a34a 12px)",
+                        }} />
                     )}
                     {animGoldPct > 0 && (
-                        <div
-                            className="h-full"
-                            style={{
-                                width: `${animGoldPct}%`,
-                                background: "repeating-linear-gradient(-45deg,#f59e0b,#f59e0b 8px,#d97706 8px,#d97706 16px)",
-                                borderRadius: animGreenPct + animGoldPct >= 100 ? "0 9999px 9999px 0" : "0",
-                                transition: "width 0ms",
-                            }}
-                            onMouseEnter={() => setTip({ text: `${fmtUSD(raisedAmt - (splitGoal ?? 0))} raised beyond goal`, pct: animGreenPct + animGoldPct / 2 })}
-                        />
+                        <div className="absolute inset-y-0" style={{
+                            left: `${animGreenPct}%`, width: `${animGoldPct}%`,
+                            background: "repeating-linear-gradient(-45deg,#f59e0b,#f59e0b 6px,#d97706 6px,#d97706 12px)",
+                        }} />
                     )}
-                    {goalAmt && raisedAmt < goalAmt && (
-                        <div
-                            className="flex-1 h-full"
-                            onMouseEnter={() => setTip({ text: `${fmtUSD(goalAmt - raisedAmt)} remaining to reach goal`, pct: animGreenPct + animGoldPct + (100 - animGreenPct - animGoldPct) / 2 })}
-                        />
+                    {animGreenPct + animGoldPct > 0 && (
+                        <div className="absolute inset-y-0 left-0 pointer-events-none" style={{
+                            width: `${animGreenPct + animGoldPct}%`, overflow: "hidden",
+                        }}>
+                            <div style={{
+                                position: "absolute", top: 0, bottom: 0, left: 0,
+                                width: "35%",
+                                background: "linear-gradient(90deg,transparent,rgba(255,255,255,0.55) 50%,transparent)",
+                                animation: "pb-shimmer 2.2s ease-in-out infinite",
+                            }} />
+                        </div>
                     )}
+
+                    {/* Invisible hit areas for tooltips */}
+                    <div className="absolute inset-0 flex">
+                        {animGreenPct > 0 && (
+                            <div style={{ width: `${animGreenPct}%` }}
+                                onMouseEnter={() => setTip({ text: `${fmtUSD(Math.min(raisedAmt, splitGoal ?? raisedAmt))} raised`, pct: animGreenPct / 2 })} />
+                        )}
+                        {animGoldPct > 0 && (
+                            <div style={{ width: `${animGoldPct}%` }}
+                                onMouseEnter={() => setTip({ text: `${fmtUSD(raisedAmt - (splitGoal ?? 0))} raised beyond goal`, pct: animGreenPct + animGoldPct / 2 })} />
+                        )}
+                        {goalAmt && raisedAmt < goalAmt && (
+                            <div className="flex-1"
+                                onMouseEnter={() => setTip({ text: `${fmtUSD(goalAmt - raisedAmt)} remaining to reach goal`, pct: animGreenPct + animGoldPct + (100 - animGreenPct - animGoldPct) / 2 })} />
+                        )}
+                    </div>
                 </div>
 
                 {/* Open-ended goal markers — green dotted = initial goal, gold dotted = scaled goal */}
@@ -286,7 +299,7 @@ export default function CampaignProgressBar({ raisedAmt, goalAmt, initialGoalAmt
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M4 21V4m0 0l8 3 8-3v13l-8 3-8-3V4z" />
                         </svg>
                         {endDate && (
-                            <span className="text-sm text-gray-500">{fmtDate(endDate)}</span>
+                            <span className="text-sm text-gray-500">{fmtDate(endDate, tz)}</span>
                         )}
                         {!endDate && (
                             <span className="text-sm text-gray-400">No end date</span>

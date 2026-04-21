@@ -1,23 +1,23 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 
 export default function NewCampaignButton() {
-    const router = useRouter();
+    const router   = useRouter();
+    const pathname = usePathname();
     const [loading, setLoading] = useState(false);
     const [mounted, setMounted] = useState(false);
-    const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    useEffect(() => {
-        setMounted(true);
-        return () => { if (timerRef.current) clearTimeout(timerRef.current); };
-    }, []);
+    useEffect(() => { setMounted(true); }, []);
+
+    // Reset if the user navigates away (e.g. browser back) before we land on /campaigns/create
+    useEffect(() => { setLoading(false); }, [pathname]);
 
     function handleClick() {
         setLoading(true);
-        timerRef.current = setTimeout(() => router.push("/campaigns/create"), 850);
+        router.push("/campaigns/create");
     }
 
     const overlay = (

@@ -159,6 +159,7 @@ export async function sendParticipantInviteEmail({
     orgDisplayName,
     goalAmount,
     endDate,
+    timezone,
     loginUrl,
     campaignUrl,
 }: {
@@ -169,6 +170,7 @@ export async function sendParticipantInviteEmail({
     orgDisplayName?: string | null;
     goalAmount?: number | null;
     endDate?: string | null;
+    timezone?: string | null;
     loginUrl: string;
     campaignUrl: string;
 }) {
@@ -176,7 +178,10 @@ export async function sendParticipantInviteEmail({
         ? new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(goalAmount)
         : null;
     const formattedEnd = endDate
-        ? new Date(endDate).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })
+        ? new Intl.DateTimeFormat("en-US", {
+            timeZone: timezone ?? "America/New_York",
+            month: "long", day: "numeric", year: "numeric",
+          }).format(new Date(endDate))
         : null;
     const senderLine = orgDisplayName
         ? `${organizerName} from <strong>${orgDisplayName}</strong>`
@@ -323,6 +328,7 @@ export async function sendDonorInviteEmail({
     story,
     goalAmount,
     endDate,
+    timezone,
     campaignUrl,
 }: {
     to: string;
@@ -332,13 +338,17 @@ export async function sendDonorInviteEmail({
     story?: string | null;
     goalAmount?: number | null;
     endDate?: string | null;
+    timezone?: string | null;
     campaignUrl: string;
 }) {
     const formattedGoal = goalAmount
         ? new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(goalAmount)
         : null;
     const formattedEnd = endDate
-        ? new Date(endDate).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })
+        ? new Intl.DateTimeFormat("en-US", {
+            timeZone: timezone ?? "America/New_York",
+            month: "long", day: "numeric", year: "numeric",
+          }).format(new Date(endDate))
         : null;
 
     await transporter.sendMail({

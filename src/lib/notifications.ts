@@ -9,6 +9,14 @@ function fmt(n: number) {
     return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(n);
 }
 
+function fmtDateInTz(date: Date, tz: string): string {
+    return new Intl.DateTimeFormat("en-US", {
+        timeZone: tz,
+        month: "long", day: "numeric", year: "numeric",
+        hour: "numeric", minute: "2-digit",
+    }).format(date);
+}
+
 function ts() { return new Date(); }
 
 // ── Low-level creators ────────────────────────────────────────────────────────
@@ -185,10 +193,8 @@ export async function broadcastDonationsResumed(campaignId: string, memberIds: s
 }
 
 /** C12 — Campaign start date updated to [date]. */
-export function notifyStartDateChanged(campaignId: string, newStartDate: Date) {
-    const formatted = newStartDate.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })
-        + " at "
-        + newStartDate.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+export function notifyStartDateChanged(campaignId: string, newStartDate: Date, timezone: string) {
+    const formatted = fmtDateInTz(newStartDate, timezone);
     return createCampaignNotif(
         campaignId,
         "start_date_changed",
@@ -197,10 +203,8 @@ export function notifyStartDateChanged(campaignId: string, newStartDate: Date) {
 }
 
 /** C13 — Campaign end date extended to [date] at [time]. */
-export function notifyCampaignExtended(campaignId: string, newEndDate: Date) {
-    const formatted = newEndDate.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })
-        + " at "
-        + newEndDate.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+export function notifyCampaignExtended(campaignId: string, newEndDate: Date, timezone: string) {
+    const formatted = fmtDateInTz(newEndDate, timezone);
     return createCampaignNotif(
         campaignId,
         "campaign_extended",
@@ -209,11 +213,9 @@ export function notifyCampaignExtended(campaignId: string, newEndDate: Date) {
 }
 
 /** P_start — Campaign start date updated. (broadcast to all participants) */
-export async function broadcastStartDateChanged(campaignId: string, memberIds: string[], newStartDate: Date) {
+export async function broadcastStartDateChanged(campaignId: string, memberIds: string[], newStartDate: Date, timezone: string) {
     if (memberIds.length === 0) return;
-    const formatted = newStartDate.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })
-        + " at "
-        + newStartDate.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+    const formatted = fmtDateInTz(newStartDate, timezone);
     await prisma.campaignNotification.createMany({
         data: memberIds.map((memberId) => ({
             campaign_id:         campaignId,
@@ -228,11 +230,9 @@ export async function broadcastStartDateChanged(campaignId: string, memberIds: s
 }
 
 /** P6 — Campaign end date extended to [date] at [time]. (broadcast to all participants) */
-export async function broadcastCampaignExtended(campaignId: string, memberIds: string[], newEndDate: Date) {
+export async function broadcastCampaignExtended(campaignId: string, memberIds: string[], newEndDate: Date, timezone: string) {
     if (memberIds.length === 0) return;
-    const formatted = newEndDate.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })
-        + " at "
-        + newEndDate.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+    const formatted = fmtDateInTz(newEndDate, timezone);
     await prisma.campaignNotification.createMany({
         data: memberIds.map((memberId) => ({
             campaign_id:         campaignId,

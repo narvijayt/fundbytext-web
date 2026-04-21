@@ -27,9 +27,9 @@ const STATUS_BADGE: Record<CampaignStatus, { label: string; cls: string }> = {
     completed: { label: "Completed", cls: "bg-purple-100 text-purple-700" },
 };
 
-function fmtDate(d: Date | null) {
+function fmtDate(d: Date | null, tz: string) {
     if (!d) return "—";
-    return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+    return new Intl.DateTimeFormat("en-US", { timeZone: tz, month: "short", day: "numeric", year: "numeric" }).format(d);
 }
 
 export default async function CampaignDetailPage({
@@ -342,7 +342,7 @@ export default async function CampaignDetailPage({
                             };
                             return ` · ${labels[campaign.goal_type] ?? campaign.goal_type}`;
                         })()}
-                        {campaign.start_date && ` · Started ${fmtDate(campaign.start_date)}`}
+                        {campaign.start_date && ` · Started ${fmtDate(campaign.start_date, campaign.timezone ?? "America/New_York")}`}
                     </p>
                     <CopyUrlButton slug={slug} />
                 </div>
@@ -482,6 +482,7 @@ export default async function CampaignDetailPage({
                             daysLeft={daysLeft}
                             status={campaign.status}
                             goalType={campaign.goal_type}
+                            timezone={campaign.timezone}
                         />
 
                         {!campaign.donations_enabled && campaign.status === CampaignStatus.active && (
@@ -730,6 +731,7 @@ export default async function CampaignDetailPage({
                         daysLeft={daysLeft}
                         status={campaign.status}
                         goalType={campaign.goal_type}
+                        timezone={campaign.timezone}
                     />
 
                     {campaign.status === CampaignStatus.completed && (() => {

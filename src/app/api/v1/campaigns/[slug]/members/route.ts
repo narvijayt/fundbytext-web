@@ -45,6 +45,7 @@ export async function POST(req: NextRequest, ctx: Ctx) {
                 status:          true,
                 goal_amount:     true,
                 end_date:        true,
+                timezone:        true,
                 org_display_name: true,
                 members: {
                     where: { user_id: user.id },
@@ -124,6 +125,7 @@ export async function POST(req: NextRequest, ctx: Ctx) {
                             orgDisplayName: campaign.org_display_name,
                             goalAmount:     campaign.goal_amount ? Number(campaign.goal_amount) : null,
                             endDate:        campaign.end_date?.toISOString() ?? null,
+                            timezone:       campaign.timezone,
                             loginUrl:       `${APP_URL}/login`,
                             campaignUrl:    `${APP_URL}/campaigns/${slug}`,
                         }).catch(console.error);
@@ -212,6 +214,7 @@ export async function POST(req: NextRequest, ctx: Ctx) {
                         orgDisplayName: campaign.org_display_name,
                         goalAmount,
                         endDate:        campaign.end_date?.toISOString() ?? null,
+                        timezone:       campaign.timezone,
                         loginUrl,
                         campaignUrl:    `${APP_URL}/campaigns/${slug}`,
                     });

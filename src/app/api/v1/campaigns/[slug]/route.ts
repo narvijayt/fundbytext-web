@@ -112,6 +112,7 @@ const patchSchema = z.object({
     name:             z.string().max(50).optional().nullable(),
     org_display_name: z.string().max(100).optional().nullable(),
     story:            z.string().optional().nullable(),
+    timezone:         z.string().max(50).optional(),
     start_date:       z.string().optional().nullable(),
     end_date:         z.string().optional().nullable(),
 
@@ -175,6 +176,7 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
                 start_date:        true,
                 end_date:          true,
                 campaign_type:     true,
+                timezone:          true,
                 donations_enabled:           true,
                 donations_disabled_message:  true,
                 visibility:                  true,
@@ -200,9 +202,10 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
             const startDateChanged = !current?.start_date ||
                 current.start_date.getTime() !== (data.start_date as Date).getTime();
             if (startDateChanged && (current?.status === CampaignStatus.active || current?.status === CampaignStatus.upcoming)) {
-                notifTasks.push(notifyStartDateChanged(ids.campaignId, data.start_date));
+                const tz = (data.timezone as string | undefined) ?? current?.timezone ?? "America/New_York";
+                notifTasks.push(notifyStartDateChanged(ids.campaignId, data.start_date, tz));
                 if (memberIds.length > 0) {
-                    notifTasks.push(broadcastStartDateChanged(ids.campaignId, memberIds, data.start_date));
+                    notifTasks.push(broadcastStartDateChanged(ids.campaignId, memberIds, data.start_date, tz));
                 }
             }
         }
@@ -234,9 +237,10 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
                 (current?.status === CampaignStatus.active || current?.status === CampaignStatus.upcoming) &&
                 (!current.end_date || data.end_date > current.end_date);
             if (isExtension) {
-                notifTasks.push(notifyCampaignExtended(ids.campaignId, data.end_date));
+                const tz = (data.timezone as string | undefined) ?? current?.timezone ?? "America/New_York";
+                notifTasks.push(notifyCampaignExtended(ids.campaignId, data.end_date, tz));
                 if (memberIds.length > 0) {
-                    notifTasks.push(broadcastCampaignExtended(ids.campaignId, memberIds, data.end_date));
+                    notifTasks.push(broadcastCampaignExtended(ids.campaignId, memberIds, data.end_date, tz));
                 }
             }
         }

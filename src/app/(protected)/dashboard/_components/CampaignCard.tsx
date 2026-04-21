@@ -18,9 +18,9 @@ function fmtMonthYear(iso: string | null) {
     return new Date(iso).toLocaleDateString("en-US", { month: "long", year: "numeric" });
 }
 
-function fmtDate(iso: string | null) {
+function fmtDate(iso: string | null, tz: string) {
     if (!iso) return null;
-    return new Date(iso).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+    return new Intl.DateTimeFormat("en-US", { timeZone: tz, month: "long", day: "numeric", year: "numeric" }).format(new Date(iso));
 }
 
 
@@ -55,6 +55,7 @@ export type CampaignCardData = {
     start_date: Date | null;
     end_date: Date | null;
     created_at: Date;
+    timezone: string | null;
     myRoles:      string[];
     myDonorCount: number;
     media: { media_type: string; url: string }[];
@@ -157,7 +158,7 @@ export default function CampaignCard({ campaign }: { campaign: CampaignCardData 
                     {status === CampaignStatus.draft ? (
                         <p className="text-xs text-gray-400 mt-0.5">Created {fmtMonthYear(campaign.created_at.toString())}</p>
                     ) : (
-                        <p className="text-xs text-gray-400 mt-0.5">{fmtDate(campaign.start_date?.toString() ?? null)}</p>
+                        <p className="text-xs text-gray-400 mt-0.5">{fmtDate(campaign.start_date?.toString() ?? null, campaign.timezone ?? "America/New_York")}</p>
                     )}
                 </div>
 

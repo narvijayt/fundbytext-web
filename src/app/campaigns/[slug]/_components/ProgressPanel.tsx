@@ -36,16 +36,30 @@ function getCountdown(target: Date) {
     return { days, hours, minutes, seconds };
 }
 
+function formatDateInTz(date: Date, tz: string) {
+    return new Intl.DateTimeFormat("en-US", {
+        timeZone: tz,
+        month: "short", day: "numeric", year: "numeric",
+        hour: "numeric", minute: "2-digit",
+    }).format(date);
+}
+
+function tzAbbr(tz: string) {
+    const s = new Intl.DateTimeFormat("en-US", { timeZone: tz, timeZoneName: "short" }).format(new Date());
+    return s.split(", ").pop() ?? tz;
+}
+
 export default function ProgressPanel({
     totalRaised, goalAmount, initialGoalAmount, pct, donorCount, recentDonations,
     accent, donationsEnabled, donationsDisabledMessage, maxDonationCents,
     endDate, startDate, status, onDonate,
 }: Props) {
     // ── Animated progress bar ──────────────────────────────────────────────
-    const [barPct,     setBarPct]     = useState(0);
-    const [displayAmt, setDisplayAmt] = useState(0);
-    const [countdown,  setCountdown]  = useState<ReturnType<typeof getCountdown>>(null);
-    const [mounted,    setMounted]    = useState(false);
+    const [barPct,        setBarPct]        = useState(0);
+    const [displayAmt,    setDisplayAmt]    = useState(0);
+    const [countdown,     setCountdown]     = useState<ReturnType<typeof getCountdown>>(null);
+    const [mounted,       setMounted]       = useState(false);
+    const [browserTz,     setBrowserTz]     = useState<string | null>(null);
     const rafRef = useRef<number>(0);
 
     // Animate bar + counter — runs on mount and whenever totalRaised/pct changes
@@ -72,6 +86,11 @@ export default function ProgressPanel({
         return () => cancelAnimationFrame(rafRef.current);
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [totalRaised, pct]);
+
+    // Capture browser timezone once on mount
+    useEffect(() => {
+        setBrowserTz(Intl.DateTimeFormat().resolvedOptions().timeZone);
+    }, []);
 
     // Live countdown — ticks every second
     useEffect(() => {
@@ -122,28 +141,36 @@ export default function ProgressPanel({
                     const goldPct   = splitGoal && displayAmt > splitGoal
                         ? (displayAmt - splitGoal) / scale * 100
                         : 0;
+                    const fillPct = greenPct + goldPct;
                     return (
-                        <div className="mt-3 h-4 rounded-full bg-gray-100 overflow-hidden flex">
+                        <div className="mt-3 h-4 rounded-full bg-gray-100 overflow-hidden" style={{ position: "relative" }}>
+                            <style>{`@keyframes pp-shimmer{0%{transform:translateX(-120%)}100%{transform:translateX(400%)}}`}</style>
                             {greenPct > 0 && (
-                                <div
-                                    className="h-full"
-                                    style={{
-                                        width:        `${greenPct}%`,
-                                        background:   "repeating-linear-gradient(-45deg,#22c55e,#22c55e 6px,#16a34a 6px,#16a34a 12px)",
-                                        borderRadius: goldPct > 0 ? "9999px 0 0 9999px" : "9999px",
-                                        transition:   "width 0ms",
-                                    }}
-                                />
+                                <div style={{
+                                    position: "absolute", top: 0, bottom: 0, left: 0,
+                                    width: `${greenPct}%`,
+                                    background: "repeating-linear-gradient(-45deg,#22c55e,#22c55e 6px,#16a34a 6px,#16a34a 12px)",
+                                }} />
                             )}
                             {goldPct > 0 && (
-                                <div
-                                    className="h-full rounded-r-full"
-                                    style={{
-                                        width:      `${goldPct}%`,
-                                        background: "repeating-linear-gradient(-45deg,#f59e0b,#f59e0b 6px,#d97706 6px,#d97706 12px)",
-                                        transition: "width 0ms",
-                                    }}
-                                />
+                                <div style={{
+                                    position: "absolute", top: 0, bottom: 0, left: `${greenPct}%`,
+                                    width: `${goldPct}%`,
+                                    background: "repeating-linear-gradient(-45deg,#f59e0b,#f59e0b 6px,#d97706 6px,#d97706 12px)",
+                                }} />
+                            )}
+                            {fillPct > 0 && (
+                                <div style={{
+                                    position: "absolute", top: 0, bottom: 0, left: 0,
+                                    width: `${fillPct}%`, overflow: "hidden",
+                                }}>
+                                    <div style={{
+                                        position: "absolute", top: 0, bottom: 0, left: 0,
+                                        width: "35%",
+                                        background: "linear-gradient(90deg,transparent,rgba(255,255,255,0.55) 50%,transparent)",
+                                        animation: "pp-shimmer 2.2s ease-in-out infinite",
+                                    }} />
+                                </div>
                             )}
                         </div>
                     );
@@ -224,6 +251,13 @@ export default function ProgressPanel({
                         Campaign ended
                     </div>
                 ) : null)}
+
+                {/* End date in visitor's timezone */}
+                {mounted && browserTz && endDate && status !== "completed" && (
+                    <div className="mt-3 text-[11px] text-gray-400 leading-snug">
+                        Ends {formatDateInTz(endDate, browserTz)} {tzAbbr(browserTz)}
+                    </div>
+                )}
 
                 {/* Donations paused banner */}
                 {!donationsEnabled && (
