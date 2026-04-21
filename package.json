@@ -7,7 +7,11 @@
         "dev:fresh": "rm -rf .next/dev/cache && next dev",
         "build": "next build",
         "start": "next start",
-        "lint": "eslint"
+        "lint": "eslint",
+        "seed": "prisma db seed"
+    },
+    "prisma": {
+        "seed": "tsx prisma/seed.ts"
     },
     "dependencies": {
         "@hookform/resolvers": "^5.2.2",
@@ -42,6 +46,7 @@
         "eslint": "^9",
         "eslint-config-next": "16.2.1",
         "tailwindcss": "^4",
+        "tsx": "^4.21.0",
         "typescript": "^5"
     }
 }
