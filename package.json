@@ -5,7 +5,7 @@
     "scripts": {
         "dev": "next dev",
         "dev:fresh": "rm -rf .next/dev/cache && next dev",
-        "build": "next build",
+        "build": "prisma generate && next build",
         "start": "next start",
         "lint": "eslint"
     },
