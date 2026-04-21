@@ -3,8 +3,7 @@
 // Expects multipart/form-data with fields: photo (File), type (profile|hero|gallery)
 
 import { NextRequest, NextResponse } from "next/server";
-import { writeFile, mkdir } from "fs/promises";
-import path from "path";
+import { put } from "@vercel/blob";
 import crypto from "crypto";
 import { getAuthUserFromRequest } from "@/lib/session";
 
@@ -43,13 +42,11 @@ export async function POST(req: NextRequest) {
         }
 
         const ext = file.type === "image/jpeg" ? "jpg" : file.type.split("/")[1];
-        const filename = `${crypto.randomUUID()}.${ext}`;
-        const dir = path.join(process.cwd(), "public", "uploads", "campaigns");
-        await mkdir(dir, { recursive: true });
-        const buffer = Buffer.from(await file.arrayBuffer());
-        await writeFile(path.join(dir, filename), buffer);
+        const filename = `campaigns/${mediaType}/${crypto.randomUUID()}.${ext}`;
 
-        return NextResponse.json({ url: `/uploads/campaigns/${filename}` }, { status: 201 });
+        const blob = await put(filename, file, { access: "public" });
+
+        return NextResponse.json({ url: blob.url }, { status: 201 });
     } catch (err) {
         console.error("[POST upload/campaign-photo]", err);
         return NextResponse.json({ error: "Internal server error" }, { status: 500 });
