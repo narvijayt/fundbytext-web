@@ -18,7 +18,7 @@ export function ProgressBar({
         s.num === 4 ? { ...s, label: isOrg ? "Participants" : "Donors" } : s
     );
     return (
-        <div className="overflow-x-auto mb-10 -mx-4 px-4">
+        <div className="mb-10 py-2">
             <div className="flex items-start justify-center gap-0 min-w-max mx-auto">
                 <StepBubble num={0} label="Start" status="done" />
                 {steps.map(({ num, label }) => {

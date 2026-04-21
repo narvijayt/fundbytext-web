@@ -16,6 +16,8 @@ type Props = {
     orgDisplayNameLocked: boolean;
     story: string;
     setStory: (v: string) => void;
+    timezone: string;
+    setTimezone: (v: string) => void;
     startDate: string;
     setStartDate: (v: string) => void;
     endDate: string;
@@ -34,6 +36,7 @@ export default function StepDetails({
     name, setName, nameReadOnly,
     orgDisplayName, setOrgDisplayName, orgDisplayNameLocked,
     story, setStory,
+    timezone, setTimezone,
     startDate, setStartDate,
     endDate, setEndDate,
     fieldErrors, clearFE,
@@ -200,6 +203,33 @@ export default function StepDetails({
                     />
                 </Field>
             </div>
+
+            <Field label="Timezone">
+                <select
+                    value={timezone}
+                    onChange={(e) => setTimezone(e.target.value)}
+                    className={inputCls}
+                >
+                    <optgroup label="United States">
+                        <option value="America/New_York">Eastern Time (ET) — New York, Miami</option>
+                        <option value="America/Chicago">Central Time (CT) — Chicago, Dallas</option>
+                        <option value="America/Denver">Mountain Time (MT) — Denver, Phoenix</option>
+                        <option value="America/Los_Angeles">Pacific Time (PT) — Los Angeles, Seattle</option>
+                        <option value="America/Anchorage">Alaska Time (AKT)</option>
+                        <option value="Pacific/Honolulu">Hawaii Time (HT)</option>
+                    </optgroup>
+                    <optgroup label="Other">
+                        <option value="UTC">UTC</option>
+                        <option value="Europe/London">London (GMT/BST)</option>
+                        <option value="Europe/Paris">Paris / Berlin (CET)</option>
+                        <option value="Asia/Kolkata">India (IST)</option>
+                        <option value="Asia/Dubai">Dubai (GST)</option>
+                        <option value="Asia/Tokyo">Tokyo (JST)</option>
+                        <option value="Australia/Sydney">Sydney (AEST)</option>
+                    </optgroup>
+                </select>
+                <p className="text-[10px] text-gray-400 mt-1">Dates above are interpreted in this timezone.</p>
+            </Field>
         </div>
     );
 }

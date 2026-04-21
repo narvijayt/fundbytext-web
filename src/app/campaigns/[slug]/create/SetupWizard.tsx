@@ -19,11 +19,42 @@ function getMediaUrl(media: Campaign["media"], type: string): string | null {
 function getGalleryUrls(media: Campaign["media"]): string[] {
     return media.filter((m) => m.media_type === "gallery").map((m) => m.url);
 }
-function toDateInput(iso: string | null): string {
+// Convert a UTC ISO string to a datetime-local input value in the given IANA timezone
+function toDateInput(iso: string | null, tz: string): string {
     if (!iso) return "";
     const d = new Date(iso);
-    const pad = (n: number) => String(n).padStart(2, "0");
-    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    // sv-SE locale gives "YYYY-MM-DD HH:mm:ss" — perfect for datetime-local after trim
+    const parts = new Intl.DateTimeFormat("sv-SE", {
+        timeZone: tz,
+        year: "numeric", month: "2-digit", day: "2-digit",
+        hour: "2-digit", minute: "2-digit",
+    }).format(d);
+    return parts.replace(" ", "T"); // "2026-04-30T23:59"
+}
+
+// Convert a datetime-local string ("2026-04-30T23:59") + IANA timezone → UTC ISO string
+function localToUTCISO(localStr: string, tz: string): string {
+    if (!localStr) return "";
+    const [datePart, timePart] = localStr.split("T");
+    const [year, month, day]   = datePart.split("-").map(Number);
+    const [hour, minute]       = (timePart ?? "00:00").split(":").map(Number);
+
+    // Candidate: treat as UTC (wrong value, but carries the right numbers)
+    const candidate = new Date(Date.UTC(year, month - 1, day, hour, minute));
+
+    // What the target TZ shows for this UTC moment
+    const fmt   = new Intl.DateTimeFormat("en-US", {
+        timeZone: tz, year: "numeric", month: "numeric", day: "numeric",
+        hour: "numeric", minute: "numeric", hour12: false,
+    });
+    const parts = fmt.formatToParts(candidate);
+    const get   = (type: string) => parseInt(parts.find(p => p.type === type)?.value ?? "0");
+    let tzHour  = get("hour"); if (tzHour === 24) tzHour = 0;
+    const showMs = Date.UTC(get("year"), get("month") - 1, get("day"), tzHour, get("minute"));
+
+    // Offset = what we want − what TZ shows; apply to candidate
+    const offsetMs = Date.UTC(year, month - 1, day, hour, minute) - showMs;
+    return new Date(candidate.getTime() + offsetMs).toISOString();
 }
 
 // ── Main component ─────────────────────────────────────────────────────────
@@ -64,8 +95,11 @@ export default function SetupWizard({
         campaign.org_display_name ?? defaultOrgDisplayName ?? ""
     );
     const [story, setStory]                 = useState(campaign.story ?? "");
-    const [startDate, setStartDate]         = useState(toDateInput(campaign.start_date));
-    const [endDate, setEndDate]             = useState(toDateInput(campaign.end_date));
+    const [timezone, setTimezone]           = useState(
+        campaign.timezone ?? (typeof window !== "undefined" ? Intl.DateTimeFormat().resolvedOptions().timeZone : "America/New_York")
+    );
+    const [startDate, setStartDate]         = useState(toDateInput(campaign.start_date, timezone));
+    const [endDate, setEndDate]             = useState(toDateInput(campaign.end_date, timezone));
 
     // ── Step 2 — Funding Goal
     const [goalType, setGoalType]   = useState(campaign.goal_type ?? "");
@@ -218,8 +252,9 @@ export default function SetupWizard({
             name:             name.trim(),
             org_display_name: isOrg ? (orgDisplayName.trim() || null) : undefined,
             story:            story.trim() || null,
-            start_date:       startDate || null,
-            end_date:         endDate,
+            timezone,
+            start_date:       startDate ? localToUTCISO(startDate, timezone) : null,
+            end_date:         localToUTCISO(endDate, timezone),
             current_step:     2,
         });
         if (ok) advance();
@@ -296,7 +331,7 @@ export default function SetupWizard({
 
         if (mustKeep) {
             if (!endDate && campaign.end_date) {
-                safeEndDate = toDateInput(campaign.end_date);
+                safeEndDate = toDateInput(campaign.end_date, timezone);
                 setEndDate(safeEndDate);
             }
             if (!goalType && campaign.goal_type) {
@@ -331,8 +366,9 @@ export default function SetupWizard({
         const data: Record<string, unknown> = {
             name:              name.trim() || null,
             story:             story.trim() || null,
-            start_date:        startDate || null,
-            end_date:          safeEndDate || null,
+            timezone,
+            start_date:        startDate    ? localToUTCISO(startDate, timezone)    : null,
+            end_date:          safeEndDate  ? localToUTCISO(safeEndDate, timezone)  : null,
             goal_type:         safeGoalType  || null,
             goal_amount:       safeGoalAmount ? Number(safeGoalAmount) : null,
             background_theme:  bgTheme,
@@ -630,6 +666,7 @@ export default function SetupWizard({
                             orgDisplayName={orgDisplayName} setOrgDisplayName={setOrgDisplayName}
                             orgDisplayNameLocked={orgDisplayNameLocked}
                             story={story} setStory={setStory}
+                            timezone={timezone} setTimezone={setTimezone}
                             startDate={startDate} setStartDate={setStartDate}
                             endDate={endDate} setEndDate={setEndDate}
                             fieldErrors={fieldErrors} clearFE={clearFE}

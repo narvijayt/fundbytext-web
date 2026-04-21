@@ -51,6 +51,7 @@ export type Campaign = {
     name: string | null;
     org_display_name: string | null;
     story: string | null;
+    timezone: string | null;
     start_date: string | null;
     end_date: string | null;
     goal_type: string | null;

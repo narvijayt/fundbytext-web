@@ -203,6 +203,7 @@ model Campaign {
     slug                   String          @unique @db.VarChar(100) // auto-generated on creation
     org_display_name       String?         @db.VarChar(100) // free-text display label (public page)
     story                  String?         @db.Text
+    timezone               String?         @default("America/New_York") @db.VarChar(50)
     start_date             DateTime?       @db.Timestamptz(3)
     end_date               DateTime?       @db.Timestamptz(3)
     status                 CampaignStatus  @default(draft)
