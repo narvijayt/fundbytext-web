@@ -14,23 +14,23 @@ const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
 const prisma = new PrismaClient({ adapter });
 
 async function main() {
-    const email     = process.env.SEED_ADMIN_EMAIL    ?? "admin@fundbytext.com";
-    const password  = process.env.SEED_ADMIN_PASSWORD ?? "ChangeMe123!";
-    const firstName = process.env.SEED_ADMIN_FIRST    ?? "Admin";
-    const lastName  = process.env.SEED_ADMIN_LAST     ?? "User";
+    const email = process.env.SEED_ADMIN_EMAIL ?? "admin@fundbytext.com";
+    const password = process.env.SEED_ADMIN_PASSWORD ?? "ChangeMe123!";
+    const firstName = process.env.SEED_ADMIN_FIRST ?? "Admin";
+    const lastName = process.env.SEED_ADMIN_LAST ?? "User";
 
     const password_hash = await bcrypt.hash(password, 12);
 
     const admin = await prisma.user.upsert({
-        where:  { email },
+        where: { email },
         update: {},
         create: {
-            first_name:        firstName,
-            last_name:         lastName,
+            first_name: firstName,
+            last_name: lastName,
             email,
-            username:          "admin",
+            username: "admin",
             password_hash,
-            role:              "admin",
+            role: "admin",
             is_email_verified: true,
         },
     });

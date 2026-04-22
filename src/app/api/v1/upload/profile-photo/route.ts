@@ -33,7 +33,12 @@ export async function POST(req: NextRequest) {
     const ext = file.type.split("/")[1].replace("jpeg", "jpg");
     const filename = `profiles/${crypto.randomUUID()}.${ext}`;
 
-    const blob = await put(filename, file, { access: "public" });
-
-    return NextResponse.json({ url: blob.url }, { status: 201 });
+    try {
+        const blob = await put(filename, file, { access: "public" });
+        return NextResponse.json({ url: blob.url }, { status: 201 });
+    } catch (err) {
+        console.error("[upload/profile-photo]", err);
+        const message = err instanceof Error ? err.message : "Upload failed";
+        return NextResponse.json({ error: message }, { status: 500 });
+    }
 }
