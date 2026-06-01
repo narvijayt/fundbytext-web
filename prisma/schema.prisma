@@ -29,9 +29,9 @@ enum CampaignStatus {
 }
 
 enum GoalType {
-    open_ended       // Individual — auto-scales +20% when met
-    fixed            // Individual — stops at target amount
-    org_goal         // Organization — one shared target
+    open_ended // Individual — auto-scales +20% when met
+    fixed // Individual — stops at target amount
+    org_goal // Organization — one shared target
     participant_goal // Organization — each participant has their own target
 }
 
@@ -46,7 +46,7 @@ enum BackgroundTheme {
 
 enum MediaType {
     profile // profile picture / logo
-    hero    // main campaign banner image
+    hero // main campaign banner image
     gallery // up to 3 extra gallery images
 }
 
@@ -57,10 +57,10 @@ enum DonorStatus {
 }
 
 enum DonorSource {
-    invited     // manually added by organizer (in organizer view)
-    self_added  // added by participant (or organizer acting in participant view)
-    walk_in     // organic donation with no prior contact record
-    link_self   // came via donor invite link but paid as a separate entry
+    invited // manually added by organizer (in organizer view)
+    self_added // added by participant (or organizer acting in participant view)
+    walk_in // organic donation with no prior contact record
+    link_self // came via donor invite link but paid as a separate entry
 }
 
 enum PaymentMethod {
@@ -79,7 +79,7 @@ enum PaymentStatus {
 
 enum NotificationType {
     participant // sent to a specific participant
-    campaign    // sent to donors / campaign-wide
+    campaign // sent to donors / campaign-wide
 }
 
 enum NotificationStatus {
@@ -196,32 +196,32 @@ model Organization {
 // ─────────────────────────────────────────────
 
 model Campaign {
-    id                     String          @id @default(uuid()) @db.Uuid
-    organization_id        String?         @db.Uuid // null = standalone individual campaign
-    campaign_type          CampaignType
-    name                   String?         @unique @db.VarChar(50)
-    slug                   String          @unique @db.VarChar(100) // auto-generated on creation
-    org_display_name       String?         @db.VarChar(100) // free-text display label (public page)
-    story                  String?         @db.Text
-    timezone               String?         @default("America/New_York") @db.VarChar(50)
-    start_date             DateTime?       @db.Timestamptz(3)
-    end_date               DateTime?       @db.Timestamptz(3)
-    status                 CampaignStatus  @default(draft)
-    goal_type              GoalType?
-    goal_amount            Decimal?        @db.Decimal(10, 2)
-    initial_goal_amount    Decimal?        @db.Decimal(10, 2) // locked at first save; goal_amount auto-scales
-    total_raised           Decimal         @default(0) @db.Decimal(10, 2)
-    donors_per_participant Int?            // Organization campaigns: donors per participant
-    background_theme       BackgroundTheme @default(sports)
-    accent_color           String?         @db.VarChar(7) // hex e.g. #1565C0 (primary)
-    secondary_color        String?         @db.VarChar(7) // hex e.g. #374151 (secondary)
-    thank_you_message      String?         @db.Text // max 940 chars
-    visibility         CampaignVisibility @default(private)  // access control (see enum)
-    donations_enabled           Boolean  @default(true)  // organizer can pause donations independently
-    donations_disabled_message  String?  @db.Text         // shown to visitors when donations are paused
-    current_step       Int                @default(1)       // wizard resume: 1–5
-    created_at             DateTime        @default(now()) @db.Timestamptz(3)
-    updated_at             DateTime        @updatedAt @db.Timestamptz(3)
+    id                         String             @id @default(uuid()) @db.Uuid
+    organization_id            String?            @db.Uuid // null = standalone individual campaign
+    campaign_type              CampaignType
+    name                       String?            @unique @db.VarChar(50)
+    slug                       String             @unique @db.VarChar(100) // auto-generated on creation
+    org_display_name           String?            @db.VarChar(100) // free-text display label (public page)
+    story                      String?            @db.Text
+    timezone                   String?            @default("America/New_York") @db.VarChar(50)
+    start_date                 DateTime?          @db.Timestamptz(3)
+    end_date                   DateTime?          @db.Timestamptz(3)
+    status                     CampaignStatus     @default(draft)
+    goal_type                  GoalType?
+    goal_amount                Decimal?           @db.Decimal(10, 2)
+    initial_goal_amount        Decimal?           @db.Decimal(10, 2) // locked at first save; goal_amount auto-scales
+    total_raised               Decimal            @default(0) @db.Decimal(10, 2)
+    donors_per_participant     Int? // Organization campaigns: donors per participant
+    background_theme           BackgroundTheme    @default(sports)
+    accent_color               String?            @db.VarChar(7) // hex e.g. #1565C0 (primary)
+    secondary_color            String?            @db.VarChar(7) // hex e.g. #374151 (secondary)
+    thank_you_message          String?            @db.Text // max 940 chars
+    visibility                 CampaignVisibility @default(private) // access control (see enum)
+    donations_enabled          Boolean            @default(true) // organizer can pause donations independently
+    donations_disabled_message String?            @db.Text // shown to visitors when donations are paused
+    current_step               Int                @default(1) // wizard resume: 1–5
+    created_at                 DateTime           @default(now()) @db.Timestamptz(3)
+    updated_at                 DateTime           @updatedAt @db.Timestamptz(3)
 
     organization  Organization?          @relation(fields: [organization_id], references: [id])
     media         CampaignMedia[]
@@ -298,12 +298,12 @@ model CampaignMember {
     created_at        DateTime  @default(now()) @db.Timestamptz(3)
     updated_at        DateTime  @updatedAt @db.Timestamptz(3)
 
-    campaign              Campaign               @relation(fields: [campaign_id], references: [id], onDelete: Cascade)
-    user                  User?                  @relation(fields: [user_id], references: [id])
-    roles                 CampaignMemberRole[]
-    donors                CampaignDonor[]  @relation("DonorAssignedMember")
-    added_donors          CampaignDonor[]  @relation("DonorAddedByMember")
-    donations             Donation[]
+    campaign               Campaign               @relation(fields: [campaign_id], references: [id], onDelete: Cascade)
+    user                   User?                  @relation(fields: [user_id], references: [id])
+    roles                  CampaignMemberRole[]
+    donors                 CampaignDonor[]        @relation("DonorAssignedMember")
+    added_donors           CampaignDonor[]        @relation("DonorAddedByMember")
+    donations              Donation[]
     received_notifications CampaignNotification[]
 
     // Unique per campaign on email (supports pending invites where user_id is null)
@@ -332,29 +332,29 @@ model CampaignMemberRole {
 // ─────────────────────────────────────────────
 
 model CampaignDonor {
-    id                String      @id @default(uuid()) @db.Uuid
+    id                 String      @id @default(uuid()) @db.Uuid
     campaign_id        String      @db.Uuid
-    assigned_member_id String?    @db.Uuid // which member this donor is assigned to
-    added_by_member_id String?    @db.Uuid // who added this donor (organizer or participant)
-    user_id            String?    @db.Uuid // linked if donor later creates an account
-    first_name        String      @db.VarChar(100)
-    last_name         String      @db.VarChar(100)
-    email             String?     @db.VarChar(255)
-    phone             String?     @db.VarChar(20)
-    email_valid       Boolean     @default(true)
-    status            DonorStatus @default(not_donated)
-    source            DonorSource @default(invited)
-    invite_token      String?     @unique @db.VarChar(100)
-    short_code        String?     @unique @db.VarChar(8)
-    last_contacted_at DateTime?   @db.Timestamptz(3)
-    created_at        DateTime    @default(now()) @db.Timestamptz(3)
-    updated_at        DateTime    @updatedAt @db.Timestamptz(3)
+    assigned_member_id String?     @db.Uuid // which member this donor is assigned to
+    added_by_member_id String?     @db.Uuid // who added this donor (organizer or participant)
+    user_id            String?     @db.Uuid // linked if donor later creates an account
+    first_name         String      @db.VarChar(100)
+    last_name          String      @db.VarChar(100)
+    email              String?     @db.VarChar(255)
+    phone              String?     @db.VarChar(20)
+    email_valid        Boolean     @default(true)
+    status             DonorStatus @default(not_donated)
+    source             DonorSource @default(invited)
+    invite_token       String?     @unique @db.VarChar(100)
+    short_code         String?     @unique @db.VarChar(8)
+    last_contacted_at  DateTime?   @db.Timestamptz(3)
+    created_at         DateTime    @default(now()) @db.Timestamptz(3)
+    updated_at         DateTime    @updatedAt @db.Timestamptz(3)
 
-    campaign         Campaign        @relation(fields: [campaign_id], references: [id], onDelete: Cascade)
-    assigned_member  CampaignMember? @relation("DonorAssignedMember", fields: [assigned_member_id], references: [id])
-    added_by_member  CampaignMember? @relation("DonorAddedByMember", fields: [added_by_member_id], references: [id])
-    user             User?           @relation("DonorUserAccount", fields: [user_id], references: [id])
-    donations        Donation[]
+    campaign        Campaign        @relation(fields: [campaign_id], references: [id], onDelete: Cascade)
+    assigned_member CampaignMember? @relation("DonorAssignedMember", fields: [assigned_member_id], references: [id])
+    added_by_member CampaignMember? @relation("DonorAddedByMember", fields: [added_by_member_id], references: [id])
+    user            User?           @relation("DonorUserAccount", fields: [user_id], references: [id])
+    donations       Donation[]
 
     @@map("campaign_donors")
 }
@@ -382,7 +382,7 @@ model Donation {
     stripe_payment_intent_id String?       @unique @db.VarChar(255)
     payment_method           PaymentMethod @default(card)
     payment_status           PaymentStatus @default(pending)
-    card_brand               String?       @db.VarChar(50)   // e.g. "visa", "mastercard"
+    card_brand               String?       @db.VarChar(50) // e.g. "visa", "mastercard"
     card_last4               String?       @db.VarChar(4)
     card_exp_month           Int?
     card_exp_year            Int?
