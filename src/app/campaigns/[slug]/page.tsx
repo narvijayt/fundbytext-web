@@ -155,9 +155,10 @@ export default async function CampaignPublicPage({
         }))
         .sort((a, b) => b.total_raised - a.total_raised);
 
-    // For org campaigns, goal_amount is stored per-participant — scale up for display
-    const isOrgCampaign = campaign.campaign_type === "organization";
-    const participantScale = isOrgCampaign && participants.length > 0 ? participants.length : 1;
+    // participant_goal stores a per-participant target — scale up to get the total.
+    // org_goal is already the single shared total — use it as-is.
+    const isPerParticipantGoal = campaign.goal_type === "participant_goal";
+    const participantScale = isPerParticipantGoal && participants.length > 0 ? participants.length : 1;
     const goalAmount        = rawGoalAmount        != null ? rawGoalAmount        * participantScale : null;
     const initialGoalAmount = rawInitialGoalAmount != null ? rawInitialGoalAmount * participantScale : null;
     const pct = goalAmount && goalAmount > 0 ? Math.min(100, (totalRaised / goalAmount) * 100) : 0;
