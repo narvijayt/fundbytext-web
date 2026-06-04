@@ -7,6 +7,10 @@ export const metadata: Metadata = {
     description: "Fundraising platform powered by text",
 };
 
+export function generateViewport() {
+    return { width: "device-width", initialScale: 1 };
+}
+
 export default function RootLayout({
     children,
 }: Readonly<{

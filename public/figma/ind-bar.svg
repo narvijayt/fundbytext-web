@@ -1,0 +1,29 @@
+<svg width="136.973" height="16.1739" overflow="visible" style="display: block;" viewBox="0 0 136.973 16.1739" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="bar-texture">
+<g clip-path="url(#clip0_0_4)">
+<rect width="136.973" height="16.1739" rx="8.08696" fill="url(#paint0_linear_0_4)"/>
+<line id="Line 33" opacity="0.5" x1="10.0835" y1="-1.68032" x2="-9.93067" y2="18.3339" stroke="var(--stroke-0, #26BA58)" stroke-width="3.53804"/>
+<line id="Line 34" opacity="0.5" x1="20.9997" y1="-1.68032" x2="0.985508" y2="18.3339" stroke="var(--stroke-0, #26BA58)" stroke-width="3.53804"/>
+<line id="Line 35" opacity="0.5" x1="31.918" y1="-1.68032" x2="11.9038" y2="18.3339" stroke="var(--stroke-0, #26BA58)" stroke-width="3.53804"/>
+<line id="Line 36" opacity="0.5" x1="42.8341" y1="-1.68032" x2="22.8199" y2="18.3339" stroke="var(--stroke-0, #26BA58)" stroke-width="3.53804"/>
+<line id="Line 37" opacity="0.5" x1="53.7503" y1="-1.68032" x2="33.7361" y2="18.3339" stroke="var(--stroke-0, #26BA58)" stroke-width="3.53804"/>
+<line id="Line 38" opacity="0.5" x1="64.6665" y1="-1.68032" x2="44.6523" y2="18.3339" stroke="var(--stroke-0, #26BA58)" stroke-width="3.53804"/>
+<line id="Line 39" opacity="0.5" x1="75.5827" y1="-1.68032" x2="55.5685" y2="18.3339" stroke="var(--stroke-0, #26BA58)" stroke-width="3.53804"/>
+<line id="Line 40" opacity="0.5" x1="86.4988" y1="-1.68032" x2="66.4846" y2="18.3339" stroke="var(--stroke-0, #26BA58)" stroke-width="3.53804"/>
+<line id="Line 41" opacity="0.5" x1="97.415" y1="-1.68032" x2="77.4008" y2="18.3339" stroke="var(--stroke-0, #26BA58)" stroke-width="3.53804"/>
+<line id="Line 42" opacity="0.5" x1="108.331" y1="-1.68032" x2="88.317" y2="18.3339" stroke="var(--stroke-0, #26BA58)" stroke-width="3.53804"/>
+<line id="Line 43" opacity="0.5" x1="119.249" y1="-1.68032" x2="99.2353" y2="18.3339" stroke="var(--stroke-0, #26BA58)" stroke-width="3.53804"/>
+<line id="Line 44" opacity="0.5" x1="130.166" y1="-1.68032" x2="110.151" y2="18.3339" stroke="var(--stroke-0, #26BA58)" stroke-width="3.53804"/>
+<line id="Line 45" opacity="0.5" x1="141.081" y1="-1.68032" x2="121.067" y2="18.3339" stroke="var(--stroke-0, #26BA58)" stroke-width="3.53804"/>
+</g>
+</g>
+<defs>
+<linearGradient id="paint0_linear_0_4" x1="0" y1="8.08696" x2="136.973" y2="8.08696" gradientUnits="userSpaceOnUse">
+<stop stop-color="#28C45D"/>
+<stop offset="1" stop-color="#34D56A"/>
+</linearGradient>
+<clipPath id="clip0_0_4">
+<rect width="136.973" height="16.1739" rx="8.08696" fill="white"/>
+</clipPath>
+</defs>
+</svg>
