@@ -196,13 +196,10 @@ export default async function HomePage() {
                         background: "radial-gradient(ellipse 90% 72% at 50% 32%,rgba(255,255,255,1) 0%,rgba(255,255,255,0.97) 22%,rgba(190,228,255,0.60) 45%,rgba(33,150,253,0.10) 68%,transparent 85%)",
                     }} />
 
-                    {/* L3 — Square grid texture: 1px lines every 50px forming visible square cells */}
+                    {/* L3 — Tiny 2×2px square dots every 20px */}
                     <div className="absolute inset-0" style={{
-                        backgroundImage: [
-                            "linear-gradient(rgba(33,150,253,0.22) 1px,transparent 1px)",
-                            "linear-gradient(90deg,rgba(33,150,253,0.22) 1px,transparent 1px)",
-                        ].join(","),
-                        backgroundSize: "50px 50px",
+                        backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20'%3E%3Crect width='2' height='2' fill='rgba(33%2C150%2C253%2C0.35)'/%3E%3C/svg%3E")`,
+                        backgroundRepeat: "repeat",
                     }} />
 
                     {/* L4 — Noise grain */}
@@ -414,19 +411,24 @@ export default async function HomePage() {
                 {/* ── Stats bar — SVG arch curve + white content ── */}
                 <div className="relative z-10">
 
-                    {/* Arch SVG: white parabolic hill rising from both edges into the hero */}
+                    {/* Arch SVG: arch rises from a white base at corners to peak at center.
+                        Base (y=70→120) ensures white is visible at every edge, not just center. */}
                     <svg
                         className="block w-full"
-                        viewBox="0 0 1440 100"
+                        viewBox="0 0 1440 120"
                         preserveAspectRatio="none"
-                        style={{ height: "clamp(50px,7vw,100px)", display: "block", marginBottom: -2 }}
+                        style={{ height: "clamp(60px,8vw,120px)", display: "block", marginBottom: -2 }}
                         aria-hidden="true"
                     >
-                        <path d="M0,100 Q720,0 1440,100 Z" fill="white" />
+                        <path d="M0,70 Q720,0 1440,70 L1440,120 L0,120 Z" fill="white" />
                     </svg>
 
-                    {/* Stats content on white background */}
-                    <div className="bg-white">
+                    {/* Stats content — white bg with matching tiny square dots */}
+                    <div style={{
+                        background: "white",
+                        backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20'%3E%3Crect width='2' height='2' fill='rgba(33%2C150%2C253%2C0.14)'/%3E%3C/svg%3E")`,
+                        backgroundRepeat: "repeat",
+                    }}>
                         <div className="grid grid-cols-2 lg:flex lg:items-center lg:justify-center divide-x divide-y lg:divide-y-0 divide-[#eaeef3]/60">
                             {[
                                 { img: A_STAT_CAMPAIGNS, imgH: 96, imgW: 80,  smH: 60, smW: 50, value: "200+",             label: "Campaigns Launched" },
