@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import DeleteCampaignButton from "@/app/(protected)/dashboard/_components/DeleteCampaignButton";
 import { type Campaign, type Payout, type Member, type Donor, type CsvRow, type ImportResult, STEPS } from "./_components/types";
@@ -617,32 +618,86 @@ export default function SetupWizard({
 
     // ── Render ─────────────────────────────────────────────────────────────
 
-    return (
-        <div className="min-h-screen bg-zinc-50 py-10 px-4 pb-24" ref={topRef}>
-            <div className="w-full max-w-2xl mx-auto">
+    const STEP_META: Record<number, { title: string; subtitle: string }> = {
+        1: { title: "Campaign Details",   subtitle: "On your mark get set… Go!" },
+        2: { title: "Funding Goal",       subtitle: "Set your sights high!" },
+        3: { title: "Campaign Visuals",   subtitle: "Make it shine!" },
+        4: { title: isOrg ? "Participants & Donors" : "Donors", subtitle: "Build your team!" },
+        5: { title: "Thank You Note",     subtitle: "Finish strong!" },
+    };
+    const meta = STEP_META[step] ?? STEP_META[1];
 
-                {/* Header */}
-                <div className="text-center mb-8 relative">
+    return (
+        <div className="min-h-screen pb-28" style={{ background: "linear-gradient(180deg, #2196F3 0%, #1565C0 100%)" }} ref={topRef}>
+
+            {/* ── Top header bar ──────────────────────────────────────── */}
+            <div className="bg-white" style={{ height: 78 }}>
+                <div
+                    className="h-full max-w-5xl mx-auto flex items-center justify-between"
+                    style={{ paddingLeft: 40, paddingRight: 40 }}
+                >
                     <button
                         type="button"
                         onClick={() => router.push(isEditMode || isLaunched ? `/dashboard/campaigns/${slug}` : "/dashboard")}
-                        className="absolute left-0 top-0 flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-600 transition-colors"
+                        className="flex items-center transition-opacity hover:opacity-70 shrink-0"
                     >
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                        </svg>
-                        {isEditMode || isLaunched ? "Campaign" : "Dashboard"}
+                        <Image src="/assets/campaigns/app-logo.svg" width={30} height={43} alt="FundbyText" />
                     </button>
-                    <h1 className="text-2xl font-bold text-gray-900">
-                        {isEditMode || isLaunched ? "Edit Your" : "Create Your"}{" "}
-                        <span className="text-orange-500">Campaign</span>
+                    <h1
+                        className="text-center font-black"
+                        style={{ color: "rgba(0,79,149,1)", fontSize: 32, lineHeight: "115%", letterSpacing: 0 }}
+                    >
+                        {isEditMode || isLaunched ? "Edit Your" : "Create Your"} Campaign
                     </h1>
-                    <p className="text-sm text-gray-500 mt-1">
-                        Complete each step — you can come back and edit at any time.
+                    <p className="shrink-0 text-right font-sans font-black text-sm leading-none tracking-[1px] uppercase text-[rgba(87,114,141,1)]">
+                        STEP{" "}
+                        <span className="text-[#26BA58]">{step}</span>
+                        {" "}/{" "}
+                        <span>5</span>
                     </p>
                 </div>
+            </div>
 
+            {/* ── Progress bar — centered, equal padding on both ends ───── */}
+            <div className="bg-white w-full">
                 <ProgressBar step={step} maxStep={maxStep} isOrg={isOrg} onStepClick={goToStep} />
+            </div>
+
+            {/* ── Step banner (not shown for step 4 — it renders its own banners) ── */}
+            {step !== 4 && (
+                <div className="relative overflow-hidden px-6 pt-8 pb-6 text-center">
+                    {/* Question-mark texture */}
+                    <div
+                        className="absolute inset-0 opacity-[0.07] pointer-events-none"
+                        style={{
+                            backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60'%3E%3Ctext x='10' y='44' font-size='40' font-family='sans-serif' fill='white'%3E%3F%3C/text%3E%3C/svg%3E")`,
+                            backgroundSize: "60px 60px",
+                        }}
+                    />
+                    {/* Ribbon banner */}
+                    <div className="relative z-10 flex justify-center">
+                        <div
+                            className="px-10 py-4 text-center min-w-65"
+                            style={{
+                                background: "linear-gradient(180deg, #1A3F8F 0%, #0D2860 100%)",
+                                borderRadius: "12px",
+                                boxShadow: "0 4px 24px rgba(0,0,0,0.35)",
+                            }}
+                        >
+                            <h2 className="text-2xl font-extrabold text-white tracking-wide">{meta.title}</h2>
+                            {/* Subtitle with decorative dashes */}
+                            <div className="flex items-center justify-center gap-2 mt-1.5">
+                                <span className="text-blue-300 text-sm select-none">—</span>
+                                <p className="text-blue-200 text-xs font-medium">{meta.subtitle}</p>
+                                <span className="text-blue-300 text-sm select-none">—</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ── Step content ────────────────────────────────────────── */}
+            <div className="w-full max-w-2xl mx-auto px-4 pt-5">
 
                 {/* Fullscreen launch loader */}
                 {launching && (
@@ -656,89 +711,98 @@ export default function SetupWizard({
                     </div>
                 )}
 
-                <div className={`bg-white rounded-2xl shadow-lg overflow-hidden ${step === 5 ? "" : "p-8"}`}>
-                    {step === 1 && (
-                        <StepDetails
-                            campaignType={campaignType} setCampaignType={setCampaignType}
-                            campaignTypeReadOnly
-                            isOrg={isOrg}
-                            name={name} setName={setName} nameReadOnly
-                            orgDisplayName={orgDisplayName} setOrgDisplayName={setOrgDisplayName}
-                            orgDisplayNameLocked={orgDisplayNameLocked}
-                            story={story} setStory={setStory}
-                            timezone={timezone} setTimezone={setTimezone}
-                            startDate={startDate} setStartDate={setStartDate}
-                            endDate={endDate} setEndDate={setEndDate}
-                            fieldErrors={fieldErrors} clearFE={clearFE}
-                            isLaunched={isLaunched} isUpcoming={isUpcoming} isActive={isActive}
-                            isCompleted={campaign.status === "completed"}
-                        />
-                    )}
-                    {step === 2 && (
-                        <StepFundingGoal
-                            isOrg={isOrg}
-                            goalType={goalType} setGoalType={setGoalType}
-                            goalAmount={goalAmount} setGoalAmount={setGoalAmount}
-                            donorsPerParticipant={donorsPerParticipant} setDonorsPerParticipant={setDonorsPerParticipant}
-                            payout={payout} setPayout={setPayout}
-                            orgDisplayName={orgDisplayName}
-                            fieldErrors={fieldErrors} clearFE={clearFE}
-                            isLaunched={isLaunched}
-                        />
-                    )}
-                    {step === 3 && (
-                        <StepVisual
-                            isOrg={isOrg}
-                            profileUrl={profileUrl} setProfileUrl={setProfileUrl}
-                            heroUrl={heroUrl} setHeroUrl={setHeroUrl}
-                            galleryUrls={galleryUrls} setGalleryUrls={setGalleryUrls}
-                            bgTheme={bgTheme} setBgTheme={setBgTheme}
-                            accentColor={accentColor} setAccentColor={setAccentColor}
-                            secondaryColor={secondaryColor} setSecondaryColor={setSecondaryColor}
-                            colorMode={colorMode} setColorMode={setColorMode}
-                            extractedColors={extractedColors} setExtractedColors={setExtractedColors}
-                            uploadingPhoto={uploadingPhoto} uploadPhoto={uploadPhoto}
-                            fieldErrors={fieldErrors} clearFE={clearFE}
-                            slug={slug} campaignName={campaign.name}
-                        />
-                    )}
-                    {step === 4 && (
-                        <StepParticipants
-                            isOrg={isOrg} isLaunched={isLaunched}
-                            members={members}
-                            addFirst={addFirst} setAddFirst={setAddFirst}
-                            addLast={addLast} setAddLast={setAddLast}
-                            addEmail={addEmail} setAddEmail={setAddEmail}
-                            addPhone={addPhone} setAddPhone={setAddPhone}
-                            addingMember={addingMember}
-                            onAddParticipant={addParticipant}
-                            onRemoveParticipant={removeParticipant}
-                            onImportParticipants={importParticipants}
-                            donors={donors}
-                            dFirst={dFirst} setDFirst={setDFirst}
-                            dLast={dLast} setDLast={setDLast}
-                            dEmail={dEmail} setDEmail={setDEmail}
-                            dPhone={dPhone} setDPhone={setDPhone}
-                            addingDonor={addingDonor}
-                            onAddDonor={addDonor}
-                            onRemoveDonor={removeDonor}
-                            onImportDonors={importDonors}
-                            organizerInfo={organizerInfo}
-                        />
-                    )}
-                    {step === 5 && (
-                        <StepThankYou
-                            thankYou={thankYou} setThankYou={setThankYou}
-                            fieldErrors={fieldErrors} clearFE={clearFE}
-                            isOrg={isOrg} orgDisplayName={orgDisplayName}
-                            members={campaign.members}
-                        />
-                    )}
-                </div>
+                {/* Step 1 — individual cards (no outer wrapper) */}
+                {step === 1 && (
+                    <StepDetails
+                        campaignType={campaignType} setCampaignType={setCampaignType}
+                        campaignTypeReadOnly
+                        isOrg={isOrg}
+                        name={name} setName={setName} nameReadOnly
+                        orgDisplayName={orgDisplayName} setOrgDisplayName={setOrgDisplayName}
+                        orgDisplayNameLocked={orgDisplayNameLocked}
+                        story={story} setStory={setStory}
+                        timezone={timezone} setTimezone={setTimezone}
+                        startDate={startDate} setStartDate={setStartDate}
+                        endDate={endDate} setEndDate={setEndDate}
+                        fieldErrors={fieldErrors} clearFE={clearFE}
+                        isLaunched={isLaunched} isUpcoming={isUpcoming} isActive={isActive}
+                        isCompleted={campaign.status === "completed"}
+                    />
+                )}
 
-                {/* Delete — below the card, only for draft/upcoming */}
+                {/* Steps 2-3 — single white card with padding */}
+                {(step === 2 || step === 3) && (
+                    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden p-6">
+                        {step === 2 && (
+                            <StepFundingGoal
+                                isOrg={isOrg}
+                                goalType={goalType} setGoalType={setGoalType}
+                                goalAmount={goalAmount} setGoalAmount={setGoalAmount}
+                                donorsPerParticipant={donorsPerParticipant} setDonorsPerParticipant={setDonorsPerParticipant}
+                                payout={payout} setPayout={setPayout}
+                                orgDisplayName={orgDisplayName}
+                                fieldErrors={fieldErrors} clearFE={clearFE}
+                                isLaunched={isLaunched}
+                            />
+                        )}
+                        {step === 3 && (
+                            <StepVisual
+                                isOrg={isOrg}
+                                profileUrl={profileUrl} setProfileUrl={setProfileUrl}
+                                heroUrl={heroUrl} setHeroUrl={setHeroUrl}
+                                galleryUrls={galleryUrls} setGalleryUrls={setGalleryUrls}
+                                bgTheme={bgTheme} setBgTheme={setBgTheme}
+                                accentColor={accentColor} setAccentColor={setAccentColor}
+                                secondaryColor={secondaryColor} setSecondaryColor={setSecondaryColor}
+                                colorMode={colorMode} setColorMode={setColorMode}
+                                extractedColors={extractedColors} setExtractedColors={setExtractedColors}
+                                uploadingPhoto={uploadingPhoto} uploadPhoto={uploadPhoto}
+                                fieldErrors={fieldErrors} clearFE={clearFE}
+                                slug={slug} campaignName={campaign.name}
+                            />
+                        )}
+                    </div>
+                )}
+
+                {/* Step 4 — manages its own banners and cards */}
+                {step === 4 && (
+                    <StepParticipants
+                        isOrg={isOrg} isLaunched={isLaunched}
+                        members={members}
+                        addFirst={addFirst} setAddFirst={setAddFirst}
+                        addLast={addLast} setAddLast={setAddLast}
+                        addEmail={addEmail} setAddEmail={setAddEmail}
+                        addPhone={addPhone} setAddPhone={setAddPhone}
+                        addingMember={addingMember}
+                        onAddParticipant={addParticipant}
+                        onRemoveParticipant={removeParticipant}
+                        onImportParticipants={importParticipants}
+                        donors={donors}
+                        dFirst={dFirst} setDFirst={setDFirst}
+                        dLast={dLast} setDLast={setDLast}
+                        dEmail={dEmail} setDEmail={setDEmail}
+                        dPhone={dPhone} setDPhone={setDPhone}
+                        addingDonor={addingDonor}
+                        onAddDonor={addDonor}
+                        onRemoveDonor={removeDonor}
+                        onImportDonors={importDonors}
+                        organizerInfo={organizerInfo}
+                    />
+                )}
+
+                {/* Step 5 — manages its own layout */}
+                {step === 5 && (
+                    <StepThankYou
+                        thankYou={thankYou} setThankYou={setThankYou}
+                        fieldErrors={fieldErrors} clearFE={clearFE}
+                        isOrg={isOrg} orgDisplayName={orgDisplayName}
+                        members={campaign.members}
+                    />
+                )}
+
+                {/* Delete — below the content, only for draft/upcoming */}
                 {(campaign.status === "draft" || (campaign.status === "upcoming" && !hasDonations)) && (
-                    <div className="mt-6 text-center">
+                    <div className="mt-5 text-center">
                         <DeleteCampaignButton
                             slug={slug}
                             campaignName={campaign.name ?? null}
