@@ -20,10 +20,11 @@ function fmt(n: number) {
     return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(n);
 }
 
-function Avatar({ name, photoUrl, size = "md" }: { name: string; photoUrl: string | null; size?: "sm" | "md" | "lg" }) {
+function Avatar({ name, photoUrl, size = "md", onDark = true }: { name: string; photoUrl: string | null; size?: "sm" | "md" | "lg"; onDark?: boolean }) {
     const sizeClass = size === "lg" ? "w-16 h-16 text-xl" : size === "md" ? "w-10 h-10 text-sm" : "w-8 h-8 text-xs";
+    const colorCls  = onDark ? "bg-white/20 border-white/40 text-white" : "bg-blue-100 border-blue-200 text-blue-700";
     return (
-        <div className={`${sizeClass} rounded-full bg-white/20 border-2 border-white/40 flex items-center justify-center font-bold text-white shrink-0 overflow-hidden`}>
+        <div className={`${sizeClass} rounded-full border-2 ${colorCls} flex items-center justify-center font-bold shrink-0 overflow-hidden`}>
             {photoUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={photoUrl} alt={name} className="w-full h-full object-cover" />
@@ -76,10 +77,15 @@ export default function Leaderboard({ participants, goalAmount, accent, donation
                 {goalAmount && (
                     <div className="grid sm:grid-cols-2 gap-6">
                         {/* Goal Achievers */}
-                        <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-5 border border-white/20">
+                        <div className="bg-white rounded-2xl p-5 shadow-lg relative overflow-hidden">
+                            <div className="absolute -top-3 -right-3 opacity-10">
+                                <svg width="80" height="80" viewBox="0 0 24 24" fill="#FFD700">
+                                    <path d="M7 4V2h10v2h3a1 1 0 011 1v3c0 2.8-1.6 5.2-4 6.3V16h1a2 2 0 012 2v2H4v-2a2 2 0 012-2h1v-1.7C4.6 13.2 3 10.8 3 8V5a1 1 0 011-1h3z"/>
+                                </svg>
+                            </div>
                             <div className="flex items-center gap-2 mb-4">
                                 <TrophyIcon variant="gold" />
-                                <h3 className="text-white font-bold text-base">Goal Achievers</h3>
+                                <h3 className="font-bold text-base text-gray-800">Goal Achievers</h3>
                             </div>
                             {achievers.length > 0 ? (
                                 <ul className="space-y-3">
@@ -87,31 +93,36 @@ export default function Leaderboard({ participants, goalAmount, accent, donation
                                         <li key={p.id}>
                                             <button
                                                 onClick={() => canDonate && dispatchDonate(p.id)}
-                                disabled={!canDonate}
+                                                disabled={!canDonate}
                                                 className="w-full flex items-center gap-3 hover:opacity-80 transition-opacity text-left"
                                             >
-                                                <span className="text-white/50 text-xs w-4 text-right">{i + 1}</span>
-                                                <Avatar name={p.first_name} photoUrl={p.profile_photo_url} size="sm" />
+                                                <span className="text-gray-400 text-xs w-4 text-right">{i + 1}</span>
+                                                <Avatar name={p.first_name} photoUrl={p.profile_photo_url} size="sm" onDark={false} />
                                                 <div className="flex-1 min-w-0">
-                                                    <p className="text-white text-xs font-semibold truncate">
+                                                    <p className="text-gray-800 text-xs font-semibold truncate">
                                                         {p.first_name} {p.last_name}
                                                     </p>
                                                 </div>
-                                                <span className="text-green-300 text-xs font-bold">{fmt(p.total_raised)}</span>
+                                                <span className="text-green-600 text-xs font-bold">{fmt(p.total_raised)}</span>
                                             </button>
                                         </li>
                                     ))}
                                 </ul>
                             ) : (
-                                <p className="text-white/40 text-sm text-center py-4">No one yet — be the first!</p>
+                                <p className="text-gray-400 text-sm text-center py-4">No one yet — be the first!</p>
                             )}
                         </div>
 
                         {/* Goal in Progress */}
-                        <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-5 border border-white/20">
+                        <div className="bg-white rounded-2xl p-5 shadow-lg relative overflow-hidden">
+                            <div className="absolute -top-3 -right-3 opacity-10">
+                                <svg width="80" height="80" viewBox="0 0 24 24" fill="#C0C0C0">
+                                    <path d="M7 4V2h10v2h3a1 1 0 011 1v3c0 2.8-1.6 5.2-4 6.3V16h1a2 2 0 012 2v2H4v-2a2 2 0 012-2h1v-1.7C4.6 13.2 3 10.8 3 8V5a1 1 0 011-1h3z"/>
+                                </svg>
+                            </div>
                             <div className="flex items-center gap-2 mb-4">
                                 <TrophyIcon variant="silver" />
-                                <h3 className="text-white font-bold text-base">Goal in Progress</h3>
+                                <h3 className="font-bold text-base text-gray-800">Goal in Progress</h3>
                             </div>
                             {inProgress.length > 0 ? (
                                 <ul className="space-y-3">
@@ -121,17 +132,17 @@ export default function Leaderboard({ participants, goalAmount, accent, donation
                                             <li key={p.id} className="space-y-1">
                                                 <button
                                                     onClick={() => canDonate && dispatchDonate(p.id)}
-                                disabled={!canDonate}
+                                                    disabled={!canDonate}
                                                     className="w-full flex items-center gap-2 hover:opacity-80 transition-opacity text-left"
                                                 >
-                                                    <span className="text-white/50 text-xs w-4 text-right">{i + 1}</span>
-                                                    <Avatar name={p.first_name} photoUrl={p.profile_photo_url} size="sm" />
-                                                    <p className="flex-1 text-white text-xs font-semibold truncate">
+                                                    <span className="text-gray-400 text-xs w-4 text-right">{i + 1}</span>
+                                                    <Avatar name={p.first_name} photoUrl={p.profile_photo_url} size="sm" onDark={false} />
+                                                    <p className="flex-1 text-gray-800 text-xs font-semibold truncate">
                                                         {p.first_name} {p.last_name}
                                                     </p>
-                                                    <span className="text-white/70 text-xs">{fmt(p.total_raised)}</span>
+                                                    <span className="text-gray-500 text-xs">{fmt(p.total_raised)}</span>
                                                 </button>
-                                                <div className="ml-10 h-1.5 rounded-full bg-white/20 overflow-hidden">
+                                                <div className="ml-10 h-1.5 rounded-full bg-gray-100 overflow-hidden">
                                                     <div
                                                         className="h-full rounded-full"
                                                         style={{ width: `${pct}%`, background: "#f97316" }}
@@ -142,7 +153,7 @@ export default function Leaderboard({ participants, goalAmount, accent, donation
                                     })}
                                 </ul>
                             ) : (
-                                <p className="text-white/40 text-sm text-center py-4">All participants achieved their goal!</p>
+                                <p className="text-gray-400 text-sm text-center py-4">All participants achieved their goal!</p>
                             )}
                         </div>
                     </div>

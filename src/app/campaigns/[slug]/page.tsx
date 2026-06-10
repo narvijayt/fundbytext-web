@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { prisma } from "@/lib/prisma";
 import { getAuthUser } from "@/lib/session";
 import { MemberRole } from "@/generated/prisma/enums";
@@ -9,6 +10,7 @@ import SpreadTheWord from "./_components/SpreadTheWord";
 import CampaignDonateShell from "./_components/CampaignDonateShell";
 import Leaderboard from "./_components/Leaderboard";
 import CampaignUpdater from "./_components/CampaignUpdater";
+import CampaignHeaderShare from "./_components/CampaignHeaderShare";
 
 export const revalidate = 60;
 
@@ -87,12 +89,13 @@ export default async function CampaignPublicPage({
         return (
             <div className="min-h-screen bg-gray-50 font-sans flex flex-col">
                 <CampaignUpdater campaignSlug={slug} status={campaign.status} />
-                <nav className="bg-white border-b border-gray-100 px-6 py-3 flex items-center gap-2">
-                    <Link href="/" className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-lg bg-orange-500 flex items-center justify-center">
-                            <span className="text-white font-bold text-sm">F</span>
-                        </div>
-                        <span className="font-bold text-lg tracking-tight text-orange-500 hidden sm:block">FundByText</span>
+                <nav className="flex items-center justify-between px-6 py-3 shadow-md" style={{ background: "#1565C0" }}>
+                    <Link href="/" className="flex items-center gap-2.5">
+                        <Image src="/assets/campaigns/app-logo.svg" width={28} height={40} alt="FundByText" className="w-6 h-9 brightness-0 invert" />
+                        <span className="font-extrabold text-lg tracking-tight text-white hidden sm:block">FundByText</span>
+                    </Link>
+                    <Link href="/campaigns/create" className="px-5 py-2 rounded-lg text-white font-bold text-sm" style={{ background: "linear-gradient(135deg, #f97316 0%, #ea580c 100%)" }}>
+                        Get Started
                     </Link>
                 </nav>
                 <div className="flex-1 flex items-center justify-center px-4 py-20">
@@ -196,21 +199,25 @@ export default async function CampaignPublicPage({
             />
 
             {/* ── Navbar ────────────────────────────────────────────────── */}
-            <nav className="sticky top-0 z-50 flex items-center justify-between px-6 py-3 shadow-sm bg-white border-b border-gray-100">
-                <Link href="/" className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: accent }}>
-                        <span className="text-white font-bold text-sm">F</span>
-                    </div>
-                    <span className="font-bold text-lg tracking-tight hidden sm:block" style={{ color: accent }}>FundByText</span>
+            <nav className="sticky top-0 z-50 flex items-center justify-between px-6 py-3 shadow-md" style={{ background: "#1565C0" }}>
+                <Link href="/" className="flex items-center gap-2.5">
+                    <Image
+                        src="/assets/campaigns/app-logo.svg"
+                        width={28}
+                        height={40}
+                        alt="FundByText"
+                        className="w-6 h-9 brightness-0 invert"
+                    />
+                    <span className="font-extrabold text-lg tracking-tight text-white hidden sm:block">FundByText</span>
                 </Link>
 
-                <div className="flex items-center gap-3">
-                    <button className="w-8 h-8 flex flex-col items-center justify-center gap-1.5 rounded-lg hover:bg-gray-100 transition-colors">
-                        <span className="block w-5 h-0.5 bg-gray-600 rounded" />
-                        <span className="block w-5 h-0.5 bg-gray-600 rounded" />
-                        <span className="block w-5 h-0.5 bg-gray-600 rounded" />
-                    </button>
-                </div>
+                <Link
+                    href="/campaigns/create"
+                    className="px-5 py-2 rounded-lg text-white font-bold text-sm transition-opacity hover:opacity-90 shadow-sm"
+                    style={{ background: "linear-gradient(135deg, #f97316 0%, #ea580c 100%)" }}
+                >
+                    Get Started
+                </Link>
             </nav>
 
             {/* ── Private campaign banner — visible to members only ─────── */}
@@ -243,41 +250,68 @@ export default async function CampaignPublicPage({
                 </div>
             )}
 
-            {/* ── Campaign title ────────────────────────────────────────── */}
+            {/* ── Campaign title + share bar ─────────────────────────────── */}
             <div className="bg-white border-b border-gray-100 px-6 py-5">
                 <div className="max-w-6xl mx-auto">
-                    <div className="flex items-center gap-2 mb-1">
-                        <span
-                            className="px-2 py-0.5 rounded text-white text-[10px] font-bold uppercase"
-                            style={{ background: campaign.status === "active" ? "#22c55e" : "#f97316" }}
-                        >
-                            {campaign.status}
-                        </span>
-                        {campaign.campaign_type === "organization" && (
-                            <span className="px-2 py-0.5 rounded bg-blue-50 text-blue-700 text-[10px] font-bold uppercase">Organization</span>
-                        )}
+                    <div className="flex items-start justify-between gap-4">
+                        {/* Left: title + badges */}
+                        <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                                <span
+                                    className="px-2.5 py-0.5 rounded-md text-white text-[10px] font-bold uppercase tracking-wide"
+                                    style={{ background: campaign.status === "active" ? "#22c55e" : "#f97316" }}
+                                >
+                                    {campaign.status}
+                                </span>
+                                {campaign.campaign_type === "organization" && (
+                                    <span className="px-2.5 py-0.5 rounded-md bg-blue-50 text-blue-700 text-[10px] font-bold uppercase tracking-wide border border-blue-100">Organization</span>
+                                )}
+                            </div>
+                            <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 leading-tight">{displayTitle}</h1>
+                            {campaign.campaign_type === "organization" && campaign.org_display_name && (
+                                <p className="text-sm text-gray-500 mt-1">
+                                    by <span className="font-semibold">{campaign.org_display_name}</span>
+                                </p>
+                            )}
+                        </div>
+
+                        {/* Right: share icons + organizer set-up */}
+                        <div className="flex items-center gap-3 shrink-0 pt-1">
+                            <CampaignHeaderShare slug={slug} />
+                            {isOrganizer && (
+                                <Link
+                                    href={`/campaigns/${slug}/edit`}
+                                    className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-white text-xs font-bold transition-opacity hover:opacity-90 shadow-sm"
+                                    style={{ background: "#f97316" }}
+                                >
+                                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                    </svg>
+                                    Set Up
+                                </Link>
+                            )}
+                        </div>
                     </div>
-                    <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 leading-tight">{displayTitle}</h1>
-                    {campaign.campaign_type === "organization" && campaign.org_display_name && (
-                        <p className="text-sm text-gray-500 mt-1">
-                            by {campaign.org_display_name}
-                        </p>
-                    )}
                 </div>
             </div>
 
-            {/* ── Main two-column layout ─────────────────────────────────── */}
+            {/* ── Full-width media grid ─────────────────────────────────── */}
+            <div className="bg-white border-b border-gray-100 px-4 sm:px-6 pb-0">
+                <div className="max-w-6xl mx-auto">
+                    <MediaGrid
+                        heroUrl={heroMedia?.url ?? null}
+                        galleryUrls={galleryMedia.map((m) => m.url)}
+                        campaignName={displayTitle}
+                    />
+                </div>
+            </div>
+
+            {/* ── Two-column: story+social | donate panel ───────────────── */}
             <div className="bg-gray-50">
-                <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 grid lg:grid-cols-[1fr_340px] gap-8">
+                <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 grid lg:grid-cols-[1fr_360px] gap-8">
 
-                    {/* Left column — server-rendered */}
+                    {/* Left column */}
                     <div className="space-y-8">
-                        <MediaGrid
-                            heroUrl={heroMedia?.url ?? null}
-                            galleryUrls={galleryMedia.map((m) => m.url)}
-                            campaignName={displayTitle}
-                        />
-
                         <CampaignStory
                             story={campaign.story ?? ""}
                             organizerName={organizerMember
@@ -348,18 +382,100 @@ export default async function CampaignPublicPage({
             )}
 
             {/* ── Footer ────────────────────────────────────────────────── */}
-            <footer style={{ background: "#0a1628" }} className="px-6 py-10">
-                <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-                    <div className="flex items-center gap-2">
-                        <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: accent }}>
-                            <span className="text-white font-bold text-xs">F</span>
+            <footer style={{ background: "#0a1628" }} className="px-6 pt-14 pb-8">
+                <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-12 items-start">
+
+                    {/* Left: Brand info + nav + payment + social */}
+                    <div className="grid grid-cols-1 sm:grid-cols-[auto_1fr_1fr] gap-8">
+                        {/* Logo + tagline */}
+                        <div className="space-y-4 min-w-40">
+                            <div className="flex items-center gap-2.5">
+                                <Image
+                                    src="/assets/campaigns/app-logo.svg"
+                                    width={28}
+                                    height={40}
+                                    alt="FundByText"
+                                    className="w-6 h-9 brightness-0 invert opacity-90"
+                                />
+                                <span className="text-white font-extrabold text-lg tracking-tight">FundByText</span>
+                            </div>
+                            <p className="text-white/40 text-xs leading-relaxed max-w-40">
+                                The easiest way to raise funds via text message.
+                            </p>
+                            {/* Payment icons */}
+                            <div className="flex items-center gap-2 flex-wrap">
+                                {["VISA", "MC", "AMEX", "PP"].map((p) => (
+                                    <div key={p} className="px-2 py-1 rounded bg-white/10 text-white/50 text-[9px] font-bold tracking-wide">{p}</div>
+                                ))}
+                            </div>
                         </div>
-                        <span className="text-white font-bold">FundByText</span>
+
+                        {/* Nav column 1 */}
+                        <div className="space-y-3">
+                            <p className="text-white/30 text-[10px] font-bold uppercase tracking-widest">Platform</p>
+                            {["How It Works", "Pricing", "Features", "Success Stories"].map((l) => (
+                                <Link key={l} href="#" className="block text-white/50 text-sm hover:text-white/80 transition-colors">{l}</Link>
+                            ))}
+                        </div>
+
+                        {/* Nav column 2 */}
+                        <div className="space-y-3">
+                            <p className="text-white/30 text-[10px] font-bold uppercase tracking-widest">Company</p>
+                            {["About Us", "Contact", "Privacy Policy", "Terms & Conditions"].map((l) => (
+                                <Link key={l} href="#" className="block text-white/50 text-sm hover:text-white/80 transition-colors">{l}</Link>
+                            ))}
+                            {/* Social icons */}
+                            <div className="flex gap-2 pt-2">
+                                {[
+                                    { label: "Facebook", color: "#1877F2", path: "M18.77 7.46H14.5v-1.9c0-.9.6-1.1 1-1.1h3V.5h-4.33C10.24.5 9.5 3.44 9.5 5.32v2.15h-3v4h3v12h5v-12h3.85l.42-4z" },
+                                    { label: "Instagram", color: "#E1306C", path: "M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" },
+                                ].map((s) => (
+                                    <a key={s.label} href="#" aria-label={s.label}
+                                        className="w-9 h-9 rounded-full flex items-center justify-center text-white transition-opacity hover:opacity-80"
+                                        style={{ background: s.color }}>
+                                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d={s.path} /></svg>
+                                    </a>
+                                ))}
+                            </div>
+                        </div>
                     </div>
-                    <p className="text-white/40 text-xs">© FundByText 2026 — All Rights Reserved.</p>
-                    <div className="flex gap-4 text-xs text-white/40">
-                        <Link href="#" className="hover:text-white/60 transition-colors">Privacy</Link>
-                        <Link href="#" className="hover:text-white/60 transition-colors">Terms</Link>
+
+                    {/* Right: Ready to Fundraise? CTA */}
+                    <div
+                        className="rounded-2xl p-8 text-center shadow-xl w-full lg:w-80"
+                        style={{ background: "linear-gradient(160deg, #1e40af 0%, #1565C0 60%, #0d47a1 100%)" }}
+                    >
+                        <h3 className="text-white font-extrabold text-2xl leading-tight">Ready to<br />Fundraise?</h3>
+                        <p className="text-white/70 text-sm mt-2 leading-relaxed">
+                            Start your campaign today<br />and make a difference.
+                        </p>
+                        <div className="mt-6 space-y-3">
+                            <Link
+                                href="/campaigns/create"
+                                className="flex items-center justify-center gap-2 w-full py-3 rounded-xl text-sm font-bold transition-opacity hover:opacity-90 shadow-sm"
+                                style={{ background: "#f97316", color: "#fff" }}
+                            >
+                                Get Started for Free
+                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                                </svg>
+                            </Link>
+                            <Link
+                                href="#"
+                                className="flex items-center justify-center gap-2 w-full py-3 rounded-xl text-sm font-bold text-white/80 border border-white/20 hover:border-white/40 hover:text-white transition-colors"
+                            >
+                                See how it works
+                            </Link>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Bottom bar */}
+                <div className="max-w-6xl mx-auto mt-10 pt-6 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-3">
+                    <p className="text-white/25 text-xs">© FundByText 2026 — All Rights Reserved.</p>
+                    <div className="flex gap-5 text-xs text-white/25">
+                        <Link href="#" className="hover:text-white/50 transition-colors">Privacy</Link>
+                        <Link href="#" className="hover:text-white/50 transition-colors">Terms &amp; Conditions</Link>
                     </div>
                 </div>
             </footer>

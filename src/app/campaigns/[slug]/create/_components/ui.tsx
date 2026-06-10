@@ -1,6 +1,40 @@
 "use client";
 
 import React from "react";
+import Image from "next/image";
+
+/* ── Page background — shared gradient + drifting "Vector" wallpaper ──
+   Used behind every step of the campaign-creation flow (both the public
+   /campaigns/create step 1 and the [slug]/create wizard) so the whole
+   journey feels continuous. */
+export const PAGE_GRADIENT =
+    "linear-gradient(180deg, rgba(33,150,253,1) 0%, rgba(174,217,254,1) 55%, rgba(255,255,255,1) 100%)";
+
+const VECTOR_TILE_SIZE = 170;
+const VECTOR_TEXTURE_URL =
+    `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='${VECTOR_TILE_SIZE}' height='${VECTOR_TILE_SIZE}'%3E` +
+    `%3Cg transform='translate(16,12)'%3E%3Cpath d='m23.28 76.64l18.97-6.62 9.55-34.07-12.37-35.43-29.27 10.22c-8.19 2.86-12.49 11.93-9.58 20.25l7.1 20.36 10.96-3.83-4.98-14.26c-0.67-1.95 0.33-4.08 2.25-4.75l22.79-7.96 2 5.73-19.75 6.89 2.4 6.86 17.5-6.11 1.82 5.23-17.46 6.09-1.9 31.39z' fill='%23003060'/%3E%3C/g%3E` +
+    `%3Cg transform='translate(96,90)'%3E%3Cpath d='M27.9717 0L9.09569 6.86879L0 41.0623L12.8348 76.3241L41.9651 65.7237C50.1204 62.752 54.2958 53.6262 51.279 45.3431L43.9061 25.0827L32.9973 29.0551L38.1658 43.2516C38.8655 45.1926 37.895 47.3292 35.9765 48.0289L13.3012 56.282L11.2248 50.5868L30.8757 43.4321L28.3855 36.601L10.969 42.9431L9.08063 37.7445L26.4595 31.4174L27.9491 0.00752493L27.9717 0Z' fill='%23003060'/%3E%3C/g%3E` +
+    `%3C/svg%3E`;
+
+/* Drifting vector wallpaper — dense repeating texture over the gradient,
+   stays behind cards, logo, header, progress bar & footer (render it as the
+   first child of a `relative isolate` wrapper, give chrome bars `relative z-40`). */
+export function VectorWallpaper() {
+    return (
+        <div
+            className="absolute inset-0 -z-10 opacity-[0.16] pointer-events-none"
+            style={{
+                backgroundImage: `url("${VECTOR_TEXTURE_URL}")`,
+                backgroundRepeat: "repeat",
+                backgroundSize: `${VECTOR_TILE_SIZE}px ${VECTOR_TILE_SIZE}px`,
+                animation: "driftLeft 18s linear infinite",
+                WebkitMaskImage: "linear-gradient(180deg, #000 0%, #000 50%, transparent 95%)",
+                maskImage: "linear-gradient(180deg, #000 0%, #000 50%, transparent 95%)",
+            }}
+        />
+    );
+}
 
 export const inputCls =
     "w-full border border-gray-200 rounded-xl px-4 py-3 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 placeholder:text-gray-400";
@@ -16,6 +50,84 @@ export function SectionTitle({
 }) {
     return (
         <h2 className={`text-base font-bold text-gray-900 ${className}`}>{children}</h2>
+    );
+}
+
+/* ── QuestionCard ──────────────────────────────────────────────────────
+   Shared "question card" shell used across the create-campaign flows
+   (both the public /campaigns/create step 1 and the [slug]/create wizard). */
+export function QuestionCard({
+    title,
+    description,
+    askBuddyText,
+    children,
+}: {
+    title: string;
+    description?: string;
+    askBuddyText?: string;
+    children: React.ReactNode;
+}) {
+    return (
+        <div
+            className="bg-white rounded-3xl overflow-hidden"
+            style={{ boxShadow: "0px 32px 40px -16px rgba(2,104,192,0.3), 0px 12px 12px -8px rgba(2,104,192,0.06)" }}
+        >
+            <div className="px-6 sm:px-14 pt-8 sm:pt-14 pb-8 sm:pb-16 flex flex-col gap-8 sm:gap-12">
+                <div className="text-center">
+                    <div className="flex items-center justify-center gap-1.5 mb-1">
+                        <Image src="/assets/campaigns/question-flag.svg" width={24} height={24} alt="" />
+                        <h3
+                            className="font-black text-[18px] sm:text-xl text-gray-900"
+                            style={{ lineHeight: "125%", letterSpacing: 0 }}
+                        >
+                            {title}
+                        </h3>
+                    </div>
+                    {description && (
+                        <p
+                            className="text-base sm:text-xl"
+                            style={{ lineHeight: "140%", letterSpacing: 0, color: "rgba(0,48,96,1)" }}
+                        >
+                            {description}
+                        </p>
+                    )}
+                </div>
+                {children}
+                {askBuddyText && (
+                    <div
+                        className="flex items-center gap-2.5"
+                        style={{
+                            borderRadius: 16,
+                            paddingTop: 18,
+                            paddingRight: 24,
+                            paddingBottom: 18,
+                            paddingLeft: 16,
+                            border: "2px solid rgba(221,224,227,1)",
+                        }}
+                    >
+                        <Image
+                            src="/assets/campaigns/ask-buddy.svg"
+                            width={64}
+                            height={80}
+                            alt=""
+                            className="shrink-0 w-7.5 h-9.5 sm:w-12 sm:h-15"
+                        />
+                        <p
+                            className="text-xs sm:text-lg"
+                            style={{
+                                fontFamily: "var(--font-satoshi, 'Satoshi Variable', sans-serif)",
+                                fontWeight: 400,
+                                lineHeight: "140%",
+                                letterSpacing: 0,
+                                color: "rgba(0,48,96,1)",
+                            }}
+                        >
+                            {askBuddyText}
+                        </p>
+                    </div>
+                )}
+            </div>
+        </div>
     );
 }
 

@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import DeleteCampaignButton from "@/app/(protected)/dashboard/_components/DeleteCampaignButton";
 import { type Campaign, type Payout, type Member, type Donor, type CsvRow, type ImportResult, STEPS } from "./_components/types";
 import { ProgressBar, BottomNav } from "./_components/WizardNav";
+import { PAGE_GRADIENT, VectorWallpaper } from "./_components/ui";
 import StepDetails      from "./_components/StepDetails";
 import StepFundingGoal  from "./_components/StepFundingGoal";
 import StepVisual       from "./_components/StepVisual";
@@ -622,34 +623,39 @@ export default function SetupWizard({
         1: { title: "Campaign Details",   subtitle: "On your mark get set… Go!" },
         2: { title: "Funding Goal",       subtitle: "Set your sights high!" },
         3: { title: "Campaign Visuals",   subtitle: "Make it shine!" },
-        4: { title: isOrg ? "Participants & Donors" : "Donors", subtitle: "Build your team!" },
+        4: { title: isOrg ? "Participants" : "Donors", subtitle: "Build your team!" },
         5: { title: "Thank You Note",     subtitle: "Finish strong!" },
     };
     const meta = STEP_META[step] ?? STEP_META[1];
 
     return (
-        <div className="min-h-screen pb-28" style={{ background: "linear-gradient(180deg, #2196F3 0%, #1565C0 100%)" }} ref={topRef}>
+        <div className="relative isolate min-h-screen pb-28" style={{ background: PAGE_GRADIENT }} ref={topRef}>
+
+            <VectorWallpaper />
 
             {/* ── Top header bar ──────────────────────────────────────── */}
-            <div className="bg-white" style={{ height: 78 }}>
-                <div
-                    className="h-full max-w-5xl mx-auto flex items-center justify-between"
-                    style={{ paddingLeft: 40, paddingRight: 40 }}
-                >
+            <div className="relative z-40 bg-white h-15.5 md:h-27">
+                <div className="h-full max-w-5xl mx-auto flex items-center justify-between px-4 md:px-10">
                     <button
                         type="button"
                         onClick={() => router.push(isEditMode || isLaunched ? `/dashboard/campaigns/${slug}` : "/dashboard")}
                         className="flex items-center transition-opacity hover:opacity-70 shrink-0"
                     >
-                        <Image src="/assets/campaigns/app-logo.svg" width={30} height={43} alt="FundbyText" />
+                        <Image
+                            src="/assets/campaigns/app-logo.svg"
+                            width={34}
+                            height={48}
+                            alt="FundbyText"
+                            className="w-5.25 h-7.5 md:w-8.5 md:h-12"
+                        />
                     </button>
                     <h1
-                        className="text-center font-black"
-                        style={{ color: "rgba(0,79,149,1)", fontSize: 32, lineHeight: "115%", letterSpacing: 0 }}
+                        className="text-center font-black text-base md:text-[32px]"
+                        style={{ color: "rgba(0,79,149,1)", lineHeight: "115%", letterSpacing: 0 }}
                     >
                         {isEditMode || isLaunched ? "Edit Your" : "Create Your"} Campaign
                     </h1>
-                    <p className="shrink-0 text-right font-sans font-black text-sm leading-none tracking-[1px] uppercase text-[rgba(87,114,141,1)]">
+                    <p className="shrink-0 text-right font-sans font-black text-[10px] md:text-sm leading-none tracking-[1px] uppercase text-[rgba(87,114,141,1)]">
                         STEP{" "}
                         <span className="text-[#26BA58]">{step}</span>
                         {" "}/{" "}
@@ -659,39 +665,52 @@ export default function SetupWizard({
             </div>
 
             {/* ── Progress bar — centered, equal padding on both ends ───── */}
-            <div className="bg-white w-full">
+            <div className="relative z-40 bg-white w-full">
                 <ProgressBar step={step} maxStep={maxStep} isOrg={isOrg} onStepClick={goToStep} />
             </div>
 
             {/* ── Step banner (not shown for step 4 — it renders its own banners) ── */}
             {step !== 4 && (
-                <div className="relative overflow-hidden px-6 pt-8 pb-6 text-center">
-                    {/* Question-mark texture */}
-                    <div
-                        className="absolute inset-0 opacity-[0.07] pointer-events-none"
-                        style={{
-                            backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60'%3E%3Ctext x='10' y='44' font-size='40' font-family='sans-serif' fill='white'%3E%3F%3C/text%3E%3C/svg%3E")`,
-                            backgroundSize: "60px 60px",
-                        }}
-                    />
+                <div className="relative px-6 pt-8 pb-6 text-center">
                     {/* Ribbon banner */}
                     <div className="relative z-10 flex justify-center">
-                        <div
-                            className="px-10 py-4 text-center min-w-65"
-                            style={{
-                                background: "linear-gradient(180deg, #1A3F8F 0%, #0D2860 100%)",
-                                borderRadius: "12px",
-                                boxShadow: "0 4px 24px rgba(0,0,0,0.35)",
-                            }}
-                        >
-                            <h2 className="text-2xl font-extrabold text-white tracking-wide">{meta.title}</h2>
-                            {/* Subtitle with decorative dashes */}
-                            <div className="flex items-center justify-center gap-2 mt-1.5">
-                                <span className="text-blue-300 text-sm select-none">—</span>
-                                <p className="text-blue-200 text-xs font-medium">{meta.subtitle}</p>
-                                <span className="text-blue-300 text-sm select-none">—</span>
+                        {step === 1 ? (
+                            <>
+                                <Image
+                                    src="/assets/campaigns/header-title.png"
+                                    alt={`${meta.title} — ${meta.subtitle}`}
+                                    width={599}
+                                    height={182}
+                                    className="hidden sm:block w-auto h-auto max-w-full max-h-20"
+                                    priority
+                                />
+                                <Image
+                                    src="/assets/campaigns/header-title-mobile.png"
+                                    alt={`${meta.title} — ${meta.subtitle}`}
+                                    width={353}
+                                    height={144}
+                                    className="sm:hidden w-auto h-auto max-w-full max-h-16"
+                                    priority
+                                />
+                            </>
+                        ) : (
+                            <div
+                                className="px-8 py-3 text-center min-w-56"
+                                style={{
+                                    background: "linear-gradient(180deg, #1A3F8F 0%, #0D2860 100%)",
+                                    borderRadius: "12px",
+                                    boxShadow: "0 4px 24px rgba(0,0,0,0.35)",
+                                }}
+                            >
+                                <h2 className="text-lg font-extrabold text-white tracking-wide">{meta.title}</h2>
+                                {/* Subtitle with decorative dashes */}
+                                <div className="flex items-center justify-center gap-2 mt-1">
+                                    <span className="text-blue-300 text-xs select-none">—</span>
+                                    <p className="text-blue-200 text-[11px] font-medium">{meta.subtitle}</p>
+                                    <span className="text-blue-300 text-xs select-none">—</span>
+                                </div>
                             </div>
-                        </div>
+                        )}
                     </div>
                 </div>
             )}

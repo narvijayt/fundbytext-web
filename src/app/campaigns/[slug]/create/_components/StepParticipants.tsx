@@ -413,90 +413,94 @@ export default function StepParticipants({
     return (
         <div className="space-y-0">
 
-            {/* ── DONORS SECTION ──────────────────────────────────────── */}
-            <SubBanner
-                title="Add Donors"
-                subtitle="Reaching out to more donors will increase your campaign's success!"
-            />
+            {/* ── DONORS SECTION (individual only) ────────────────────── */}
+            {!isOrg && (
+                <>
+                    <SubBanner
+                        title="Add Donors"
+                        subtitle="Reaching out to more donors will increase your campaign's success!"
+                    />
 
-            <div className="pt-4 pb-6 space-y-3">
+                    <div className="pt-4 pb-6 space-y-3">
 
-                {isLaunched && (
-                    <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-700">
-                        <svg className="w-4 h-4 shrink-0 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                        </svg>
-                        Donor list is locked once the campaign is launched.
-                    </div>
-                )}
-
-                {/* Donor card */}
-                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                    <div className="p-4 space-y-2">
-
-                        {/* Saved donors */}
-                        {donors.map((d, i) => (
-                            <SavedRow
-                                key={d.id}
-                                index={i + 1}
-                                name={`${d.first_name} ${d.last_name}`}
-                                contactInfo={[d.email, d.phone].filter(Boolean).join(" · ")}
-                                status="added"
-                                expanded={expandedDonorId === d.id}
-                                onToggle={() => setExpandedDonorId(expandedDonorId === d.id ? null : d.id)}
-                                onRemove={() => { onRemoveDonor(d.id); setExpandedDonorId(null); }}
-                                locked={isLaunched}
-                            />
-                        ))}
-
-                        {/* Add new donor form */}
-                        {!isLaunched && (
-                            <AddForm
-                                index={donors.length + 1}
-                                label="Donor"
-                                first={dFirst} setFirst={setDFirst}
-                                last={dLast}   setLast={setDLast}
-                                email={dEmail} setEmail={setDEmail}
-                                phone={dPhone} setPhone={setDPhone}
-                                adding={addingDonor}
-                                onAdd={onAddDonor}
-                                myselfInfo={organizerInfo}
-                                myselfAlready={myselfAlreadyDonor}
-                            />
+                        {isLaunched && (
+                            <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-700">
+                                <svg className="w-4 h-4 shrink-0 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                                </svg>
+                                Donor list is locked once the campaign is launched.
+                            </div>
                         )}
-                    </div>
 
-                    {/* Add another button */}
-                    {!isLaunched && (
-                        <div className="px-4 pb-4">
-                            <button
-                                type="button"
-                                onClick={onAddDonor}
-                                disabled={addingDonor || !dFirst || !dLast}
-                                className="w-full py-3 bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white font-bold rounded-xl text-sm transition-colors"
-                            >
-                                {addingDonor ? "Adding…" : "+ Add Another Donor"}
-                            </button>
+                        {/* Donor card */}
+                        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                            <div className="p-4 space-y-2">
 
-                            {/* CSV link */}
-                            <p className="text-center text-xs text-gray-400 mt-2">
-                                Have a CSV file?{" "}
-                                <button type="button" onClick={() => setShowDonorCsv((v) => !v)}
-                                    className="text-blue-600 hover:text-blue-700 font-semibold">
-                                    Import now
-                                </button>
-                            </p>
-                            {showDonorCsv && onImportDonors && (
-                                <div className="mt-3">
-                                    <CsvImporter type="donor" onImport={onImportDonors} onClose={() => setShowDonorCsv(false)} />
+                                {/* Saved donors */}
+                                {donors.map((d, i) => (
+                                    <SavedRow
+                                        key={d.id}
+                                        index={i + 1}
+                                        name={`${d.first_name} ${d.last_name}`}
+                                        contactInfo={[d.email, d.phone].filter(Boolean).join(" · ")}
+                                        status="added"
+                                        expanded={expandedDonorId === d.id}
+                                        onToggle={() => setExpandedDonorId(expandedDonorId === d.id ? null : d.id)}
+                                        onRemove={() => { onRemoveDonor(d.id); setExpandedDonorId(null); }}
+                                        locked={isLaunched}
+                                    />
+                                ))}
+
+                                {/* Add new donor form */}
+                                {!isLaunched && (
+                                    <AddForm
+                                        index={donors.length + 1}
+                                        label="Donor"
+                                        first={dFirst} setFirst={setDFirst}
+                                        last={dLast}   setLast={setDLast}
+                                        email={dEmail} setEmail={setDEmail}
+                                        phone={dPhone} setPhone={setDPhone}
+                                        adding={addingDonor}
+                                        onAdd={onAddDonor}
+                                        myselfInfo={organizerInfo}
+                                        myselfAlready={myselfAlreadyDonor}
+                                    />
+                                )}
+                            </div>
+
+                            {/* Add another button */}
+                            {!isLaunched && (
+                                <div className="px-4 pb-4">
+                                    <button
+                                        type="button"
+                                        onClick={onAddDonor}
+                                        disabled={addingDonor || !dFirst || !dLast}
+                                        className="w-full py-3 bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white font-bold rounded-xl text-sm transition-colors"
+                                    >
+                                        {addingDonor ? "Adding…" : "+ Add Another Donor"}
+                                    </button>
+
+                                    {/* CSV link */}
+                                    <p className="text-center text-xs text-gray-400 mt-2">
+                                        Have a CSV file?{" "}
+                                        <button type="button" onClick={() => setShowDonorCsv((v) => !v)}
+                                            className="text-blue-600 hover:text-blue-700 font-semibold">
+                                            Import now
+                                        </button>
+                                    </p>
+                                    {showDonorCsv && onImportDonors && (
+                                        <div className="mt-3">
+                                            <CsvImporter type="donor" onImport={onImportDonors} onClose={() => setShowDonorCsv(false)} />
+                                        </div>
+                                    )}
                                 </div>
                             )}
-                        </div>
-                    )}
 
-                    <FundBuddyBar text="Ask FundBuddy for additional context on how to find and engage your best potential donors." />
-                </div>
-            </div>
+                            <FundBuddyBar text="Ask FundBuddy for additional context on how to find and engage your best potential donors." />
+                        </div>
+                    </div>
+                </>
+            )}
 
             {/* ── PARTICIPANTS SECTION (org only) ─────────────────────── */}
             {isOrg && (

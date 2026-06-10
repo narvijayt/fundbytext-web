@@ -138,3 +138,98 @@ You're a participant in "Rural America Revive Fund" — here's how to get starte
 2. While adding donors in step 4 i am able to add duplicate myself which is wrong, I can add myself only one time --DONE
 3. Accept Donations - Only processed while the campaign is active - When camapign is upcoming and when switch is clicked, we can show toast for error --DONE
 4. When cron job is hit, update details in specific dashboard campaign --DONE
+
+
+# Tasks ---------------------------------------------
+1. Incorrect Notifications to participants
+2. Adding donor with the same email
+3. Add Participants: Adding myself and notification alert (multiple triggers), leave participant role (view + Participant view)
+
+
+
+
+
+
+
+
+
+Core Operations
+
+Users — view all registered users, see their campaigns, disable/suspend accounts
+
+Campaigns — browse all campaigns across the platform, filter by status, force-complete or force-pause any campaign, view financials
+Donations — full donation ledger across all campaigns, export, flag suspicious transactions
+Financial
+
+Payouts — see all payout records, mark as paid/pending, track disbursement status
+
+Payments — Stripe payment intent log, failed payments, refund initiation
+Platform Health
+
+Notifications Log — view all notifications sent platform-wide, debug delivery issues
+
+Cron / Jobs — see last tick time, manually trigger the cron tick, view campaign status transition history
+Content & Access
+
+Platform Settings — Stripe keys, Ably keys, feature flags, maintenance mode toggle
+Audit Log — who did what and when (campaign launches, completions, member changes)
+What I'd suggest starting with (highest value, lowest complexity):
+
+Campaigns — most critical for support/operations
+Users — account management
+Donations — financial visibility
+Payouts — disbursement tracking
+The rest (audit log, cron monitor, platform settings) can come later.
+
+Want me to scaffold the admin sidebar and route structure, starting with those four modules?
+
+
+# Tasks ---------------------------------------------
+
+1. Should we allow restoring the user account if deleted and new one exists with the same credentials.
+2. Create New User.
+3. Admin Users Listing.
+
+Admin control over visinlity, Donation enable, 
+When visiting user by clicking users in admin campaign view, add back button to came back to this screen 
+
+- An admin can edit his own account details but not of other admins 
+- Continue where we left: make sure to add scroll in modal so that they dont touch top and bottom of browser screen
+
+
+
+# Tasks ---------------------------------------------
+
+1. Should we show initial goal completed in individual open ended campaign??? --DONE
+2. In the Individual fixed goal, when goal is completed and donor visit through the link it openup the donation modal which should not be opened bc in fixed goal we can't donate additional amount so its meaningless to open donation modal. --DONE
+3. CSV Import feature top upload participant or donors --DONE
+4. When we do Proviate a campaign, should that be private to participants as well? suggest me. --DONE
+5. In organizer view, I added a donor to a participant (myself) but did not tagged added by me for organizer and preasigned by organizer for participant but for other participant "added by me" shows but for that participant not showing (preassigned by admin) later starts showing. Check what's issue --DONE
+6. Goal reached not showing in organization - shared goal type campaign under progressbar in dashboard campaign. --DONE
+7. Email alert confimation on actions like adding participant.
+8. smallcase emails while adding --DONE
+9. Should we allow tab click in campaign edit??
+10. Overview x axis text overlaps --DONE
+
+# Tasks for later ---------------------------------------------
+1. Ask Ai Buddy and onboarding participant modals.
+
+# Tasks --------------------------------------------- April 20
+1. Add donation success modal (General Fund (or Individual Campaign - Organizer Name) / To Participant) --DONE
+2. Top Donor tag. --DONE
+3. Should we allow tab click in campaign edit?? --DONE
+4. Ask for send alerts when adding participant or donors.??
+5. While viewing participant profile, does it show participant profile? --DONE
+6. Do not border radius in progress bar. Left and Right side are ok but at centre do not. --DONE
+7. When we added a participant or donor, add option to edit them. --DONE
+8. When organizer is view camapign as participant in dashboard campaign, and adding donor, it display preassigned by organizer but it should not be shown anything. Only if organizer added donate to himself by assign then it should work and for others --DONE
+9. If donor is coming through link, and prefilled donor name display in modal but if donor closes modal and click on Donate Now it shows to select participant or general fund. If this happens and general fund is selected the payment should be gone to general fund not to the participant which select using the link. --DONE
+10. In the organization, per participant campaign in marketing page it shows incorrect fundraising goal. it should be fundraising goal x no. of participants --DONE
+
+
+# Tasks --------------------------------------------- April 22
+1. Allow upload user image in admin view.
+2. When organizer added a participant and participant account got created. Later if, organizer remove from campaign, then in the admin user view - it shows Created By Admin. But it should still show added as participant in this [X] campaign.
+3. Add lazy or suspense loading. 
+4. Add pagination and filters in participant listing.
+5. In the admin view donations listing, attributed to: General Fund tag is so dull.

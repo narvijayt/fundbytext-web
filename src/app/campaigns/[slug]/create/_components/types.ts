@@ -70,9 +70,9 @@ export type Campaign = {
 export const STEPS = [
     { num: 1, label: "Details" },
     { num: 2, label: "Funding Goal" },
-    { num: 3, label: "Campaign Visual" },
+    { num: 3, label: "Visuals" },
     { num: 4, label: "Participants" },
-    { num: 5, label: "Thank You" },
+    { num: 5, label: "Finish" },
 ];
 
 export const BACKGROUND_THEMES = [

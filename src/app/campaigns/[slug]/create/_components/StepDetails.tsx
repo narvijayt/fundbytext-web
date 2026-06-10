@@ -1,7 +1,9 @@
 "use client";
 
-import { useState, useRef } from "react";
-import { StepCard, CardHeader, CardDivider, FundBuddyBar, Field, LockedField, inputCls, inputErrCls } from "./ui";
+import { useRef, useState } from "react";
+import Image from "next/image";
+import { Field, LockedField, QuestionCard, inputCls, inputErrCls } from "./ui";
+import { CalendarPopover, TimePopover, TimezonePopover, timezoneLabel } from "./DateTimePicker";
 import RichTextEditor from "./RichTextEditor";
 
 /* ── helpers ─────────────────────────────────────────────────────────── */
@@ -31,23 +33,6 @@ function joinDateTime(date: string, time: string): string {
     return `${date}T${time || "00:00"}`;
 }
 
-/* ── icons ───────────────────────────────────────────────────────────── */
-function BotIcon() {
-    return (
-        <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}>
-            <rect x="3" y="8" width="18" height="12" rx="2" />
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 8V4M8 4h8M9 14h.01M15 14h.01M9 18h6" />
-        </svg>
-    );
-}
-function CalendarIcon() {
-    return (
-        <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}>
-            <rect x="3" y="4" width="18" height="18" rx="2" />
-            <path strokeLinecap="round" d="M16 2v4M8 2v4M3 10h18" />
-        </svg>
-    );
-}
 function CalendarSmIcon() {
     return (
         <svg className="w-4 h-4 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
@@ -64,24 +49,10 @@ function ClockSmIcon() {
         </svg>
     );
 }
-function OrgIcon({ active }: { active: boolean }) {
+function ChevronDownSmIcon() {
     return (
-        <svg className={`w-5 h-5 ${active ? "text-white" : "text-gray-500"}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-        </svg>
-    );
-}
-function PersonIcon({ active }: { active: boolean }) {
-    return (
-        <svg className={`w-5 h-5 ${active ? "text-white" : "text-gray-500"}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-        </svg>
-    );
-}
-function CheckCircleIcon() {
-    return (
-        <svg className="w-4 h-4 text-white shrink-0" viewBox="0 0 24 24" fill="currentColor">
-            <path fillRule="evenodd" d="M12 2a10 10 0 100 20A10 10 0 0012 2zm4.7 7.3a1 1 0 00-1.4-1.4L11 12.18l-2.3-2.3a1 1 0 00-1.4 1.42l3 3a1 1 0 001.4 0l5-5z" clipRule="evenodd" />
+        <svg className="w-4 h-4 text-gray-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
         </svg>
     );
 }
@@ -108,8 +79,10 @@ function DateTimeField({
     error?: string;
     disabled?: boolean;
 }) {
-    const dateRef = useRef<HTMLInputElement>(null);
-    const timeRef = useRef<HTMLInputElement>(null);
+    const [showCalendar, setShowCalendar] = useState(false);
+    const [showTime, setShowTime] = useState(false);
+    const dateBtnRef = useRef<HTMLButtonElement>(null);
+    const timeBtnRef = useRef<HTMLButtonElement>(null);
 
     return (
         <div className="flex-1 min-w-0">
@@ -117,52 +90,56 @@ function DateTimeField({
                 {label}{required && <span className="text-red-400 ml-0.5">*</span>}
             </label>
             {/* Date row */}
-            <button
-                type="button"
-                onClick={() => dateRef.current?.showPicker?.()}
-                disabled={disabled}
-                className={`relative w-full flex items-center gap-2 px-3 py-2.5 rounded-xl border text-sm text-left transition-colors mb-1.5
-                    ${error ? "border-red-400 bg-red-50" : "border-gray-200 bg-white hover:border-blue-400"}
-                    ${disabled ? "opacity-50 cursor-not-allowed bg-gray-50" : "cursor-pointer"}`}
-            >
-                <CalendarSmIcon />
-                <span className={dateValue ? "text-gray-800" : "text-gray-400"}>
-                    {dateValue ? formatDate(dateValue) : "Select date"}
-                </span>
-                <input
-                    ref={dateRef}
-                    type="date"
-                    value={dateValue}
-                    min={minDate}
-                    onChange={(e) => onDateChange(e.target.value)}
+            <div className="relative mb-1.5">
+                <button
+                    ref={dateBtnRef}
+                    type="button"
+                    onClick={() => !disabled && setShowCalendar((v) => !v)}
                     disabled={disabled}
-                    className="absolute inset-0 opacity-0 w-full cursor-pointer"
-                    tabIndex={-1}
-                />
-            </button>
+                    className={`relative w-full flex items-center gap-2 px-3 py-2.5 rounded-xl border text-sm text-left transition-colors
+                        ${error ? "border-red-400 bg-red-50" : "border-gray-200 bg-white hover:border-blue-400"}
+                        ${disabled ? "opacity-50 cursor-not-allowed bg-gray-50" : "cursor-pointer"}`}
+                >
+                    <CalendarSmIcon />
+                    <span className={dateValue ? "text-gray-800" : "text-gray-400"}>
+                        {dateValue ? formatDate(dateValue) : "Select date"}
+                    </span>
+                </button>
+                {showCalendar && (
+                    <CalendarPopover
+                        value={dateValue}
+                        minDate={minDate}
+                        anchorRef={dateBtnRef}
+                        onSelect={onDateChange}
+                        onClose={() => setShowCalendar(false)}
+                    />
+                )}
+            </div>
             {/* Time row */}
-            <button
-                type="button"
-                onClick={() => timeRef.current?.showPicker?.()}
-                disabled={disabled}
-                className={`relative w-full flex items-center gap-2 px-3 py-2.5 rounded-xl border text-sm text-left transition-colors
-                    ${error ? "border-red-400 bg-red-50" : "border-gray-200 bg-white hover:border-blue-400"}
-                    ${disabled ? "opacity-50 cursor-not-allowed bg-gray-50" : "cursor-pointer"}`}
-            >
-                <ClockSmIcon />
-                <span className={timeValue ? "text-gray-800" : "text-gray-400"}>
-                    {timeValue ? formatTime(timeValue) : "Select time"}
-                </span>
-                <input
-                    ref={timeRef}
-                    type="time"
-                    value={timeValue}
-                    onChange={(e) => onTimeChange(e.target.value)}
+            <div className="relative">
+                <button
+                    ref={timeBtnRef}
+                    type="button"
+                    onClick={() => !disabled && setShowTime((v) => !v)}
                     disabled={disabled}
-                    className="absolute inset-0 opacity-0 w-full cursor-pointer"
-                    tabIndex={-1}
-                />
-            </button>
+                    className={`relative w-full flex items-center gap-2 px-3 py-2.5 rounded-xl border text-sm text-left transition-colors
+                        ${error ? "border-red-400 bg-red-50" : "border-gray-200 bg-white hover:border-blue-400"}
+                        ${disabled ? "opacity-50 cursor-not-allowed bg-gray-50" : "cursor-pointer"}`}
+                >
+                    <ClockSmIcon />
+                    <span className={timeValue ? "text-gray-800" : "text-gray-400"}>
+                        {timeValue ? formatTime(timeValue) : "Select time"}
+                    </span>
+                </button>
+                {showTime && (
+                    <TimePopover
+                        value={timeValue}
+                        anchorRef={timeBtnRef}
+                        onSelect={onTimeChange}
+                        onClose={() => setShowTime(false)}
+                    />
+                )}
+            </div>
             {error && <p className="text-[10px] text-red-500 mt-1">{error}</p>}
         </div>
     );
@@ -211,6 +188,9 @@ export default function StepDetails({
 }: Props) {
     const typeDisabled = campaignTypeReadOnly || isLaunched;
 
+    const [showTimezone, setShowTimezone] = useState(false);
+    const timezoneBtnRef = useRef<HTMLButtonElement>(null);
+
     /* Split datetime-local strings into date + time */
     const { date: startD, time: startT } = splitDateTime(startDate);
     const { date: endD,   time: endT   } = splitDateTime(endDate);
@@ -232,34 +212,72 @@ export default function StepDetails({
             )}
 
             {/* ── Card 1: Campaign Type ───────────────────────────────── */}
-            <StepCard>
-                <CardHeader
-                    icon={<BotIcon />}
-                    title="What type of campaign are you running?"
-                    description="This will be the title that everyone sees. Make it clear and catchy!"
-                />
-                <CardDivider />
-                <div className="px-5 py-4">
-                    <div className={`flex flex-col sm:flex-row gap-3 ${typeDisabled ? "opacity-60 pointer-events-none" : ""}`}>
+            <QuestionCard
+                title="What type of campaign are you running?"
+                description="This will be the title that everyone sees. Make it clear and catchy!"
+                askBuddyText={
+                    campaignType === "individual"
+                        ? "Individual Campaigns are for a single person like yourself."
+                        : "Organizational Campaigns are for groups of people, like sports teams, bands, clubs, schools — you name it."
+                }
+            >
+                <div>
+                    <div className={`flex flex-col lg:flex-row gap-4 ${typeDisabled ? "opacity-60 pointer-events-none" : ""}`}>
                         {(["organization", "individual"] as const).map((type) => {
                             const active = campaignType === type;
+                            const activeIcon   = type === "organization" ? "/assets/campaigns/organization-active.svg"     : "/assets/campaigns/individual-active.svg";
+                            const inactiveIcon = type === "organization" ? "/assets/campaigns/organizational-icon.svg"     : "/assets/campaigns/individual-icon.svg";
                             return (
                                 <button
                                     key={type}
                                     type="button"
                                     onClick={() => !typeDisabled && setCampaignType(type)}
                                     disabled={typeDisabled}
-                                    className={`flex-1 flex items-center gap-3 px-4 py-3 rounded-2xl border-2 text-sm font-semibold transition-all text-left ${
-                                        active
-                                            ? "bg-blue-700 border-blue-700 text-white shadow-md"
-                                            : "bg-white border-gray-200 text-gray-600 hover:border-blue-300"
-                                    }`}
+                                    className="flex-1 min-w-0 lg:max-w-83.5 h-17 flex items-center justify-between bg-white text-left transition-all"
+                                    style={{
+                                        gap: active ? 8 : 6,
+                                        borderRadius: 16,
+                                        paddingTop: 18,
+                                        paddingRight: 24,
+                                        paddingBottom: 18,
+                                        paddingLeft: 16,
+                                        border: active ? "2px solid transparent" : "1px solid rgba(212,222,231,1)",
+                                        backgroundImage: active
+                                            ? "linear-gradient(white, white), linear-gradient(95.84deg, #0278DE 40.72%, #AED9FE 50%, #0278DE 59.28%)"
+                                            : undefined,
+                                        backgroundOrigin: active ? "border-box" : undefined,
+                                        backgroundClip: active ? "padding-box, border-box" : undefined,
+                                    }}
                                 >
-                                    {type === "organization" ? <OrgIcon active={active} /> : <PersonIcon active={active} />}
-                                    <span className="flex-1">
-                                        {type === "organization" ? "Organization Campaign" : "Individual Campaign"}
-                                    </span>
-                                    {active && <CheckCircleIcon />}
+                                    <div className="flex items-center gap-2.5 min-w-0">
+                                        <span className="shrink-0 w-8 h-8 flex items-center justify-center">
+                                            <Image
+                                                src={active ? activeIcon : inactiveIcon}
+                                                width={type === "organization" ? 32 : 17}
+                                                height={type === "organization" ? 32 : 20}
+                                                alt=""
+                                            />
+                                        </span>
+                                        <span
+                                            className="truncate"
+                                            style={{
+                                                fontFamily: "var(--font-satoshi, 'Satoshi Variable', sans-serif)",
+                                                fontWeight: 500,
+                                                fontSize: 20,
+                                                lineHeight: "150%",
+                                                letterSpacing: 0,
+                                                color: "rgba(0,48,96,1)",
+                                            }}
+                                        >
+                                            {type === "organization" ? "Organization Campaign" : "Individual Campaign"}
+                                        </span>
+                                    </div>
+                                    {active && (
+                                        <span
+                                            className="shrink-0"
+                                            style={{ width: 16, height: 16, borderRadius: 100, background: "rgba(2,104,192,1)" }}
+                                        />
+                                    )}
                                 </button>
                             );
                         })}
@@ -268,111 +286,78 @@ export default function StepDetails({
                         <p className="text-xs text-red-500 mt-2">{fieldErrors.campaign_type}</p>
                     )}
                 </div>
-                <FundBuddyBar
-                    text={
-                        campaignType === "individual"
-                            ? "Individual Campaigns are for a single person like yourself."
-                            : "Organizational Campaigns are for groups of people, like sports teams, bands, clubs, schools — you name it."
-                    }
-                />
-            </StepCard>
+            </QuestionCard>
 
             {/* ── Card 2: Campaign Name ───────────────────────────────── */}
-            <StepCard>
-                <CardHeader
-                    icon={<BotIcon />}
-                    title="What's the name of your campaign?"
-                    description="This will be the title that everyone sees. Make it clear and catchy!"
-                />
-                <CardDivider />
-                <div className="px-5 py-4">
-                    {nameReadOnly ? (
-                        <LockedField value={name} label="Campaign Name" />
-                    ) : (
-                        <div>
-                            <div className="relative">
-                                <input
-                                    value={name}
-                                    onChange={(e) => { setName(e.target.value); clearFE("name"); }}
-                                    maxLength={50}
-                                    placeholder="Give your campaign a catchy name…"
-                                    className={`${fieldErrors.name ? inputErrCls : inputCls} pr-16`}
-                                />
-                                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-gray-400 font-medium">
-                                    {name.length}/50
-                                </span>
-                            </div>
-                            {fieldErrors.name && <p className="text-xs text-red-500 mt-1">{fieldErrors.name}</p>}
+            <QuestionCard
+                title="What's the name of your campaign?"
+                description="This will be the title that everyone sees. Make it clear and catchy!"
+                askBuddyText="Ask FundBuddy for your campaign description — our AI will suggest a great name based on your cause."
+            >
+                {nameReadOnly ? (
+                    <LockedField value={name} label="Campaign Name" />
+                ) : (
+                    <div>
+                        <div className="relative">
+                            <input
+                                value={name}
+                                onChange={(e) => { setName(e.target.value); clearFE("name"); }}
+                                maxLength={50}
+                                placeholder="Give your campaign a catchy name…"
+                                className={`${fieldErrors.name ? inputErrCls : inputCls} pr-16`}
+                            />
+                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-gray-400 font-medium">
+                                {name.length}/50
+                            </span>
                         </div>
-                    )}
-                </div>
-                <FundBuddyBar
-                    text="Ask FundBuddy for your campaign description — our AI will suggest a great name based on your cause."
-                    onAsk={() => {}}
-                />
-            </StepCard>
+                        {fieldErrors.name && <p className="text-xs text-red-500 mt-1">{fieldErrors.name}</p>}
+                    </div>
+                )}
+            </QuestionCard>
 
             {/* ── Card 3: Organization Name (org only) ────────────────── */}
             {isOrg && (
-                <StepCard>
-                    <CardHeader
-                        icon={<BotIcon />}
-                        title="What's your organization name?"
-                        description="This will be the name that everyone sees. Tell us who you are!"
-                    />
-                    <CardDivider />
-                    <div className="px-5 py-4">
-                        {orgDisplayNameLocked ? (
-                            <LockedField value={orgDisplayName} label="Organization Display Name" />
-                        ) : (
-                            <Field label="Organization Display Name" required error={fieldErrors.org_display_name}>
-                                <input
-                                    value={orgDisplayName}
-                                    onChange={(e) => { setOrgDisplayName(e.target.value); clearFE("org_display_name"); }}
-                                    maxLength={100}
-                                    placeholder="Your organization name here"
-                                    className={fieldErrors.org_display_name ? inputErrCls : inputCls}
-                                />
-                            </Field>
-                        )}
-                    </div>
-                    <FundBuddyBar
-                        text="Ask FundBuddy for campaign name suggestions tailored to your organization type."
-                        onAsk={() => {}}
-                    />
-                </StepCard>
+                <QuestionCard
+                    title="What's your organization name?"
+                    description="This will be the name that everyone sees. Tell us who you are!"
+                    askBuddyText="Ask FundBuddy for campaign name suggestions tailored to your organization type."
+                >
+                    {orgDisplayNameLocked ? (
+                        <LockedField value={orgDisplayName} label="Organization Display Name" />
+                    ) : (
+                        <Field label="Organization Display Name" required error={fieldErrors.org_display_name}>
+                            <input
+                                value={orgDisplayName}
+                                onChange={(e) => { setOrgDisplayName(e.target.value); clearFE("org_display_name"); }}
+                                maxLength={100}
+                                placeholder="Your organization name here"
+                                className={fieldErrors.org_display_name ? inputErrCls : inputCls}
+                            />
+                        </Field>
+                    )}
+                </QuestionCard>
             )}
 
             {/* ── Card 4: Campaign Story ──────────────────────────────── */}
-            <StepCard>
-                <CardHeader
-                    icon={<CalendarIcon />}
-                    title="Share your story!"
-                    description="Share a few sentences about your campaign. Tell us why you are fundraising and what the funds will be used for. This will be displayed on your campaign page, and used in communications with donors."
+            <QuestionCard
+                title="Share your story!"
+                description="Share a few sentences about your campaign. Tell us why you are fundraising and what the funds will be used for. This will be displayed on your campaign page, and used in communications with donors."
+                askBuddyText="Ask FundBuddy for your campaign description — our AI will write a compelling story for you."
+            >
+                <RichTextEditor
+                    value={story}
+                    onChange={setStory}
+                    placeholder="Tell donors why this campaign matters…"
                 />
-                <CardDivider />
-                <div className="px-5 py-4">
-                    <RichTextEditor
-                        value={story}
-                        onChange={setStory}
-                        placeholder="Tell donors why this campaign matters…"
-                    />
-                </div>
-                <FundBuddyBar
-                    text="Ask FundBuddy for your campaign description — our AI will write a compelling story for you."
-                    onAsk={() => {}}
-                />
-            </StepCard>
+            </QuestionCard>
 
             {/* ── Card 5: Campaign Duration ───────────────────────────── */}
-            <StepCard>
-                <CardHeader
-                    icon={<CalendarIcon />}
-                    title="How long will your campaign last?"
-                    description="Choose a start and end date to keep your campaign on track. You can always extend it later if needed!"
-                />
-                <CardDivider />
-                <div className="px-5 py-4 space-y-4">
+            <QuestionCard
+                title="How long will your campaign last?"
+                description="Choose a start and end date to keep your campaign on track. You can always extend it later if needed!"
+                askBuddyText="Hey there, I see you're doing something unusual — we recommend campaigns run for at least a week to give your donors time to donate!"
+            >
+                <div className="space-y-4">
                     <div className="grid grid-cols-2 gap-3">
                         <DateTimeField
                             label="Start Date"
@@ -404,36 +389,29 @@ export default function StepDetails({
                         <label className="block text-[10px] font-semibold text-gray-500 mb-1.5 uppercase tracking-wide">
                             Timezone
                         </label>
-                        <select
-                            value={timezone}
-                            onChange={(e) => setTimezone(e.target.value)}
-                            className={inputCls}
-                        >
-                            <optgroup label="United States">
-                                <option value="America/New_York">Eastern Time (ET) — New York, Miami</option>
-                                <option value="America/Chicago">Central Time (CT) — Chicago, Dallas</option>
-                                <option value="America/Denver">Mountain Time (MT) — Denver, Phoenix</option>
-                                <option value="America/Los_Angeles">Pacific Time (PT) — Los Angeles, Seattle</option>
-                                <option value="America/Anchorage">Alaska Time (AKT)</option>
-                                <option value="Pacific/Honolulu">Hawaii Time (HT)</option>
-                            </optgroup>
-                            <optgroup label="Other">
-                                <option value="UTC">UTC</option>
-                                <option value="Europe/London">London (GMT/BST)</option>
-                                <option value="Europe/Paris">Paris / Berlin (CET)</option>
-                                <option value="Asia/Kolkata">India (IST)</option>
-                                <option value="Asia/Dubai">Dubai (GST)</option>
-                                <option value="Asia/Tokyo">Tokyo (JST)</option>
-                                <option value="Australia/Sydney">Sydney (AEST)</option>
-                            </optgroup>
-                        </select>
+                        <div className="relative">
+                            <button
+                                ref={timezoneBtnRef}
+                                type="button"
+                                onClick={() => setShowTimezone((v) => !v)}
+                                className="relative w-full flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl border border-gray-200 bg-white hover:border-blue-400 text-sm text-left transition-colors cursor-pointer"
+                            >
+                                <span className="truncate text-gray-800">{timezoneLabel(timezone)}</span>
+                                <ChevronDownSmIcon />
+                            </button>
+                            {showTimezone && (
+                                <TimezonePopover
+                                    value={timezone}
+                                    anchorRef={timezoneBtnRef}
+                                    onSelect={setTimezone}
+                                    onClose={() => setShowTimezone(false)}
+                                />
+                            )}
+                        </div>
                         <p className="text-[10px] text-gray-400 mt-1">All dates above are interpreted in this timezone.</p>
                     </div>
                 </div>
-                <FundBuddyBar
-                    text="Hey there, I see you're doing something unusual — we recommend campaigns run for at least a week to give your donors time to donate!"
-                />
-            </StepCard>
+            </QuestionCard>
         </div>
     );
 }

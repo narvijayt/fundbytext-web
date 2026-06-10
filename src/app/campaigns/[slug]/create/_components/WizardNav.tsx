@@ -13,51 +13,32 @@ const STEP_ILLUSTRATIONS: Record<number, string> = {
 };
 
 /*
- * Flex proportions per box:
- *   START (0) and FINISH (5) → flex 1.5  (wider end boxes)
- *   Steps 1-4               → flex 1
- *   Total                   → 7
+ * Layout: 6 equal inner blocks of 15% each, with 5% edge padding at both ends.
+ * Steps 0 and 5 therefore occupy 20% of the bar (5% pad + 15% inner).
+ * Steps 1–4 occupy 15% each.
  *
- * Circle center % = cumulative flex / total × 100
- *   START=10.71  DETAILS=28.57  GOAL=42.86  VISUALS=57.14  DONORS=71.43  FINISH=89.29
+ * Circle centers (all 15% apart):
+ *   START=12.5  DETAILS=27.5  GOAL=42.5  VISUALS=57.5  DONORS=72.5  FINISH=87.5
+ *
+ * Block right edges (fill targets):
+ *   step 0→20%  1→35%  2→50%  3→65%  4→80%  5→100%
  */
-const FLEX_RATIO = [1.5, 1, 1, 1, 1, 1.5];
-const TOTAL_FLEX = 7;
 
-/* % position where a step's block starts (left edge) */
-function blockStartPct(num: number): number {
-    let left = 0;
-    for (let i = 0; i < num; i++) left += FLEX_RATIO[i];
-    return (left / TOTAL_FLEX) * 100;
-}
-
-/* % width of a step's block */
-function blockWidthPct(num: number): number {
-    return (FLEX_RATIO[num] / TOTAL_FLEX) * 100;
-}
-
+/* Circle center for step num (equally spaced, 15% apart, starting at 12.5%) */
 function circlePct(num: number): number {
-    return blockStartPct(num) + blockWidthPct(num) / 2;
+    return 12.5 + num * 15;
 }
 
-/* Center of the *colored bar segment* owned by a step — i.e. the midpoint
-   between this step's circle and the next one's (or the bar's right edge,
-   for the last step). This is where the active-step illustration sits —
-   distinct from circlePct, which is where the flag/circle/label anchor. */
-function blockCenterPct(num: number, isLast: boolean): number {
-    const start = circlePct(num);
-    const end   = isLast ? 100 : circlePct(num + 1);
-    return (start + end) / 2;
+/* Midpoint between the previous step's circle and the current step's circle —
+   this sits inside the green fill zone, which is where the illustration belongs. */
+function illustrationPct(step: number): number {
+    return (circlePct(Math.max(0, step - 1)) + circlePct(step)) / 2;
 }
 
-/* Fill lands 90% of the way through the current step's "block" — the same
-   circle-to-circle segment used by blockCenterPct (current circle to the
-   next one's, or the bar's right edge for the last step). Reads as "in
-   progress on this step, almost to the next" rather than stopping short. */
+/* Fill to the right edge of the active step's block (100% of current block). */
 function fillPct(step: number): number {
-    const start = circlePct(step);
-    const end   = step === 5 ? 100 : circlePct(step + 1);
-    return start + (end - start) * 0.9;
+    if (step === 5) return 100;
+    return 20 + step * 15;
 }
 
 export function ProgressBar({
@@ -88,10 +69,11 @@ export function ProgressBar({
         const isPast = isDone || isCurrent;
         const isFinish = num === LAST;
 
-        const flagSrc = isPast
-            ? "/assets/campaigns/flag-active.svg"
-            : isFinish
-                ? "/assets/campaigns/finish-flag-inactive.svg"
+        const showBigFinishFlag = isFinish;
+        const flagSrc = showBigFinishFlag
+            ? "/assets/campaigns/finish-flag-inactive.svg"
+            : isPast
+                ? "/assets/campaigns/flag-active.svg"
                 : "/assets/campaigns/flag-inactive.svg";
 
         return {
@@ -102,15 +84,15 @@ export function ProgressBar({
             isPast,
             isFinish,
             flagSrc,
-            flagW: (isFinish && !isPast) ? 28 : 20,
-            flagH: (isFinish && !isPast) ? 40 : 34,
+            flagW: showBigFinishFlag ? 65 : 23,
+            flagH: showBigFinishFlag ? 68 : 22,
             clickable: num > 0 && num <= maxStep && !isCurrent,
             centerPct: circlePct(num),
         };
     });
 
-    const FLAG_ZONE = 54;
-    const BAR_H = 40;
+    const FLAG_ZONE = 46;
+    const BAR_H = 32;
 
     return (
         /*
@@ -129,19 +111,22 @@ export function ProgressBar({
 
             {/* Flags — each centered directly above its own circle (anchored at circlePct) */}
             <div className="absolute left-0 right-0" style={{ bottom: BAR_H, height: FLAG_ZONE, zIndex: 1 }}>
-                {stepMeta.map(({ num, isPast, flagSrc, flagW, flagH, centerPct }) => (
+                {stepMeta.map(({ num, isPast, isFinish, flagSrc, flagW, flagH, centerPct }) => (
                     <div
                         key={num}
                         className="absolute bottom-0"
-                        style={{ left: `${centerPct}%`, transform: "translateX(-50%)" }}
+                        style={
+                            isFinish
+                                ? { right: `${100 - centerPct}%`, transform: "translateX(50%)" }
+                                : { left: `${centerPct}%`, transform: "translateX(-50%)" }
+                        }
                     >
                         <Image
                             src={flagSrc}
                             width={flagW}
                             height={flagH}
                             alt=""
-                            style={{ opacity: isPast ? 1 : 0.35 }}
-                            className="ml-4"
+                            style={{ opacity: isPast ? 1 : 0.35, ...(isFinish ? { marginRight: '39px' } : { marginLeft: '18px' }) }}
                         />
                     </div>
                 ))}
@@ -151,13 +136,13 @@ export function ProgressBar({
                     of the flag, which is anchored at the circle itself. */}
                 {STEP_ILLUSTRATIONS[step] && (
                     <div
-                        className="absolute bottom-0"
-                        style={{ left: `${blockCenterPct(step, step === LAST)}%`, transform: "translateX(-50%)" }}
+                        className="absolute bottom-3"
+                        style={{ left: `${illustrationPct(step)}%`, transform: "translateX(-50%)" }}
                     >
                         <Image
                             src={STEP_ILLUSTRATIONS[step]}
-                            width={40}
-                            height={40}
+                            width={32}
+                            height={32}
                             alt=""
                             style={{ objectFit: "contain" }}
                         />
@@ -184,12 +169,12 @@ export function ProgressBar({
 
             {/* Circles + labels — circle's own center anchored at circlePct(num); label trails after, free to overflow */}
             <div className="absolute left-0 right-0" style={{ bottom: 0, height: BAR_H, zIndex: 1 }}>
-                {stepMeta.map(({ num, label, isDone, isCurrent, isPast, clickable, centerPct }) => {
+                {stepMeta.map(({ num, label, isDone, isCurrent, isPast, isFinish, clickable, centerPct }) => {
                     const circle = (
                         <div
                             className="flex items-center justify-center rounded-full bg-white shrink-0 font-bold transition-all duration-300"
                             style={{
-                                width: 20, height: 20, fontSize: 11,
+                                width: 17, height: 17, fontSize: 10,
                                 color: isPast ? "rgba(38,186,88,1)" : "#9ca3af",
                                 boxShadow: isCurrent
                                     ? "0 0 0 3px rgba(38,186,88,1), 0 0 12px 3px rgba(38,186,88,0.5)"
@@ -208,16 +193,24 @@ export function ProgressBar({
 
                     const labelEl = (
                         <span
-                            className="uppercase font-bold tracking-wide text-[9px] sm:text-[10px] whitespace-nowrap"
+                            className="uppercase font-black tracking-[1px] leading-none text-[10px] md:text-[12px] whitespace-nowrap"
                             style={{ color: isPast ? "white" : "#9ca3af" }}
                         >
                             {label}
                         </span>
                     );
 
-                    /* Anchor the GROUP's left edge 10px (half the circle's width) left of centerPct,
-                       so the circle's own center — not the group's — lands on centerPct. */
-                    const groupStyle = { left: `${centerPct}%`, transform: "translateX(-10px)" } as const;
+                    /* Anchor the GROUP's left edge ~half the circle's width left of centerPct,
+                       so the circle's own center — not the group's — lands on centerPct.
+                       For the Finish step, mirror this from the right edge instead, with the
+                       label trailing before (to the left of) the circle — this makes the
+                       Finish step's buffer space (circle-edge → bar end) exactly equal to the
+                       Start step's buffer space (bar start → circle-edge). */
+                    const groupStyle = isFinish
+                        ? { right: `${100 - centerPct}%`, transform: "translateX(8.5px)" } as const
+                        : { left: `${centerPct}%`, transform: "translateX(-8.5px)" } as const;
+
+                    const content = isFinish ? <>{labelEl}{circle}</> : <>{circle}{labelEl}</>;
 
                     return clickable ? (
                         <button
@@ -228,11 +221,11 @@ export function ProgressBar({
                             style={groupStyle}
                             title={`Go to ${label}`}
                         >
-                            {circle}{labelEl}
+                            {content}
                         </button>
                     ) : (
                         <div key={num} className="absolute top-0 h-full flex items-center gap-1.25" style={groupStyle}>
-                            {circle}{labelEl}
+                            {content}
                         </div>
                     );
                 })}
@@ -279,14 +272,16 @@ export function BottomNav({
                 </div>
             )}
 
-            <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 px-6 py-3 flex items-center justify-between shadow-lg">
+            <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-100 px-6 py-3 flex items-center justify-between shadow-[0_-2px_12px_rgba(0,0,0,0.06)]">
                 <button
                     type="button"
                     onClick={onExit}
                     disabled={busy}
-                    className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 transition-colors disabled:opacity-50"
+                    className="flex items-center gap-3 text-sm font-semibold transition-opacity hover:opacity-70 disabled:opacity-40"
+                    style={{ color: "rgba(0,64,149,1)" }}
                 >
-                    <span className="w-5 h-5 flex items-center justify-center rounded border border-gray-300 text-gray-400 text-[10px] font-bold shrink-0">✕</span>
+                    <span className="text-base leading-none">✕</span>
+                    <span className="w-px h-4 bg-current opacity-30 shrink-0" />
                     <span>Exit and Save Progress</span>
                 </button>
 
@@ -296,7 +291,18 @@ export function BottomNav({
                             type="button"
                             onClick={onBack}
                             disabled={busy}
-                            className="px-5 py-2 border border-gray-300 text-gray-600 rounded-lg text-sm font-semibold hover:border-gray-400 transition-colors disabled:opacity-50"
+                            className="flex items-center justify-center transition-colors disabled:opacity-50"
+                            style={{
+                                width: 114,
+                                height: 42,
+                                background: "transparent",
+                                fontFamily: "var(--font-satoshi, 'Satoshi Variable', sans-serif)",
+                                fontWeight: 500,
+                                fontSize: 16,
+                                lineHeight: "100%",
+                                letterSpacing: "0.15px",
+                                color: "rgba(0, 48, 96, 1)",
+                            }}
                         >
                             Previous
                         </button>
@@ -308,7 +314,8 @@ export function BottomNav({
                                 type="button"
                                 onClick={onLaunch}
                                 disabled={busy}
-                                className="flex items-center gap-2 px-7 py-2.5 bg-green-500 hover:bg-green-600 text-white font-bold rounded-lg text-sm transition-colors disabled:opacity-60"
+                                className="flex items-center gap-2 px-7 py-2.5 rounded-full text-sm font-semibold text-white transition-colors disabled:opacity-60"
+                                style={{ background: "rgba(0,64,149,1)" }}
                             >
                                 {launching ? "Launching…" : "Launch"}
                                 {!launching && (
@@ -323,7 +330,24 @@ export function BottomNav({
                             type="button"
                             onClick={onNext}
                             disabled={busy}
-                            className="flex items-center gap-2 px-7 py-2.5 bg-blue-700 hover:bg-blue-800 text-white font-bold rounded-lg text-sm transition-colors disabled:opacity-60"
+                            className="flex items-center justify-center transition-colors disabled:opacity-60"
+                            style={{
+                                width: 114,
+                                height: 42,
+                                borderRadius: 12,
+                                paddingTop: 12,
+                                paddingRight: 16,
+                                paddingBottom: 14,
+                                paddingLeft: 16,
+                                gap: 8,
+                                background: "rgba(2, 104, 192, 1)",
+                                fontFamily: "var(--font-satoshi, 'Satoshi Variable', sans-serif)",
+                                fontWeight: 500,
+                                fontSize: 16,
+                                lineHeight: "100%",
+                                letterSpacing: "0.15px",
+                                color: "rgba(255, 255, 255, 1)",
+                            }}
                         >
                             {saving ? (
                                 <>
@@ -334,12 +358,7 @@ export function BottomNav({
                                     Saving…
                                 </>
                             ) : (
-                                <>
-                                    Next
-                                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                                    </svg>
-                                </>
+                                "Next"
                             )}
                         </button>
                     )}
