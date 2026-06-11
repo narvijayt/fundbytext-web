@@ -331,17 +331,16 @@ export function BottomNav({
                 </div>
             )}
 
-            <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-100 px-6 py-3 flex items-center justify-between shadow-[0_-2px_12px_rgba(0,0,0,0.06)]">
+            <div className="fixed bottom-0 left-0 right-0 z-50 h-20 bg-white border-t border-[rgba(234,238,243,1)] px-4 flex items-center justify-between shadow-[0_-2px_12px_rgba(0,0,0,0.06)]">
                 <button
                     type="button"
                     onClick={onExit}
                     disabled={busy}
-                    className="flex items-center gap-3 text-sm font-semibold transition-opacity hover:opacity-70 disabled:opacity-40"
-                    style={{ color: "rgba(0,64,149,1)" }}
+                    className="flex items-center gap-3 transition-opacity hover:opacity-70 disabled:opacity-40 text-[rgba(0,48,96,1)] md:rounded-xl md:pt-3 md:pr-0.5 md:pb-3.5 md:pl-0.5"
                 >
-                    <span className="text-base leading-none">✕</span>
-                    <span className="w-px h-4 bg-current opacity-30 shrink-0" />
-                    <span>Exit and Save Progress</span>
+                    <Image src="/assets/campaigns/exit.svg" width={18} height={18} alt="" />
+                    <span className="w-px h-5 bg-[rgba(212,222,231,1)] shrink-0" />
+                    <span className="hidden md:inline text-base font-medium leading-[1.4]">Exit and Save Progress</span>
                 </button>
 
                 <div className="flex items-center gap-3">
@@ -350,7 +349,7 @@ export function BottomNav({
                             type="button"
                             onClick={onBack}
                             disabled={busy}
-                            className="flex items-center justify-center transition-colors disabled:opacity-50"
+                            className="flex items-center justify-center transition-colors disabled:opacity-50 rounded-xl border border-[rgba(212,222,231,1)]"
                             style={{
                                 width: 114,
                                 height: 42,
@@ -394,10 +393,8 @@ export function BottomNav({
                                 width: 114,
                                 height: 42,
                                 borderRadius: 12,
-                                paddingTop: 12,
-                                paddingRight: 16,
-                                paddingBottom: 14,
                                 paddingLeft: 16,
+                                paddingRight: 16,
                                 gap: 8,
                                 background: "rgba(2, 104, 192, 1)",
                                 fontFamily: "var(--font-satoshi, 'Satoshi Variable', sans-serif)",

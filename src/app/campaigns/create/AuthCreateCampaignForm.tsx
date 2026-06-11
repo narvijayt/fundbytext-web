@@ -17,10 +17,13 @@ const schema = z.object({
 
 type FormData = z.infer<typeof schema>;
 
+const focusGradientCls =
+    "focus:outline-none focus:border-2 focus:border-transparent focus:[background-image:linear-gradient(#fff,#fff),linear-gradient(95.84deg,#0278DE_40.72%,#AED9FE_50%,#0278DE_59.28%)] focus:[background-origin:border-box] focus:[background-clip:padding-box,border-box]";
+
 const inputCls =
-    "w-full border border-gray-200 rounded-xl px-4 py-3 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 placeholder:text-gray-400";
+    `w-full border border-gray-200 rounded-xl px-4 py-3 text-sm bg-white ${focusGradientCls} placeholder:text-gray-400`;
 const inputErrCls =
-    "w-full border border-red-400 rounded-xl px-4 py-3 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-red-400 placeholder:text-gray-400";
+    `w-full border border-red-400 rounded-xl px-4 py-3 text-sm bg-white ${focusGradientCls} placeholder:text-gray-400`;
 
 export default function AuthCreateCampaignForm() {
     const router = useRouter();
@@ -142,7 +145,7 @@ export default function AuthCreateCampaignForm() {
                                         key={type}
                                         type="button"
                                         onClick={() => setValue("campaign_type", type, { shouldValidate: true })}
-                                        className="flex-1 min-w-0 lg:max-w-83.5 h-17 flex items-center justify-between bg-white text-left transition-all"
+                                        className="flex-1 min-w-0 lg:max-w-83.5 h-15 lg:h-17 flex items-center justify-between bg-white text-left transition-all"
                                         style={{
                                             gap: active ? 8 : 6,
                                             borderRadius: 16,
@@ -159,20 +162,20 @@ export default function AuthCreateCampaignForm() {
                                         }}
                                     >
                                         <div className="flex items-center gap-2.5 min-w-0">
-                                            <span className="shrink-0 w-8 h-8 flex items-center justify-center">
+                                            <span className="shrink-0 w-6 h-6 lg:w-8 lg:h-8 flex items-center justify-center">
                                                 <Image
                                                     src={active ? activeIcon : inactiveIcon}
-                                                    width={type === "organization" ? 32 : 17}
-                                                    height={type === "organization" ? 32 : 20}
+                                                    width={32}
+                                                    height={32}
                                                     alt=""
+                                                    className="w-6 h-6 lg:w-8 lg:h-8"
                                                 />
                                             </span>
                                             <span
-                                                className="truncate"
+                                                className="truncate text-sm lg:text-xl"
                                                 style={{
                                                     fontFamily: "var(--font-satoshi, 'Satoshi Variable', sans-serif)",
                                                     fontWeight: 500,
-                                                    fontSize: 20,
                                                     lineHeight: "150%",
                                                     letterSpacing: 0,
                                                     color: "rgba(0,48,96,1)",
@@ -226,7 +229,7 @@ export default function AuthCreateCampaignForm() {
             </div>
 
             {/* ── Fixed bottom nav ────────────────────────────────────── */}
-            <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-100 px-6 py-3 flex items-center justify-between shadow-[0_-2px_12px_rgba(0,0,0,0.06)]">
+            <div className="fixed bottom-0 left-0 right-0 z-50 h-20 bg-white border-t border-[rgba(234,238,243,1)] px-4 flex items-center justify-between shadow-[0_-2px_12px_rgba(0,0,0,0.06)]">
                 <Link
                     href="/dashboard"
                     className="flex items-center gap-3 text-sm font-semibold transition-opacity hover:opacity-70"
@@ -241,7 +244,7 @@ export default function AuthCreateCampaignForm() {
                     onClick={handleSubmit(onSubmit)}
                     disabled={isSubmitting}
                     className="flex items-center gap-2 px-7 py-2.5 rounded-full text-sm font-semibold text-white transition-colors disabled:opacity-60"
-                    style={{ background: "rgba(0,64,149,1)" }}
+                    style={{ background: "rgba(2,104,192,1)" }}
                 >
                     {isSubmitting ? (
                         <>

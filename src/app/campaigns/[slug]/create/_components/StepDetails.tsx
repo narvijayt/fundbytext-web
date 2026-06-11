@@ -233,7 +233,7 @@ export default function StepDetails({
                                     type="button"
                                     onClick={() => !typeDisabled && setCampaignType(type)}
                                     disabled={typeDisabled}
-                                    className="flex-1 min-w-0 lg:max-w-83.5 h-17 flex items-center justify-between bg-white text-left transition-all"
+                                    className="flex-1 min-w-0 lg:max-w-83.5 h-15 lg:h-17 flex items-center justify-between bg-white text-left transition-all"
                                     style={{
                                         gap: active ? 8 : 6,
                                         borderRadius: 16,
@@ -250,20 +250,20 @@ export default function StepDetails({
                                     }}
                                 >
                                     <div className="flex items-center gap-2.5 min-w-0">
-                                        <span className="shrink-0 w-8 h-8 flex items-center justify-center">
+                                        <span className="shrink-0 w-6 h-6 lg:w-8 lg:h-8 flex items-center justify-center">
                                             <Image
                                                 src={active ? activeIcon : inactiveIcon}
-                                                width={type === "organization" ? 32 : 17}
-                                                height={type === "organization" ? 32 : 20}
+                                                width={32}
+                                                height={32}
                                                 alt=""
+                                                className="w-6 h-6 lg:w-8 lg:h-8"
                                             />
                                         </span>
                                         <span
-                                            className="truncate"
+                                            className="truncate text-sm lg:text-xl"
                                             style={{
                                                 fontFamily: "var(--font-satoshi, 'Satoshi Variable', sans-serif)",
                                                 fontWeight: 500,
-                                                fontSize: 20,
                                                 lineHeight: "150%",
                                                 letterSpacing: 0,
                                                 color: "rgba(0,48,96,1)",

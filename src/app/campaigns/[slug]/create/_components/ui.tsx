@@ -36,10 +36,13 @@ export function VectorWallpaper() {
     );
 }
 
+const focusGradientCls =
+    "focus:outline-none focus:border-2 focus:border-transparent focus:[background-image:linear-gradient(#fff,#fff),linear-gradient(95.84deg,#0278DE_40.72%,#AED9FE_50%,#0278DE_59.28%)] focus:[background-origin:border-box] focus:[background-clip:padding-box,border-box]";
+
 export const inputCls =
-    "w-full border border-gray-200 rounded-xl px-4 py-3 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 placeholder:text-gray-400";
+    `w-full border border-gray-200 rounded-xl px-4 py-3 text-sm bg-white ${focusGradientCls} placeholder:text-gray-400`;
 export const inputErrCls =
-    "w-full border border-red-400 rounded-xl px-4 py-3 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-red-400 placeholder:text-gray-400";
+    `w-full border border-red-400 rounded-xl px-4 py-3 text-sm bg-white ${focusGradientCls} placeholder:text-gray-400`;
 
 export function SectionTitle({
     children,
@@ -77,16 +80,16 @@ export function QuestionCard({
                     <div className="flex items-center justify-center gap-1.5 mb-1">
                         <Image src="/assets/campaigns/question-flag.svg" width={24} height={24} alt="" />
                         <h3
-                            className="font-black text-[18px] sm:text-xl text-gray-900"
-                            style={{ lineHeight: "125%", letterSpacing: 0 }}
+                            className="font-black text-[18px] sm:text-[22px]"
+                            style={{ lineHeight: "125%", letterSpacing: 0, color: "rgba(2,104,192,1)" }}
                         >
                             {title}
                         </h3>
                     </div>
                     {description && (
                         <p
-                            className="text-base sm:text-xl"
-                            style={{ lineHeight: "140%", letterSpacing: 0, color: "rgba(0,48,96,1)" }}
+                            className="text-base sm:text-xl leading-[140%] lg:leading-[115%]"
+                            style={{ letterSpacing: 0, color: "rgba(0,48,96,1)" }}
                         >
                             {description}
                         </p>
@@ -95,7 +98,7 @@ export function QuestionCard({
                 {children}
                 {askBuddyText && (
                     <div
-                        className="flex items-center gap-2.5"
+                        className="flex items-center gap-2.25"
                         style={{
                             borderRadius: 16,
                             paddingTop: 18,
@@ -110,7 +113,7 @@ export function QuestionCard({
                             width={64}
                             height={80}
                             alt=""
-                            className="shrink-0 w-7.5 h-9.5 sm:w-12 sm:h-15"
+                            className="shrink-0 w-7.5 h-10 sm:w-[55.65px] sm:h-20"
                         />
                         <p
                             className="text-xs sm:text-lg"
