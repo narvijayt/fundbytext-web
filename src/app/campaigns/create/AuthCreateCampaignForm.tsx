@@ -64,35 +64,35 @@ export default function AuthCreateCampaignForm() {
 
             <VectorWallpaper />
 
-            {/* ── Top header bar ──────────────────────────────────────── */}
-            <div className="relative z-40 bg-white h-15.5 md:h-27">
-                <div className="h-full max-w-5xl mx-auto flex items-center justify-between px-4 md:px-10">
-                    <Link href="/dashboard" className="flex items-center transition-opacity hover:opacity-70 shrink-0">
-                        <Image
-                            src="/assets/campaigns/app-logo.svg"
-                            width={34}
-                            height={48}
-                            alt="FundbyText"
-                            className="w-5.25 h-7.5 md:w-8.5 md:h-12"
-                        />
-                    </Link>
-                    <h1
-                        className="text-center font-black text-base md:text-[32px]"
-                        style={{ color: "rgba(0,79,149,1)", lineHeight: "115%", letterSpacing: 0 }}
-                    >
-                        Create Your Campaign
-                    </h1>
-                    <p className="shrink-0 text-right font-sans font-black text-[10px] md:text-sm leading-none tracking-[1px] uppercase text-[rgba(87,114,141,1)]">
-                        STEP{" "}
-                        <span className="text-[#26BA58]">0</span>
-                        {" "}/{" "}
-                        <span>5</span>
-                    </p>
-                </div>
-            </div>
-
-            {/* ── Progress bar — full width ────────────────────────────── */}
+            {/* ── Top header bar + progress bar — single shared white background,
+            so no seam/gap shows the page background between them ───────── */}
             <div className="relative z-40 bg-white w-full">
+                <div className="h-15.5 md:h-22 mb-2 md:mb-4">
+                    <div className="h-full max-w-5xl mx-auto flex items-center justify-between px-4 md:px-10">
+                        <Link href="/dashboard" className="flex items-center transition-opacity hover:opacity-70 shrink-0">
+                            <Image
+                                src="/assets/campaigns/app-logo.svg"
+                                width={34}
+                                height={48}
+                                alt="FundbyText"
+                                className="w-5.25 h-7.5 md:w-8.5 md:h-12"
+                            />
+                        </Link>
+                        <h1
+                            className="text-center font-black text-base md:text-[32px]"
+                            style={{ color: "rgba(0,79,149,1)", lineHeight: "115%", letterSpacing: 0 }}
+                        >
+                            Create Your Campaign
+                        </h1>
+                        <p className="shrink-0 text-right font-sans font-black text-[10px] md:text-sm leading-none tracking-[1px] uppercase text-[rgba(87,114,141,1)]">
+                            STEP{" "}
+                            <span className="text-[#26BA58]">0</span>
+                            {" "}/{" "}
+                            <span>5</span>
+                        </p>
+                    </div>
+                </div>
+
                 <ProgressBar step={0} maxStep={0} isOrg={false} />
             </div>
 
