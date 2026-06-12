@@ -213,7 +213,7 @@ export function ProgressBar({
 
                         const labelEl = (
                             <span
-                                className="uppercase font-black tracking-[1px] leading-none text-[12px] whitespace-nowrap"
+                                className="uppercase font-black tracking-[1px] leading-none text-[10.8px] whitespace-nowrap"
                                 style={{ color: isPast ? "rgba(255,255,255,1)" : "rgba(212,222,231,1)" }}
                             >
                                 {label}

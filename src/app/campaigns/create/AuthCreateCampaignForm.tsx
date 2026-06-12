@@ -55,7 +55,7 @@ export default function AuthCreateCampaignForm() {
     }
 
     return (
-        <div className="relative isolate min-h-screen pb-24" style={{ background: PAGE_GRADIENT, zoom: 0.9 }}>
+        <div className="wizard-scale-90 relative isolate min-h-screen pb-24" style={{ background: PAGE_GRADIENT }}>
 
             <VectorWallpaper />
 
@@ -74,12 +74,12 @@ export default function AuthCreateCampaignForm() {
                             />
                         </Link>
                         <h1
-                            className="text-center font-black text-base md:text-[32px]"
+                            className="text-center font-black text-base md:text-[28.8px]"
                             style={{ color: "rgba(0,79,149,1)", lineHeight: "115%", letterSpacing: 0 }}
                         >
                             Create Your Campaign
                         </h1>
-                        <p className="shrink-0 text-right font-sans font-black text-[10px] md:text-sm leading-none tracking-[1px] uppercase text-[rgba(87,114,141,1)]">
+                        <p className="shrink-0 text-right font-sans font-black text-[9px] md:text-sm leading-none tracking-[1px] uppercase text-[rgba(87,114,141,1)]">
                             STEP{" "}
                             <span className="text-[#26BA58]">0</span>
                             {" "}/{" "}
@@ -127,7 +127,7 @@ export default function AuthCreateCampaignForm() {
                     }
                 >
                     <div>
-                        <div className="flex flex-col lg:flex-row gap-4">
+                        <div className="flex flex-col lg:flex-row gap-[16px]">
                             {(["organization", "individual"] as const).map((type) => {
                                 const active = selectedType === type;
                                 const activeIcon   = type === "organization" ? "/assets/campaigns/organization-active.svg"     : "/assets/campaigns/individual-active.svg";
@@ -139,13 +139,13 @@ export default function AuthCreateCampaignForm() {
                                         onClick={() => setValue("campaign_type", type, { shouldValidate: true })}
                                         className="flex-1 min-w-0 h-15 lg:h-17 flex items-center justify-between bg-white text-left transition-all"
                                         style={{
-                                            gap: 8,
-                                            borderRadius: 16,
-                                            paddingTop: 18,
-                                            paddingRight: 24,
-                                            paddingBottom: 18,
-                                            paddingLeft: 16,
-                                            border: active ? "2px solid transparent" : "2px solid rgba(212,222,231,1)",
+                                            gap: "7.2px",
+                                            borderRadius: "14.4px",
+                                            paddingTop: "16.2px",
+                                            paddingRight: "21.6px",
+                                            paddingBottom: "16.2px",
+                                            paddingLeft: "14.4px",
+                                            border: active ? "1.8px solid transparent" : "1.8px solid rgba(212,222,231,1)",
                                             backgroundImage: active
                                                 ? "linear-gradient(white, white), linear-gradient(95.84deg, #0278DE 40.72%, #AED9FE 50%, #0278DE 59.28%)"
                                                 : undefined,
@@ -164,7 +164,7 @@ export default function AuthCreateCampaignForm() {
                                                 />
                                             </span>
                                             <span
-                                                className="truncate text-sm lg:text-base xl:text-xl"
+                                                className="truncate text-[11.6px] lg:text-[13.4px] xl:text-[17px]"
                                                 style={{
                                                     fontFamily: "var(--font-sans)",
                                                     fontWeight: 500,
@@ -179,7 +179,13 @@ export default function AuthCreateCampaignForm() {
                                         {active && (
                                             <span
                                                 className="shrink-0"
-                                                style={{ width: 16, height: 16, borderRadius: 100, border: "4px solid rgba(2,104,192,1)", boxSizing: "border-box" }}
+                                                style={{
+                                                    width: "14.4px",
+                                                    height: "14.4px",
+                                                    borderRadius: "90px",
+                                                    border: "3.6px solid rgba(2,104,192,1)",
+                                                    boxSizing: "border-box",
+                                                }}
                                             />
                                         )}
                                     </button>
@@ -187,7 +193,7 @@ export default function AuthCreateCampaignForm() {
                             })}
                         </div>
                         {errors.campaign_type && (
-                            <p className="text-[10px] sm:text-xs text-red-500 mt-2">{errors.campaign_type.message}</p>
+                            <p className="text-[9px] sm:text-xs text-red-500 mt-2">{errors.campaign_type.message}</p>
                         )}
                     </div>
                 </QuestionCard>
@@ -197,6 +203,12 @@ export default function AuthCreateCampaignForm() {
                     title="What's the name of your campaign?"
                     description="This will be the title that everyone sees. Make it clear and catchy!"
                     askBuddyText="Ask FundBuddy for your campaign description — our AI will suggest a great name based on your cause."
+                    askBuddySuggestionsHeading="Hey there buddy, here are some great campaign name suggestions!"
+                    askBuddySuggestions={[
+                        "New Gear for Samuel's Soccer Team",
+                        "Fund John's Wrestling Team's Travel Expenses",
+                        "New Uniforms for Jason's Little League Team",
+                    ]}
                 >
                     <div>
                         <div className="relative">
@@ -206,12 +218,12 @@ export default function AuthCreateCampaignForm() {
                                 maxLength={50}
                                 className={`${errors.name || nameTaken ? inputErrCls : inputCls} pr-16`}
                             />
-                            <span className="absolute right-3 sm:right-5 top-1/2 -translate-y-1/2 text-[10px] sm:text-xs text-gray-400 font-medium">
+                            <span className="absolute right-3 sm:right-5 top-1/2 -translate-y-1/2 text-[9px] sm:text-xs text-gray-400 font-medium">
                                 {nameVal.length}/50
                             </span>
                         </div>
-                        {errors.name && <p className="text-[10px] sm:text-xs text-red-500 mt-1">{errors.name.message}</p>}
-                        {nameTaken && <p className="text-[10px] sm:text-xs text-red-500 mt-1">A campaign with this name already exists. Please choose a different name.</p>}
+                        {errors.name && <p className="text-[9px] sm:text-xs text-red-500 mt-1">{errors.name.message}</p>}
+                        {nameTaken && <p className="text-[9px] sm:text-xs text-red-500 mt-1">A campaign with this name already exists. Please choose a different name.</p>}
                     </div>
                 </QuestionCard>
 

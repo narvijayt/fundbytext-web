@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import Image from "next/image";
 
 /* ── Page background — shared gradient + drifting "Vector" wallpaper ──
@@ -40,9 +40,9 @@ const focusGradientCls =
     "focus:outline-none focus:border-transparent focus:[background-image:linear-gradient(#fff,#fff),linear-gradient(95.84deg,#0278DE_40.72%,#AED9FE_50%,#0278DE_59.28%)] focus:[background-origin:border-box] focus:[background-clip:padding-box,border-box]";
 
 export const inputCls =
-    `w-full border-2 border-gray-200 rounded-2xl px-4 py-3 sm:px-5 sm:py-3.5 lg:px-6 lg:py-5 text-sm sm:text-base lg:text-lg xl:text-xl font-medium leading-[140%] tracking-normal bg-white text-[rgba(0,48,96,1)] ${focusGradientCls} placeholder:text-[rgba(126,138,150,1)]`;
+    `w-full border-[1.8px] border-gray-200 rounded-2xl px-4 py-3 sm:px-5 sm:py-3.5 lg:px-6 lg:py-5 text-[11.6px] sm:text-[13.4px] lg:text-[15.2px] xl:text-[17px] font-medium leading-[140%] tracking-normal bg-white text-[rgba(0,48,96,1)] ${focusGradientCls} placeholder:text-[rgba(126,138,150,1)]`;
 export const inputErrCls =
-    `w-full border-2 border-red-400 rounded-2xl px-4 py-3 sm:px-5 sm:py-3.5 lg:px-6 lg:py-5 text-sm sm:text-base lg:text-lg xl:text-xl font-medium leading-[140%] tracking-normal bg-white text-[rgba(0,48,96,1)] ${focusGradientCls} placeholder:text-[rgba(126,138,150,1)]`;
+    `w-full border-[1.8px] border-red-400 rounded-2xl px-4 py-3 sm:px-5 sm:py-3.5 lg:px-6 lg:py-5 text-[11.6px] sm:text-[13.4px] lg:text-[15.2px] xl:text-[17px] font-medium leading-[140%] tracking-normal bg-white text-[rgba(0,48,96,1)] ${focusGradientCls} placeholder:text-[rgba(126,138,150,1)]`;
 
 export function SectionTitle({
     children,
@@ -63,24 +63,31 @@ export function QuestionCard({
     title,
     description,
     askBuddyText,
+    askBuddySuggestionsHeading,
+    askBuddySuggestions,
     children,
 }: {
     title: string;
     description?: string;
     askBuddyText?: string;
+    askBuddySuggestionsHeading?: string;
+    askBuddySuggestions?: string[];
     children: React.ReactNode;
 }) {
+    const [showSuggestions, setShowSuggestions] = useState(false);
+    const hasSuggestions = !!askBuddySuggestions?.length;
+
     return (
         <div
             className="bg-white rounded-3xl overflow-hidden"
             style={{ boxShadow: "0px 32px 40px -16px rgba(2,104,192,0.3), 0px 12px 12px -8px rgba(2,104,192,0.06)" }}
         >
-            <div className="px-6 sm:px-14 pt-8 sm:pt-14 pb-8 sm:pb-16 flex flex-col gap-8 sm:gap-12">
-                <div className="text-center">
-                    <div className="flex items-center justify-center gap-1.5 mb-1">
+            <div className="px-6 sm:px-14 pt-8 sm:pt-14 pb-8 sm:pb-16 flex flex-col">
+                <div className="text-center mb-[28.8px] sm:mb-[43.2px]">
+                    <div className="flex items-center justify-center gap-1.5 mb-[14.4px]">
                         <Image src="/assets/campaigns/question-flag.svg" width={24} height={24} alt="" />
                         <h3
-                            className="font-black text-[18px] sm:text-[22px]"
+                            className="font-black text-[17.2px] sm:text-[20.8px]"
                             style={{ lineHeight: "125%", letterSpacing: 0, color: "rgba(2,104,192,1)" }}
                         >
                             {title}
@@ -88,7 +95,7 @@ export function QuestionCard({
                     </div>
                     {description && (
                         <p
-                            className="text-base sm:text-xl leading-[140%] lg:leading-[115%]"
+                            className="text-[12.4px] sm:text-[16px] leading-[140%] lg:leading-[115%]"
                             style={{ letterSpacing: 0, color: "rgba(0,48,96,1)" }}
                         >
                             {description}
@@ -96,8 +103,8 @@ export function QuestionCard({
                     )}
                 </div>
                 {children}
-                {askBuddyText && (
-                    <div className="flex items-center gap-2.25">
+                {askBuddyText && !hasSuggestions && (
+                    <div className="flex items-center gap-[16px] mt-[21.6px]">
                         <Image
                             src="/assets/campaigns/ask-buddy.svg"
                             width={64}
@@ -113,21 +120,128 @@ export function QuestionCard({
                                 lineHeight: "140%",
                                 letterSpacing: 0,
                                 color: "rgba(0,48,96,1)",
-                                borderRadius: 16,
-                                paddingTop: 18,
-                                paddingRight: 24,
-                                paddingBottom: 18,
-                                paddingLeft: 16,
-                                border: "2px solid rgba(221,224,227,1)",
+                                borderRadius: "14.4px",
+                                paddingTop: "16.2px",
+                                paddingRight: "21.6px",
+                                paddingBottom: "16.2px",
+                                paddingLeft: "14.4px",
+                                border: "1.8px solid rgba(221,224,227,1)",
                             }}
                         >
                             {askBuddyText}
                         </p>
                     </div>
                 )}
+                {askBuddyText && hasSuggestions && (
+                    <div className="mt-[21.6px]">
+                        <div className="flex items-center gap-[16px]">
+                            <Image
+                                src="/assets/campaigns/ask-buddy.svg"
+                                width={30}
+                                height={40}
+                                alt=""
+                                className="shrink-0 w-[27px] h-[36px]"
+                            />
+                            <p
+                                className="flex-1 text-[14.4px]"
+                                style={{
+                                    fontFamily: "var(--font-sans)",
+                                    fontWeight: 500,
+                                    lineHeight: "140%",
+                                    letterSpacing: 0,
+                                    color: "rgba(143,152,163,1)",
+                                }}
+                            >
+                                {renderAskBuddyText(askBuddyText)}
+                            </p>
+                            <button
+                                type="button"
+                                onClick={() => setShowSuggestions((s) => !s)}
+                                className="shrink-0 rounded-[10.8px] font-bold text-[12.6px] text-white"
+                                style={{
+                                    paddingTop: "10.8px",
+                                    paddingRight: "12.6px",
+                                    paddingBottom: "10.53px",
+                                    paddingLeft: "12.6px",
+                                    lineHeight: "100%",
+                                    background: "linear-gradient(0deg, #FF8C53 0%, #F47435 100%)",
+                                    boxShadow: "0px 10.8px 36px -7.2px rgba(244,116,53,0.48)",
+                                }}
+                            >
+                                Ask FundBuddy
+                            </button>
+                        </div>
+                        {showSuggestions && (
+                            <div
+                                className="mt-[21.6px] flex flex-col"
+                                style={{
+                                    gap: "21.6px",
+                                    borderRadius: "13.5px",
+                                    paddingTop: "21.6px",
+                                    paddingRight: "28.8px",
+                                    paddingBottom: "21.6px",
+                                    paddingLeft: "28.8px",
+                                    background: "linear-gradient(0deg, #0278DE 0%, #005BAC 100%)",
+                                    boxShadow:
+                                        "0px 10.8px 10.8px 0px rgba(0,91,172,0.25), 0px 28.8px 36px 0px rgba(20,65,109,0.26)",
+                                }}
+                            >
+                                <h4
+                                    className="font-black text-[19.8px] text-white"
+                                    style={{ lineHeight: "125%", letterSpacing: 0 }}
+                                >
+                                    {askBuddySuggestionsHeading}
+                                </h4>
+                                <ul className="list-disc pl-5 flex flex-col gap-1.5">
+                                    {askBuddySuggestions!.map((s) => (
+                                        <li
+                                            key={s}
+                                            className="font-medium text-[16.2px] text-white"
+                                            style={{ lineHeight: "140%", letterSpacing: 0 }}
+                                        >
+                                            {s}
+                                        </li>
+                                    ))}
+                                </ul>
+                                <div className="flex justify-end">
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowSuggestions(false)}
+                                        className="shrink-0 rounded-[10.8px] bg-white font-bold text-[12.6px]"
+                                        style={{
+                                            paddingTop: "10.8px",
+                                            paddingRight: "12.6px",
+                                            paddingBottom: "10.53px",
+                                            paddingLeft: "12.6px",
+                                            lineHeight: "100%",
+                                            color: "rgba(2,104,192,1)",
+                                            boxShadow: "0px 10.8px 36px -7.2px rgba(255,255,255,0.74)",
+                                        }}
+                                    >
+                                        Thanks!
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                )}
             </div>
         </div>
     );
+}
+
+/* Splits askBuddyText on the word "FundBuddy" and renders it bold + underlined,
+   matching the FundBuddy brand styling in the ask-buddy bar. */
+function renderAskBuddyText(text: string) {
+    const parts = text.split("FundBuddy");
+    return parts.map((part, i) => (
+        <React.Fragment key={i}>
+            {part}
+            {i < parts.length - 1 && (
+                <strong style={{ fontWeight: 900, textDecoration: "underline" }}>FundBuddy</strong>
+            )}
+        </React.Fragment>
+    ));
 }
 
 export function Field({
@@ -197,12 +311,12 @@ export function FundBuddyBar({
     return (
         <div className="flex items-center gap-3 px-5 py-3.5 bg-orange-50 border-t border-orange-100">
             <FundBuddyIcon className="w-9 h-9 shrink-0" />
-            <p className="text-[11px] text-gray-600 flex-1 leading-relaxed">{text}</p>
+            <p className="text-[9.9px] text-gray-600 flex-1 leading-relaxed">{text}</p>
             {onAsk && (
                 <button
                     type="button"
                     onClick={onAsk}
-                    className="shrink-0 px-3 py-1.5 bg-orange-500 hover:bg-orange-600 text-white text-[11px] font-semibold rounded-full transition-colors"
+                    className="shrink-0 px-3 py-1.5 bg-orange-500 hover:bg-orange-600 text-white text-[9.9px] font-semibold rounded-full transition-colors"
                 >
                     Ask FundBuddy
                 </button>
@@ -282,7 +396,7 @@ export function StepBubble({
                     <span>{num === 0 ? "" : num}</span>
                 )}
             </div>
-            <span className={`text-[9px] mt-1 uppercase tracking-wider whitespace-nowrap ${labelColor}`}>
+            <span className={`text-[8.1px] mt-1 uppercase tracking-wider whitespace-nowrap ${labelColor}`}>
                 {label}
             </span>
         </div>
@@ -324,7 +438,7 @@ export function LockedField({ value, label }: { value: string; label: string }) 
                 </svg>
                 <span className="normal-case font-normal text-gray-400">locked</span>
             </label>
-            <div className="w-full border-2 border-gray-200 rounded-xl sm:rounded-2xl px-4 py-3 sm:px-5 sm:py-3.5 lg:py-4 text-sm sm:text-base lg:text-lg bg-gray-50 text-gray-500 cursor-not-allowed select-none">
+            <div className="w-full border-[1.8px] border-gray-200 rounded-xl sm:rounded-2xl px-4 py-3 sm:px-5 sm:py-3.5 lg:py-4 text-sm sm:text-base lg:text-lg bg-gray-50 text-gray-500 cursor-not-allowed select-none">
                 {value}
             </div>
         </div>

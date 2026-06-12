@@ -182,6 +182,28 @@
     }
 }
 
+/* ─── Campaign wizard 90% scale ────────────────────────────────
+   Replicates the "90% browser zoom" look by scaling Tailwind's
+   spacing, font-size, radius & container scales down to 90% —
+   avoids the `zoom` CSS property (poor support in older browsers,
+   not a recommended layout tool). ─────────────────────────────── */
+.wizard-scale-90 {
+    --spacing: 0.225rem;
+    --text-xs: 0.675rem;
+    --text-sm: 0.7875rem;
+    --text-base: 0.9rem;
+    --text-lg: 1.0125rem;
+    --text-xl: 1.125rem;
+    --text-2xl: 1.35rem;
+    --radius-xl: 0.675rem;
+    --radius-2xl: 0.9rem;
+    --radius-3xl: 1.35rem;
+    --container-2xl: 37.8rem;
+    --container-3xl: 43.2rem;
+    --container-4xl: 50.4rem;
+    --container-5xl: 57.6rem;
+}
+
 html {
     overflow-x: hidden;
 }

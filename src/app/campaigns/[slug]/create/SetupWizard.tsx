@@ -629,7 +629,7 @@ export default function SetupWizard({
     const meta = STEP_META[step] ?? STEP_META[1];
 
     return (
-        <div className="relative isolate min-h-screen pb-28" style={{ background: PAGE_GRADIENT, zoom: 0.9 }} ref={topRef}>
+        <div className="wizard-scale-90 relative isolate min-h-screen pb-28" style={{ background: PAGE_GRADIENT }} ref={topRef}>
 
             <VectorWallpaper />
 
@@ -652,12 +652,12 @@ export default function SetupWizard({
                             />
                         </button>
                         <h1
-                            className="text-center font-black text-base md:text-[32px]"
+                            className="text-center font-black text-base md:text-[28.8px]"
                             style={{ color: "rgba(0,79,149,1)", lineHeight: "115%", letterSpacing: 0 }}
                         >
                             {isEditMode || isLaunched ? "Edit Your" : "Create Your"} Campaign
                         </h1>
-                        <p className="shrink-0 text-right font-sans font-black text-[10px] md:text-sm leading-none tracking-[1px] uppercase text-[rgba(87,114,141,1)]">
+                        <p className="shrink-0 text-right font-sans font-black text-[9px] md:text-sm leading-none tracking-[1px] uppercase text-[rgba(87,114,141,1)]">
                             STEP{" "}
                             <span className="text-[#26BA58]">{step}</span>
                             {" "}/{" "}

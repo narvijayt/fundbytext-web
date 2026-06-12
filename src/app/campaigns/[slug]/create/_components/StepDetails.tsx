@@ -84,7 +84,7 @@ function PickerField({
 
     return (
         <div className="min-w-0">
-            <label className="block text-[10px] sm:text-xs font-semibold text-gray-500 mb-1.5 sm:mb-2 uppercase tracking-wide">
+            <label className="block text-[9px] sm:text-xs font-semibold text-gray-500 mb-1.5 sm:mb-2 uppercase tracking-wide">
                 {label}{required && <span className="text-red-400 ml-0.5">*</span>}
             </label>
             <div className="relative">
@@ -105,7 +105,7 @@ function PickerField({
                 {/* eslint-disable-next-line react-hooks/refs -- anchorRef.current is only read inside the popover's own effects, after render */}
                 {open && renderPopover(btnRef, () => setOpen(false))}
             </div>
-            {error && <p className="text-[10px] sm:text-xs text-red-500 mt-1">{error}</p>}
+            {error && <p className="text-[9px] sm:text-xs text-red-500 mt-1">{error}</p>}
         </div>
     );
 }
@@ -179,7 +179,7 @@ export default function StepDetails({
             {/* ── Card 1: Campaign Type ───────────────────────────────── */}
             <QuestionCard
                 title="What type of campaign are you running?"
-                description="This will be the title that everyone sees. Make it clear and catchy!"
+                description="Choose the campaign type that best fits your fundraising goal."
                 askBuddyText={
                     campaignType === "individual"
                         ? "Individual Campaigns are for a single person like yourself."
@@ -187,7 +187,7 @@ export default function StepDetails({
                 }
             >
                 <div>
-                    <div className={`flex flex-col lg:flex-row gap-4 ${typeDisabled ? "opacity-60 pointer-events-none" : ""}`}>
+                    <div className={`flex flex-col lg:flex-row gap-[16px] ${typeDisabled ? "opacity-60 pointer-events-none" : ""}`}>
                         {(["organization", "individual"] as const).map((type) => {
                             const active = campaignType === type;
                             const activeIcon   = type === "organization" ? "/assets/campaigns/organization-active.svg"     : "/assets/campaigns/individual-active.svg";
@@ -200,13 +200,13 @@ export default function StepDetails({
                                     disabled={typeDisabled}
                                     className="flex-1 min-w-0 h-15 lg:h-17 flex items-center justify-between bg-white text-left transition-all"
                                     style={{
-                                        gap: 8,
-                                        borderRadius: 16,
-                                        paddingTop: 18,
-                                        paddingRight: 24,
-                                        paddingBottom: 18,
-                                        paddingLeft: 16,
-                                        border: active ? "2px solid transparent" : "2px solid rgba(212,222,231,1)",
+                                        gap: "7.2px",
+                                        borderRadius: "14.4px",
+                                        paddingTop: "16.2px",
+                                        paddingRight: "21.6px",
+                                        paddingBottom: "16.2px",
+                                        paddingLeft: "14.4px",
+                                        border: active ? "1.8px solid transparent" : "1.8px solid rgba(212,222,231,1)",
                                         backgroundImage: active
                                             ? "linear-gradient(white, white), linear-gradient(95.84deg, #0278DE 40.72%, #AED9FE 50%, #0278DE 59.28%)"
                                             : undefined,
@@ -225,7 +225,7 @@ export default function StepDetails({
                                             />
                                         </span>
                                         <span
-                                            className="truncate text-sm lg:text-base xl:text-xl"
+                                            className="truncate text-[11.6px] lg:text-[13.4px] xl:text-[17px]"
                                             style={{
                                                 fontFamily: "var(--font-sans)",
                                                 fontWeight: 500,
@@ -240,7 +240,13 @@ export default function StepDetails({
                                     {active && (
                                         <span
                                             className="shrink-0"
-                                            style={{ width: 16, height: 16, borderRadius: 100, border: "4px solid rgba(2,104,192,1)", boxSizing: "border-box" }}
+                                            style={{
+                                                width: "14.4px",
+                                                height: "14.4px",
+                                                borderRadius: "90px",
+                                                border: "3.6px solid rgba(2,104,192,1)",
+                                                boxSizing: "border-box",
+                                            }}
                                         />
                                     )}
                                 </button>
@@ -258,6 +264,12 @@ export default function StepDetails({
                 title="What's the name of your campaign?"
                 description="This will be the title that everyone sees. Make it clear and catchy!"
                 askBuddyText="Ask FundBuddy for your campaign description — our AI will suggest a great name based on your cause."
+                askBuddySuggestionsHeading="Hey there buddy, here are some great campaign name suggestions!"
+                askBuddySuggestions={[
+                    "New Gear for Samuel's Soccer Team",
+                    "Fund John's Wrestling Team's Travel Expenses",
+                    "New Uniforms for Jason's Little League Team",
+                ]}
             >
                 {nameReadOnly ? (
                     <LockedField value={name} label="Campaign Name" />
@@ -271,7 +283,7 @@ export default function StepDetails({
                                 placeholder="Give your campaign a catchy name…"
                                 className={`${fieldErrors.name ? inputErrCls : inputCls} pr-16 sm:pr-20`}
                             />
-                            <span className="absolute right-3 sm:right-5 top-1/2 -translate-y-1/2 text-[10px] sm:text-xs text-gray-400 font-medium">
+                            <span className="absolute right-3 sm:right-5 top-1/2 -translate-y-1/2 text-[9px] sm:text-xs text-gray-400 font-medium">
                                 {name.length}/50
                             </span>
                         </div>
@@ -391,14 +403,14 @@ export default function StepDetails({
                         />
                     </div>
                     {isActive && (
-                        <p className="text-[10px] sm:text-xs text-blue-500">
+                        <p className="text-[9px] sm:text-xs text-blue-500">
                             Setting a future start date will revert this campaign to Upcoming.
                         </p>
                     )}
 
                     {/* Timezone */}
                     <div>
-                        <label className="block text-[10px] sm:text-xs font-semibold text-gray-500 mb-1.5 sm:mb-2 uppercase tracking-wide">
+                        <label className="block text-[9px] sm:text-xs font-semibold text-gray-500 mb-1.5 sm:mb-2 uppercase tracking-wide">
                             Timezone
                         </label>
                         <div className="relative">
@@ -420,7 +432,7 @@ export default function StepDetails({
                                 />
                             )}
                         </div>
-                        <p className="text-[10px] sm:text-xs text-gray-400 mt-1 sm:mt-1.5">All dates above are interpreted in this timezone.</p>
+                        <p className="text-[9px] sm:text-xs text-gray-400 mt-1 sm:mt-1.5">All dates above are interpreted in this timezone.</p>
                     </div>
                 </div>
             </QuestionCard>

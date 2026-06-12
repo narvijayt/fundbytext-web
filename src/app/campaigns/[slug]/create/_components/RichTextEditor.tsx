@@ -75,7 +75,7 @@ export default function RichTextEditor({ value, onChange, placeholder, className
     if (!editor) return null;
 
     return (
-        <div className={`border-2 border-gray-300 rounded-xl sm:rounded-2xl overflow-hidden focus-within:ring-2 focus-within:ring-orange-400 focus-within:border-orange-400 ${className ?? ""}`}>
+        <div className={`border-[1.8px] border-gray-300 rounded-xl sm:rounded-2xl overflow-hidden focus-within:ring-2 focus-within:ring-orange-400 focus-within:border-orange-400 ${className ?? ""}`}>
             {/* Toolbar */}
             <div className="flex items-center gap-0.5 sm:gap-1 px-2 py-1.5 sm:px-3 sm:py-2 border-b border-gray-200 bg-gray-50 flex-wrap">
                 {/* Bold */}
