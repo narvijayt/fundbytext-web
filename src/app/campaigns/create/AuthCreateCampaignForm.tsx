@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { ProgressBar } from "@/app/campaigns/[slug]/create/_components/WizardNav";
-import { QuestionCard, PAGE_GRADIENT, VectorWallpaper } from "@/app/campaigns/[slug]/create/_components/ui";
+import { QuestionCard, PAGE_GRADIENT, VectorWallpaper, inputCls, inputErrCls } from "@/app/campaigns/[slug]/create/_components/ui";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 
@@ -16,14 +16,6 @@ const schema = z.object({
 });
 
 type FormData = z.infer<typeof schema>;
-
-const focusGradientCls =
-    "focus:outline-none focus:border-2 focus:border-transparent focus:[background-image:linear-gradient(#fff,#fff),linear-gradient(95.84deg,#0278DE_40.72%,#AED9FE_50%,#0278DE_59.28%)] focus:[background-origin:border-box] focus:[background-clip:padding-box,border-box]";
-
-const inputCls =
-    `w-full border border-gray-200 rounded-xl px-4 py-3 text-sm bg-white ${focusGradientCls} placeholder:text-gray-400`;
-const inputErrCls =
-    `w-full border border-red-400 rounded-xl px-4 py-3 text-sm bg-white ${focusGradientCls} placeholder:text-gray-400`;
 
 export default function AuthCreateCampaignForm() {
     const router = useRouter();
@@ -63,7 +55,7 @@ export default function AuthCreateCampaignForm() {
     }
 
     return (
-        <div className="relative isolate min-h-screen pb-24" style={{ background: PAGE_GRADIENT }}>
+        <div className="relative isolate min-h-screen pb-24" style={{ background: PAGE_GRADIENT, zoom: 0.9 }}>
 
             <VectorWallpaper />
 
@@ -78,7 +70,7 @@ export default function AuthCreateCampaignForm() {
                                 width={34}
                                 height={48}
                                 alt="FundbyText"
-                                className="w-5.25 h-7.5 md:w-8.5 md:h-12"
+                                className="app-logo w-5.25 h-7.5 md:w-8.5 md:h-12"
                             />
                         </Link>
                         <h1
@@ -103,26 +95,26 @@ export default function AuthCreateCampaignForm() {
             <div className="relative px-6 pt-8 pb-6 text-center">
                 <div className="relative z-10 flex justify-center">
                     <Image
-                        src="/assets/campaigns/header-title-start.png"
-                        alt="Start Your Campaign — Tell us a bit about yourself to get started."
+                        src="/assets/campaigns/header-title.png"
+                        alt="Campaign Details — On your mark get set… Go!"
                         width={599}
                         height={182}
-                        className="hidden sm:block w-auto h-auto max-w-full max-h-20"
+                        className="hidden sm:block w-auto h-auto max-w-full max-h-16 lg:max-h-24 xl:max-h-28"
                         priority
                     />
                     <Image
-                        src="/assets/campaigns/header-title-start-mobile.png"
-                        alt="Start Your Campaign — Tell us a bit about yourself to get started."
+                        src="/assets/campaigns/header-title-mobile.png"
+                        alt="Campaign Details — On your mark get set… Go!"
                         width={353}
                         height={144}
-                        className="sm:hidden w-auto h-auto max-w-full max-h-16"
+                        className="sm:hidden w-auto h-auto max-w-full max-h-14"
                         priority
                     />
                 </div>
             </div>
 
             {/* ── Form cards ──────────────────────────────────────────── */}
-            <div className="w-full max-w-2xl mx-auto px-4 pt-5 space-y-4">
+            <div className="w-full max-w-2xl lg:max-w-3xl xl:max-w-4xl mx-auto px-4 pt-5 space-y-4 sm:space-y-6 lg:space-y-8">
 
                 {/* Card 1: Campaign Type */}
                 <QuestionCard
@@ -139,21 +131,21 @@ export default function AuthCreateCampaignForm() {
                             {(["organization", "individual"] as const).map((type) => {
                                 const active = selectedType === type;
                                 const activeIcon   = type === "organization" ? "/assets/campaigns/organization-active.svg"     : "/assets/campaigns/individual-active.svg";
-                                const inactiveIcon = type === "organization" ? "/assets/campaigns/organizational-icon.svg"     : "/assets/campaigns/individual-icon.svg";
+                                const inactiveIcon = type === "organization" ? "/assets/campaigns/organizational-icon.svg"     : "/assets/campaigns/individual-inactive.svg";
                                 return (
                                     <button
                                         key={type}
                                         type="button"
                                         onClick={() => setValue("campaign_type", type, { shouldValidate: true })}
-                                        className="flex-1 min-w-0 lg:max-w-83.5 h-15 lg:h-17 flex items-center justify-between bg-white text-left transition-all"
+                                        className="flex-1 min-w-0 h-15 lg:h-17 flex items-center justify-between bg-white text-left transition-all"
                                         style={{
-                                            gap: active ? 8 : 6,
+                                            gap: 8,
                                             borderRadius: 16,
                                             paddingTop: 18,
                                             paddingRight: 24,
                                             paddingBottom: 18,
                                             paddingLeft: 16,
-                                            border: active ? "2px solid transparent" : "1px solid rgba(212,222,231,1)",
+                                            border: active ? "2px solid transparent" : "2px solid rgba(212,222,231,1)",
                                             backgroundImage: active
                                                 ? "linear-gradient(white, white), linear-gradient(95.84deg, #0278DE 40.72%, #AED9FE 50%, #0278DE 59.28%)"
                                                 : undefined,
@@ -172,9 +164,9 @@ export default function AuthCreateCampaignForm() {
                                                 />
                                             </span>
                                             <span
-                                                className="truncate text-sm lg:text-xl"
+                                                className="truncate text-sm lg:text-base xl:text-xl"
                                                 style={{
-                                                    fontFamily: "var(--font-satoshi, 'Satoshi Variable', sans-serif)",
+                                                    fontFamily: "var(--font-sans)",
                                                     fontWeight: 500,
                                                     lineHeight: "150%",
                                                     letterSpacing: 0,
@@ -187,7 +179,7 @@ export default function AuthCreateCampaignForm() {
                                         {active && (
                                             <span
                                                 className="shrink-0"
-                                                style={{ width: 16, height: 16, borderRadius: 100, background: "rgba(2,104,192,1)" }}
+                                                style={{ width: 16, height: 16, borderRadius: 100, border: "4px solid rgba(2,104,192,1)", boxSizing: "border-box" }}
                                             />
                                         )}
                                     </button>
@@ -195,7 +187,7 @@ export default function AuthCreateCampaignForm() {
                             })}
                         </div>
                         {errors.campaign_type && (
-                            <p className="text-xs text-red-500 mt-2">{errors.campaign_type.message}</p>
+                            <p className="text-[10px] sm:text-xs text-red-500 mt-2">{errors.campaign_type.message}</p>
                         )}
                     </div>
                 </QuestionCard>
@@ -214,17 +206,17 @@ export default function AuthCreateCampaignForm() {
                                 maxLength={50}
                                 className={`${errors.name || nameTaken ? inputErrCls : inputCls} pr-16`}
                             />
-                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-gray-400 font-medium">
+                            <span className="absolute right-3 sm:right-5 top-1/2 -translate-y-1/2 text-[10px] sm:text-xs text-gray-400 font-medium">
                                 {nameVal.length}/50
                             </span>
                         </div>
-                        {errors.name && <p className="text-xs text-red-500 mt-1">{errors.name.message}</p>}
-                        {nameTaken && <p className="text-xs text-red-500 mt-1">A campaign with this name already exists. Please choose a different name.</p>}
+                        {errors.name && <p className="text-[10px] sm:text-xs text-red-500 mt-1">{errors.name.message}</p>}
+                        {nameTaken && <p className="text-[10px] sm:text-xs text-red-500 mt-1">A campaign with this name already exists. Please choose a different name.</p>}
                     </div>
                 </QuestionCard>
 
                 {serverError && (
-                    <p className="text-sm text-red-500 text-center">{serverError}</p>
+                    <p className="text-sm sm:text-base text-red-500 text-center">{serverError}</p>
                 )}
             </div>
 

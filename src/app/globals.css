@@ -233,6 +233,14 @@ html {
     background: #f1f5f9;
 }
 
+/* ─── Disable drag for images/icons/illustrations (header app logo excluded) ─── */
+img:not(.app-logo),
+svg:not(.app-logo) {
+    -webkit-user-drag: none;
+    user-drag: none;
+    user-select: none;
+}
+
 /* Remove number input spinners */
 input[type=number]::-webkit-inner-spin-button,
 input[type=number]::-webkit-outer-spin-button {

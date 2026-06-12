@@ -12,5 +12,17 @@ export default function GlobalEffects() {
         return () => document.removeEventListener("wheel", handleWheel);
     }, []);
 
+    useEffect(() => {
+        function handleDragStart(e: DragEvent) {
+            const target = e.target as HTMLElement | null;
+            if (!target) return;
+            if ((target.tagName === "IMG" || target.tagName === "SVG") && !target.closest(".app-logo")) {
+                e.preventDefault();
+            }
+        }
+        document.addEventListener("dragstart", handleDragStart);
+        return () => document.removeEventListener("dragstart", handleDragStart);
+    }, []);
+
     return null;
 }

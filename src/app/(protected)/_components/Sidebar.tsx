@@ -52,7 +52,7 @@ export default async function Sidebar({ user }: { user: AuthUser }) {
             {/* Logo */}
             <div className="px-5 pt-5 mb-5">
                 <Link href="/dashboard">
-                    <Image src="/logo.svg" alt="FundByText" width={140} height={42} priority />
+                    <Image src="/logo.svg" alt="FundByText" width={140} height={42} priority className="app-logo" />
                 </Link>
             </div>
 

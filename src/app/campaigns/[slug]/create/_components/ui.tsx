@@ -37,12 +37,12 @@ export function VectorWallpaper() {
 }
 
 const focusGradientCls =
-    "focus:outline-none focus:border-2 focus:border-transparent focus:[background-image:linear-gradient(#fff,#fff),linear-gradient(95.84deg,#0278DE_40.72%,#AED9FE_50%,#0278DE_59.28%)] focus:[background-origin:border-box] focus:[background-clip:padding-box,border-box]";
+    "focus:outline-none focus:border-transparent focus:[background-image:linear-gradient(#fff,#fff),linear-gradient(95.84deg,#0278DE_40.72%,#AED9FE_50%,#0278DE_59.28%)] focus:[background-origin:border-box] focus:[background-clip:padding-box,border-box]";
 
 export const inputCls =
-    `w-full border border-gray-200 rounded-xl px-4 py-3 text-sm bg-white ${focusGradientCls} placeholder:text-gray-400`;
+    `w-full border-2 border-gray-200 rounded-2xl px-4 py-3 sm:px-5 sm:py-3.5 lg:px-6 lg:py-5 text-sm sm:text-base lg:text-lg xl:text-xl font-medium leading-[140%] tracking-normal bg-white text-[rgba(0,48,96,1)] ${focusGradientCls} placeholder:text-[rgba(126,138,150,1)]`;
 export const inputErrCls =
-    `w-full border border-red-400 rounded-xl px-4 py-3 text-sm bg-white ${focusGradientCls} placeholder:text-gray-400`;
+    `w-full border-2 border-red-400 rounded-2xl px-4 py-3 sm:px-5 sm:py-3.5 lg:px-6 lg:py-5 text-sm sm:text-base lg:text-lg xl:text-xl font-medium leading-[140%] tracking-normal bg-white text-[rgba(0,48,96,1)] ${focusGradientCls} placeholder:text-[rgba(126,138,150,1)]`;
 
 export function SectionTitle({
     children,
@@ -97,17 +97,7 @@ export function QuestionCard({
                 </div>
                 {children}
                 {askBuddyText && (
-                    <div
-                        className="flex items-center gap-2.25"
-                        style={{
-                            borderRadius: 16,
-                            paddingTop: 18,
-                            paddingRight: 24,
-                            paddingBottom: 18,
-                            paddingLeft: 16,
-                            border: "2px solid rgba(221,224,227,1)",
-                        }}
-                    >
+                    <div className="flex items-center gap-2.25">
                         <Image
                             src="/assets/campaigns/ask-buddy.svg"
                             width={64}
@@ -116,13 +106,19 @@ export function QuestionCard({
                             className="shrink-0 w-7.5 h-10 sm:w-[55.65px] sm:h-20"
                         />
                         <p
-                            className="text-xs sm:text-lg"
+                            className="flex-1 text-xs sm:text-lg"
                             style={{
-                                fontFamily: "var(--font-satoshi, 'Satoshi Variable', sans-serif)",
+                                fontFamily: "var(--font-sans)",
                                 fontWeight: 400,
                                 lineHeight: "140%",
                                 letterSpacing: 0,
                                 color: "rgba(0,48,96,1)",
+                                borderRadius: 16,
+                                paddingTop: 18,
+                                paddingRight: 24,
+                                paddingBottom: 18,
+                                paddingLeft: 16,
+                                border: "2px solid rgba(221,224,227,1)",
                             }}
                         >
                             {askBuddyText}
@@ -149,13 +145,13 @@ export function Field({
 }) {
     return (
         <div>
-            <label className="block text-xs font-semibold text-gray-500 mb-1.5 uppercase tracking-wide">
+            <label className="block text-xs sm:text-sm font-semibold text-gray-500 mb-1.5 sm:mb-2 uppercase tracking-wide">
                 {label}
                 {required && <span className="text-red-400 ml-0.5">*</span>}
             </label>
-            {hint && <p className="text-xs text-gray-400 mb-1.5">{hint}</p>}
+            {hint && <p className="text-xs sm:text-sm text-gray-400 mb-1.5">{hint}</p>}
             {children}
-            {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
+            {error && <p className="text-xs sm:text-sm text-red-500 mt-1">{error}</p>}
         </div>
     );
 }
@@ -321,14 +317,14 @@ export function CardDivider() {
 export function LockedField({ value, label }: { value: string; label: string }) {
     return (
         <div>
-            <label className="flex items-center gap-1 text-xs font-semibold text-gray-500 mb-1.5 uppercase tracking-wide">
+            <label className="flex items-center gap-1 text-xs sm:text-sm font-semibold text-gray-500 mb-1.5 sm:mb-2 uppercase tracking-wide">
                 {label}
                 <svg className="w-3 h-3 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                 </svg>
                 <span className="normal-case font-normal text-gray-400">locked</span>
             </label>
-            <div className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm bg-gray-50 text-gray-500 cursor-not-allowed select-none">
+            <div className="w-full border-2 border-gray-200 rounded-xl sm:rounded-2xl px-4 py-3 sm:px-5 sm:py-3.5 lg:py-4 text-sm sm:text-base lg:text-lg bg-gray-50 text-gray-500 cursor-not-allowed select-none">
                 {value}
             </div>
         </div>

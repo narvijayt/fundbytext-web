@@ -91,7 +91,7 @@ export default async function CampaignPublicPage({
                 <CampaignUpdater campaignSlug={slug} status={campaign.status} />
                 <nav className="flex items-center justify-between px-6 py-3 shadow-md" style={{ background: "#1565C0" }}>
                     <Link href="/" className="flex items-center gap-2.5">
-                        <Image src="/assets/campaigns/app-logo.svg" width={28} height={40} alt="FundByText" className="w-6 h-9 brightness-0 invert" />
+                        <Image src="/assets/campaigns/app-logo.svg" width={28} height={40} alt="FundByText" className="app-logo w-6 h-9 brightness-0 invert" />
                         <span className="font-extrabold text-lg tracking-tight text-white hidden sm:block">FundByText</span>
                     </Link>
                     <Link href="/campaigns/create" className="px-5 py-2 rounded-lg text-white font-bold text-sm" style={{ background: "linear-gradient(135deg, #f97316 0%, #ea580c 100%)" }}>
@@ -206,7 +206,7 @@ export default async function CampaignPublicPage({
                         width={28}
                         height={40}
                         alt="FundByText"
-                        className="w-6 h-9 brightness-0 invert"
+                        className="app-logo w-6 h-9 brightness-0 invert"
                     />
                     <span className="font-extrabold text-lg tracking-tight text-white hidden sm:block">FundByText</span>
                 </Link>

@@ -629,7 +629,7 @@ export default function SetupWizard({
     const meta = STEP_META[step] ?? STEP_META[1];
 
     return (
-        <div className="relative isolate min-h-screen pb-28" style={{ background: PAGE_GRADIENT }} ref={topRef}>
+        <div className="relative isolate min-h-screen pb-28" style={{ background: PAGE_GRADIENT, zoom: 0.9 }} ref={topRef}>
 
             <VectorWallpaper />
 
@@ -648,7 +648,7 @@ export default function SetupWizard({
                                 width={34}
                                 height={48}
                                 alt="FundbyText"
-                                className="w-5.25 h-7.5 md:w-8.5 md:h-12"
+                                className="app-logo w-5.25 h-7.5 md:w-8.5 md:h-12"
                             />
                         </button>
                         <h1
@@ -671,52 +671,31 @@ export default function SetupWizard({
 
             {/* ── Step banner (not shown for step 4 — it renders its own banners) ── */}
             {step !== 4 && (
-                <div className="relative px-6 pt-8 pb-6 text-center">
-                    {/* Ribbon banner */}
+                <div className="relative px-6 pt-8 sm:pt-10 lg:pt-12 pb-6 sm:pb-8 text-center">
+                    {/* Ribbon banner — shared across all steps (no per-step artwork yet) */}
                     <div className="relative z-10 flex justify-center">
-                        {step === 1 ? (
-                            <>
-                                <Image
-                                    src="/assets/campaigns/header-title.png"
-                                    alt={`${meta.title} — ${meta.subtitle}`}
-                                    width={599}
-                                    height={182}
-                                    className="hidden sm:block w-auto h-auto max-w-full max-h-20"
-                                    priority
-                                />
-                                <Image
-                                    src="/assets/campaigns/header-title-mobile.png"
-                                    alt={`${meta.title} — ${meta.subtitle}`}
-                                    width={353}
-                                    height={144}
-                                    className="sm:hidden w-auto h-auto max-w-full max-h-16"
-                                    priority
-                                />
-                            </>
-                        ) : (
-                            <div
-                                className="px-8 py-3 text-center min-w-56"
-                                style={{
-                                    background: "linear-gradient(180deg, #1A3F8F 0%, #0D2860 100%)",
-                                    borderRadius: "12px",
-                                    boxShadow: "0 4px 24px rgba(0,0,0,0.35)",
-                                }}
-                            >
-                                <h2 className="text-lg font-extrabold text-white tracking-wide">{meta.title}</h2>
-                                {/* Subtitle with decorative dashes */}
-                                <div className="flex items-center justify-center gap-2 mt-1">
-                                    <span className="text-blue-300 text-xs select-none">—</span>
-                                    <p className="text-blue-200 text-[11px] font-medium">{meta.subtitle}</p>
-                                    <span className="text-blue-300 text-xs select-none">—</span>
-                                </div>
-                            </div>
-                        )}
+                        <Image
+                            src="/assets/campaigns/header-title.png"
+                            alt={`${meta.title} — ${meta.subtitle}`}
+                            width={599}
+                            height={182}
+                            className="hidden sm:block w-auto h-auto max-w-full max-h-16 lg:max-h-24 xl:max-h-28"
+                            priority
+                        />
+                        <Image
+                            src="/assets/campaigns/header-title-mobile.png"
+                            alt={`${meta.title} — ${meta.subtitle}`}
+                            width={353}
+                            height={144}
+                            className="sm:hidden w-auto h-auto max-w-full max-h-14"
+                            priority
+                        />
                     </div>
                 </div>
             )}
 
             {/* ── Step content ────────────────────────────────────────── */}
-            <div className="w-full max-w-2xl mx-auto px-4 pt-5">
+            <div className="w-full max-w-2xl lg:max-w-3xl xl:max-w-4xl mx-auto px-4 pt-5">
 
                 {/* Fullscreen launch loader */}
                 {launching && (
