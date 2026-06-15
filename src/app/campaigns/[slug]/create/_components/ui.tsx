@@ -64,7 +64,7 @@ export function StepBanner({ title, subtitle }: { title: string; subtitle: strin
             const pl = plaqueRef.current, sub = subRef.current;
             if (!pl || !sub) return;
             const isSm = window.matchMedia("(min-width: 640px)").matches;
-            const flare  = isSm ? 88 : 52;   // total width added beyond the plaque (both tips)
+            const flare = isSm ? 88 : 52;   // total width added beyond the plaque (both tips)
             const subPad = isSm ? 150 : 96;  // room for dots + gaps + notch + side padding
             setRibbonW(Math.round(Math.max(pl.offsetWidth + flare, sub.offsetWidth + subPad)));
         }
@@ -197,30 +197,30 @@ function AskBuddyPopover({
     useLayoutEffect(() => {
         const el = popRef.current;
         if (!rect || !el) return;
-        const gap = 10;
         const margin = 12;
         const bottomBar = 92; // fixed footer height + breathing room
+        const mascotW = 30;   // row mascot width
+        const sideGap = 4;    // panel sits just right of the mascot; the tail bridges the rest
         const popH = el.offsetHeight;
-        const spaceBelow = window.innerHeight - rect.bottom - gap - bottomBar;
-        const spaceAbove = rect.top - gap - margin;
-        const placeAbove = popH > spaceBelow && spaceAbove > spaceBelow;
-        const top = placeAbove ? Math.max(margin, rect.top - popH - gap) : rect.bottom + gap;
+        const mascotCenterY = (rect.top + rect.bottom) / 2;
+        const tailOffset = 26;  // tail's distance from the panel top (clears the rounded corner)
+        // Panel sits to the RIGHT of the row mascot and runs to the row's right edge.
+        const left = rect.left + mascotW + sideGap;
+        const width = Math.max(0, rect.width - mascotW - sideGap);
+        // Raise the panel so the tail (at tailOffset) lines up with the mascot's
+        // centre; clamp so it stays on screen and clear of the fixed footer.
+        const maxTop = window.innerHeight - bottomBar - margin - popH;
+        const top = Math.max(margin, Math.min(mascotCenterY - tailOffset - 8, maxTop));
         el.style.top = `${top}px`;
-        el.style.left = `${rect.left}px`;
-        el.style.width = `${rect.width}px`;
+        el.style.left = `${left}px`;
+        el.style.width = `${width}px`;
         el.style.visibility = "visible";
-        // Point the tail toward the row mascot — up when the panel sits below the
-        // row, down when it's flipped above. (Mutated here rather than via state
-        // to avoid a setState-in-effect cascade.)
+        // Tail on the LEFT edge, centred on the mascot. Mutated here rather than
+        // via state to avoid a setState-in-effect cascade.
         const tail = tailRef.current;
         if (tail) {
-            if (placeAbove) {
-                tail.style.top = ""; tail.style.bottom = "-8px";
-                tail.style.borderTop = "8px solid #0278DE"; tail.style.borderBottom = "";
-            } else {
-                tail.style.bottom = ""; tail.style.top = "-8px";
-                tail.style.borderBottom = "8px solid #005BAC"; tail.style.borderTop = "";
-            }
+            const ty = Math.min(Math.max(mascotCenterY - top - 8, 18), popH - 30);
+            tail.style.top = `${ty}px`;
         }
     });
 
@@ -246,9 +246,9 @@ function AskBuddyPopover({
             ref={popRef}
             className="fixed z-[200] flex flex-col"
             style={{
-                top: rect.bottom + 10,
-                left: rect.left,
-                width: rect.width,
+                top: rect.top,
+                left: rect.left + 34,
+                width: rect.width - 34,
                 visibility: "hidden",
                 gap: "16px",
                 borderRadius: "15px",
@@ -257,13 +257,12 @@ function AskBuddyPopover({
                 boxShadow: "0px 12px 12px 0px rgba(0,91,172,0.25), 0px 32px 40px 0px rgba(20,65,109,0.26)",
             }}
         >
-            {/* Tail — points up to the FundBuddy mascot in the row above (or down
-            to it when the panel is flipped above the row). Aligned to the
-            mascot's column at the left edge; direction is set in the effect. */}
+            {/* Tail on the LEFT edge, pointing at the row mascot. Its vertical
+            position is set in the effect to track the mascot's centre. */}
             <div
                 ref={tailRef}
-                className="absolute left-[7px] w-0 h-0"
-                style={{ borderLeft: "8px solid transparent", borderRight: "8px solid transparent" }}
+                className="absolute -left-[8px] top-[16px] w-0 h-0"
+                style={{ borderTop: "8px solid transparent", borderBottom: "8px solid transparent", borderRight: "8px solid #005BAC" }}
             />
             <h4 className="font-black text-[18px] sm:text-[22px] text-white" style={{ lineHeight: "125%", letterSpacing: 0 }}>
                 {heading}
@@ -581,13 +580,13 @@ export function StepBubble({
 }) {
     const circleBase = "w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold transition-all";
     const circleColor =
-        status === "done"    ? `${circleBase} bg-green-500 text-white` :
-        status === "current" ? `${circleBase} bg-blue-700 text-white ring-4 ring-blue-100` :
-                               `${circleBase} bg-gray-200 text-gray-400`;
+        status === "done" ? `${circleBase} bg-green-500 text-white` :
+            status === "current" ? `${circleBase} bg-blue-700 text-white ring-4 ring-blue-100` :
+                `${circleBase} bg-gray-200 text-gray-400`;
     const labelColor =
         status === "current" ? "text-blue-700 font-bold" :
-        status === "done"    ? "text-green-600 font-semibold" :
-                               "text-gray-400";
+            status === "done" ? "text-green-600 font-semibold" :
+                "text-gray-400";
 
     const inner = (
         <div className="flex flex-col items-center">
@@ -620,11 +619,10 @@ export function StepBubble({
                 inner
             )}
             {!isLast && (
-                <div className={`w-8 sm:w-14 h-0.5 mb-7 mx-1 shrink-0 ${
-                    status === "done" ? "bg-green-400" :
+                <div className={`w-8 sm:w-14 h-0.5 mb-7 mx-1 shrink-0 ${status === "done" ? "bg-green-400" :
                     status === "current" ? "bg-blue-200" :
-                    "bg-gray-200"
-                }`} />
+                        "bg-gray-200"
+                    }`} />
             )}
         </div>
     );
