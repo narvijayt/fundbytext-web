@@ -1,0 +1,44 @@
+<svg preserveAspectRatio="none" width="100%" height="100%" overflow="visible" style="display: block;" viewBox="0 0 125 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="bar-texture">
+<g clip-path="url(#clip0_0_84)">
+<path d="M0 0H109C117.837 0 125 7.16344 125 16V16C125 24.8366 117.837 32 109 32H0V0Z" fill="url(#paint0_linear_0_84)"/>
+<g id="Progress Bar">
+<line id="Line 33" opacity="0.5" x1="-368.045" y1="-3.3242" x2="-407.643" y2="36.2738" stroke="var(--stroke-0, #DDE0E3)" stroke-width="7"/>
+<line id="Line 34" opacity="0.5" x1="-346.447" y1="-3.3242" x2="-386.045" y2="36.2738" stroke="var(--stroke-0, #DDE0E3)" stroke-width="7"/>
+<line id="Line 35" opacity="0.5" x1="-324.849" y1="-3.3242" x2="-364.447" y2="36.2738" stroke="var(--stroke-0, #DDE0E3)" stroke-width="7"/>
+<line id="Line 36" opacity="0.5" x1="-303.252" y1="-3.3242" x2="-342.85" y2="36.2738" stroke="var(--stroke-0, #DDE0E3)" stroke-width="7"/>
+<line id="Line 37" opacity="0.5" x1="-281.65" y1="-3.3242" x2="-321.248" y2="36.2738" stroke="var(--stroke-0, #DDE0E3)" stroke-width="7"/>
+<line id="Line 38" opacity="0.5" x1="-260.056" y1="-3.3242" x2="-299.654" y2="36.2738" stroke="var(--stroke-0, #DDE0E3)" stroke-width="7"/>
+<line id="Line 39" opacity="0.5" x1="-238.459" y1="-3.3242" x2="-278.057" y2="36.2738" stroke="var(--stroke-0, #DDE0E3)" stroke-width="7"/>
+<line id="Line 40" opacity="0.5" x1="-216.861" y1="-3.3242" x2="-256.459" y2="36.2738" stroke="var(--stroke-0, #DDE0E3)" stroke-width="7"/>
+<line id="Line 41" opacity="0.5" x1="-195.26" y1="-3.3242" x2="-234.858" y2="36.2738" stroke="var(--stroke-0, #DDE0E3)" stroke-width="7"/>
+<line id="Line 42" opacity="0.5" x1="-173.666" y1="-3.3242" x2="-213.264" y2="36.2738" stroke="var(--stroke-0, #DDE0E3)" stroke-width="7"/>
+<line id="Line 43" opacity="0.5" x1="-152.064" y1="-3.3242" x2="-191.662" y2="36.2738" stroke="var(--stroke-0, #DDE0E3)" stroke-width="7"/>
+<line id="Line 44" opacity="0.5" x1="-130.467" y1="-3.3242" x2="-170.064" y2="36.2738" stroke="var(--stroke-0, #DDE0E3)" stroke-width="7"/>
+<line id="Line 45" opacity="0.5" x1="-108.869" y1="-3.3242" x2="-148.467" y2="36.2738" stroke="var(--stroke-0, #DDE0E3)" stroke-width="7"/>
+</g>
+<line id="Line 33_2" opacity="0.5" x1="-87.2712" y1="-3.3242" x2="-126.869" y2="36.2738" stroke="var(--stroke-0, #DDE0E3)" stroke-width="7"/>
+<line id="Line 34_2" opacity="0.5" x1="-65.6736" y1="-3.3242" x2="-105.272" y2="36.2738" stroke="var(--stroke-0, #DDE0E3)" stroke-width="7"/>
+<line id="Line 35_2" opacity="0.5" x1="-44.0759" y1="-3.3242" x2="-83.6739" y2="36.2738" stroke="var(--stroke-0, #DDE0E3)" stroke-width="7"/>
+<line id="Line 36_2" opacity="0.5" x1="-22.4783" y1="-3.3242" x2="-62.0762" y2="36.2738" stroke="var(--stroke-0, #DDE0E3)" stroke-width="7"/>
+<line id="Line 37_2" opacity="0.5" x1="-0.876689" y1="-3.3242" x2="-40.4747" y2="36.2738" stroke="var(--stroke-0, #DDE0E3)" stroke-width="7"/>
+<line id="Line 38_2" opacity="0.5" x1="20.7171" y1="-3.3242" x2="-18.8809" y2="36.2738" stroke="var(--stroke-0, #DDE0E3)" stroke-width="7"/>
+<line id="Line 39_2" opacity="0.5" x1="42.3147" y1="-3.3242" x2="2.71674" y2="36.2738" stroke="var(--stroke-0, #DDE0E3)" stroke-width="7"/>
+<line id="Line 40_2" opacity="0.5" x1="63.9124" y1="-3.3242" x2="24.3144" y2="36.2738" stroke="var(--stroke-0, #DDE0E3)" stroke-width="7"/>
+<line id="Line 41_2" opacity="0.5" x1="85.5139" y1="-3.3242" x2="45.916" y2="36.2738" stroke="var(--stroke-0, #DDE0E3)" stroke-width="7"/>
+<line id="Line 42_2" opacity="0.5" x1="107.108" y1="-3.3242" x2="67.5097" y2="36.2738" stroke="var(--stroke-0, #DDE0E3)" stroke-width="7"/>
+<line id="Line 43_2" opacity="0.5" x1="128.709" y1="-3.3242" x2="89.1113" y2="36.2738" stroke="var(--stroke-0, #DDE0E3)" stroke-width="7"/>
+<line id="Line 44_2" opacity="0.5" x1="150.307" y1="-3.3242" x2="110.709" y2="36.2738" stroke="var(--stroke-0, #DDE0E3)" stroke-width="7"/>
+<line id="Line 45_2" opacity="0.5" x1="171.905" y1="-3.3242" x2="132.307" y2="36.2738" stroke="var(--stroke-0, #DDE0E3)" stroke-width="7"/>
+</g>
+</g>
+<defs>
+<linearGradient id="paint0_linear_0_84" x1="0" y1="16" x2="125" y2="16" gradientUnits="userSpaceOnUse">
+<stop stop-color="#F2F2F2"/>
+<stop offset="1" stop-color="white"/>
+</linearGradient>
+<clipPath id="clip0_0_84">
+<path d="M0 0H109C117.837 0 125 7.16344 125 16V16C125 24.8366 117.837 32 109 32H0V0Z" fill="white"/>
+</clipPath>
+</defs>
+</svg>

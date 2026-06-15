@@ -1,0 +1,10 @@
+<svg preserveAspectRatio="none" width="100%" height="100%" overflow="visible" style="display: block;" viewBox="0 0 18.9833 36.0001" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="flag">
+<path id="Rectangle 875" d="M0 6.9402C0 6.41074 0.429214 5.98152 0.958677 5.98152H2.0723C2.60176 5.98152 3.03097 6.41074 3.03097 6.9402V35.0414C3.03097 35.5709 2.60176 36.0001 2.0723 36.0001H0.958677C0.429214 36.0001 0 35.5709 0 35.0414V6.9402Z" fill="var(--fill-0, #0268C0)"/>
+<g id="Group">
+<path id="Vector" d="M12.0416 1.30403V14.6776L3.03003 19.9024L3.03003 6.52881L12.0416 1.30403Z" fill="var(--fill-0, #F47435)"/>
+<path id="Vector_2" d="M9.98142 5.23482L12.0426 1.30424V5.70457L9.98142 5.23482Z" fill="var(--fill-0, #F47435)"/>
+<path id="Vector_3" d="M18.9833 5.01737e-05V13.3736L9.98133 18.608V5.23443L13.6243 3.11575L18.9833 5.01737e-05Z" fill="var(--fill-0, #FF8C53)"/>
+</g>
+</g>
+</svg>
