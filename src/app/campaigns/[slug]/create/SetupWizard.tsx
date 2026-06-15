@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import DeleteCampaignButton from "@/app/(protected)/dashboard/_components/DeleteCampaignButton";
 import { type Campaign, type Payout, type Member, type Donor, type CsvRow, type ImportResult, STEPS } from "./_components/types";
 import { ProgressBar, BottomNav } from "./_components/WizardNav";
-import { PAGE_GRADIENT, VectorWallpaper } from "./_components/ui";
+import { PAGE_GRADIENT, VectorWallpaper, StepBanner } from "./_components/ui";
 import StepDetails      from "./_components/StepDetails";
 import StepFundingGoal  from "./_components/StepFundingGoal";
 import StepVisual       from "./_components/StepVisual";
@@ -629,7 +629,7 @@ export default function SetupWizard({
     const meta = STEP_META[step] ?? STEP_META[1];
 
     return (
-        <div className="wizard-scale-90 relative isolate min-h-screen pb-28" style={{ background: PAGE_GRADIENT }} ref={topRef}>
+        <div className="wizard-shell relative isolate min-h-screen pb-28" style={{ background: PAGE_GRADIENT }} ref={topRef}>
 
             <VectorWallpaper />
 
@@ -652,7 +652,7 @@ export default function SetupWizard({
                             />
                         </button>
                         <h1
-                            className="text-center font-black text-base md:text-[28.8px]"
+                            className="text-center font-black text-base md:text-[32px]"
                             style={{ color: "rgba(0,79,149,1)", lineHeight: "115%", letterSpacing: 0 }}
                         >
                             {isEditMode || isLaunched ? "Edit Your" : "Create Your"} Campaign
@@ -669,27 +669,12 @@ export default function SetupWizard({
                 <ProgressBar step={step} maxStep={maxStep} isOrg={isOrg} onStepClick={goToStep} />
             </div>
 
-            {/* ── Step banner (not shown for step 4 — it renders its own banners) ── */}
+            {/* ── Step banner (not shown for step 4 — it renders its own banners).
+            CSS plaque + ribbon with the step's own title/subtitle as text. ── */}
             {step !== 4 && (
-                <div className="relative px-6 pt-8 sm:pt-10 lg:pt-12 pb-6 sm:pb-8 text-center">
-                    {/* Ribbon banner — shared across all steps (no per-step artwork yet) */}
+                <div className="relative px-6 pt-8 sm:pt-10 lg:pt-12 pb-6 sm:pb-8">
                     <div className="relative z-10 flex justify-center">
-                        <Image
-                            src="/assets/campaigns/header-title.png"
-                            alt={`${meta.title} — ${meta.subtitle}`}
-                            width={599}
-                            height={182}
-                            className="hidden sm:block w-auto h-auto max-w-full max-h-16 lg:max-h-24 xl:max-h-28"
-                            priority
-                        />
-                        <Image
-                            src="/assets/campaigns/header-title-mobile.png"
-                            alt={`${meta.title} — ${meta.subtitle}`}
-                            width={353}
-                            height={144}
-                            className="sm:hidden w-auto h-auto max-w-full max-h-14"
-                            priority
-                        />
+                        <StepBanner title={meta.title} subtitle={meta.subtitle} />
                     </div>
                 </div>
             )}

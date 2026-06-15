@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import Image from "next/image";
 
 /* ── Page background — shared gradient + drifting "Vector" wallpaper ──
@@ -36,13 +37,109 @@ export function VectorWallpaper() {
     );
 }
 
+/* ── StepBanner ────────────────────────────────────────────────────────
+   The "Campaign Details / On your mark get set… Go!" plaque + ribbon shown
+   above each step. Built entirely in CSS (gradients, shadows, a clip-path
+   ribbon) so each step shows its own title/subtitle as real text — matching
+   the marketing campaign page's plaque/ribbon treatment, and replacing the
+   old baked-in header-title.png that could only ever say "Campaign Details". */
+function BannerDot({ className }: { className?: string }) {
+    return (
+        <span className={`relative shrink-0 rounded-full ${className}`} style={{ background: "#0278de" }}>
+            <span className="absolute inset-0 rounded-full" style={{ boxShadow: "inset 0px 3.5px 0px 0px #003060" }} />
+        </span>
+    );
+}
+
+export function StepBanner({ title, subtitle }: { title: string; subtitle: string }) {
+    const plaqueRef = useRef<HTMLDivElement>(null);
+    const subRef = useRef<HTMLParagraphElement>(null);
+    // The ribbon must always be wider than the plaque (its notched tips flare
+    // out past the plaque's edges) AND wide enough to hold the subtitle. Both
+    // the plaque (sized to the title) and the subtitle vary, so derive the
+    // ribbon width from a measurement of each rather than a fixed value.
+    const [ribbonW, setRibbonW] = useState<number | null>(null);
+    useEffect(() => {
+        function update() {
+            const pl = plaqueRef.current, sub = subRef.current;
+            if (!pl || !sub) return;
+            const isSm = window.matchMedia("(min-width: 640px)").matches;
+            const flare  = isSm ? 88 : 52;   // total width added beyond the plaque (both tips)
+            const subPad = isSm ? 150 : 96;  // room for dots + gaps + notch + side padding
+            setRibbonW(Math.round(Math.max(pl.offsetWidth + flare, sub.offsetWidth + subPad)));
+        }
+        update();
+        const ro = new ResizeObserver(update);
+        if (plaqueRef.current) ro.observe(plaqueRef.current);
+        if (subRef.current) ro.observe(subRef.current);
+        window.addEventListener("resize", update);
+        return () => { ro.disconnect(); window.removeEventListener("resize", update); };
+    }, [title, subtitle]);
+
+    return (
+        <div className="flex flex-col items-center select-none">
+            {/* Plaque (outer frame + inner panel) */}
+            <div
+                ref={plaqueRef}
+                className="relative flex justify-center overflow-hidden rounded-t-[22px] sm:rounded-t-[32px] px-[13px] pt-[13px] sm:px-[18px] sm:pt-[18px]"
+                style={{
+                    background: "linear-gradient(180deg, #0278de 0%, #0d8dfd 66.111%)",
+                    boxShadow: "0px 22px 24px -10px rgba(0,48,96,0.3)",
+                }}
+            >
+                <span aria-hidden className="absolute inset-0 rounded-[inherit] pointer-events-none" style={{ boxShadow: "inset 0px 5px 4px -3px rgba(174,217,254,0.7)" }} />
+                <div
+                    className="relative flex items-center justify-center rounded-t-[14px] sm:rounded-t-[19px] px-[26px] pt-[22px] pb-[12px] sm:px-[44px] sm:pt-[30px] sm:pb-[16px]"
+                    style={{
+                        background: "linear-gradient(180deg, #0278de 17.803%, #0d8dfd 71.97%)",
+                        boxShadow: "0px 0px 30px 0px rgba(0,48,96,0.4)",
+                    }}
+                >
+                    <span aria-hidden className="absolute inset-0 rounded-[inherit] pointer-events-none" style={{ boxShadow: "inset 0px -4px 8px 0px rgba(0,48,96,0.1), inset 0px 4px 8px -3px rgba(174,217,254,0.7)" }} />
+                    <h2
+                        className="relative font-black text-white text-center whitespace-nowrap leading-none text-[26px] sm:text-[36px]"
+                        style={{ textShadow: "0px 0px 16px #005bac, 0px 0px 4px #005bac", letterSpacing: "-1.2px" }}
+                    >
+                        {title}
+                    </h2>
+                </div>
+            </div>
+
+            {/* Ribbon (notched banner via clip-path) — width derived from the
+            plaque/subtitle so its tips always flare out beyond the plaque. */}
+            <div
+                className="relative -mt-px flex items-center justify-center h-[30px] w-[270px] sm:h-[50px] sm:w-[470px]"
+                style={{ width: ribbonW ?? undefined }}
+            >
+                <div
+                    aria-hidden
+                    className="absolute inset-0 overflow-hidden"
+                    style={{ clipPath: "polygon(0 0, 100% 0, 94.35% 50%, 100% 100%, 0 100%, 5.65% 50%)", background: "#004f95" }}
+                >
+                    <span
+                        className="absolute inset-0"
+                        style={{ backgroundImage: "repeating-linear-gradient(115deg, transparent 0 7px, rgba(0,0,0,0.07) 7px 8px)" }}
+                    />
+                </div>
+                <div className="relative flex items-center justify-center gap-[8px] sm:gap-[12px] px-[32px]">
+                    <BannerDot className="size-[6px] sm:size-[9px]" />
+                    <p ref={subRef} className="font-bold text-white text-center whitespace-nowrap text-[11px] sm:text-[16px]" style={{ lineHeight: 1.25 }}>
+                        {subtitle}
+                    </p>
+                    <BannerDot className="size-[6px] sm:size-[9px]" />
+                </div>
+            </div>
+        </div>
+    );
+}
+
 const focusGradientCls =
     "focus:outline-none focus:border-transparent focus:[background-image:linear-gradient(#fff,#fff),linear-gradient(95.84deg,#0278DE_40.72%,#AED9FE_50%,#0278DE_59.28%)] focus:[background-origin:border-box] focus:[background-clip:padding-box,border-box]";
 
 export const inputCls =
-    `w-full border-[1.8px] border-gray-200 rounded-2xl px-4 py-3 sm:px-5 sm:py-3.5 lg:px-6 lg:py-5 text-[11.6px] sm:text-[13.4px] lg:text-[15.2px] xl:text-[17px] font-medium leading-[140%] tracking-normal bg-white text-[rgba(0,48,96,1)] ${focusGradientCls} placeholder:text-[rgba(126,138,150,1)]`;
+    `w-full border-[2px] border-gray-200 rounded-2xl px-4 py-3 sm:px-5 sm:py-3.5 lg:px-6 lg:py-5 text-[14px] sm:text-[18px] font-medium leading-[140%] tracking-normal bg-white text-[rgba(0,48,96,1)] ${focusGradientCls} placeholder:text-[rgba(126,138,150,1)]`;
 export const inputErrCls =
-    `w-full border-[1.8px] border-red-400 rounded-2xl px-4 py-3 sm:px-5 sm:py-3.5 lg:px-6 lg:py-5 text-[11.6px] sm:text-[13.4px] lg:text-[15.2px] xl:text-[17px] font-medium leading-[140%] tracking-normal bg-white text-[rgba(0,48,96,1)] ${focusGradientCls} placeholder:text-[rgba(126,138,150,1)]`;
+    `w-full border-[2px] border-red-400 rounded-2xl px-4 py-3 sm:px-5 sm:py-3.5 lg:px-6 lg:py-5 text-[14px] sm:text-[18px] font-medium leading-[140%] tracking-normal bg-white text-[rgba(0,48,96,1)] ${focusGradientCls} placeholder:text-[rgba(126,138,150,1)]`;
 
 export function SectionTitle({
     children,
@@ -56,11 +153,157 @@ export function SectionTitle({
     );
 }
 
+/* ── AskBuddyPopover ───────────────────────────────────────────────────
+   The blue FundBuddy suggestions panel. Rendered into document.body via a
+   portal so it floats OVER the card (escaping the card's overflow-hidden /
+   stacking context) instead of growing it. Positioned just below the
+   ask-buddy row, but flipped above it when there isn't room before the
+   fixed bottom nav — so it's never hidden at the bottom of the page. */
+function AskBuddyPopover({
+    anchorRef,
+    heading,
+    suggestions,
+    onClose,
+}: {
+    anchorRef: React.RefObject<HTMLDivElement | null>;
+    heading?: string;
+    suggestions: string[];
+    onClose: () => void;
+}) {
+    const popRef = useRef<HTMLDivElement>(null);
+    const tailRef = useRef<HTMLDivElement>(null);
+    const [rect, setRect] = useState<{ top: number; left: number; width: number; bottom: number } | null>(null);
+
+    // Track the anchor's viewport rect (re-measure on scroll/resize).
+    useLayoutEffect(() => {
+        function update() {
+            const a = anchorRef.current;
+            if (!a) return;
+            const r = a.getBoundingClientRect();
+            setRect({ top: r.top, left: r.left, width: r.width, bottom: r.bottom });
+        }
+        update();
+        window.addEventListener("scroll", update, true);
+        window.addEventListener("resize", update);
+        return () => {
+            window.removeEventListener("scroll", update, true);
+            window.removeEventListener("resize", update);
+        };
+    }, [anchorRef]);
+
+    // Measure the rendered panel and place it (below by default, flipped above
+    // when it would collide with the fixed bottom nav). Mutating style here —
+    // rather than via state — avoids an extra render/flicker.
+    useLayoutEffect(() => {
+        const el = popRef.current;
+        if (!rect || !el) return;
+        const gap = 10;
+        const margin = 12;
+        const bottomBar = 92; // fixed footer height + breathing room
+        const popH = el.offsetHeight;
+        const spaceBelow = window.innerHeight - rect.bottom - gap - bottomBar;
+        const spaceAbove = rect.top - gap - margin;
+        const placeAbove = popH > spaceBelow && spaceAbove > spaceBelow;
+        const top = placeAbove ? Math.max(margin, rect.top - popH - gap) : rect.bottom + gap;
+        el.style.top = `${top}px`;
+        el.style.left = `${rect.left}px`;
+        el.style.width = `${rect.width}px`;
+        el.style.visibility = "visible";
+        // Point the tail toward the row mascot — up when the panel sits below the
+        // row, down when it's flipped above. (Mutated here rather than via state
+        // to avoid a setState-in-effect cascade.)
+        const tail = tailRef.current;
+        if (tail) {
+            if (placeAbove) {
+                tail.style.top = ""; tail.style.bottom = "-8px";
+                tail.style.borderTop = "8px solid #0278DE"; tail.style.borderBottom = "";
+            } else {
+                tail.style.bottom = ""; tail.style.top = "-8px";
+                tail.style.borderBottom = "8px solid #005BAC"; tail.style.borderTop = "";
+            }
+        }
+    });
+
+    // Close on outside click / Escape.
+    useEffect(() => {
+        function onDown(e: MouseEvent) {
+            const a = anchorRef.current, el = popRef.current;
+            if (el && !el.contains(e.target as Node) && a && !a.contains(e.target as Node)) onClose();
+        }
+        function onKey(e: KeyboardEvent) { if (e.key === "Escape") onClose(); }
+        document.addEventListener("mousedown", onDown);
+        document.addEventListener("keydown", onKey);
+        return () => {
+            document.removeEventListener("mousedown", onDown);
+            document.removeEventListener("keydown", onKey);
+        };
+    }, [anchorRef, onClose]);
+
+    if (typeof document === "undefined" || !rect) return null;
+
+    return createPortal(
+        <div
+            ref={popRef}
+            className="fixed z-[200] flex flex-col"
+            style={{
+                top: rect.bottom + 10,
+                left: rect.left,
+                width: rect.width,
+                visibility: "hidden",
+                gap: "16px",
+                borderRadius: "15px",
+                padding: "24px 32px",
+                background: "linear-gradient(0deg, #0278DE 0%, #005BAC 100%)",
+                boxShadow: "0px 12px 12px 0px rgba(0,91,172,0.25), 0px 32px 40px 0px rgba(20,65,109,0.26)",
+            }}
+        >
+            {/* Tail — points up to the FundBuddy mascot in the row above (or down
+            to it when the panel is flipped above the row). Aligned to the
+            mascot's column at the left edge; direction is set in the effect. */}
+            <div
+                ref={tailRef}
+                className="absolute left-[7px] w-0 h-0"
+                style={{ borderLeft: "8px solid transparent", borderRight: "8px solid transparent" }}
+            />
+            <h4 className="font-black text-[18px] sm:text-[22px] text-white" style={{ lineHeight: "125%", letterSpacing: 0 }}>
+                {heading}
+            </h4>
+            <ul className="list-disc pl-5 flex flex-col gap-1.5">
+                {suggestions.map((s) => (
+                    <li key={s} className="font-medium text-[16px] sm:text-[18px] text-white" style={{ lineHeight: "140%", letterSpacing: 0 }}>
+                        {s}
+                    </li>
+                ))}
+            </ul>
+            <div className="flex justify-end">
+                <button
+                    type="button"
+                    onClick={onClose}
+                    className="shrink-0 rounded-[12px] bg-white font-bold text-[14px] transition-transform hover:scale-[1.03] active:scale-95"
+                    style={{
+                        paddingTop: "12px",
+                        paddingRight: "14px",
+                        paddingBottom: "11.7px",
+                        paddingLeft: "14px",
+                        lineHeight: "100%",
+                        color: "rgba(2,104,192,1)",
+                        boxShadow: "0px 12px 36px -8px rgba(255,255,255,0.74)",
+                    }}
+                >
+                    Thanks!
+                </button>
+            </div>
+        </div>,
+        document.body
+    );
+}
+
 /* ── QuestionCard ──────────────────────────────────────────────────────
    Shared "question card" shell used across the create-campaign flows
    (both the public /campaigns/create step 1 and the [slug]/create wizard). */
 export function QuestionCard({
     title,
+    icon = "/assets/campaigns/question-flag.svg",
     description,
     askBuddyText,
     askBuddySuggestionsHeading,
@@ -68,6 +311,9 @@ export function QuestionCard({
     children,
 }: {
     title: string;
+    /* Title flag/icon — defaults to the blue question flag; some cards
+       (Share your story, Campaign duration) use their own icon. */
+    icon?: string;
     description?: string;
     askBuddyText?: string;
     askBuddySuggestionsHeading?: string;
@@ -76,6 +322,7 @@ export function QuestionCard({
 }) {
     const [showSuggestions, setShowSuggestions] = useState(false);
     const hasSuggestions = !!askBuddySuggestions?.length;
+    const askRowRef = useRef<HTMLDivElement>(null);
 
     return (
         <div
@@ -83,11 +330,11 @@ export function QuestionCard({
             style={{ boxShadow: "0px 32px 40px -16px rgba(2,104,192,0.3), 0px 12px 12px -8px rgba(2,104,192,0.06)" }}
         >
             <div className="px-6 sm:px-14 pt-8 sm:pt-14 pb-8 sm:pb-16 flex flex-col">
-                <div className="text-center mb-[28.8px] sm:mb-[43.2px]">
-                    <div className="flex items-center justify-center gap-1.5 mb-[14.4px]">
-                        <Image src="/assets/campaigns/question-flag.svg" width={24} height={24} alt="" />
+                <div className="text-center mb-[32px] sm:mb-[48px]">
+                    <div className="flex items-center justify-center gap-1.5 mb-[16px]">
+                        <Image src={icon} width={24} height={24} alt="" />
                         <h3
-                            className="font-black text-[17.2px] sm:text-[20.8px]"
+                            className="font-black text-[18px] sm:text-[22px]"
                             style={{ lineHeight: "125%", letterSpacing: 0, color: "rgba(2,104,192,1)" }}
                         >
                             {title}
@@ -95,7 +342,7 @@ export function QuestionCard({
                     </div>
                     {description && (
                         <p
-                            className="text-[12.4px] sm:text-[16px] leading-[140%] lg:leading-[115%]"
+                            className="text-[16px] sm:text-[20px] leading-[140%]"
                             style={{ letterSpacing: 0, color: "rgba(0,48,96,1)" }}
                         >
                             {description}
@@ -104,13 +351,13 @@ export function QuestionCard({
                 </div>
                 {children}
                 {askBuddyText && !hasSuggestions && (
-                    <div className="flex items-center gap-[16px] mt-[21.6px]">
+                    <div className="flex items-end gap-[16px] mt-[24px]">
                         <Image
                             src="/assets/campaigns/ask-buddy.svg"
                             width={64}
                             height={80}
                             alt=""
-                            className="shrink-0 w-7.5 h-10 sm:w-[55.65px] sm:h-20"
+                            className="shrink-0 w-7.5 h-10 sm:w-[61.8px] sm:h-20"
                         />
                         <p
                             className="flex-1 text-xs sm:text-lg"
@@ -120,12 +367,12 @@ export function QuestionCard({
                                 lineHeight: "140%",
                                 letterSpacing: 0,
                                 color: "rgba(0,48,96,1)",
-                                borderRadius: "14.4px",
-                                paddingTop: "16.2px",
-                                paddingRight: "21.6px",
-                                paddingBottom: "16.2px",
-                                paddingLeft: "14.4px",
-                                border: "1.8px solid rgba(221,224,227,1)",
+                                borderRadius: "16px",
+                                paddingTop: "18px",
+                                paddingRight: "24px",
+                                paddingBottom: "18px",
+                                paddingLeft: "16px",
+                                border: "2px solid rgba(221,224,227,1)",
                             }}
                         >
                             {askBuddyText}
@@ -133,21 +380,22 @@ export function QuestionCard({
                     </div>
                 )}
                 {askBuddyText && hasSuggestions && (
-                    <div className="mt-[21.6px]">
-                        <div className="flex items-center gap-[16px]">
+                    <>
+                        {/* Always-visible row — mascot + prompt + "Ask FundBuddy" button. */}
+                        <div ref={askRowRef} className="flex items-center gap-[16px] mt-[24px]">
                             <Image
                                 src="/assets/campaigns/ask-buddy.svg"
                                 width={30}
                                 height={40}
                                 alt=""
-                                className="shrink-0 w-[27px] h-[36px]"
+                                className="shrink-0 w-[30px] h-[40px]"
                             />
                             <p
-                                className="flex-1 text-[14.4px]"
+                                className="flex-1 text-[12px] sm:text-[14px]"
                                 style={{
                                     fontFamily: "var(--font-sans)",
                                     fontWeight: 500,
-                                    lineHeight: "140%",
+                                    lineHeight: "130%",
                                     letterSpacing: 0,
                                     color: "rgba(143,152,163,1)",
                                 }}
@@ -157,73 +405,33 @@ export function QuestionCard({
                             <button
                                 type="button"
                                 onClick={() => setShowSuggestions((s) => !s)}
-                                className="shrink-0 rounded-[10.8px] font-bold text-[12.6px] text-white"
+                                className="shrink-0 rounded-[12px] font-bold text-[14px] text-white transition-transform hover:scale-[1.03] active:scale-95"
                                 style={{
-                                    paddingTop: "10.8px",
-                                    paddingRight: "12.6px",
-                                    paddingBottom: "10.53px",
-                                    paddingLeft: "12.6px",
+                                    paddingTop: "12px",
+                                    paddingRight: "14px",
+                                    paddingBottom: "11.7px",
+                                    paddingLeft: "14px",
                                     lineHeight: "100%",
                                     background: "linear-gradient(0deg, #FF8C53 0%, #F47435 100%)",
-                                    boxShadow: "0px 10.8px 36px -7.2px rgba(244,116,53,0.48)",
+                                    boxShadow: "0px 12px 36px -8px rgba(244,116,53,0.48)",
                                 }}
                             >
-                                Ask FundBuddy
+                                <span className="sm:hidden">Ask me</span>
+                                <span className="hidden sm:inline">Ask FundBuddy</span>
                             </button>
                         </div>
+                        {/* Suggestions — absolute overlay floating OVER the card (rendered
+                        in a portal so the card's overflow-hidden can't clip it), flipped
+                        above the row when near the page bottom so it's never hidden. */}
                         {showSuggestions && (
-                            <div
-                                className="mt-[21.6px] flex flex-col"
-                                style={{
-                                    gap: "21.6px",
-                                    borderRadius: "13.5px",
-                                    paddingTop: "21.6px",
-                                    paddingRight: "28.8px",
-                                    paddingBottom: "21.6px",
-                                    paddingLeft: "28.8px",
-                                    background: "linear-gradient(0deg, #0278DE 0%, #005BAC 100%)",
-                                    boxShadow:
-                                        "0px 10.8px 10.8px 0px rgba(0,91,172,0.25), 0px 28.8px 36px 0px rgba(20,65,109,0.26)",
-                                }}
-                            >
-                                <h4
-                                    className="font-black text-[19.8px] text-white"
-                                    style={{ lineHeight: "125%", letterSpacing: 0 }}
-                                >
-                                    {askBuddySuggestionsHeading}
-                                </h4>
-                                <ul className="list-disc pl-5 flex flex-col gap-1.5">
-                                    {askBuddySuggestions!.map((s) => (
-                                        <li
-                                            key={s}
-                                            className="font-medium text-[16.2px] text-white"
-                                            style={{ lineHeight: "140%", letterSpacing: 0 }}
-                                        >
-                                            {s}
-                                        </li>
-                                    ))}
-                                </ul>
-                                <div className="flex justify-end">
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowSuggestions(false)}
-                                        className="shrink-0 rounded-[10.8px] bg-white font-bold text-[12.6px]"
-                                        style={{
-                                            paddingTop: "10.8px",
-                                            paddingRight: "12.6px",
-                                            paddingBottom: "10.53px",
-                                            paddingLeft: "12.6px",
-                                            lineHeight: "100%",
-                                            color: "rgba(2,104,192,1)",
-                                            boxShadow: "0px 10.8px 36px -7.2px rgba(255,255,255,0.74)",
-                                        }}
-                                    >
-                                        Thanks!
-                                    </button>
-                                </div>
-                            </div>
+                            <AskBuddyPopover
+                                anchorRef={askRowRef}
+                                heading={askBuddySuggestionsHeading}
+                                suggestions={askBuddySuggestions!}
+                                onClose={() => setShowSuggestions(false)}
+                            />
                         )}
-                    </div>
+                    </>
                 )}
             </div>
         </div>
@@ -438,7 +646,7 @@ export function LockedField({ value, label }: { value: string; label: string }) 
                 </svg>
                 <span className="normal-case font-normal text-gray-400">locked</span>
             </label>
-            <div className="w-full border-[1.8px] border-gray-200 rounded-xl sm:rounded-2xl px-4 py-3 sm:px-5 sm:py-3.5 lg:py-4 text-sm sm:text-base lg:text-lg bg-gray-50 text-gray-500 cursor-not-allowed select-none">
+            <div className="w-full border-[2px] border-gray-200 rounded-xl sm:rounded-2xl px-4 py-3 sm:px-5 sm:py-3.5 lg:py-4 text-sm sm:text-base lg:text-lg bg-gray-50 text-gray-500 cursor-not-allowed select-none">
                 {value}
             </div>
         </div>

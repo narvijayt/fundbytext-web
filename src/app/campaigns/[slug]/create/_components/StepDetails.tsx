@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import Image from "next/image";
-import { Field, LockedField, QuestionCard, inputCls, inputErrCls } from "./ui";
+import { LockedField, QuestionCard, inputCls, inputErrCls } from "./ui";
 import { CalendarPopover, TimePopover, TimezonePopover, timezoneLabel } from "./DateTimePicker";
 import RichTextEditor from "./RichTextEditor";
 
@@ -67,6 +67,7 @@ function PickerField({
     icon,
     error,
     disabled,
+    className,
     renderPopover,
 }: {
     label: string;
@@ -77,14 +78,15 @@ function PickerField({
     icon: React.ReactNode;
     error?: string;
     disabled?: boolean;
+    className?: string;
     renderPopover: (anchorRef: React.RefObject<HTMLButtonElement | null>, close: () => void) => React.ReactNode;
 }) {
     const [open, setOpen] = useState(false);
     const btnRef = useRef<HTMLButtonElement>(null);
 
     return (
-        <div className="min-w-0">
-            <label className="block text-[9px] sm:text-xs font-semibold text-gray-500 mb-1.5 sm:mb-2 uppercase tracking-wide">
+        <div className={`min-w-0 ${className ?? ""}`}>
+            <label className="block text-[12px] font-semibold text-gray-500 mb-1.5 sm:mb-2 uppercase tracking-[1px]">
                 {label}{required && <span className="text-red-400 ml-0.5">*</span>}
             </label>
             <div className="relative">
@@ -93,19 +95,34 @@ function PickerField({
                     type="button"
                     onClick={() => !disabled && setOpen((v) => !v)}
                     disabled={disabled}
-                    className={`relative w-full flex items-center gap-2 sm:gap-3 px-3 py-2.5 sm:px-4 sm:py-3 lg:py-3.5 rounded-xl sm:rounded-2xl border text-sm sm:text-base text-left transition-colors
+                    className={`relative w-full flex items-center justify-between gap-2 sm:gap-3 pl-3 pr-2 py-2 sm:pl-4 sm:pr-2.5 sm:py-2.5 lg:py-3 rounded-xl sm:rounded-2xl border text-sm sm:text-base text-left transition-colors
                         ${error ? "border-red-400 bg-red-50" : "border-gray-200 bg-white hover:border-blue-400"}
                         ${disabled ? "opacity-50 cursor-not-allowed bg-gray-50" : "cursor-pointer"}`}
                 >
-                    {icon}
-                    <span className={`truncate ${value ? "text-gray-800" : "text-gray-400"}`}>
+                    <span className={`truncate flex-1 ${value ? "text-gray-800" : "text-gray-400"}`}>
                         {value ? displayValue : placeholder}
+                    </span>
+                    <span className="shrink-0 flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-gray-50">
+                        {icon}
                     </span>
                 </button>
                 {/* eslint-disable-next-line react-hooks/refs -- anchorRef.current is only read inside the popover's own effects, after render */}
                 {open && renderPopover(btnRef, () => setOpen(false))}
             </div>
             {error && <p className="text-[9px] sm:text-xs text-red-500 mt-1">{error}</p>}
+        </div>
+    );
+}
+
+/* ── RangeDash ───────────────────────────────────────────────────────────
+   The "—" that joins a start/end pair (date row, time row). An invisible
+   label spacer above the dash reserves the same height as each field's label,
+   so the dash lines up with the input boxes rather than their labels. */
+function RangeDash() {
+    return (
+        <div className="shrink-0 flex flex-col select-none" aria-hidden>
+            <span className="block text-[12px] font-semibold mb-1.5 sm:mb-2 uppercase tracking-[1px] invisible">.</span>
+            <span className="flex items-center justify-center h-11 sm:h-13 lg:h-14 text-lg text-[rgba(212,222,231,1)]">—</span>
         </div>
     );
 }
@@ -183,7 +200,7 @@ export default function StepDetails({
                 askBuddyText={
                     campaignType === "individual"
                         ? "Individual Campaigns are for a single person like yourself."
-                        : "Organizational Campaigns are for groups of people, like sports teams, bands, clubs, schools — you name it."
+                        : "Organizational Campaigns are for groups of people, like sports teams, bands, clubs, schools; you name it."
                 }
             >
                 <div>
@@ -200,13 +217,13 @@ export default function StepDetails({
                                     disabled={typeDisabled}
                                     className="flex-1 min-w-0 h-15 lg:h-17 flex items-center justify-between bg-white text-left transition-all"
                                     style={{
-                                        gap: "7.2px",
-                                        borderRadius: "14.4px",
-                                        paddingTop: "16.2px",
-                                        paddingRight: "21.6px",
-                                        paddingBottom: "16.2px",
-                                        paddingLeft: "14.4px",
-                                        border: active ? "1.8px solid transparent" : "1.8px solid rgba(212,222,231,1)",
+                                        gap: "8px",
+                                        borderRadius: "16px",
+                                        paddingTop: "18px",
+                                        paddingRight: "24px",
+                                        paddingBottom: "18px",
+                                        paddingLeft: "16px",
+                                        border: active ? "2px solid transparent" : "2px solid rgba(212,222,231,1)",
                                         backgroundImage: active
                                             ? "linear-gradient(white, white), linear-gradient(95.84deg, #0278DE 40.72%, #AED9FE 50%, #0278DE 59.28%)"
                                             : undefined,
@@ -225,7 +242,7 @@ export default function StepDetails({
                                             />
                                         </span>
                                         <span
-                                            className="truncate text-[11.6px] lg:text-[13.4px] xl:text-[17px]"
+                                            className="truncate text-[14px] sm:text-[20px]"
                                             style={{
                                                 fontFamily: "var(--font-sans)",
                                                 fontWeight: 500,
@@ -239,15 +256,19 @@ export default function StepDetails({
                                     </div>
                                     {active && (
                                         <span
-                                            className="shrink-0"
+                                            className="shrink-0 flex items-center justify-center rounded-full"
                                             style={{
-                                                width: "14.4px",
-                                                height: "14.4px",
-                                                borderRadius: "90px",
-                                                border: "3.6px solid rgba(2,104,192,1)",
+                                                width: "18px",
+                                                height: "18px",
+                                                border: "2px solid rgba(2,104,192,1)",
                                                 boxSizing: "border-box",
                                             }}
-                                        />
+                                        >
+                                            <span
+                                                className="rounded-full"
+                                                style={{ width: "8px", height: "8px", background: "rgba(2,104,192,1)" }}
+                                            />
+                                        </span>
                                     )}
                                 </button>
                             );
@@ -263,7 +284,7 @@ export default function StepDetails({
             <QuestionCard
                 title="What's the name of your campaign?"
                 description="This will be the title that everyone sees. Make it clear and catchy!"
-                askBuddyText="Ask FundBuddy for your campaign description — our AI will suggest a great name based on your cause."
+                askBuddyText="Ask FundBuddy for your campaign description."
                 askBuddySuggestionsHeading="Hey there buddy, here are some great campaign name suggestions!"
                 askBuddySuggestions={[
                     "New Gear for Samuel's Soccer Team",
@@ -283,8 +304,8 @@ export default function StepDetails({
                                 placeholder="Give your campaign a catchy name…"
                                 className={`${fieldErrors.name ? inputErrCls : inputCls} pr-16 sm:pr-20`}
                             />
-                            <span className="absolute right-3 sm:right-5 top-1/2 -translate-y-1/2 text-[9px] sm:text-xs text-gray-400 font-medium">
-                                {name.length}/50
+                            <span className="absolute right-3 sm:right-5 top-1/2 -translate-y-1/2 text-[12px] sm:text-[14px] text-[#8f98a3] font-medium">
+                                Max. {50 - name.length}
                             </span>
                         </div>
                         {fieldErrors.name && <p className="text-xs sm:text-sm text-red-500 mt-1">{fieldErrors.name}</p>}
@@ -297,12 +318,18 @@ export default function StepDetails({
                 <QuestionCard
                     title="What's your organization name?"
                     description="This will be the name that everyone sees. Tell us who you are!"
-                    askBuddyText="Ask FundBuddy for campaign name suggestions tailored to your organization type."
+                    askBuddyText="Ask FundBuddy for campaign name suggestions."
+                    askBuddySuggestionsHeading="Hey there buddy, here are some great campaign name suggestions!"
+                    askBuddySuggestions={[
+                        "New Gear for Samuel's Soccer Team",
+                        "Fund John's Wrestling Team's Travel Expenses",
+                        "New Uniforms for Jason's Little League Team",
+                    ]}
                 >
                     {orgDisplayNameLocked ? (
                         <LockedField value={orgDisplayName} label="Organization Display Name" />
                     ) : (
-                        <Field label="Organization Display Name" required error={fieldErrors.org_display_name}>
+                        <div>
                             <input
                                 value={orgDisplayName}
                                 onChange={(e) => { setOrgDisplayName(e.target.value); clearFE("org_display_name"); }}
@@ -310,7 +337,10 @@ export default function StepDetails({
                                 placeholder="Your organization name here"
                                 className={fieldErrors.org_display_name ? inputErrCls : inputCls}
                             />
-                        </Field>
+                            {fieldErrors.org_display_name && (
+                                <p className="text-xs sm:text-sm text-red-500 mt-1">{fieldErrors.org_display_name}</p>
+                            )}
+                        </div>
                     )}
                 </QuestionCard>
             )}
@@ -318,8 +348,15 @@ export default function StepDetails({
             {/* ── Card 4: Campaign Story ──────────────────────────────── */}
             <QuestionCard
                 title="Share your story!"
+                icon="/assets/campaigns/question-story.svg"
                 description="Share a few sentences about your campaign. Tell us why you are fundraising and what the funds will be used for. This will be displayed on your campaign page, and used in communications with donors."
-                askBuddyText="Ask FundBuddy for your campaign description — our AI will write a compelling story for you."
+                askBuddyText="Ask FundBuddy for your campaign description."
+                askBuddySuggestionsHeading="Hey there buddy, here are some tips for a great story!"
+                askBuddySuggestions={[
+                    "Introduce who you are and what your cause is about.",
+                    "Explain why you're fundraising and your specific goal.",
+                    "Tell donors exactly how their support will make a difference.",
+                ]}
             >
                 <RichTextEditor
                     value={story}
@@ -331,12 +368,15 @@ export default function StepDetails({
             {/* ── Card 5: Campaign Duration ───────────────────────────── */}
             <QuestionCard
                 title="How long will your campaign last?"
+                icon="/assets/campaigns/question-calendar.svg"
                 description="Choose a start and end date to keep your campaign on track. You can always extend it later if needed!"
-                askBuddyText="Hey there, I see you're doing something unusual — we recommend campaigns run for at least a week to give your donors time to donate!"
+                askBuddyText="Hey there, I saw you're doing something unusual, we recommend campaigns run for at least a week to give your donors time to donate!"
             >
                 <div className="space-y-4 sm:space-y-6">
-                    <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:gap-6">
+                    {/* Start ── End date row */}
+                    <div className="flex items-start gap-2 sm:gap-3 lg:gap-4">
                         <PickerField
+                            className="flex-1"
                             label="Start Date"
                             value={startD}
                             displayValue={formatDate(startD)}
@@ -352,7 +392,9 @@ export default function StepDetails({
                                 />
                             )}
                         />
+                        <RangeDash />
                         <PickerField
+                            className="flex-1"
                             label="End Date"
                             required
                             value={endD}
@@ -370,7 +412,11 @@ export default function StepDetails({
                                 />
                             )}
                         />
+                    </div>
+                    {/* Start ── End time row */}
+                    <div className="flex items-start gap-2 sm:gap-3 lg:gap-4">
                         <PickerField
+                            className="flex-1"
                             label="Start Time"
                             value={startT || "07:00"}
                             displayValue={formatTime(startT || "07:00")}
@@ -386,7 +432,9 @@ export default function StepDetails({
                                 />
                             )}
                         />
+                        <RangeDash />
                         <PickerField
+                            className="flex-1"
                             label="End Time"
                             value={endT || "18:00"}
                             displayValue={formatTime(endT || "18:00")}
@@ -410,7 +458,7 @@ export default function StepDetails({
 
                     {/* Timezone */}
                     <div>
-                        <label className="block text-[9px] sm:text-xs font-semibold text-gray-500 mb-1.5 sm:mb-2 uppercase tracking-wide">
+                        <label className="block text-[12px] font-semibold text-gray-500 mb-1.5 sm:mb-2 uppercase tracking-[1px]">
                             Timezone
                         </label>
                         <div className="relative">

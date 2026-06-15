@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { ProgressBar } from "@/app/campaigns/[slug]/create/_components/WizardNav";
-import { QuestionCard, PAGE_GRADIENT, VectorWallpaper, inputCls, inputErrCls } from "@/app/campaigns/[slug]/create/_components/ui";
+import { QuestionCard, PAGE_GRADIENT, VectorWallpaper, StepBanner, inputCls, inputErrCls } from "@/app/campaigns/[slug]/create/_components/ui";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 
@@ -55,7 +55,7 @@ export default function AuthCreateCampaignForm() {
     }
 
     return (
-        <div className="wizard-scale-90 relative isolate min-h-screen pb-24" style={{ background: PAGE_GRADIENT }}>
+        <div className="wizard-shell relative isolate min-h-screen pb-24" style={{ background: PAGE_GRADIENT }}>
 
             <VectorWallpaper />
 
@@ -74,7 +74,7 @@ export default function AuthCreateCampaignForm() {
                             />
                         </Link>
                         <h1
-                            className="text-center font-black text-base md:text-[28.8px]"
+                            className="text-center font-black text-base md:text-[32px]"
                             style={{ color: "rgba(0,79,149,1)", lineHeight: "115%", letterSpacing: 0 }}
                         >
                             Create Your Campaign
@@ -91,25 +91,10 @@ export default function AuthCreateCampaignForm() {
                 <ProgressBar step={0} maxStep={0} isOrg={false} />
             </div>
 
-            {/* ── Step banner ─────────────────────────────────────────── */}
-            <div className="relative px-6 pt-8 pb-6 text-center">
+            {/* ── Step banner — CSS plaque + ribbon ───────────────────── */}
+            <div className="relative px-6 pt-8 pb-6">
                 <div className="relative z-10 flex justify-center">
-                    <Image
-                        src="/assets/campaigns/header-title.png"
-                        alt="Campaign Details — On your mark get set… Go!"
-                        width={599}
-                        height={182}
-                        className="hidden sm:block w-auto h-auto max-w-full max-h-16 lg:max-h-24 xl:max-h-28"
-                        priority
-                    />
-                    <Image
-                        src="/assets/campaigns/header-title-mobile.png"
-                        alt="Campaign Details — On your mark get set… Go!"
-                        width={353}
-                        height={144}
-                        className="sm:hidden w-auto h-auto max-w-full max-h-14"
-                        priority
-                    />
+                    <StepBanner title="Let's Get Started" subtitle="Ready, set, create!" />
                 </div>
             </div>
 
@@ -139,13 +124,13 @@ export default function AuthCreateCampaignForm() {
                                         onClick={() => setValue("campaign_type", type, { shouldValidate: true })}
                                         className="flex-1 min-w-0 h-15 lg:h-17 flex items-center justify-between bg-white text-left transition-all"
                                         style={{
-                                            gap: "7.2px",
-                                            borderRadius: "14.4px",
-                                            paddingTop: "16.2px",
-                                            paddingRight: "21.6px",
-                                            paddingBottom: "16.2px",
-                                            paddingLeft: "14.4px",
-                                            border: active ? "1.8px solid transparent" : "1.8px solid rgba(212,222,231,1)",
+                                            gap: "8px",
+                                            borderRadius: "16px",
+                                            paddingTop: "18px",
+                                            paddingRight: "24px",
+                                            paddingBottom: "18px",
+                                            paddingLeft: "16px",
+                                            border: active ? "2px solid transparent" : "2px solid rgba(212,222,231,1)",
                                             backgroundImage: active
                                                 ? "linear-gradient(white, white), linear-gradient(95.84deg, #0278DE 40.72%, #AED9FE 50%, #0278DE 59.28%)"
                                                 : undefined,
@@ -164,7 +149,7 @@ export default function AuthCreateCampaignForm() {
                                                 />
                                             </span>
                                             <span
-                                                className="truncate text-[11.6px] lg:text-[13.4px] xl:text-[17px]"
+                                                className="truncate text-[14px] sm:text-[20px]"
                                                 style={{
                                                     fontFamily: "var(--font-sans)",
                                                     fontWeight: 500,
@@ -178,15 +163,11 @@ export default function AuthCreateCampaignForm() {
                                         </div>
                                         {active && (
                                             <span
-                                                className="shrink-0"
-                                                style={{
-                                                    width: "14.4px",
-                                                    height: "14.4px",
-                                                    borderRadius: "90px",
-                                                    border: "3.6px solid rgba(2,104,192,1)",
-                                                    boxSizing: "border-box",
-                                                }}
-                                            />
+                                                className="shrink-0 flex items-center justify-center rounded-full"
+                                                style={{ width: "18px", height: "18px", border: "2px solid rgba(2,104,192,1)", boxSizing: "border-box" }}
+                                            >
+                                                <span className="rounded-full" style={{ width: "8px", height: "8px", background: "rgba(2,104,192,1)" }} />
+                                            </span>
                                         )}
                                     </button>
                                 );
@@ -202,7 +183,7 @@ export default function AuthCreateCampaignForm() {
                 <QuestionCard
                     title="What's the name of your campaign?"
                     description="This will be the title that everyone sees. Make it clear and catchy!"
-                    askBuddyText="Ask FundBuddy for your campaign description — our AI will suggest a great name based on your cause."
+                    askBuddyText="Ask FundBuddy for your campaign description."
                     askBuddySuggestionsHeading="Hey there buddy, here are some great campaign name suggestions!"
                     askBuddySuggestions={[
                         "New Gear for Samuel's Soccer Team",
@@ -218,8 +199,8 @@ export default function AuthCreateCampaignForm() {
                                 maxLength={50}
                                 className={`${errors.name || nameTaken ? inputErrCls : inputCls} pr-16`}
                             />
-                            <span className="absolute right-3 sm:right-5 top-1/2 -translate-y-1/2 text-[9px] sm:text-xs text-gray-400 font-medium">
-                                {nameVal.length}/50
+                            <span className="absolute right-3 sm:right-5 top-1/2 -translate-y-1/2 text-[12px] sm:text-[14px] text-[#8f98a3] font-medium">
+                                Max. {50 - nameVal.length}
                             </span>
                         </div>
                         {errors.name && <p className="text-[9px] sm:text-xs text-red-500 mt-1">{errors.name.message}</p>}
@@ -233,22 +214,28 @@ export default function AuthCreateCampaignForm() {
             </div>
 
             {/* ── Fixed bottom nav ────────────────────────────────────── */}
-            <div className="fixed bottom-0 left-0 right-0 z-50 h-20 bg-white border-t border-[rgba(234,238,243,1)] px-4 flex items-center justify-between shadow-[0_-2px_12px_rgba(0,0,0,0.06)]">
+            <div className="fixed bottom-0 left-0 right-0 z-50 h-20 bg-white border-t border-[rgba(234,238,243,1)] px-4 md:px-10 flex items-center justify-between shadow-[0_-2px_12px_rgba(0,0,0,0.06)]">
                 <Link
                     href="/dashboard"
-                    className="flex items-center gap-3 text-sm font-semibold transition-opacity hover:opacity-70"
-                    style={{ color: "rgba(0,64,149,1)" }}
+                    className="flex items-center gap-3 transition-opacity hover:opacity-70 text-[rgba(0,48,96,1)] rounded-xl px-0.5 pt-3 pb-3.5"
                 >
-                    <span className="text-base leading-none">✕</span>
-                    <span className="w-px h-4 bg-current opacity-30 shrink-0" />
-                    <span className="hidden sm:inline">Exit</span>
+                    <svg className="w-[18px] h-[18px] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round">
+                        <path d="M5 5l14 14M19 5L5 19" />
+                    </svg>
+                    <span className="w-px h-5 bg-[rgba(212,222,231,1)] shrink-0" />
+                    <span className="hidden sm:inline text-base font-medium leading-[1.4]">Exit</span>
                 </Link>
                 <button
                     type="button"
                     onClick={handleSubmit(onSubmit)}
                     disabled={isSubmitting}
-                    className="flex items-center gap-2 px-7 py-2.5 rounded-full text-sm font-semibold text-white transition-colors disabled:opacity-60"
-                    style={{ background: "rgba(2,104,192,1)" }}
+                    className="flex items-center justify-center gap-2 transition-colors disabled:opacity-60"
+                    style={{
+                        minWidth: 114, height: 42, borderRadius: 12, paddingLeft: 16, paddingRight: 16,
+                        background: "rgba(2, 104, 192, 1)",
+                        fontFamily: "var(--font-sans)", fontWeight: 500, fontSize: 16,
+                        lineHeight: "100%", letterSpacing: "0.15px", color: "rgba(255, 255, 255, 1)",
+                    }}
                 >
                     {isSubmitting ? (
                         <>

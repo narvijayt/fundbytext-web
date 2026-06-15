@@ -331,14 +331,16 @@ export function BottomNav({
                 </div>
             )}
 
-            <div className="fixed bottom-0 left-0 right-0 z-50 h-20 bg-white border-t border-[rgba(234,238,243,1)] px-4 flex items-center justify-between shadow-[0_-2px_12px_rgba(0,0,0,0.06)]">
+            <div className="fixed bottom-0 left-0 right-0 z-50 h-20 bg-white border-t border-[rgba(234,238,243,1)] px-4 md:px-10 flex items-center justify-between shadow-[0_-2px_12px_rgba(0,0,0,0.06)]">
                 <button
                     type="button"
                     onClick={onExit}
                     disabled={busy}
-                    className="flex items-center gap-3 transition-opacity hover:opacity-70 disabled:opacity-40 text-[rgba(0,48,96,1)] md:rounded-xl md:pt-3 md:pr-0.5 md:pb-3.5 md:pl-0.5"
+                    className="flex items-center gap-3 transition-opacity hover:opacity-70 disabled:opacity-40 text-[rgba(0,48,96,1)] rounded-xl px-0.5 pt-3 pb-3.5"
                 >
-                    <Image src="/assets/campaigns/exit.svg" width={18} height={18} alt="" />
+                    <svg className="w-[18px] h-[18px] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round">
+                        <path d="M5 5l14 14M19 5L5 19" />
+                    </svg>
                     <span className="w-px h-5 bg-[rgba(212,222,231,1)] shrink-0" />
                     <span className="hidden md:inline text-base font-medium leading-[1.4]">Exit and Save Progress</span>
                 </button>

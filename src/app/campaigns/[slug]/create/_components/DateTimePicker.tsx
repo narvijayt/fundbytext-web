@@ -159,7 +159,10 @@ export function CalendarPopover({
         <div ref={ref}>
             {/* Month / year header + nav */}
             <div className="flex items-center justify-between mb-3">
-                <span className="text-sm font-bold text-gray-800">{MONTHS[viewMonth]} {viewYear}</span>
+                <span className="flex items-center gap-1.5 text-[15px] font-bold text-gray-800">
+                    {MONTHS[viewMonth]} {viewYear}
+                    <ChevronIcon dir="down" className="w-4 h-4 text-gray-400" />
+                </span>
                 <div className="flex items-center gap-1">
                     <button
                         type="button"
@@ -225,6 +228,21 @@ function wrap(value: number, min: number, max: number): number {
     return ((value - min) % span + span) % span + min;
 }
 
+/* Material-style time picker: big hour/minute tiles (the active one is
+   highlighted green), a segmented AM/PM control, and a keyboard affordance.
+   Each tile is focusable — type digits, use ↑/↓, or scroll to change it. */
+function KeyboardIcon({ className = "w-5 h-5" }: { className?: string }) {
+    return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7}>
+            <rect x="2" y="6" width="20" height="12" rx="2" />
+            <path strokeLinecap="round" d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M6 13h.01M18 13h.01M9 13h6" />
+        </svg>
+    );
+}
+
+const GREEN_TILE = "rgba(38,186,88,0.14)";
+const GREEN_TEXT = "rgba(38,186,88,1)";
+
 export function TimePopover({
     value,
     anchorRef,
@@ -237,10 +255,16 @@ export function TimePopover({
     onClose: () => void;
 }) {
     const ref = useRef<HTMLDivElement>(null);
+    const hourRef = useRef<HTMLButtonElement>(null);
     const [h24, m] = value ? value.split(":").map(Number) : [7, 0];
-    const [hour, setHour] = useState(h24 % 12 || 12);
-    const [minute, setMinute] = useState(m);
+    const [hour, setHour] = useState(h24 % 12 || 12);   // 1..12
+    const [minute, setMinute] = useState(m);             // 0..59
     const [ampm, setAmpm] = useState<"AM" | "PM">(h24 >= 12 ? "PM" : "AM");
+    const [active, setActive] = useState<"hour" | "minute">("hour");
+
+    // Digit-entry buffers, so typing "1" then "2" makes 12.
+    const hourBuf = useRef("");
+    const minBuf = useRef("");
 
     useEffect(() => {
         function onClickOutside(e: MouseEvent) {
@@ -256,68 +280,113 @@ export function TimePopover({
         onClose();
     }
 
-    const spinBtnCls = "w-7 h-6 flex items-center justify-center rounded-md text-gray-400 hover:bg-blue-50 hover:text-blue-600 transition-colors";
+    function onHourKey(e: React.KeyboardEvent) {
+        if (e.key === "ArrowUp")        { e.preventDefault(); setHour((h) => wrap(h + 1, 1, 12)); }
+        else if (e.key === "ArrowDown") { e.preventDefault(); setHour((h) => wrap(h - 1, 1, 12)); }
+        else if (e.key === "Enter")     { e.preventDefault(); commit(); }
+        else if (/^[0-9]$/.test(e.key)) {
+            e.preventDefault();
+            hourBuf.current = (hourBuf.current + e.key).slice(-2);
+            let n = parseInt(hourBuf.current, 10);
+            if (n > 12) { hourBuf.current = e.key; n = parseInt(e.key, 10); }
+            setHour(n === 0 ? 12 : n);
+        }
+    }
+    function onMinuteKey(e: React.KeyboardEvent) {
+        if (e.key === "ArrowUp")        { e.preventDefault(); setMinute((mi) => wrap(mi + 1, 0, 59)); }
+        else if (e.key === "ArrowDown") { e.preventDefault(); setMinute((mi) => wrap(mi - 1, 0, 59)); }
+        else if (e.key === "Enter")     { e.preventDefault(); commit(); }
+        else if (/^[0-9]$/.test(e.key)) {
+            e.preventDefault();
+            minBuf.current = (minBuf.current + e.key).slice(-2);
+            let n = parseInt(minBuf.current, 10);
+            if (n > 59) { minBuf.current = e.key; n = parseInt(e.key, 10); }
+            setMinute(n);
+        }
+    }
+
+    const tileCls =
+        "flex-1 h-[76px] flex items-center justify-center rounded-2xl text-[44px] leading-none font-black tabular-nums transition-colors focus:outline-none cursor-pointer";
+    const hourActive = active === "hour";
+    const minActive = active === "minute";
 
     return (
-        <AnchoredPopover anchorRef={anchorRef} width={256}>
-        <div ref={ref}>
+        <AnchoredPopover anchorRef={anchorRef} width={300}>
+        <div ref={ref} className="p-1">
             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide mb-3">Select Time</p>
 
-            <div className="flex items-center justify-center gap-2 mb-4">
-                {/* Hour spinner */}
-                <div className="flex flex-col items-center gap-1">
-                    <button type="button" className={spinBtnCls} onClick={() => setHour((h) => wrap(h + 1, 1, 12))}>
-                        <ChevronIcon dir="up" className="w-3.5 h-3.5" />
-                    </button>
-                    <div className="w-14 h-12 flex items-center justify-center rounded-xl bg-blue-50 text-2xl font-black text-blue-700 tabular-nums">
-                        {pad2(hour)}
-                    </div>
-                    <button type="button" className={spinBtnCls} onClick={() => setHour((h) => wrap(h - 1, 1, 12))}>
-                        <ChevronIcon dir="down" className="w-3.5 h-3.5" />
-                    </button>
-                </div>
+            <div className="flex items-stretch gap-2 mb-5">
+                {/* Hour + minute tiles */}
+                <button
+                    ref={hourRef}
+                    type="button"
+                    onFocus={() => { setActive("hour"); hourBuf.current = ""; }}
+                    onKeyDown={onHourKey}
+                    onWheel={(e) => setHour((h) => wrap(h + (e.deltaY < 0 ? 1 : -1), 1, 12))}
+                    className={tileCls}
+                    style={{
+                        background: hourActive ? GREEN_TILE : "rgba(241,243,245,1)",
+                        color: hourActive ? GREEN_TEXT : "rgba(31,41,55,1)",
+                    }}
+                >
+                    {hour}
+                </button>
 
-                <span className="text-2xl font-black text-gray-300 -mt-4">:</span>
+                <span className="self-center text-[40px] leading-none font-black text-gray-300">:</span>
 
-                {/* Minute spinner */}
-                <div className="flex flex-col items-center gap-1">
-                    <button type="button" className={spinBtnCls} onClick={() => setMinute((mi) => wrap(mi + 5, 0, 59))}>
-                        <ChevronIcon dir="up" className="w-3.5 h-3.5" />
-                    </button>
-                    <div className="w-14 h-12 flex items-center justify-center rounded-xl bg-gray-100 text-2xl font-black text-gray-700 tabular-nums">
-                        {pad2(minute)}
-                    </div>
-                    <button type="button" className={spinBtnCls} onClick={() => setMinute((mi) => wrap(mi - 5, 0, 59))}>
-                        <ChevronIcon dir="down" className="w-3.5 h-3.5" />
-                    </button>
-                </div>
+                <button
+                    type="button"
+                    onFocus={() => { setActive("minute"); minBuf.current = ""; }}
+                    onKeyDown={onMinuteKey}
+                    onWheel={(e) => setMinute((mi) => wrap(mi + (e.deltaY < 0 ? 1 : -1), 0, 59))}
+                    className={tileCls}
+                    style={{
+                        background: minActive ? GREEN_TILE : "rgba(241,243,245,1)",
+                        color: minActive ? GREEN_TEXT : "rgba(31,41,55,1)",
+                    }}
+                >
+                    {pad2(minute)}
+                </button>
 
-                {/* AM / PM toggle */}
-                <div className="flex flex-col gap-1 ml-1 -mt-4">
-                    <button
-                        type="button"
-                        onClick={() => setAmpm("AM")}
-                        className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-colors ${ampm === "AM" ? "bg-green-100 text-green-700" : "text-gray-400 hover:bg-gray-100"}`}
-                    >
-                        AM
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => setAmpm("PM")}
-                        className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-colors ${ampm === "PM" ? "bg-green-100 text-green-700" : "text-gray-400 hover:bg-gray-100"}`}
-                    >
-                        PM
-                    </button>
+                {/* AM / PM segmented control */}
+                <div className="shrink-0 w-13 flex flex-col rounded-xl border border-gray-200 overflow-hidden">
+                    {(["AM", "PM"] as const).map((ap, i) => {
+                        const on = ampm === ap;
+                        return (
+                            <button
+                                key={ap}
+                                type="button"
+                                onClick={() => setAmpm(ap)}
+                                className={`flex-1 text-[13px] font-bold transition-colors ${i === 0 ? "border-b border-gray-200" : ""}`}
+                                style={{
+                                    background: on ? GREEN_TILE : "#fff",
+                                    color: on ? GREEN_TEXT : "rgba(126,138,150,1)",
+                                }}
+                            >
+                                {ap}
+                            </button>
+                        );
+                    })}
                 </div>
             </div>
 
-            <div className="flex items-center justify-end gap-4 text-xs font-bold tracking-wide">
-                <button type="button" onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
-                    CANCEL
+            <div className="flex items-center justify-between">
+                <button
+                    type="button"
+                    onClick={() => hourRef.current?.focus()}
+                    className="text-gray-400 hover:text-gray-600 transition-colors"
+                    title="Enter time with keyboard"
+                >
+                    <KeyboardIcon />
                 </button>
-                <button type="button" onClick={commit} className="text-blue-600 hover:text-blue-800 transition-colors">
-                    OK
-                </button>
+                <div className="flex items-center gap-5 text-[13px] font-bold tracking-wide">
+                    <button type="button" onClick={onClose} className="text-blue-600 hover:text-blue-800 transition-colors">
+                        CANCEL
+                    </button>
+                    <button type="button" onClick={commit} className="text-blue-600 hover:text-blue-800 transition-colors">
+                        OK
+                    </button>
+                </div>
             </div>
         </div>
         </AnchoredPopover>
