@@ -284,3 +284,14 @@ input[type=number] {
     from { background-position-x: 0; }
     to   { background-position-x: -170px; }
 }
+
+/* Progressive-reveal entrance for the campaign-creation cards — used to
+   slide/fade later questions in once the user answers the first one. */
+@keyframes revealUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+.reveal-up { animation: revealUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) both; }
+@media (prefers-reduced-motion: reduce) {
+    .reveal-up { animation: none; }
+}

@@ -190,6 +190,10 @@ export default function CreateCampaignForm() {
                     </div>
                 </QuestionCard>
 
+                {/* The remaining questions reveal once a campaign type is chosen. */}
+                {selectedType && (
+                <div className="reveal-up space-y-4 sm:space-y-6 lg:space-y-8">
+
                 {/* Card 2: Campaign Name */}
                 <QuestionCard
                     title="What's the name of your campaign?"
@@ -276,6 +280,8 @@ export default function CreateCampaignForm() {
                     Already have an account?{" "}
                     <Link href="/login" className="text-blue-700 font-semibold hover:underline">Log In</Link>
                 </p>
+                </div>
+                )}
             </div>
 
             {/* ── Fixed bottom nav ────────────────────────────────────── */}

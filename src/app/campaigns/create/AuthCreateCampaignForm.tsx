@@ -179,6 +179,9 @@ export default function AuthCreateCampaignForm() {
                     </div>
                 </QuestionCard>
 
+                {/* The campaign name reveals once a campaign type is chosen. */}
+                {selectedType && (
+                <div className="reveal-up">
                 {/* Card 2: Campaign Name */}
                 <QuestionCard
                     title="What's the name of your campaign?"
@@ -207,6 +210,8 @@ export default function AuthCreateCampaignForm() {
                         {nameTaken && <p className="text-[9px] sm:text-xs text-red-500 mt-1">A campaign with this name already exists. Please choose a different name.</p>}
                     </div>
                 </QuestionCard>
+                </div>
+                )}
 
                 {serverError && (
                     <p className="text-sm sm:text-base text-red-500 text-center">{serverError}</p>
