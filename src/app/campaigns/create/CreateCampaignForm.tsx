@@ -32,6 +32,14 @@ export default function CreateCampaignForm() {
     const selectedType = watch("campaign_type");
     const nameVal = watch("name") ?? "";
 
+    // On a failed submit, scroll the first inline field error into view
+    // (errors are shown next to each field — no toast).
+    function scrollToFirstError() {
+        setTimeout(() => {
+            document.querySelector("[data-field-error]")?.scrollIntoView({ behavior: "smooth", block: "center" });
+        }, 0);
+    }
+
     async function onSubmit(data: FormData) {
         setServerError(null);
         setAccountExists(false);
@@ -185,7 +193,7 @@ export default function CreateCampaignForm() {
                             })}
                         </div>
                         {errors.campaign_type && (
-                            <p className="text-[9px] sm:text-xs text-red-500 mt-2">{errors.campaign_type.message}</p>
+                            <p data-field-error className="text-[9px] sm:text-xs text-red-500 mt-2">{errors.campaign_type.message}</p>
                         )}
                     </div>
                 </QuestionCard>
@@ -218,8 +226,8 @@ export default function CreateCampaignForm() {
                                 Max. {50 - nameVal.length}
                             </span>
                         </div>
-                        {errors.name && <p className="text-[9px] sm:text-xs text-red-500 mt-1">{errors.name.message}</p>}
-                        {nameTaken && <p className="text-[9px] sm:text-xs text-red-500 mt-1">A campaign with this name already exists. Please choose a different name.</p>}
+                        {errors.name && <p data-field-error className="text-[9px] sm:text-xs text-red-500 mt-1">{errors.name.message}</p>}
+                        {nameTaken && <p data-field-error className="text-[9px] sm:text-xs text-red-500 mt-1">A campaign with this name already exists. Please choose a different name.</p>}
                     </div>
                 </QuestionCard>
 
@@ -237,7 +245,7 @@ export default function CreateCampaignForm() {
                                     aria-label="First Name"
                                     className={errors.first_name ? inputErrCls : inputCls}
                                 />
-                                {errors.first_name && <p className="text-[9px] sm:text-xs text-red-500 mt-1">{errors.first_name.message}</p>}
+                                {errors.first_name && <p data-field-error className="text-[9px] sm:text-xs text-red-500 mt-1">{errors.first_name.message}</p>}
                             </div>
                             <div>
                                 <input
@@ -246,7 +254,7 @@ export default function CreateCampaignForm() {
                                     aria-label="Last Name"
                                     className={errors.last_name ? inputErrCls : inputCls}
                                 />
-                                {errors.last_name && <p className="text-[9px] sm:text-xs text-red-500 mt-1">{errors.last_name.message}</p>}
+                                {errors.last_name && <p data-field-error className="text-[9px] sm:text-xs text-red-500 mt-1">{errors.last_name.message}</p>}
                             </div>
                         </div>
                         <div>
@@ -257,7 +265,7 @@ export default function CreateCampaignForm() {
                                 aria-label="Email Address"
                                 className={errors.email ? inputErrCls : inputCls}
                             />
-                            {errors.email && <p className="text-[9px] sm:text-xs text-red-500 mt-1">{errors.email.message}</p>}
+                            {errors.email && <p data-field-error className="text-[9px] sm:text-xs text-red-500 mt-1">{errors.email.message}</p>}
                         </div>
 
                         {accountExists && (
@@ -298,7 +306,7 @@ export default function CreateCampaignForm() {
                 </Link>
                 <button
                     type="button"
-                    onClick={handleSubmit(onSubmit)}
+                    onClick={handleSubmit(onSubmit, scrollToFirstError)}
                     disabled={isSubmitting}
                     className="flex items-center justify-center gap-2 transition-colors disabled:opacity-60"
                     style={{

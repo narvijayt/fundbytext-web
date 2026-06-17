@@ -42,10 +42,10 @@ export default function DeleteCampaignButton({
             {compact ? (
                 <button
                     onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpen(true); }}
-                    className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-red-500 transition-colors"
+                    className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-[#8f98a3] hover:text-red-600 hover:bg-red-50 transition-colors"
                 >
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                     </svg>
                     Delete this campaign
                 </button>
@@ -63,37 +63,35 @@ export default function DeleteCampaignButton({
 
             {/* Confirmation dialog */}
             {open && (
-                <div className="fixed inset-0 z-200 flex items-center justify-center p-4">
+                <div className="fixed inset-0 z-[300] flex items-center justify-center p-4">
                     {/* Backdrop */}
-                    <div
-                        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-                    />
+                    <div className="absolute inset-0 bg-black/30 backdrop-blur-[2px]" onClick={() => { if (!loading) { setOpen(false); setError(null); } }} />
                     {/* Modal */}
-                    <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 z-10 max-h-[calc(100vh-2rem)] overflow-y-auto">
-                        <div className="flex items-center justify-center w-12 h-12 rounded-full bg-red-100 mx-auto mb-4">
-                            <svg className="w-6 h-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+                    <div className="relative z-10 w-full max-w-sm rounded-2xl bg-white p-6 shadow-[0px_24px_48px_-12px_rgba(0,48,96,0.35)] max-h-[calc(100vh-2rem)] overflow-y-auto">
+                        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-50">
+                            <svg className="h-6 w-6 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
                             </svg>
                         </div>
-                        <h2 className="text-lg font-bold text-gray-900 text-center mb-1">Delete Campaign?</h2>
-                        <p className="text-sm text-gray-500 text-center mb-4">
-                            <span className="font-semibold text-gray-700">{campaignName ?? "This campaign"}</span> will be permanently deleted. This cannot be undone.
+                        <h2 className="mb-1.5 text-center text-[18px] font-black text-[rgba(0,48,96,1)]">Delete this campaign?</h2>
+                        <p className="mb-5 text-center text-[14px] leading-relaxed text-[#57728d]">
+                            <span className="font-bold text-[rgba(0,48,96,1)]">{campaignName ?? "This campaign"}</span>{" "}will be permanently deleted. This can&rsquo;t be undone.
                         </p>
                         {error && (
-                            <p className="text-sm text-red-500 text-center mb-3">{error}</p>
+                            <p className="mb-3 text-center text-[13px] font-medium text-red-500">{error}</p>
                         )}
                         <div className="flex gap-3">
                             <button
                                 onClick={() => { setOpen(false); setError(null); }}
                                 disabled={loading}
-                                className="flex-1 px-4 py-2.5 border border-gray-200 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50"
+                                className="flex-1 rounded-xl border border-[#d4dee7] py-3 text-sm font-semibold text-[rgba(0,48,96,1)] transition-colors hover:bg-gray-50 disabled:opacity-50"
                             >
                                 Cancel
                             </button>
                             <button
                                 onClick={handleDelete}
                                 disabled={loading}
-                                className="flex-1 px-4 py-2.5 bg-red-600 hover:bg-red-700 rounded-lg text-sm font-bold text-white transition-colors disabled:opacity-50"
+                                className="flex-1 rounded-xl bg-red-500 py-3 text-sm font-bold text-white transition-colors hover:bg-red-600 disabled:opacity-50"
                             >
                                 {loading ? "Deleting…" : "Yes, Delete"}
                             </button>

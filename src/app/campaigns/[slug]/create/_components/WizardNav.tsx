@@ -298,7 +298,6 @@ export function BottomNav({
     step,
     saving,
     launching,
-    toast,
     uploadingPhoto,
     isLaunched,
     onBack,
@@ -309,7 +308,6 @@ export function BottomNav({
     step: number;
     saving: boolean;
     launching: boolean;
-    toast: string | null;
     uploadingPhoto: string | null;
     isLaunched: boolean;
     onBack: () => void;
@@ -322,15 +320,6 @@ export function BottomNav({
 
     return (
         <>
-            {toast && (
-                <div className="fixed bottom-20 right-6 z-100 flex items-start gap-3 bg-red-600 text-white text-sm font-medium px-4 py-3 rounded-xl shadow-lg max-w-xs">
-                    <svg className="w-4 h-4 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v4m0 4h.01M12 3a9 9 0 100 18A9 9 0 0012 3z" />
-                    </svg>
-                    <span>{toast}</span>
-                </div>
-            )}
-
             <div className="fixed bottom-0 left-0 right-0 z-50 h-20 bg-white border-t border-[rgba(234,238,243,1)] px-4 md:px-10 flex items-center justify-between shadow-[0_-2px_12px_rgba(0,0,0,0.06)]">
                 <button
                     type="button"

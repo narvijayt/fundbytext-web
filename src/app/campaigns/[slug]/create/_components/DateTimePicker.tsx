@@ -125,6 +125,8 @@ export function CalendarPopover({
     const initial = value ? new Date(value + "T12:00") : new Date();
     const [viewYear, setViewYear] = useState(initial.getFullYear());
     const [viewMonth, setViewMonth] = useState(initial.getMonth());
+    const [pickingYear, setPickingYear] = useState(false);
+    const selectedYearRef = useRef<HTMLButtonElement>(null);
 
     useEffect(() => {
         function onClickOutside(e: MouseEvent) {
@@ -133,6 +135,11 @@ export function CalendarPopover({
         document.addEventListener("mousedown", onClickOutside);
         return () => document.removeEventListener("mousedown", onClickOutside);
     }, [onClose]);
+
+    // When the year grid opens, scroll the current year into view.
+    useEffect(() => {
+        if (pickingYear) selectedYearRef.current?.scrollIntoView({ block: "center" });
+    }, [pickingYear]);
 
     const numDays = new Date(viewYear, viewMonth + 1, 0).getDate();
     const firstWeekday = (new Date(viewYear, viewMonth, 1).getDay() + 6) % 7; // Monday-first
@@ -144,6 +151,13 @@ export function CalendarPopover({
 
     const todayStr = new Date().toISOString().slice(0, 10);
     const minDt = minDate ? new Date(minDate + "T00:00") : null;
+
+    // Year-picker range — always includes the current view year + a generous
+    // window around today so both past (edits) and future campaigns are reachable.
+    const todayY = new Date().getFullYear();
+    const yearFrom = Math.min(todayY, viewYear) - 8;
+    const yearTo = Math.max(todayY, viewYear) + 12;
+    const years = Array.from({ length: yearTo - yearFrom + 1 }, (_, i) => yearFrom + i);
 
     function goPrevMonth() {
         if (viewMonth === 0) { setViewMonth(11); setViewYear((y) => y - 1); }
@@ -157,66 +171,98 @@ export function CalendarPopover({
     return (
         <AnchoredPopover anchorRef={anchorRef} width={272}>
         <div ref={ref}>
-            {/* Month / year header + nav */}
+            {/* Month / year header + nav — the label toggles the year picker */}
             <div className="flex items-center justify-between mb-3">
-                <span className="flex items-center gap-1.5 text-[15px] font-bold text-gray-800">
+                <button
+                    type="button"
+                    onClick={() => setPickingYear((v) => !v)}
+                    className="flex items-center gap-1.5 text-[15px] font-bold text-gray-800 hover:text-blue-600 transition-colors"
+                >
                     {MONTHS[viewMonth]} {viewYear}
-                    <ChevronIcon dir="down" className="w-4 h-4 text-gray-400" />
-                </span>
-                <div className="flex items-center gap-1">
-                    <button
-                        type="button"
-                        onClick={goPrevMonth}
-                        className="w-7 h-7 flex items-center justify-center rounded-full text-gray-400 hover:bg-blue-50 hover:text-blue-600 transition-colors"
-                    >
-                        <ChevronIcon dir="left" />
-                    </button>
-                    <button
-                        type="button"
-                        onClick={goNextMonth}
-                        className="w-7 h-7 flex items-center justify-center rounded-full text-gray-400 hover:bg-blue-50 hover:text-blue-600 transition-colors"
-                    >
-                        <ChevronIcon dir="right" />
-                    </button>
-                </div>
+                    <ChevronIcon dir={pickingYear ? "up" : "down"} className="w-4 h-4 text-gray-400" />
+                </button>
+                {!pickingYear && (
+                    <div className="flex items-center gap-1">
+                        <button
+                            type="button"
+                            onClick={goPrevMonth}
+                            className="w-7 h-7 flex items-center justify-center rounded-full text-gray-400 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                        >
+                            <ChevronIcon dir="left" />
+                        </button>
+                        <button
+                            type="button"
+                            onClick={goNextMonth}
+                            className="w-7 h-7 flex items-center justify-center rounded-full text-gray-400 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                        >
+                            <ChevronIcon dir="right" />
+                        </button>
+                    </div>
+                )}
             </div>
 
-            {/* Weekday header */}
-            <div className="grid grid-cols-7 mb-1">
-                {WEEKDAYS.map((w, i) => (
-                    <div key={i} className="text-center text-[10px] font-bold text-gray-400 uppercase tracking-wide">{w}</div>
-                ))}
-            </div>
-
-            {/* Day grid */}
-            <div className="grid grid-cols-7 gap-y-1">
-                {cells.map((day, i) => {
-                    if (day === null) return <div key={i} />;
-                    const dStr = `${viewYear}-${pad2(viewMonth + 1)}-${pad2(day)}`;
-                    const isSelected = dStr === value;
-                    const isToday = dStr === todayStr;
-                    const isDisabled = minDt ? new Date(dStr + "T00:00") < minDt : false;
-                    return (
-                        <div key={i} className="flex items-center justify-center">
+            {pickingYear ? (
+                /* Year picker */
+                <div className="grid grid-cols-4 gap-1.5 max-h-[196px] overflow-y-auto no-scrollbar py-1">
+                    {years.map((y) => {
+                        const sel = y === viewYear;
+                        return (
                             <button
+                                key={y}
+                                ref={sel ? selectedYearRef : undefined}
                                 type="button"
-                                disabled={isDisabled}
-                                onClick={() => { onSelect(dStr); onClose(); }}
-                                className={`w-8 h-8 flex items-center justify-center rounded-full text-xs font-semibold transition-colors
-                                    ${isSelected
+                                onClick={() => { setViewYear(y); setPickingYear(false); }}
+                                className={`h-9 rounded-lg text-xs font-semibold transition-colors ${
+                                    sel
                                         ? "bg-gradient-to-b from-[rgba(38,186,88,1)] to-[rgba(52,213,106,1)] text-white shadow-sm"
-                                        : isDisabled
-                                            ? "text-gray-300 cursor-not-allowed"
-                                            : isToday
-                                                ? "text-blue-600 ring-1 ring-blue-200 hover:bg-blue-50"
-                                                : "text-gray-700 hover:bg-blue-50"}`}
+                                        : "text-gray-700 hover:bg-blue-50"
+                                }`}
                             >
-                                {day}
+                                {y}
                             </button>
-                        </div>
-                    );
-                })}
-            </div>
+                        );
+                    })}
+                </div>
+            ) : (
+                <>
+                    {/* Weekday header */}
+                    <div className="grid grid-cols-7 mb-1">
+                        {WEEKDAYS.map((w, i) => (
+                            <div key={i} className="text-center text-[10px] font-bold text-gray-400 uppercase tracking-wide">{w}</div>
+                        ))}
+                    </div>
+
+                    {/* Day grid */}
+                    <div className="grid grid-cols-7 gap-y-1">
+                        {cells.map((day, i) => {
+                            if (day === null) return <div key={i} />;
+                            const dStr = `${viewYear}-${pad2(viewMonth + 1)}-${pad2(day)}`;
+                            const isSelected = dStr === value;
+                            const isToday = dStr === todayStr;
+                            const isDisabled = minDt ? new Date(dStr + "T00:00") < minDt : false;
+                            return (
+                                <div key={i} className="flex items-center justify-center">
+                                    <button
+                                        type="button"
+                                        disabled={isDisabled}
+                                        onClick={() => { onSelect(dStr); onClose(); }}
+                                        className={`w-8 h-8 flex items-center justify-center rounded-full text-xs font-semibold transition-colors
+                                            ${isSelected
+                                                ? "bg-gradient-to-b from-[rgba(38,186,88,1)] to-[rgba(52,213,106,1)] text-white shadow-sm"
+                                                : isDisabled
+                                                    ? "text-gray-300 cursor-not-allowed"
+                                                    : isToday
+                                                        ? "text-blue-600 ring-1 ring-blue-200 hover:bg-blue-50"
+                                                        : "text-gray-700 hover:bg-blue-50"}`}
+                                    >
+                                        {day}
+                                    </button>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </>
+            )}
         </div>
         </AnchoredPopover>
     );
@@ -229,17 +275,8 @@ function wrap(value: number, min: number, max: number): number {
 }
 
 /* Material-style time picker: big hour/minute tiles (the active one is
-   highlighted green), a segmented AM/PM control, and a keyboard affordance.
-   Each tile is focusable — type digits, use ↑/↓, or scroll to change it. */
-function KeyboardIcon({ className = "w-5 h-5" }: { className?: string }) {
-    return (
-        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7}>
-            <rect x="2" y="6" width="20" height="12" rx="2" />
-            <path strokeLinecap="round" d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M6 13h.01M18 13h.01M9 13h6" />
-        </svg>
-    );
-}
-
+   highlighted green) and a segmented AM/PM control. Each tile is focusable —
+   type digits, use ↑/↓, or scroll to change it. */
 const GREEN_TILE = "rgba(38,186,88,0.14)";
 const GREEN_TEXT = "rgba(38,186,88,1)";
 
@@ -255,7 +292,6 @@ export function TimePopover({
     onClose: () => void;
 }) {
     const ref = useRef<HTMLDivElement>(null);
-    const hourRef = useRef<HTMLButtonElement>(null);
     const [h24, m] = value ? value.split(":").map(Number) : [7, 0];
     const [hour, setHour] = useState(h24 % 12 || 12);   // 1..12
     const [minute, setMinute] = useState(m);             // 0..59
@@ -318,7 +354,6 @@ export function TimePopover({
             <div className="flex items-stretch gap-2 mb-5">
                 {/* Hour + minute tiles */}
                 <button
-                    ref={hourRef}
                     type="button"
                     onFocus={() => { setActive("hour"); hourBuf.current = ""; }}
                     onKeyDown={onHourKey}
@@ -370,23 +405,13 @@ export function TimePopover({
                 </div>
             </div>
 
-            <div className="flex items-center justify-between">
-                <button
-                    type="button"
-                    onClick={() => hourRef.current?.focus()}
-                    className="text-gray-400 hover:text-gray-600 transition-colors"
-                    title="Enter time with keyboard"
-                >
-                    <KeyboardIcon />
+            <div className="flex items-center justify-end gap-5 text-[13px] font-bold tracking-wide">
+                <button type="button" onClick={onClose} className="text-blue-600 hover:text-blue-800 transition-colors">
+                    CANCEL
                 </button>
-                <div className="flex items-center gap-5 text-[13px] font-bold tracking-wide">
-                    <button type="button" onClick={onClose} className="text-blue-600 hover:text-blue-800 transition-colors">
-                        CANCEL
-                    </button>
-                    <button type="button" onClick={commit} className="text-blue-600 hover:text-blue-800 transition-colors">
-                        OK
-                    </button>
-                </div>
+                <button type="button" onClick={commit} className="text-blue-600 hover:text-blue-800 transition-colors">
+                    OK
+                </button>
             </div>
         </div>
         </AnchoredPopover>

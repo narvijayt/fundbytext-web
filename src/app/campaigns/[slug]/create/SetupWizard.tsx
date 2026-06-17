@@ -155,14 +155,17 @@ export default function SetupWizard({
     const [maxStep, setMaxStep] = useState(isLaunched ? STEPS.length + 1 : initialStep);
     const [saving, setSaving]       = useState(false);
     const [launching, setLaunching] = useState(false);
-    const [toast, setToast]         = useState<string | null>(null);
+    const [alertMsg, setAlertMsg]   = useState<string | null>(null);
     const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
     const topRef = useRef<HTMLDivElement>(null);
 
-    function showToast(msg: string) {
-        setToast(msg);
-        setTimeout(() => setToast(null), 4000);
+    // Validation errors are shown inline next to each field — just bring the
+    // first one into view (the error <p>s carry a data-field-error marker).
+    function scrollToFirstError() {
+        setTimeout(() => {
+            document.querySelector("[data-field-error]")?.scrollIntoView({ behavior: "smooth", block: "center" });
+        }, 0);
     }
     function clearFE(key: string) {
         setFieldErrors((prev) => {
@@ -191,13 +194,13 @@ export default function SetupWizard({
                 if (res.status === 409 && json.code === "name_taken") {
                     setFieldErrors((p) => ({ ...p, name: "A campaign with this name already exists." }));
                 } else {
-                    showToast(typeof json.error === "string" ? json.error : "Failed to save.");
+                    setAlertMsg(typeof json.error === "string" ? json.error : "Failed to save.");
                 }
                 return false;
             }
             return true;
         } catch {
-            showToast("Network error. Please try again.");
+            setAlertMsg("Network error. Please try again.");
             return false;
         } finally {
             setSaving(false);
@@ -212,10 +215,10 @@ export default function SetupWizard({
             fd.append("type", type);
             const res  = await fetch("/api/v1/upload/campaign-photo", { method: "POST", body: fd });
             const json = await res.json();
-            if (!res.ok) { showToast(json.error ?? "Upload failed."); return null; }
+            if (!res.ok) { setAlertMsg(json.error ?? "Upload failed."); return null; }
             return json.url as string;
         } catch {
-            showToast("Upload failed. Please try again.");
+            setAlertMsg("Upload failed. Please try again.");
             return null;
         } finally {
             setUploadingPhoto(null);
@@ -247,7 +250,7 @@ export default function SetupWizard({
         if (isOrg && !orgDisplayName.trim()) errs.org_display_name = "Organization display name is required.";
         if (!endDate)                                    errs.end_date = "End date is required.";
         else if (startDate && endDate <= startDate)      errs.end_date = "End date must be after the start date.";
-        if (Object.keys(errs).length) { setFieldErrors(errs); showToast("Please fill in all required fields."); return; }
+        if (Object.keys(errs).length) { setFieldErrors(errs); scrollToFirstError(); return; }
         setFieldErrors({});
         const ok = await patch({
             campaign_type:    campaignType,
@@ -273,7 +276,7 @@ export default function SetupWizard({
         if (!payout.city)                 errs.pay_city   = "City is required.";
         if (!payout.state)                errs.pay_state  = "State is required.";
         if (!payout.zip)                  errs.pay_zip    = "ZIP is required.";
-        if (Object.keys(errs).length) { setFieldErrors(errs); showToast("Please fill in all required fields."); return; }
+        if (Object.keys(errs).length) { setFieldErrors(errs); scrollToFirstError(); return; }
         setFieldErrors({});
         const data: Record<string, unknown> = {
             goal_type:   goalType,
@@ -444,7 +447,7 @@ export default function SetupWizard({
         if (!thankYou.trim())             errs.thank_you   = "Thank you message is required.";
         if (Object.keys(errs).length) {
             setFieldErrors(errs);
-            showToast("Please complete all required fields before launching.");
+            scrollToFirstError();
             return;
         }
         setFieldErrors({});
@@ -455,11 +458,11 @@ export default function SetupWizard({
         try {
             const res  = await fetch(`/api/v1/campaigns/${slug}/launch`, { method: "POST" });
             const json = await res.json();
-            if (!res.ok) { showToast(json.error ?? "Could not launch campaign."); return; }
+            if (!res.ok) { setAlertMsg(json.error ?? "Could not launch campaign."); return; }
             router.push("/dashboard?launched=1");
             router.refresh();
         } catch {
-            showToast("Network error. Please try again.");
+            setAlertMsg("Network error. Please try again.");
         } finally {
             setLaunching(false);
         }
@@ -469,7 +472,7 @@ export default function SetupWizard({
 
     async function addParticipant() {
         if (!addFirst || !addLast || (!addEmail && !addPhone)) {
-            showToast("First name, last name, and email or phone are required.");
+            setAlertMsg("First name, last name, and email or phone are required.");
             return;
         }
         setAddingMember(true);
@@ -483,7 +486,7 @@ export default function SetupWizard({
                 }),
             });
             const json = await res.json();
-            if (!res.ok) { showToast(json.error ?? "Could not add participant."); return; }
+            if (!res.ok) { setAlertMsg(json.error ?? "Could not add participant."); return; }
             // Upsert: update existing member record if same id (organizer self-added as participant)
             setMembers((prev) => {
                 const idx = prev.findIndex((m) => m.id === json.member.id);
@@ -496,7 +499,7 @@ export default function SetupWizard({
             });
             setAddFirst(""); setAddLast(""); setAddEmail(""); setAddPhone("");
         } catch {
-            showToast("Network error.");
+            setAlertMsg("Network error.");
         } finally {
             setAddingMember(false);
         }
@@ -508,14 +511,14 @@ export default function SetupWizard({
             setMembers((prev) => prev.filter((m) => m.id !== memberId));
         } else {
             const json = await res.json().catch(() => ({}));
-            showToast(json.error ?? "Could not remove participant.");
+            setAlertMsg(json.error ?? "Could not remove participant.");
         }
     }
 
     async function addDonor() {
-        if (!dFirst || !dLast || !dEmail) { showToast("First name, last name, and email are required."); return; }
+        if (!dFirst || !dLast || !dEmail) { setAlertMsg("First name, last name, and email are required."); return; }
         if (donors.some((d) => d.email?.toLowerCase() === dEmail.trim().toLowerCase())) {
-            showToast("A donor with this email has already been added.");
+            setAlertMsg("A donor with this email has already been added.");
             return;
         }
         setAddingDonor(true);
@@ -529,11 +532,11 @@ export default function SetupWizard({
                 }),
             });
             const json = await res.json();
-            if (!res.ok) { showToast(json.error ?? "Could not add donor."); return; }
+            if (!res.ok) { setAlertMsg(json.error ?? "Could not add donor."); return; }
             setDonors((prev) => [...prev, json.donor]);
             setDFirst(""); setDLast(""); setDEmail(""); setDPhone("");
         } catch {
-            showToast("Network error.");
+            setAlertMsg("Network error.");
         } finally {
             setAddingDonor(false);
         }
@@ -545,7 +548,7 @@ export default function SetupWizard({
             setDonors((prev) => prev.filter((d) => d.id !== donorId));
         } else {
             const json = await res.json().catch(() => ({}));
-            showToast(json.error ?? "Could not remove donor.");
+            setAlertMsg(json.error ?? "Could not remove donor.");
         }
     }
 
@@ -713,21 +716,23 @@ export default function SetupWizard({
                     />
                 )}
 
-                {/* Steps 2-3 — single white card with padding */}
-                {(step === 2 || step === 3) && (
+                {/* Step 2 — its own question cards (no outer wrapper) */}
+                {step === 2 && (
+                    <StepFundingGoal
+                        isOrg={isOrg}
+                        goalType={goalType} setGoalType={setGoalType}
+                        goalAmount={goalAmount} setGoalAmount={setGoalAmount}
+                        donorsPerParticipant={donorsPerParticipant} setDonorsPerParticipant={setDonorsPerParticipant}
+                        payout={payout} setPayout={setPayout}
+                        orgDisplayName={orgDisplayName}
+                        fieldErrors={fieldErrors} clearFE={clearFE}
+                        isLaunched={isLaunched}
+                    />
+                )}
+
+                {/* Step 3 — single white card with padding */}
+                {step === 3 && (
                     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden p-6">
-                        {step === 2 && (
-                            <StepFundingGoal
-                                isOrg={isOrg}
-                                goalType={goalType} setGoalType={setGoalType}
-                                goalAmount={goalAmount} setGoalAmount={setGoalAmount}
-                                donorsPerParticipant={donorsPerParticipant} setDonorsPerParticipant={setDonorsPerParticipant}
-                                payout={payout} setPayout={setPayout}
-                                orgDisplayName={orgDisplayName}
-                                fieldErrors={fieldErrors} clearFE={clearFE}
-                                isLaunched={isLaunched}
-                            />
-                        )}
                         {step === 3 && (
                             <StepVisual
                                 isOrg={isOrg}
@@ -799,7 +804,6 @@ export default function SetupWizard({
                 step={step}
                 saving={saving}
                 launching={launching}
-                toast={toast}
                 uploadingPhoto={uploadingPhoto}
                 isLaunched={isLaunched}
                 onBack={back}
@@ -807,6 +811,41 @@ export default function SetupWizard({
                 onLaunch={launch}
                 onExit={exitAndSave}
             />
+
+            {/* OK alert dialog — shown for non-field errors (save/network/etc.) */}
+            {alertMsg && <AlertDialog message={alertMsg} onClose={() => setAlertMsg(null)} />}
+        </div>
+    );
+}
+
+/* ── AlertDialog — simple centered "message + OK" modal ──────────────────── */
+function AlertDialog({ message, onClose }: { message: string; onClose: () => void }) {
+    return (
+        <div
+            className="fixed inset-0 z-[300] flex items-center justify-center bg-black/30 backdrop-blur-[2px] px-4"
+            onClick={onClose}
+        >
+            <div
+                role="alertdialog"
+                className="w-full max-w-sm rounded-2xl bg-white p-6 text-center shadow-[0px_24px_48px_-12px_rgba(0,48,96,0.35)]"
+                onClick={(e) => e.stopPropagation()}
+            >
+                <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-50">
+                    <svg className="h-6 w-6 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v4m0 4h.01M12 3a9 9 0 110 18A9 9 0 0112 3z" />
+                    </svg>
+                </div>
+                <p className="text-[15px] leading-relaxed text-[rgba(0,48,96,1)]">{message}</p>
+                <button
+                    type="button"
+                    onClick={onClose}
+                    autoFocus
+                    className="mt-6 w-full rounded-xl py-3 text-sm font-semibold text-white transition-colors"
+                    style={{ background: "rgba(2,104,192,1)" }}
+                >
+                    OK
+                </button>
+            </div>
         </div>
     );
 }

@@ -28,6 +28,13 @@ export default function AuthCreateCampaignForm() {
     const selectedType = watch("campaign_type");
     const nameVal = watch("name") ?? "";
 
+    // On a failed submit, scroll the first inline field error into view.
+    function scrollToFirstError() {
+        setTimeout(() => {
+            document.querySelector("[data-field-error]")?.scrollIntoView({ behavior: "smooth", block: "center" });
+        }, 0);
+    }
+
     async function onSubmit(data: FormData) {
         setServerError(null);
         setNameTaken(false);
@@ -174,7 +181,7 @@ export default function AuthCreateCampaignForm() {
                             })}
                         </div>
                         {errors.campaign_type && (
-                            <p className="text-[9px] sm:text-xs text-red-500 mt-2">{errors.campaign_type.message}</p>
+                            <p data-field-error className="text-[9px] sm:text-xs text-red-500 mt-2">{errors.campaign_type.message}</p>
                         )}
                     </div>
                 </QuestionCard>
@@ -206,8 +213,8 @@ export default function AuthCreateCampaignForm() {
                                 Max. {50 - nameVal.length}
                             </span>
                         </div>
-                        {errors.name && <p className="text-[9px] sm:text-xs text-red-500 mt-1">{errors.name.message}</p>}
-                        {nameTaken && <p className="text-[9px] sm:text-xs text-red-500 mt-1">A campaign with this name already exists. Please choose a different name.</p>}
+                        {errors.name && <p data-field-error className="text-[9px] sm:text-xs text-red-500 mt-1">{errors.name.message}</p>}
+                        {nameTaken && <p data-field-error className="text-[9px] sm:text-xs text-red-500 mt-1">A campaign with this name already exists. Please choose a different name.</p>}
                     </div>
                 </QuestionCard>
                 </div>
@@ -232,7 +239,7 @@ export default function AuthCreateCampaignForm() {
                 </Link>
                 <button
                     type="button"
-                    onClick={handleSubmit(onSubmit)}
+                    onClick={handleSubmit(onSubmit, scrollToFirstError)}
                     disabled={isSubmitting}
                     className="flex items-center justify-center gap-2 transition-colors disabled:opacity-60"
                     style={{

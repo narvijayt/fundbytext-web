@@ -399,7 +399,7 @@ export function QuestionCard({
                                     color: "rgba(143,152,163,1)",
                                 }}
                             >
-                                {renderAskBuddyText(askBuddyText)}
+                                {renderAskBuddyText(askBuddyText, () => setShowSuggestions(true))}
                             </p>
                             <button
                                 type="button"
@@ -439,13 +439,24 @@ export function QuestionCard({
 
 /* Splits askBuddyText on the word "FundBuddy" and renders it bold + underlined,
    matching the FundBuddy brand styling in the ask-buddy bar. */
-function renderAskBuddyText(text: string) {
+function renderAskBuddyText(text: string, onAsk?: () => void) {
     const parts = text.split("FundBuddy");
     return parts.map((part, i) => (
         <React.Fragment key={i}>
             {part}
             {i < parts.length - 1 && (
-                <strong style={{ fontWeight: 900, textDecoration: "underline" }}>FundBuddy</strong>
+                onAsk ? (
+                    <button
+                        type="button"
+                        onClick={onAsk}
+                        className="cursor-pointer underline transition-opacity hover:opacity-70"
+                        style={{ fontWeight: 900, color: "inherit" }}
+                    >
+                        FundBuddy
+                    </button>
+                ) : (
+                    <strong style={{ fontWeight: 900, textDecoration: "underline" }}>FundBuddy</strong>
+                )
             )}
         </React.Fragment>
     ));
@@ -472,7 +483,64 @@ export function Field({
             </label>
             {hint && <p className="text-xs sm:text-sm text-gray-400 mb-1.5">{hint}</p>}
             {children}
-            {error && <p className="text-xs sm:text-sm text-red-500 mt-1">{error}</p>}
+            {error && <p data-field-error className="text-xs sm:text-sm text-red-500 mt-1">{error}</p>}
+        </div>
+    );
+}
+
+/* ── Stepper ───────────────────────────────────────────────────────────
+   Big centered value flanked by blue −/+ buttons (Step 2 funding amount,
+   donors per participant). The value is freely editable; while focused it
+   shows the raw number, and when blurred it's formatted (e.g. "$5,000"). */
+export function Stepper({
+    value,
+    onChange,
+    step = 1,
+    min = 0,
+    prefix = "",
+    placeholder = "0",
+    fractionDigits = 0,
+    disabled = false,
+}: {
+    value: string;
+    onChange: (v: string) => void;
+    step?: number;
+    min?: number;
+    prefix?: string;
+    placeholder?: string;
+    fractionDigits?: number;
+    disabled?: boolean;
+}) {
+    const [focused, setFocused] = useState(false);
+    const num = Number(value) || 0;
+    const display = focused
+        ? value
+        : value !== ""
+            ? `${prefix}${num.toLocaleString(undefined, { minimumFractionDigits: fractionDigits, maximumFractionDigits: fractionDigits })}`
+            : "";
+    const set = (n: number) => onChange(String(Math.max(min, n)));
+    const btn =
+        "shrink-0 flex items-center justify-center rounded-xl size-10 bg-[#0268c0] text-white transition hover:brightness-110 active:scale-95 disabled:opacity-40 disabled:active:scale-100";
+
+    return (
+        <div className="flex items-center justify-center gap-3 sm:gap-5 w-full">
+            <button type="button" disabled={disabled} onClick={() => set(num - step)} className={btn} aria-label="Decrease">
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round"><path d="M6 12h12" /></svg>
+            </button>
+            <input
+                type="text"
+                inputMode="decimal"
+                disabled={disabled}
+                value={display}
+                placeholder={`${prefix}${placeholder}`}
+                onFocus={() => setFocused(true)}
+                onBlur={() => setFocused(false)}
+                onChange={(e) => onChange(e.target.value.replace(/[^0-9.]/g, ""))}
+                className="min-w-0 flex-1 bg-transparent text-center text-[26px] sm:text-[32px] font-bold leading-none text-[rgba(0,48,96,1)] focus:outline-none placeholder:text-[rgba(174,181,189,1)] disabled:opacity-50"
+            />
+            <button type="button" disabled={disabled} onClick={() => set(num + step)} className={btn} aria-label="Increase">
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round"><path d="M12 6v12M6 12h12" /></svg>
+            </button>
         </div>
     );
 }

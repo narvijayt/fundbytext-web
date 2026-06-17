@@ -33,6 +33,10 @@ function joinDateTime(date: string, time: string): string {
     return `${date}T${time || "00:00"}`;
 }
 
+/* Default times applied when a date is chosen but no time has been set yet. */
+const DEFAULT_START_TIME = "07:00";
+const DEFAULT_END_TIME = "18:00";
+
 function CalendarSmIcon() {
     return (
         <svg className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
@@ -109,7 +113,7 @@ function PickerField({
                 {/* eslint-disable-next-line react-hooks/refs -- anchorRef.current is only read inside the popover's own effects, after render */}
                 {open && renderPopover(btnRef, () => setOpen(false))}
             </div>
-            {error && <p className="text-[9px] sm:text-xs text-red-500 mt-1">{error}</p>}
+            {error && <p data-field-error className="text-[9px] sm:text-xs text-red-500 mt-1">{error}</p>}
         </div>
     );
 }
@@ -118,11 +122,53 @@ function PickerField({
    The "—" that joins a start/end pair (date row, time row). An invisible
    label spacer above the dash reserves the same height as each field's label,
    so the dash lines up with the input boxes rather than their labels. */
-function RangeDash() {
+function RangeDash({ className = "flex" }: { className?: string }) {
     return (
-        <div className="shrink-0 flex flex-col select-none" aria-hidden>
+        <div className={`shrink-0 flex-col select-none ${className}`} aria-hidden>
             <span className="block text-[12px] font-semibold mb-1.5 sm:mb-2 uppercase tracking-[1px] invisible">.</span>
             <span className="flex items-center justify-center h-11 sm:h-13 lg:h-14 text-lg text-[rgba(212,222,231,1)]">—</span>
+        </div>
+    );
+}
+
+/* ── CampaignSummary ─────────────────────────────────────────────────────
+   Compact, read-only recap of the campaign type + name (both captured back in
+   Step 0). Shown instead of re-asking those two questions on Step 1. */
+function CampaignSummary({ isOrg, name }: { isOrg: boolean; name: string }) {
+    return (
+        <div
+            className="bg-white rounded-3xl overflow-hidden"
+            style={{ boxShadow: "0px 32px 40px -16px rgba(2,104,192,0.3), 0px 12px 12px -8px rgba(2,104,192,0.06)" }}
+        >
+            <div className="flex items-center gap-4 sm:gap-5 px-6 sm:px-10 py-5 sm:py-6">
+                <span
+                    className="shrink-0 flex items-center justify-center rounded-2xl w-12 h-12 sm:w-14 sm:h-14"
+                    style={{ background: "#e2f1ff" }}
+                >
+                    <Image
+                        src={isOrg ? "/assets/campaigns/organization-active.svg" : "/assets/campaigns/individual-active.svg"}
+                        width={32}
+                        height={32}
+                        alt=""
+                        className="w-7 h-7 sm:w-8 sm:h-8"
+                    />
+                </span>
+                <div className="min-w-0 flex-1">
+                    <p className="uppercase tracking-[1px] text-[11px] sm:text-[12px] font-bold text-[#8f98a3] mb-1">
+                        Your campaign
+                    </p>
+                    <h3
+                        className="font-black text-[18px] sm:text-[22px] leading-[125%] truncate"
+                        style={{ color: "rgba(0,48,96,1)" }}
+                        title={name}
+                    >
+                        {name}
+                    </h3>
+                    <span className="inline-flex items-center mt-2 rounded-full bg-[#eaeef3] px-3 py-1 text-[12px] sm:text-[13px] font-semibold text-[#0268c0]">
+                        {isOrg ? "Organization Campaign" : "Individual Campaign"}
+                    </span>
+                </div>
+            </div>
         </div>
     );
 }
@@ -157,9 +203,8 @@ type Props = {
 
 /* ── StepDetails ─────────────────────────────────────────────────────── */
 export default function StepDetails({
-    campaignType, setCampaignType, campaignTypeReadOnly,
     isOrg,
-    name, setName, nameReadOnly,
+    name,
     orgDisplayName, setOrgDisplayName, orgDisplayNameLocked,
     story, setStory,
     timezone, setTimezone,
@@ -168,19 +213,19 @@ export default function StepDetails({
     fieldErrors, clearFE,
     isLaunched, isActive, isCompleted,
 }: Props) {
-    const typeDisabled = campaignTypeReadOnly || isLaunched;
-
-    const [showTimezone, setShowTimezone] = useState(false);
-    const timezoneBtnRef = useRef<HTMLButtonElement>(null);
-
     /* Split datetime-local strings into date + time */
     const { date: startD, time: startT } = splitDateTime(startDate);
     const { date: endD,   time: endT   } = splitDateTime(endDate);
 
-    function handleStartDate(d: string) { setStartDate(joinDateTime(d, startT)); }
-    function handleStartTime(t: string) { setStartDate(joinDateTime(startD, t)); }
-    function handleEndDate(d: string)   { setEndDate(joinDateTime(d, endT)); clearFE("end_date"); }
-    function handleEndTime(t: string)   { setEndDate(joinDateTime(endD, t)); }
+    /* Date & time are stored together as one datetime-local string, so neither
+       can stand alone. To let the time be set before a date (and vice-versa):
+       picking a date fills in the default time if none was chosen yet, and
+       picking a time falls back to today's date so the choice isn't discarded. */
+    const todayLocal = () => new Date().toLocaleDateString("en-CA"); // YYYY-MM-DD
+    function handleStartDate(d: string) { setStartDate(joinDateTime(d, startT || DEFAULT_START_TIME)); }
+    function handleStartTime(t: string) { setStartDate(joinDateTime(startD || todayLocal(), t)); }
+    function handleEndDate(d: string)   { setEndDate(joinDateTime(d, endT || DEFAULT_END_TIME)); clearFE("end_date"); }
+    function handleEndTime(t: string)   { setEndDate(joinDateTime(endD || todayLocal(), t)); clearFE("end_date"); }
 
     return (
         <div className="space-y-4 sm:space-y-6 lg:space-y-8">
@@ -193,137 +238,21 @@ export default function StepDetails({
                 </div>
             )}
 
-            {/* ── Card 1: Campaign Type ───────────────────────────────── */}
-            <QuestionCard
-                title="What type of campaign are you running?"
-                description="Choose the campaign type that best fits your fundraising goal."
-                askBuddyText={
-                    campaignType === "individual"
-                        ? "Individual Campaigns are for a single person like yourself."
-                        : "Organizational Campaigns are for groups of people, like sports teams, bands, clubs, schools; you name it."
-                }
-            >
-                <div>
-                    <div className={`flex flex-col lg:flex-row gap-[16px] ${typeDisabled ? "opacity-60 pointer-events-none" : ""}`}>
-                        {(["organization", "individual"] as const).map((type) => {
-                            const active = campaignType === type;
-                            const activeIcon   = type === "organization" ? "/assets/campaigns/organization-active.svg"     : "/assets/campaigns/individual-active.svg";
-                            const inactiveIcon = type === "organization" ? "/assets/campaigns/organizational-icon.svg"     : "/assets/campaigns/individual-inactive.svg";
-                            return (
-                                <button
-                                    key={type}
-                                    type="button"
-                                    onClick={() => !typeDisabled && setCampaignType(type)}
-                                    disabled={typeDisabled}
-                                    className="flex-1 min-w-0 h-15 lg:h-17 flex items-center justify-between bg-white text-left transition-all"
-                                    style={{
-                                        gap: "8px",
-                                        borderRadius: "16px",
-                                        paddingTop: "18px",
-                                        paddingRight: "24px",
-                                        paddingBottom: "18px",
-                                        paddingLeft: "16px",
-                                        border: active ? "2px solid transparent" : "2px solid rgba(212,222,231,1)",
-                                        backgroundImage: active
-                                            ? "linear-gradient(white, white), linear-gradient(95.84deg, #0278DE 40.72%, #AED9FE 50%, #0278DE 59.28%)"
-                                            : undefined,
-                                        backgroundOrigin: active ? "border-box" : undefined,
-                                        backgroundClip: active ? "padding-box, border-box" : undefined,
-                                    }}
-                                >
-                                    <div className="flex items-center gap-2.5 min-w-0">
-                                        <span className="shrink-0 w-6 h-6 lg:w-8 lg:h-8 flex items-center justify-center">
-                                            <Image
-                                                src={active ? activeIcon : inactiveIcon}
-                                                width={32}
-                                                height={32}
-                                                alt=""
-                                                className="w-6 h-6 lg:w-8 lg:h-8"
-                                            />
-                                        </span>
-                                        <span
-                                            className="truncate text-[14px] sm:text-[20px]"
-                                            style={{
-                                                fontFamily: "var(--font-sans)",
-                                                fontWeight: 500,
-                                                lineHeight: "150%",
-                                                letterSpacing: 0,
-                                                color: "rgba(0,48,96,1)",
-                                            }}
-                                        >
-                                            {type === "organization" ? "Organization Campaign" : "Individual Campaign"}
-                                        </span>
-                                    </div>
-                                    {active && (
-                                        <span
-                                            className="shrink-0 flex items-center justify-center rounded-full"
-                                            style={{
-                                                width: "18px",
-                                                height: "18px",
-                                                border: "2px solid rgba(2,104,192,1)",
-                                                boxSizing: "border-box",
-                                            }}
-                                        >
-                                            <span
-                                                className="rounded-full"
-                                                style={{ width: "8px", height: "8px", background: "rgba(2,104,192,1)" }}
-                                            />
-                                        </span>
-                                    )}
-                                </button>
-                            );
-                        })}
-                    </div>
-                    {fieldErrors.campaign_type && (
-                        <p className="text-xs sm:text-sm text-red-500 mt-2">{fieldErrors.campaign_type}</p>
-                    )}
-                </div>
-            </QuestionCard>
-
-            {/* ── Card 2: Campaign Name ───────────────────────────────── */}
-            <QuestionCard
-                title="What's the name of your campaign?"
-                description="This will be the title that everyone sees. Make it clear and catchy!"
-                askBuddyText="Ask FundBuddy for your campaign description."
-                askBuddySuggestionsHeading="Hey there buddy, here are some great campaign name suggestions!"
-                askBuddySuggestions={[
-                    "New Gear for Samuel's Soccer Team",
-                    "Fund John's Wrestling Team's Travel Expenses",
-                    "New Uniforms for Jason's Little League Team",
-                ]}
-            >
-                {nameReadOnly ? (
-                    <LockedField value={name} label="Campaign Name" />
-                ) : (
-                    <div>
-                        <div className="relative">
-                            <input
-                                value={name}
-                                onChange={(e) => { setName(e.target.value); clearFE("name"); }}
-                                maxLength={50}
-                                placeholder="Give your campaign a catchy name…"
-                                className={`${fieldErrors.name ? inputErrCls : inputCls} pr-16 sm:pr-20`}
-                            />
-                            <span className="absolute right-3 sm:right-5 top-1/2 -translate-y-1/2 text-[12px] sm:text-[14px] text-[#8f98a3] font-medium">
-                                Max. {50 - name.length}
-                            </span>
-                        </div>
-                        {fieldErrors.name && <p className="text-xs sm:text-sm text-red-500 mt-1">{fieldErrors.name}</p>}
-                    </div>
-                )}
-            </QuestionCard>
+            {/* ── Campaign summary — type & name (already chosen in Step 0,
+            shown read-only here as a compact summary, not a question). ───── */}
+            <CampaignSummary isOrg={isOrg} name={name} />
 
             {/* ── Card 3: Organization Name (org only) ────────────────── */}
             {isOrg && (
                 <QuestionCard
                     title="What's your organization name?"
                     description="This will be the name that everyone sees. Tell us who you are!"
-                    askBuddyText="Ask FundBuddy for campaign name suggestions."
-                    askBuddySuggestionsHeading="Hey there buddy, here are some great campaign name suggestions!"
+                    askBuddyText="Ask FundBuddy for organization name ideas."
+                    askBuddySuggestionsHeading="Hey there buddy, here are some organization name ideas!"
                     askBuddySuggestions={[
-                        "New Gear for Samuel's Soccer Team",
-                        "Fund John's Wrestling Team's Travel Expenses",
-                        "New Uniforms for Jason's Little League Team",
+                        "Lincoln High Soccer Boosters",
+                        "Riverside Youth Basketball Club",
+                        "Westfield Band Parents Association",
                     ]}
                 >
                     {orgDisplayNameLocked ? (
@@ -338,7 +267,7 @@ export default function StepDetails({
                                 className={fieldErrors.org_display_name ? inputErrCls : inputCls}
                             />
                             {fieldErrors.org_display_name && (
-                                <p className="text-xs sm:text-sm text-red-500 mt-1">{fieldErrors.org_display_name}</p>
+                                <p data-field-error className="text-xs sm:text-sm text-red-500 mt-1">{fieldErrors.org_display_name}</p>
                             )}
                         </div>
                     )}
@@ -374,9 +303,9 @@ export default function StepDetails({
             >
                 <div className="space-y-4 sm:space-y-6">
                     {/* Start ── End date row */}
-                    <div className="flex items-start gap-2 sm:gap-3 lg:gap-4">
+                    <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-3 lg:gap-4">
                         <PickerField
-                            className="flex-1"
+                            className="sm:flex-1"
                             label="Start Date"
                             value={startD}
                             displayValue={formatDate(startD)}
@@ -392,9 +321,9 @@ export default function StepDetails({
                                 />
                             )}
                         />
-                        <RangeDash />
+                        <RangeDash className="hidden sm:flex" />
                         <PickerField
-                            className="flex-1"
+                            className="sm:flex-1"
                             label="End Date"
                             required
                             value={endD}
@@ -414,35 +343,35 @@ export default function StepDetails({
                         />
                     </div>
                     {/* Start ── End time row */}
-                    <div className="flex items-start gap-2 sm:gap-3 lg:gap-4">
+                    <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-3 lg:gap-4">
                         <PickerField
-                            className="flex-1"
+                            className="sm:flex-1"
                             label="Start Time"
-                            value={startT || "07:00"}
-                            displayValue={formatTime(startT || "07:00")}
+                            value={startT || DEFAULT_START_TIME}
+                            displayValue={formatTime(startT || DEFAULT_START_TIME)}
                             placeholder="Select time"
                             icon={<ClockSmIcon />}
                             disabled={isCompleted}
                             renderPopover={(ref, close) => (
                                 <TimePopover
-                                    value={startT || "07:00"}
+                                    value={startT || DEFAULT_START_TIME}
                                     anchorRef={ref}
                                     onSelect={handleStartTime}
                                     onClose={close}
                                 />
                             )}
                         />
-                        <RangeDash />
+                        <RangeDash className="hidden sm:flex" />
                         <PickerField
-                            className="flex-1"
+                            className="sm:flex-1"
                             label="End Time"
-                            value={endT || "18:00"}
-                            displayValue={formatTime(endT || "18:00")}
+                            value={endT || DEFAULT_END_TIME}
+                            displayValue={formatTime(endT || DEFAULT_END_TIME)}
                             placeholder="Select time"
                             icon={<ClockSmIcon />}
                             renderPopover={(ref, close) => (
                                 <TimePopover
-                                    value={endT || "18:00"}
+                                    value={endT || DEFAULT_END_TIME}
                                     anchorRef={ref}
                                     onSelect={handleEndTime}
                                     onClose={close}
@@ -456,30 +385,23 @@ export default function StepDetails({
                         </p>
                     )}
 
-                    {/* Timezone */}
+                    {/* Timezone — same field style as the date/time pickers */}
                     <div>
-                        <label className="block text-[12px] font-semibold text-gray-500 mb-1.5 sm:mb-2 uppercase tracking-[1px]">
-                            Timezone
-                        </label>
-                        <div className="relative">
-                            <button
-                                ref={timezoneBtnRef}
-                                type="button"
-                                onClick={() => setShowTimezone((v) => !v)}
-                                className="relative w-full flex items-center justify-between gap-2 px-3 py-2.5 sm:px-4 sm:py-3 lg:py-3.5 rounded-xl sm:rounded-2xl border border-gray-200 bg-white hover:border-blue-400 text-sm sm:text-base text-left transition-colors cursor-pointer"
-                            >
-                                <span className="truncate text-gray-800">{timezoneLabel(timezone)}</span>
-                                <ChevronDownSmIcon />
-                            </button>
-                            {showTimezone && (
+                        <PickerField
+                            label="Timezone"
+                            value={timezone}
+                            displayValue={timezoneLabel(timezone)}
+                            placeholder="Select timezone"
+                            icon={<ChevronDownSmIcon />}
+                            renderPopover={(ref, close) => (
                                 <TimezonePopover
                                     value={timezone}
-                                    anchorRef={timezoneBtnRef}
+                                    anchorRef={ref}
                                     onSelect={setTimezone}
-                                    onClose={() => setShowTimezone(false)}
+                                    onClose={close}
                                 />
                             )}
-                        </div>
+                        />
                         <p className="text-[9px] sm:text-xs text-gray-400 mt-1 sm:mt-1.5">All dates above are interpreted in this timezone.</p>
                     </div>
                 </div>
