@@ -285,6 +285,15 @@ input[type=number] {
     to   { background-position-x: -170px; }
 }
 
+@keyframes loaderSpin {
+    to { transform: rotate(1turn); }
+}
+
+/* Skeleton shimmer sweep — used as a placeholder while a photo loads. */
+@keyframes shimmer {
+    100% { transform: translateX(100%); }
+}
+
 /* Progressive-reveal entrance for the campaign-creation cards — used to
    slide/fade later questions in once the user answers the first one. */
 @keyframes revealUp {

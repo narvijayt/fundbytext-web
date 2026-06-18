@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import DeleteCampaignButton from "@/app/(protected)/dashboard/_components/DeleteCampaignButton";
@@ -160,6 +160,16 @@ export default function SetupWizard({
 
     const topRef = useRef<HTMLDivElement>(null);
 
+    // ── Step 3 auto-save — visuals (photos, colours, theme) are persisted on
+    // every change so the live "Preview your Campaign page" link is always
+    // current. Debounced + cancellable so rapid edits coalesce into one save.
+    const [autosaveStatus, setAutosaveStatus] = useState<"idle" | "saving" | "saved">("idle");
+    const autosaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const autosaveArmed = useRef(false);
+    function cancelAutosave() {
+        if (autosaveTimer.current) { clearTimeout(autosaveTimer.current); autosaveTimer.current = null; }
+    }
+
     // Validation errors are shown inline next to each field — just bring the
     // first one into view (the error <p>s carry a data-field-error marker).
     function scrollToFirstError() {
@@ -207,8 +217,11 @@ export default function SetupWizard({
         }
     }
 
-    async function uploadPhoto(file: File, type: string): Promise<string | null> {
-        setUploadingPhoto(type);
+    // `type` is the server media type (profile|hero|gallery). `key` identifies
+    // which box is uploading for the spinner — gallery boxes all share the
+    // "gallery" type but need distinct keys so only the picked one spins.
+    async function uploadPhoto(file: File, type: string, key?: string): Promise<string | null> {
+        setUploadingPhoto(key ?? type);
         try {
             const fd = new FormData();
             fd.append("photo", file);
@@ -224,6 +237,37 @@ export default function SetupWizard({
             setUploadingPhoto(null);
         }
     }
+
+    // Debounced auto-save of Step 3 visuals. Armed after the first render so the
+    // initial mount (no change yet) doesn't trigger a save; every later change to
+    // a photo / colour / theme schedules a silent PATCH so the live preview stays
+    // in sync. Cancelled by explicit saves (saveVisual / saveAllDraft).
+    useEffect(() => {
+        if (!autosaveArmed.current) { autosaveArmed.current = true; return; }
+        cancelAutosave();
+        autosaveTimer.current = setTimeout(() => {
+            const media: { media_type: string; url: string; sort_order: number }[] = [];
+            if (profileUrl) media.push({ media_type: "profile", url: profileUrl, sort_order: 0 });
+            if (heroUrl)    media.push({ media_type: "hero",    url: heroUrl,    sort_order: 0 });
+            galleryUrls.forEach((u, i) => { if (u) media.push({ media_type: "gallery", url: u, sort_order: i }); });
+            const data: Record<string, unknown> = {
+                background_theme: bgTheme,
+                accent_color:     accentColor,
+                secondary_color:  secondaryColor,
+            };
+            if (media.length > 0) data.media = media;
+            setAutosaveStatus("saving");
+            fetch(`/api/v1/campaigns/${slug}`, {
+                method:  "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body:    JSON.stringify(data),
+            })
+                .then((res) => setAutosaveStatus(res.ok ? "saved" : "idle"))
+                .catch(() => setAutosaveStatus("idle"));
+        }, 800);
+        return cancelAutosave;
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [profileUrl, heroUrl, galleryUrls, bgTheme, accentColor, secondaryColor]);
 
     function advance() {
         setStep((s) => {
@@ -304,12 +348,15 @@ export default function SetupWizard({
         const errs: Record<string, string> = {};
         if (!profileUrl) errs.profile = `${isOrg ? "Organization logo" : "Profile photo"} is required.`;
         if (!heroUrl)    errs.hero    = "A campaign photo is required.";
+        // If validation fails, leave the pending auto-save in place so the visual
+        // changes still persist; only cancel it once we're committing a full save.
         if (Object.keys(errs).length) { setFieldErrors(errs); return; }
         setFieldErrors({});
+        cancelAutosave();
         const media: { media_type: string; url: string; sort_order: number }[] = [];
         if (profileUrl) media.push({ media_type: "profile", url: profileUrl, sort_order: 0 });
         media.push({ media_type: "hero", url: heroUrl!, sort_order: 0 });
-        galleryUrls.forEach((u, i) => media.push({ media_type: "gallery", url: u, sort_order: i }));
+        galleryUrls.forEach((u, i) => { if (u) media.push({ media_type: "gallery", url: u, sort_order: i }); });
         const ok = await patch({
             background_theme: bgTheme,
             accent_color:     accentColor,
@@ -321,6 +368,7 @@ export default function SetupWizard({
     }
 
     async function saveAllDraft() {
+        cancelAutosave();
         // In edit/launched mode, mandatory fields that already have a saved value
         // must not be cleared — restore from the original campaign if the user emptied them.
         const mustKeep = isEditMode || isLaunched;
@@ -400,7 +448,7 @@ export default function SetupWizard({
         const safeProfileUrl = profileUrl ?? (mustKeep ? getMediaUrl(origMedia, "profile") : null);
         if (safeProfileUrl) media.push({ media_type: "profile", url: safeProfileUrl, sort_order: 0 });
         if (safeHeroUrl)    media.push({ media_type: "hero",    url: safeHeroUrl,    sort_order: 0 });
-        galleryUrls.forEach((u, i) => media.push({ media_type: "gallery", url: u, sort_order: i }));
+        galleryUrls.forEach((u, i) => { if (u) media.push({ media_type: "gallery", url: u, sort_order: i }); });
         if (media.length > 0) data.media = media;
         try {
             const res = await fetch(`/api/v1/campaigns/${slug}`, {
@@ -730,26 +778,43 @@ export default function SetupWizard({
                     />
                 )}
 
-                {/* Step 3 — single white card with padding */}
+                {/* Step 3 — its own question cards (no outer wrapper) */}
                 {step === 3 && (
-                    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden p-6">
-                        {step === 3 && (
-                            <StepVisual
-                                isOrg={isOrg}
-                                profileUrl={profileUrl} setProfileUrl={setProfileUrl}
-                                heroUrl={heroUrl} setHeroUrl={setHeroUrl}
-                                galleryUrls={galleryUrls} setGalleryUrls={setGalleryUrls}
-                                bgTheme={bgTheme} setBgTheme={setBgTheme}
-                                accentColor={accentColor} setAccentColor={setAccentColor}
-                                secondaryColor={secondaryColor} setSecondaryColor={setSecondaryColor}
-                                colorMode={colorMode} setColorMode={setColorMode}
-                                extractedColors={extractedColors} setExtractedColors={setExtractedColors}
-                                uploadingPhoto={uploadingPhoto} uploadPhoto={uploadPhoto}
-                                fieldErrors={fieldErrors} clearFE={clearFE}
-                                slug={slug} campaignName={campaign.name}
-                            />
-                        )}
-                    </div>
+                    <>
+                        <div className="mb-2 flex h-4 items-center justify-end gap-1.5 text-[11px] sm:text-[12px] font-medium text-[#8f98a3]">
+                            {autosaveStatus === "saving" && (
+                                <>
+                                    <svg className="w-3.5 h-3.5 animate-spin text-[#0268c0]" viewBox="0 0 24 24" fill="none">
+                                        <circle className="opacity-20" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
+                                        <path className="opacity-90" fill="currentColor" d="M4 12a8 8 0 018-8v3a5 5 0 00-5 5z" />
+                                    </svg>
+                                    Saving changes…
+                                </>
+                            )}
+                            {autosaveStatus === "saved" && (
+                                <>
+                                    <svg className="w-3.5 h-3.5 text-[#26ba58]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                    </svg>
+                                    All changes saved
+                                </>
+                            )}
+                        </div>
+                        <StepVisual
+                            isOrg={isOrg}
+                            profileUrl={profileUrl} setProfileUrl={setProfileUrl}
+                            heroUrl={heroUrl} setHeroUrl={setHeroUrl}
+                            galleryUrls={galleryUrls} setGalleryUrls={setGalleryUrls}
+                            bgTheme={bgTheme} setBgTheme={setBgTheme}
+                            accentColor={accentColor} setAccentColor={setAccentColor}
+                            secondaryColor={secondaryColor} setSecondaryColor={setSecondaryColor}
+                            colorMode={colorMode} setColorMode={setColorMode}
+                            extractedColors={extractedColors} setExtractedColors={setExtractedColors}
+                            uploadingPhoto={uploadingPhoto} uploadPhoto={uploadPhoto}
+                            fieldErrors={fieldErrors} clearFE={clearFE}
+                            slug={slug} campaignName={campaign.name}
+                        />
+                    </>
                 )}
 
                 {/* Step 4 — manages its own banners and cards */}

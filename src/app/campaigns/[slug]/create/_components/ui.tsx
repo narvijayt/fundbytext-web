@@ -32,6 +32,10 @@ export function VectorWallpaper() {
                 animation: "driftLeft 18s linear infinite",
                 WebkitMaskImage: "linear-gradient(180deg, #000 0%, #000 50%, transparent 95%)",
                 maskImage: "linear-gradient(180deg, #000 0%, #000 50%, transparent 95%)",
+                // Promote to its own GPU layer so the drift/mask repaints stay
+                // isolated and don't repaint the cards above it while scrolling.
+                transform: "translateZ(0)",
+                backfaceVisibility: "hidden",
             }}
         />
     );
@@ -300,9 +304,126 @@ function AskBuddyPopover({
 /* ── QuestionCard ──────────────────────────────────────────────────────
    Shared "question card" shell used across the create-campaign flows
    (both the public /campaigns/create step 1 and the [slug]/create wizard). */
+/* ── InfoDot ───────────────────────────────────────────────────────────
+   Small grey "?" circle used as a tooltip affordance next to titles and
+   field labels (matches the Figma ⓘ marks). */
+export function InfoDot({ className = "" }: { className?: string }) {
+    return (
+        <span
+            aria-hidden
+            className={`inline-flex shrink-0 items-center justify-center rounded-full bg-[#c4cbd2] text-white ${className}`}
+            style={{ width: 14, height: 14, fontSize: 9, fontWeight: 800, lineHeight: 1 }}
+        >
+            ?
+        </span>
+    );
+}
+
+/* ── InfoTooltip ───────────────────────────────────────────────────────
+   The grey "?" dot, now clickable: it opens a blue gradient popover (same
+   look as the Ask-FundBuddy suggestions panel) explaining the field. The
+   popover is portal'd into document.body so the card's overflow-hidden
+   can't clip it, and flips above the dot when there's no room below. */
+export function InfoTooltip({ tip, className = "" }: { tip: string; className?: string }) {
+    const dotRef = useRef<HTMLButtonElement>(null);
+    const popRef = useRef<HTMLDivElement>(null);
+    const caretRef = useRef<HTMLSpanElement>(null);
+    const [open, setOpen] = useState(false);
+    const [rect, setRect] = useState<DOMRect | null>(null);
+
+    useLayoutEffect(() => {
+        if (!open) return;
+        function update() {
+            const d = dotRef.current;
+            if (d) setRect(d.getBoundingClientRect());
+        }
+        update();
+        window.addEventListener("scroll", update, true);
+        window.addEventListener("resize", update);
+        return () => {
+            window.removeEventListener("scroll", update, true);
+            window.removeEventListener("resize", update);
+        };
+    }, [open]);
+
+    useLayoutEffect(() => {
+        const el = popRef.current;
+        if (!open || !rect || !el) return;
+        const margin = 12, gap = 10, w = el.offsetWidth, h = el.offsetHeight;
+        let left = rect.left + rect.width / 2 - w / 2;
+        left = Math.max(margin, Math.min(left, window.innerWidth - w - margin));
+        let top = rect.bottom + gap;
+        let above = false;
+        if (top + h > window.innerHeight - margin && rect.top - gap - h > margin) {
+            top = rect.top - gap - h; above = true;
+        }
+        el.style.left = `${left}px`;
+        el.style.top = `${top}px`;
+        el.style.visibility = "visible";
+        const caret = caretRef.current;
+        if (caret) {
+            caret.style.left = `${Math.max(14, Math.min(rect.left + rect.width / 2 - left, w - 14))}px`;
+            caret.style.top = above ? "" : "-5px";
+            caret.style.bottom = above ? "-5px" : "";
+            caret.style.background = above ? "#0278DE" : "#005BAC";
+        }
+    });
+
+    useEffect(() => {
+        if (!open) return;
+        function onDown(e: MouseEvent) {
+            const d = dotRef.current, el = popRef.current;
+            if (el && !el.contains(e.target as Node) && d && !d.contains(e.target as Node)) setOpen(false);
+        }
+        function onKey(e: KeyboardEvent) { if (e.key === "Escape") setOpen(false); }
+        document.addEventListener("mousedown", onDown);
+        document.addEventListener("keydown", onKey);
+        return () => {
+            document.removeEventListener("mousedown", onDown);
+            document.removeEventListener("keydown", onKey);
+        };
+    }, [open]);
+
+    return (
+        <>
+            <button
+                ref={dotRef}
+                type="button"
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpen((o) => !o); }}
+                aria-label="More information"
+                className={`pointer-events-auto inline-flex shrink-0 items-center justify-center rounded-full text-white transition-colors ${open ? "bg-[#0268c0]" : "bg-[#c4cbd2] hover:bg-[#0268c0]"} ${className}`}
+                style={{ width: 14, height: 14, fontSize: 9, fontWeight: 800, lineHeight: 1 }}
+            >
+                ?
+            </button>
+            {open && typeof document !== "undefined" && rect && createPortal(
+                <div
+                    ref={popRef}
+                    className="fixed z-[220] max-w-[280px]"
+                    style={{
+                        top: 0, left: 0, visibility: "hidden", borderRadius: 14, padding: "14px 18px",
+                        background: "linear-gradient(0deg, #0278DE 0%, #005BAC 100%)",
+                        boxShadow: "0px 12px 12px 0px rgba(0,91,172,0.25), 0px 24px 32px 0px rgba(20,65,109,0.26)",
+                    }}
+                >
+                    <span
+                        ref={caretRef}
+                        aria-hidden
+                        className="absolute w-[10px] h-[10px]"
+                        style={{ left: 0, top: -5, transform: "translateX(-50%) rotate(45deg)", background: "#005BAC" }}
+                    />
+                    <p className="font-medium text-[13px] sm:text-[14px] text-white" style={{ lineHeight: "150%" }}>{tip}</p>
+                </div>,
+                document.body,
+            )}
+        </>
+    );
+}
+
 export function QuestionCard({
     title,
     icon = "/assets/campaigns/question-flag.svg",
+    titleInfoTip,
     description,
     askBuddyText,
     askBuddySuggestionsHeading,
@@ -313,6 +434,9 @@ export function QuestionCard({
     /* Title flag/icon — defaults to the blue question flag; some cards
        (Share your story, Campaign duration) use their own icon. */
     icon?: string;
+    /* When set, render a clickable "?" dot after the title that opens a
+       blue tooltip popover with this text. */
+    titleInfoTip?: string;
     description?: string;
     askBuddyText?: string;
     askBuddySuggestionsHeading?: string;
@@ -338,6 +462,7 @@ export function QuestionCard({
                         >
                             {title}
                         </h3>
+                        {titleInfoTip && <InfoTooltip tip={titleInfoTip} className="self-center" />}
                     </div>
                     {description && (
                         <p

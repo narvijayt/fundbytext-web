@@ -3,6 +3,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { del } from "@vercel/blob";
 import { prisma } from "@/lib/prisma";
 import { getAuthUserFromRequest } from "@/lib/session";
 import { Prisma } from "@/generated/prisma/client";
@@ -335,22 +336,35 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
             });
         }
 
-        // Replace media per type
+        // Replace media. The wizard always sends the COMPLETE intended media
+        // set (profile + hero + every gallery photo), so we replace the whole
+        // set rather than per-type — otherwise removing the last photo of a
+        // type (e.g. all gallery photos) leaves no item to trigger its delete
+        // and the records linger in the DB.
         if (media && media.length > 0) {
-            const types = [...new Set(media.map((m) => m.media_type))];
-            for (const type of types) {
-                await prisma.campaignMedia.deleteMany({
-                    where: { campaign_id: ids.campaignId, media_type: type as MediaType },
-                });
-            }
-            await prisma.campaignMedia.createMany({
-                data: media.map((m) => ({
-                    campaign_id: ids.campaignId,
-                    media_type:  m.media_type as MediaType,
-                    url:         m.url,
-                    sort_order:  m.sort_order,
-                })),
+            const existing = await prisma.campaignMedia.findMany({
+                where: { campaign_id: ids.campaignId },
+                select: { url: true },
             });
+            await prisma.$transaction([
+                prisma.campaignMedia.deleteMany({ where: { campaign_id: ids.campaignId } }),
+                prisma.campaignMedia.createMany({
+                    data: media.map((m) => ({
+                        campaign_id: ids.campaignId,
+                        media_type:  m.media_type as MediaType,
+                        url:         m.url,
+                        sort_order:  m.sort_order,
+                    })),
+                }),
+            ]);
+
+            // Best-effort: delete blobs that are no longer referenced so removed
+            // photos don't linger in storage. Failures here must not fail the save.
+            const keptUrls = new Set(media.map((m) => m.url));
+            const orphanedUrls = existing.map((m) => m.url).filter((u) => u && !keptUrls.has(u));
+            if (orphanedUrls.length > 0) {
+                await Promise.allSettled(orphanedUrls.map((u) => del(u))).catch(() => {});
+            }
         }
 
         const updated = await prisma.campaign.findUnique({
