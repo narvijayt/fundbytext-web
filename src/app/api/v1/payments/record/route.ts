@@ -37,9 +37,9 @@ export async function POST(req: NextRequest) {
 
         const { payment_intent_id } = parsed.data;
 
-        // Verify with Stripe and expand payment_method for card details
+        // Verify with Stripe and expand payment_method (card details) + latest_charge (receipt URL)
         const pi = await stripe.paymentIntents.retrieve(payment_intent_id, {
-            expand: ["payment_method"],
+            expand: ["payment_method", "latest_charge"],
         });
 
         if (pi.status !== "succeeded") {
@@ -47,6 +47,7 @@ export async function POST(req: NextRequest) {
         }
 
         const m = pi.metadata;
+        const receiptUrl = (pi.latest_charge as import("stripe").Stripe.Charge | null)?.receipt_url ?? null;
 
         if (!m.campaign_id) {
             return NextResponse.json({ error: "Missing campaign metadata" }, { status: 400 });
@@ -57,7 +58,7 @@ export async function POST(req: NextRequest) {
             where:  { stripe_payment_intent_id: pi.id },
             select: { card_brand: true, card_last4: true },
         });
-        if (existing) return NextResponse.json({ ok: true, card_brand: existing.card_brand, card_last4: existing.card_last4 });
+        if (existing) return NextResponse.json({ ok: true, card_brand: existing.card_brand, card_last4: existing.card_last4, receipt_url: receiptUrl });
 
         const amount      = pi.amount / 100;
         const platformFee = 0;
@@ -224,7 +225,7 @@ export async function POST(req: NextRequest) {
             }
         }
 
-        return NextResponse.json({ ok: true, card_brand: cardBrand, card_last4: cardLast4 });
+        return NextResponse.json({ ok: true, card_brand: cardBrand, card_last4: cardLast4, receipt_url: receiptUrl });
     } catch (err) {
         console.error("[POST /payments/record]", err);
         return NextResponse.json({ error: "Internal server error" }, { status: 500 });
