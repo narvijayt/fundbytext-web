@@ -23,6 +23,7 @@ export type Member = {
     last_name: string;
     email: string | null;
     phone: string | null;
+    profile_photo_url: string | null;
     roles: MemberRole[];
 };
 
@@ -60,6 +61,7 @@ export type Campaign = {
     background_theme: string;
     accent_color: string | null;
     secondary_color: string | null;
+    tertiary_color: string | null;
     thank_you_message: string | null;
     media: Media[];
     payout: Payout | null;

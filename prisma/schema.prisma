@@ -215,6 +215,7 @@ model Campaign {
     background_theme           BackgroundTheme    @default(sports)
     accent_color               String?            @db.VarChar(7) // hex e.g. #1565C0 (primary)
     secondary_color            String?            @db.VarChar(7) // hex e.g. #374151 (secondary)
+    tertiary_color             String?            @db.VarChar(7) // hex (tertiary) — reserved for campaign-page use
     thank_you_message          String?            @db.Text // max 940 chars
     visibility                 CampaignVisibility @default(private) // access control (see enum)
     donations_enabled          Boolean            @default(true) // organizer can pause donations independently

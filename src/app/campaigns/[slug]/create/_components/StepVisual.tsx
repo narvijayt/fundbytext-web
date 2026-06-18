@@ -16,14 +16,17 @@ type Props = {
     setGalleryUrls: (fn: (prev: string[]) => string[]) => void;
     bgTheme: string;
     setBgTheme: (v: string) => void;
+    // Applied colours (derived from the active mode) — read-only, for the preview.
     accentColor: string;
-    setAccentColor: (v: string) => void;
     secondaryColor: string;
-    setSecondaryColor: (v: string) => void;
+    // The custom box's 3 editable colours.
+    customColors: [string, string, string];
+    setCustomColor: (i: number, hex: string) => void;
     colorMode: "logo" | "custom";
     setColorMode: (m: "logo" | "custom") => void;
-    extractedColors: [string, string] | null;
-    setExtractedColors: (c: [string, string] | null) => void;
+    // The logo box's 3 colours, extracted from the uploaded logo.
+    extractedColors: [string, string, string] | null;
+    setExtractedColors: (c: [string, string, string] | null) => void;
     uploadingPhoto: string | null;
     uploadPhoto: (file: File, type: string, key?: string) => Promise<string | null>;
     fieldErrors: Record<string, string>;
@@ -34,6 +37,8 @@ type Props = {
 
 const DEFAULT_ACCENT = "#0268C0";
 const DEFAULT_SECONDARY = "#003060";
+const DEFAULT_TERTIARY = "#FFFFFF";
+const DEFAULT_COLORS: [string, string, string] = [DEFAULT_ACCENT, DEFAULT_SECONDARY, DEFAULT_TERTIARY];
 
 /* Gallery is a fixed set of 4 independent slots. Normalising to a fixed-length
    array (empties as "") keeps each slot stable — uploading/removing one slot
@@ -90,7 +95,7 @@ function luminance(hex: string) {
     return (0.299 * r + 0.587 * g + 0.114 * b) / 255;
 }
 
-async function extractColorsFromUrl(url: string): Promise<[string, string]> {
+async function extractColorsFromUrl(url: string): Promise<[string, string, string]> {
     return new Promise((resolve) => {
         const img = new window.Image();
         img.crossOrigin = "anonymous";
@@ -99,7 +104,7 @@ async function extractColorsFromUrl(url: string): Promise<[string, string]> {
                 const canvas = document.createElement("canvas");
                 canvas.width = 50; canvas.height = 50;
                 const ctx = canvas.getContext("2d");
-                if (!ctx) { resolve([DEFAULT_ACCENT, DEFAULT_SECONDARY]); return; }
+                if (!ctx) { resolve(DEFAULT_COLORS); return; }
                 ctx.drawImage(img, 0, 0, 50, 50);
                 const pixels = ctx.getImageData(0, 0, 50, 50).data;
                 const freq = new Map<string, number>();
@@ -114,12 +119,16 @@ async function extractColorsFromUrl(url: string): Promise<[string, string]> {
                     freq.set(hex, (freq.get(hex) ?? 0) + 1);
                 }
                 const sorted = [...freq.entries()].sort((a, b) => b[1] - a[1]);
-                resolve([sorted[0]?.[0] ?? DEFAULT_ACCENT, sorted[2]?.[0] ?? DEFAULT_SECONDARY]);
+                resolve([
+                    sorted[0]?.[0] ?? DEFAULT_ACCENT,
+                    sorted[2]?.[0] ?? sorted[1]?.[0] ?? DEFAULT_SECONDARY,
+                    sorted[4]?.[0] ?? sorted[3]?.[0] ?? DEFAULT_TERTIARY,
+                ]);
             } catch {
-                resolve([DEFAULT_ACCENT, DEFAULT_SECONDARY]);
+                resolve(DEFAULT_COLORS);
             }
         };
-        img.onerror = () => resolve([DEFAULT_ACCENT, DEFAULT_SECONDARY]);
+        img.onerror = () => resolve(DEFAULT_COLORS);
         img.src = url;
     });
 }
@@ -419,8 +428,8 @@ export default function StepVisual({
     heroUrl, setHeroUrl,
     galleryUrls, setGalleryUrls,
     bgTheme, setBgTheme,
-    accentColor, setAccentColor,
-    secondaryColor, setSecondaryColor,
+    accentColor, secondaryColor,
+    customColors, setCustomColor,
     colorMode, setColorMode,
     extractedColors, setExtractedColors,
     uploadingPhoto, uploadPhoto,
@@ -429,27 +438,20 @@ export default function StepVisual({
 }: Props) {
     // Individuals only get the custom-colour option; orgs also get logo colours.
     const mode: "logo" | "custom" = isOrg ? colorMode : "custom";
-    const [picking, setPicking] = useState<null | "accent" | "secondary">(null);
-    const accentRef = useRef<HTMLDivElement>(null);
-    const secondaryRef = useRef<HTMLDivElement>(null);
+    const [picking, setPicking] = useState<null | 0 | 1 | 2>(null);
+    const customRefs = [useRef<HTMLDivElement>(null), useRef<HTMLDivElement>(null), useRef<HTMLDivElement>(null)];
 
+    // Pull the logo's colours into the (independent) logo box.
     function applyLogoColors(url: string) {
-        extractColorsFromUrl(url).then(([c1, c2]) => {
-            setExtractedColors([c1, c2]);
-            setAccentColor(c1);
-            setSecondaryColor(c2);
-        });
+        extractColorsFromUrl(url).then((cols) => setExtractedColors(cols));
     }
 
     function resetColors() {
-        setAccentColor(DEFAULT_ACCENT);
-        setSecondaryColor(DEFAULT_SECONDARY);
+        DEFAULT_COLORS.forEach((c, i) => setCustomColor(i, c));
         setColorMode("custom");
         setExtractedColors(null);
         setPicking(null);
     }
-
-    const logoColors: [string, string] = extractedColors ?? [accentColor, secondaryColor];
 
     return (
         <div className="space-y-4 sm:space-y-6 lg:space-y-8">
@@ -490,7 +492,8 @@ export default function StepVisual({
                             onUploaded={(url) => {
                                 setProfileUrl(url);
                                 clearFE("profile");
-                                if (mode === "logo") applyLogoColors(url);
+                                // Always refresh the logo box's colours from the new logo.
+                                applyLogoColors(url);
                             }}
                             onRemoved={() => setProfileUrl(null)}
                             className={`w-[112px] h-[112px] sm:w-[117px] sm:h-[117px]${fieldErrors.profile ? " ring-2 ring-red-400 rounded-xl" : ""}`}
@@ -571,12 +574,12 @@ export default function StepVisual({
                                 selected={mode === "logo"}
                                 onSelect={() => {
                                     setColorMode("logo");
-                                    if (profileUrl) applyLogoColors(profileUrl);
+                                    if (profileUrl && !extractedColors) applyLogoColors(profileUrl);
                                 }}
                             >
-                                <Swatch color={logoColors[0]} showHex />
-                                <Swatch color={logoColors[1]} showHex />
-                                <Swatch color="#ffffff" />
+                                {[0, 1, 2].map((i) => (
+                                    <Swatch key={i} color={extractedColors ? extractedColors[i] : "#ffffff"} showHex={!!extractedColors} />
+                                ))}
                             </ColorBox>
                         )}
 
@@ -587,19 +590,15 @@ export default function StepVisual({
                             showSelectedLabel={isOrg}
                             onSelect={() => setColorMode("custom")}
                         >
-                            <Swatch
-                                color={accentColor}
-                                editable={mode === "custom"}
-                                swatchRef={accentRef}
-                                onClick={() => { setColorMode("custom"); setPicking("accent"); }}
-                            />
-                            <Swatch
-                                color={secondaryColor}
-                                editable={mode === "custom"}
-                                swatchRef={secondaryRef}
-                                onClick={() => { setColorMode("custom"); setPicking("secondary"); }}
-                            />
-                            <Swatch color="#ffffff" />
+                            {[0, 1, 2].map((i) => (
+                                <Swatch
+                                    key={i}
+                                    color={customColors[i]}
+                                    editable={mode === "custom"}
+                                    swatchRef={customRefs[i]}
+                                    onClick={() => { setColorMode("custom"); setPicking(i as 0 | 1 | 2); }}
+                                />
+                            ))}
                         </ColorBox>
                     </div>
 
@@ -613,11 +612,11 @@ export default function StepVisual({
                 </div>
             </QuestionCard>
 
-            {picking && (
+            {picking !== null && (
                 <ColorPickerPopover
-                    anchorRef={picking === "accent" ? accentRef : secondaryRef}
-                    value={picking === "accent" ? accentColor : secondaryColor}
-                    onChange={(hex) => (picking === "accent" ? setAccentColor(hex) : setSecondaryColor(hex))}
+                    anchorRef={customRefs[picking]}
+                    value={customColors[picking]}
+                    onChange={(hex) => setCustomColor(picking, hex)}
                     onClose={() => setPicking(null)}
                 />
             )}

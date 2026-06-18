@@ -3,6 +3,22 @@
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { STEPS } from "./types";
+import { Loader } from "./ui";
+
+/* ── Launch rocket icon (Figma stick-rocket, white strokes) ──────────── */
+function RocketIcon({ className = "" }: { className?: string }) {
+    return (
+        <svg className={className} viewBox="0 0 21 27.5254" fill="none" stroke="white" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <path d="M5.51002 18.0407L1.06486 15.589C2.8355 12.1963 6.31486 11.3791 9.00177 12.1221" />
+            <path d="M9.49705 22.0153L11.9487 26.4605C15.329 24.6899 16.1586 21.2105 15.4157 18.5236" />
+            <path d="M5.52241 18.0283L5.55955 18.0531C7.16922 19.0436 8.51887 20.4057 9.50943 22.0153C12.704 20.1085 16.3196 18.2512 17.9788 16.5425C21.5572 12.964 19.477 8.06073 19.477 8.06073C19.477 8.06073 14.5737 5.98054 10.9953 9.55896C9.28656 11.2182 7.41686 14.8585 5.52241 18.0283Z" />
+            <path d="M5.69575 25.3585C5.23762 25.8042 4.03656 26.2129 2.88502 26.5348C1.70873 26.8567 0.65625 25.8166 0.990566 24.6403C1.3125 23.5012 1.72111 22.2877 2.16686 21.8296C2.38974 21.582 2.67453 21.3838 2.9717 21.2476C3.28125 21.1114 3.60318 21.0371 3.9375 21.0371C4.27182 21.0371 4.60613 21.0991 4.91568 21.2229C5.22524 21.3467 5.51002 21.5324 5.74528 21.7677C5.98054 22.003 6.16627 22.2877 6.29009 22.5973C6.41391 22.9068 6.47583 23.2412 6.47583 23.5755C6.47583 23.9098 6.40153 24.2441 6.26533 24.5413C6.12913 24.8508 5.93101 25.1232 5.68337 25.3461L5.69575 25.3585Z" />
+            <path d="M11.763 16.5796L13.1374 13.0755L9.01415 12.1097L9.1875 5.90625" />
+            <path d="M9.21226 5.90625C10.5868 5.90625 11.7011 4.79198 11.7011 3.41745C11.7011 2.04293 10.5868 0.928656 9.21226 0.928656C7.83774 0.928656 6.72347 2.04293 6.72347 3.41745C6.72347 4.79198 7.83774 5.90625 9.21226 5.90625Z" />
+            <path d="M9.06368 8.86557L4.50708 7.33019" />
+        </svg>
+    );
+}
 
 /* ── Step illustrations ──────────────────────────────────────────────── */
 const STEP_ILLUSTRATIONS: Record<number, string> = {
@@ -363,14 +379,16 @@ export function BottomNav({
                                 type="button"
                                 onClick={onLaunch}
                                 disabled={busy}
-                                className="flex items-center gap-2 px-7 py-2.5 rounded-full text-sm font-semibold text-white transition-colors disabled:opacity-60"
-                                style={{ background: "rgba(0,64,149,1)" }}
+                                className="flex items-center justify-center gap-2 rounded-xl px-[18px] text-white transition hover:brightness-105 active:scale-[0.99] disabled:opacity-60 disabled:active:scale-100"
+                                style={{ height: 48, background: "linear-gradient(76.24deg, #26BA58 1.19%, #34D56A 98.81%)" }}
                             >
-                                {launching ? "Launching…" : "Launch"}
-                                {!launching && (
-                                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-                                    </svg>
+                                {launching ? (
+                                    <Loader className="w-5 h-5" light />
+                                ) : (
+                                    <>
+                                        <span className="text-[16px] font-bold leading-[1.25]">Launch</span>
+                                        <RocketIcon className="w-[19px] h-[25px]" />
+                                    </>
                                 )}
                             </button>
                         )
@@ -396,17 +414,7 @@ export function BottomNav({
                                 color: "rgba(255, 255, 255, 1)",
                             }}
                         >
-                            {saving ? (
-                                <>
-                                    <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
-                                    </svg>
-                                    Saving…
-                                </>
-                            ) : (
-                                "Next"
-                            )}
+                            {saving ? <Loader className="w-5 h-5" light /> : "Next"}
                         </button>
                     )}
                 </div>

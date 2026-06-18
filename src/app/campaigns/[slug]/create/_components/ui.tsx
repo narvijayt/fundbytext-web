@@ -319,6 +319,24 @@ export function InfoDot({ className = "" }: { className?: string }) {
     );
 }
 
+/* ── Loader ────────────────────────────────────────────────────────────
+   The shared 12-segment spinner (exported from Figma). Used for every loading
+   state — photo uploads, auto-save, the Next/Launch buttons, etc. `light`
+   swaps in the white variant for dark backgrounds (the blue one vanishes). */
+export function Loader({ className = "w-10 h-10", light = false }: { className?: string; light?: boolean }) {
+    return (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+            src={light ? "/assets/campaigns/loader-spinner-light.svg" : "/assets/campaigns/loader-spinner.svg"}
+            alt=""
+            role="status"
+            aria-label="Loading"
+            className={className}
+            style={{ animation: "loaderSpin 1s steps(12) infinite" }}
+        />
+    );
+}
+
 /* ── InfoTooltip ───────────────────────────────────────────────────────
    The grey "?" dot, now clickable: it opens a blue gradient popover (same
    look as the Ask-FundBuddy suggestions panel) explaining the field. The
@@ -349,23 +367,20 @@ export function InfoTooltip({ tip, className = "" }: { tip: string; className?: 
     useLayoutEffect(() => {
         const el = popRef.current;
         if (!open || !rect || !el) return;
-        const margin = 12, gap = 10, w = el.offsetWidth, h = el.offsetHeight;
+        const margin = 12, gap = 10, footerH = 88, w = el.offsetWidth, h = el.offsetHeight;
         let left = rect.left + rect.width / 2 - w / 2;
         left = Math.max(margin, Math.min(left, window.innerWidth - w - margin));
-        let top = rect.bottom + gap;
-        let above = false;
-        if (top + h > window.innerHeight - margin && rect.top - gap - h > margin) {
-            top = rect.top - gap - h; above = true;
-        }
+        // Always sit below the dot — never flip above. If the WHOLE popover no
+        // longer fits before the fixed bottom bar, hide it cleanly rather than
+        // showing a clipped/cut-off fragment over the content.
+        const top = rect.bottom + gap;
+        const fits = top + h <= window.innerHeight - footerH;
         el.style.left = `${left}px`;
         el.style.top = `${top}px`;
-        el.style.visibility = "visible";
+        el.style.visibility = fits ? "visible" : "hidden";
         const caret = caretRef.current;
         if (caret) {
             caret.style.left = `${Math.max(14, Math.min(rect.left + rect.width / 2 - left, w - 14))}px`;
-            caret.style.top = above ? "" : "-5px";
-            caret.style.bottom = above ? "-5px" : "";
-            caret.style.background = above ? "#0278DE" : "#005BAC";
         }
     });
 
@@ -389,7 +404,16 @@ export function InfoTooltip({ tip, className = "" }: { tip: string; className?: 
             <button
                 ref={dotRef}
                 type="button"
-                onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpen((o) => !o); }}
+                onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setOpen((o) => !o);
+                    // After a mouse click, drop focus so pressing Space scrolls the
+                    // page instead of re-activating this button (which would close
+                    // the popover). e.detail === 0 means a keyboard activation —
+                    // keep focus there so keyboard users can still toggle/close it.
+                    if (e.detail !== 0) e.currentTarget.blur();
+                }}
                 aria-label="More information"
                 className={`pointer-events-auto inline-flex shrink-0 items-center justify-center rounded-full text-white transition-colors ${open ? "bg-[#0268c0]" : "bg-[#c4cbd2] hover:bg-[#0268c0]"} ${className}`}
                 style={{ width: 14, height: 14, fontSize: 9, fontWeight: 800, lineHeight: 1 }}
@@ -430,7 +454,9 @@ export function QuestionCard({
     askBuddySuggestions,
     children,
 }: {
-    title: string;
+    /* Optional — when omitted the centred title/icon/description header is
+       skipped and the card opens straight into its content (Step 4 uses this). */
+    title?: string;
     /* Title flag/icon — defaults to the blue question flag; some cards
        (Share your story, Campaign duration) use their own icon. */
     icon?: string;
@@ -453,26 +479,28 @@ export function QuestionCard({
             style={{ boxShadow: "0px 32px 40px -16px rgba(2,104,192,0.3), 0px 12px 12px -8px rgba(2,104,192,0.06)" }}
         >
             <div className="px-6 sm:px-14 pt-8 sm:pt-14 pb-8 sm:pb-16 flex flex-col">
-                <div className="text-center mb-[32px] sm:mb-[48px]">
-                    <div className="flex items-center justify-center gap-1.5 mb-[16px]">
-                        <Image src={icon} width={24} height={24} alt="" />
-                        <h3
-                            className="font-black text-[18px] sm:text-[22px]"
-                            style={{ lineHeight: "125%", letterSpacing: 0, color: "rgba(2,104,192,1)" }}
-                        >
-                            {title}
-                        </h3>
-                        {titleInfoTip && <InfoTooltip tip={titleInfoTip} className="self-center" />}
+                {title && (
+                    <div className="text-center mb-[32px] sm:mb-[48px]">
+                        <div className="flex items-center justify-center gap-1.5 mb-[16px]">
+                            <Image src={icon} width={24} height={24} alt="" />
+                            <h3
+                                className="font-black text-[18px] sm:text-[22px]"
+                                style={{ lineHeight: "125%", letterSpacing: 0, color: "rgba(2,104,192,1)" }}
+                            >
+                                {title}
+                            </h3>
+                            {titleInfoTip && <InfoTooltip tip={titleInfoTip} className="self-center" />}
+                        </div>
+                        {description && (
+                            <p
+                                className="text-[16px] sm:text-[20px] leading-[140%]"
+                                style={{ letterSpacing: 0, color: "rgba(0,48,96,1)" }}
+                            >
+                                {description}
+                            </p>
+                        )}
                     </div>
-                    {description && (
-                        <p
-                            className="text-[16px] sm:text-[20px] leading-[140%]"
-                            style={{ letterSpacing: 0, color: "rgba(0,48,96,1)" }}
-                        >
-                            {description}
-                        </p>
-                    )}
-                </div>
+                )}
                 {children}
                 {askBuddyText && !hasSuggestions && (
                     <div className="flex items-end gap-[16px] mt-[24px]">

@@ -24,10 +24,11 @@ function generatePassword(): string {
 type Ctx = { params: Promise<{ slug: string }> };
 
 const schema = z.object({
-    first_name: z.string().min(1).max(100),
-    last_name:  z.string().min(1).max(100),
-    email:      z.string().email().max(255).transform(s => s.toLowerCase().trim()).nullable().optional(),
-    phone:      z.string().max(20).optional().nullable(),
+    first_name:        z.string().min(1).max(100),
+    last_name:         z.string().min(1).max(100),
+    email:             z.string().email().max(255).transform(s => s.toLowerCase().trim()).nullable().optional(),
+    phone:             z.string().max(20).optional().nullable(),
+    profile_photo_url: z.string().url().max(2048).nullable().optional(),
 }).refine((d) => d.email || d.phone, { message: "Email or phone is required" });
 
 export async function POST(req: NextRequest, ctx: Ctx) {
@@ -67,7 +68,7 @@ export async function POST(req: NextRequest, ctx: Ctx) {
             return NextResponse.json({ error: z.treeifyError(parsed.error) }, { status: 422 });
         }
 
-        const { first_name, last_name, email, phone } = parsed.data;
+        const { first_name, last_name, email, phone, profile_photo_url } = parsed.data;
 
         // Check for duplicate email in this campaign (only when email is provided)
         const existing = email
@@ -97,7 +98,12 @@ export async function POST(req: NextRequest, ctx: Ctx) {
                     }),
                     prisma.campaignMember.update({
                         where: { id: existing.id },
-                        data:  { first_name, last_name, phone: phone ?? existing.phone, ...tokenUpdate },
+                        data:  {
+                            first_name, last_name,
+                            phone: phone ?? existing.phone,
+                            profile_photo_url: profile_photo_url ?? existing.profile_photo_url,
+                            ...tokenUpdate,
+                        },
                     }),
                 ]);
                 const updated = await prisma.campaignMember.findUnique({
@@ -149,6 +155,7 @@ export async function POST(req: NextRequest, ctx: Ctx) {
                 last_name,
                 email:        email ?? null,
                 phone:        phone ?? null,
+                profile_photo_url: profile_photo_url ?? null,
                 invite_token: inviteToken,
                 roles: {
                     create: { role: MemberRole.participant },
@@ -188,7 +195,7 @@ export async function POST(req: NextRequest, ctx: Ctx) {
                         const password_hash = await bcrypt.hash(generatedPassword, 12);
                         const username = await generateUsername(first_name, last_name);
                         const newUser = await prisma.user.create({
-                            data: { first_name, last_name, email, password_hash, username },
+                            data: { first_name, last_name, email, password_hash, username, profile_photo_url: profile_photo_url ?? null },
                         });
                         await prisma.campaignMember.update({
                             where: { id: member.id },

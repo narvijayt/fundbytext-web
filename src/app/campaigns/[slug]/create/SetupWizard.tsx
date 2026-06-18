@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import DeleteCampaignButton from "@/app/(protected)/dashboard/_components/DeleteCampaignButton";
 import { type Campaign, type Payout, type Member, type Donor, type CsvRow, type ImportResult, STEPS } from "./_components/types";
 import { ProgressBar, BottomNav } from "./_components/WizardNav";
-import { PAGE_GRADIENT, VectorWallpaper, StepBanner } from "./_components/ui";
+import { PAGE_GRADIENT, VectorWallpaper, StepBanner, Loader } from "./_components/ui";
 import StepDetails      from "./_components/StepDetails";
 import StepFundingGoal  from "./_components/StepFundingGoal";
 import StepVisual       from "./_components/StepVisual";
@@ -19,7 +19,14 @@ function getMediaUrl(media: Campaign["media"], type: string): string | null {
     return media.find((m) => m.media_type === type)?.url ?? null;
 }
 function getGalleryUrls(media: Campaign["media"]): string[] {
-    return media.filter((m) => m.media_type === "gallery").map((m) => m.url);
+    // Rebuild the gallery by its saved slot index (sort_order) so a photo stays
+    // in the box it was uploaded to — empty slots in between are preserved as "".
+    const slots: string[] = [];
+    for (const m of media) {
+        if (m.media_type === "gallery") slots[m.sort_order] = m.url;
+    }
+    for (let i = 0; i < slots.length; i++) if (slots[i] == null) slots[i] = "";
+    return slots;
 }
 // Convert a UTC ISO string to a datetime-local input value in the given IANA timezone
 function toDateInput(iso: string | null, tz: string): string {
@@ -125,10 +132,22 @@ export default function SetupWizard({
     const [heroUrl, setHeroUrl]         = useState<string | null>(getMediaUrl(campaign.media, "hero"));
     const [galleryUrls, setGalleryUrls] = useState<string[]>(getGalleryUrls(campaign.media));
     const [bgTheme, setBgTheme]         = useState(campaign.background_theme ?? "sports");
-    const [accentColor, setAccentColor]       = useState(campaign.accent_color    ?? "#1565C0");
-    const [secondaryColor, setSecondaryColor] = useState(campaign.secondary_color ?? "#374151");
+    // Colours: the custom box and the logo box are independent. `customColors`
+    // is what the user picks; `extractedColors` is pulled from the logo. The
+    // APPLIED colours (saved + shown in the preview) derive from the active mode,
+    // so editing one box never changes the other.
+    const [customColors, setCustomColors] = useState<[string, string, string]>([
+        campaign.accent_color    ?? "#0268C0",
+        campaign.secondary_color ?? "#003060",
+        campaign.tertiary_color  ?? "#FFFFFF",
+    ]);
     const [colorMode, setColorMode]           = useState<"logo" | "custom">("custom");
-    const [extractedColors, setExtractedColors] = useState<[string, string] | null>(null);
+    const [extractedColors, setExtractedColors] = useState<[string, string, string] | null>(null);
+    const appliedColors = colorMode === "logo" && extractedColors ? extractedColors : customColors;
+    const [accentColor, secondaryColor, tertiaryColor] = appliedColors;
+    function setCustomColor(i: number, hex: string) {
+        setCustomColors((prev) => { const n = [...prev] as [string, string, string]; n[i] = hex; return n; });
+    }
     const [uploadingPhoto, setUploadingPhoto]   = useState<string | null>(null);
 
     // ── Step 4 — Participants / Donors
@@ -137,7 +156,11 @@ export default function SetupWizard({
     const [addLast, setAddLast]   = useState("");
     const [addEmail, setAddEmail] = useState("");
     const [addPhone, setAddPhone] = useState("");
+    const [addPhotoUrl, setAddPhotoUrl] = useState<string | null>(null);
     const [addingMember, setAddingMember] = useState(false);
+    // UI-only: when on, the add/participant rows show a profile-photo upload slot.
+    // (Not a persisted permission — photos themselves live on each member.)
+    const [allowParticipantPhoto, setAllowParticipantPhoto] = useState(true);
 
     const [donors, setDonors]   = useState<Donor[]>(campaign.donors);
     const [dFirst, setDFirst]   = useState("");
@@ -254,6 +277,7 @@ export default function SetupWizard({
                 background_theme: bgTheme,
                 accent_color:     accentColor,
                 secondary_color:  secondaryColor,
+                tertiary_color:   tertiaryColor,
             };
             if (media.length > 0) data.media = media;
             setAutosaveStatus("saving");
@@ -267,7 +291,7 @@ export default function SetupWizard({
         }, 800);
         return cancelAutosave;
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [profileUrl, heroUrl, galleryUrls, bgTheme, accentColor, secondaryColor]);
+    }, [profileUrl, heroUrl, galleryUrls, bgTheme, customColors, extractedColors, colorMode]);
 
     function advance() {
         setStep((s) => {
@@ -313,7 +337,9 @@ export default function SetupWizard({
         const errs: Record<string, string> = {};
         if (!goalType)   errs.goal_type   = "Please select a goal type.";
         if (!goalAmount) errs.goal_amount  = "Fundraising goal is required.";
-        if (isOrg && !donorsPerParticipant) errs.donors_per_participant = "Donors per participant is required.";
+        if (isOrg && !donorsPerParticipant) errs.donors_per_participant = goalType === "participant_goal"
+            ? "Target contacts per participant is required."
+            : "Donors per participant is required.";
         if (!payout.recipient_first_name) errs.pay_first  = "First name is required.";
         if (!payout.recipient_last_name)  errs.pay_last   = "Last name is required.";
         if (!payout.street_address)       errs.pay_street = "Street address is required.";
@@ -332,7 +358,9 @@ export default function SetupWizard({
         data.payout = {
             recipient_first_name: payout.recipient_first_name,
             recipient_last_name:  payout.recipient_last_name,
-            org_name:             payout.org_name     || undefined,
+            // Org name is only collected for a shared Organization Goal — null it
+            // out for individual and participant-goal campaigns (matches Figma).
+            org_name:             (isOrg && goalType !== "participant_goal") ? (payout.org_name || undefined) : null,
             street_address:       payout.street_address,
             apt_suite:            payout.apt_suite    || undefined,
             city:                 payout.city,
@@ -361,6 +389,7 @@ export default function SetupWizard({
             background_theme: bgTheme,
             accent_color:     accentColor,
             secondary_color:  secondaryColor,
+            tertiary_color:   tertiaryColor,
             media,
             current_step: 4,
         });
@@ -427,6 +456,7 @@ export default function SetupWizard({
             background_theme:  bgTheme,
             accent_color:      accentColor,
             secondary_color:   secondaryColor,
+            tertiary_color:    tertiaryColor,
             thank_you_message: thankYou.trim() || null,
             current_step:      step,
         };
@@ -531,6 +561,7 @@ export default function SetupWizard({
                 body:    JSON.stringify({
                     first_name: addFirst.trim(), last_name: addLast.trim(),
                     email: addEmail.trim() || null, phone: addPhone.trim() || null,
+                    profile_photo_url: addPhotoUrl,
                 }),
             });
             const json = await res.json();
@@ -545,7 +576,7 @@ export default function SetupWizard({
                 }
                 return [...prev, json.member];
             });
-            setAddFirst(""); setAddLast(""); setAddEmail(""); setAddPhone("");
+            setAddFirst(""); setAddLast(""); setAddEmail(""); setAddPhone(""); setAddPhotoUrl(null);
         } catch {
             setAlertMsg("Network error.");
         } finally {
@@ -668,14 +699,103 @@ export default function SetupWizard({
         return { added, skipped };
     }
 
+    // ── Step 4 — participant-photo permission + inline edits ────────────────
+
+    type PersonField = "first_name" | "last_name" | "email" | "phone";
+    type PersonFields = { first_name: string; last_name: string; email: string | null; phone: string | null };
+
+    // Upload a profile photo (used by the participant photo slots). Returns the
+    // blob URL, or null on failure. The URL is then stored on the member record.
+    async function uploadProfilePhoto(file: File): Promise<string | null> {
+        try {
+            const fd = new FormData();
+            fd.append("photo", file);
+            const res  = await fetch("/api/v1/upload/profile-photo", { method: "POST", body: fd });
+            const json = await res.json();
+            if (!res.ok) { setAlertMsg(json.error ?? "Photo upload failed."); return null; }
+            return json.url as string;
+        } catch {
+            setAlertMsg("Photo upload failed. Please try again.");
+            return null;
+        }
+    }
+
+    // Set / clear a saved participant's profile photo (optimistic + persisted).
+    function setParticipantPhoto(id: string, url: string | null) {
+        setMembers((prev) => prev.map((m) => (m.id === id ? { ...m, profile_photo_url: url } : m)));
+        fetch(`/api/v1/campaigns/${slug}/members/${id}`, {
+            method:  "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body:    JSON.stringify({ profile_photo_url: url }),
+        }).then(async (res) => {
+            if (!res.ok) {
+                const json = await res.json().catch(() => ({}));
+                setAlertMsg(typeof json.error === "string" ? json.error : "Could not update photo.");
+            }
+        }).catch(() => setAlertMsg("Network error. Please try again."));
+    }
+
+    // Optimistic local edit — keeps the row title / status icon live as the user
+    // types (the actual persist happens on blur/collapse, only when valid).
+    function editDonorField(id: string, field: PersonField, value: string) {
+        setDonors((prev) => prev.map((d) => (d.id === id ? { ...d, [field]: value } : d)));
+    }
+    function editParticipantField(id: string, field: PersonField, value: string) {
+        setMembers((prev) => prev.map((m) => (m.id === id ? { ...m, [field]: value } : m)));
+    }
+
+    async function saveDonor(id: string, f: PersonFields) {
+        try {
+            const res = await fetch(`/api/v1/campaigns/${slug}/donors/${id}`, {
+                method:  "PUT",
+                headers: { "Content-Type": "application/json" },
+                body:    JSON.stringify({
+                    first_name: f.first_name.trim(),
+                    last_name:  f.last_name.trim(),
+                    email:      f.email?.trim() || null,
+                    phone:      f.phone?.trim() || null,
+                }),
+            });
+            if (!res.ok) {
+                const json = await res.json().catch(() => ({}));
+                setAlertMsg(typeof json.error === "string" ? json.error : "Could not update donor.");
+            }
+        } catch {
+            setAlertMsg("Network error. Please try again.");
+        }
+    }
+
+    async function saveParticipant(id: string, f: PersonFields) {
+        try {
+            const res = await fetch(`/api/v1/campaigns/${slug}/members/${id}`, {
+                method:  "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body:    JSON.stringify({
+                    first_name: f.first_name.trim(),
+                    last_name:  f.last_name.trim(),
+                    email:      f.email?.trim() || null,
+                    phone:      f.phone?.trim() || null,
+                }),
+            });
+            if (!res.ok) {
+                const json = await res.json().catch(() => ({}));
+                setAlertMsg(typeof json.error === "string" ? json.error : "Could not update participant.");
+            }
+        } catch {
+            setAlertMsg("Network error. Please try again.");
+        }
+    }
+
     // ── Render ─────────────────────────────────────────────────────────────
 
     const STEP_META: Record<number, { title: string; subtitle: string }> = {
         1: { title: "Campaign Details",   subtitle: "On your mark get set… Go!" },
         2: { title: "Funding Goal",       subtitle: "Set your sights high!" },
         3: { title: "Campaign Visuals",   subtitle: "Make it shine!" },
-        4: { title: isOrg ? "Participants" : "Donors", subtitle: "Build your team!" },
-        5: { title: "Thank You Note",     subtitle: "Finish strong!" },
+        4: isOrg
+            ? { title: "Add Participants", subtitle: "Invite participants to boost your reach" }
+            : { title: "Add Donors",       subtitle: "Reaching out to more donors will increase your campaign's success!" },
+        5: { title: "Thank You Note",     subtitle: "Write a heartfelt message for your donors" },
     };
     const meta = STEP_META[step] ?? STEP_META[1];
 
@@ -720,15 +840,13 @@ export default function SetupWizard({
                 <ProgressBar step={step} maxStep={maxStep} isOrg={isOrg} onStepClick={goToStep} />
             </div>
 
-            {/* ── Step banner (not shown for step 4 — it renders its own banners).
-            CSS plaque + ribbon with the step's own title/subtitle as text. ── */}
-            {step !== 4 && (
-                <div className="relative px-6 pt-8 sm:pt-10 lg:pt-12 pb-6 sm:pb-8">
-                    <div className="relative z-10 flex justify-center">
-                        <StepBanner title={meta.title} subtitle={meta.subtitle} />
-                    </div>
+            {/* ── Step banner — CSS plaque + ribbon with the step's own
+            title/subtitle as text (Step 4 shows "Add Donors" / "Add Participants"). ── */}
+            <div className="relative px-6 pt-8 sm:pt-10 lg:pt-12 pb-6 sm:pb-8">
+                <div className="relative z-10 flex justify-center">
+                    <StepBanner title={meta.title} subtitle={meta.subtitle} />
                 </div>
-            )}
+            </div>
 
             {/* ── Step content ────────────────────────────────────────── */}
             <div className="w-full max-w-2xl lg:max-w-3xl xl:max-w-4xl mx-auto px-4 pt-5">
@@ -736,10 +854,7 @@ export default function SetupWizard({
                 {/* Fullscreen launch loader */}
                 {launching && (
                     <div className="fixed inset-0 z-200 flex flex-col items-center justify-center bg-white/80 backdrop-blur-sm">
-                        <svg className="w-14 h-14 animate-spin text-blue-700 mb-4" fill="none" viewBox="0 0 24 24">
-                            <circle className="opacity-20" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                            <path className="opacity-90" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
-                        </svg>
+                        <Loader className="w-14 h-14 mb-4" />
                         <p className="text-lg font-bold text-gray-800">Launching your campaign…</p>
                         <p className="text-sm text-gray-500 mt-1">Please wait a moment</p>
                     </div>
@@ -784,19 +899,8 @@ export default function SetupWizard({
                         <div className="mb-2 flex h-4 items-center justify-end gap-1.5 text-[11px] sm:text-[12px] font-medium text-[#8f98a3]">
                             {autosaveStatus === "saving" && (
                                 <>
-                                    <svg className="w-3.5 h-3.5 animate-spin text-[#0268c0]" viewBox="0 0 24 24" fill="none">
-                                        <circle className="opacity-20" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
-                                        <path className="opacity-90" fill="currentColor" d="M4 12a8 8 0 018-8v3a5 5 0 00-5 5z" />
-                                    </svg>
+                                    <Loader className="w-3.5 h-3.5" />
                                     Saving changes…
-                                </>
-                            )}
-                            {autosaveStatus === "saved" && (
-                                <>
-                                    <svg className="w-3.5 h-3.5 text-[#26ba58]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                                    </svg>
-                                    All changes saved
                                 </>
                             )}
                         </div>
@@ -806,8 +910,8 @@ export default function SetupWizard({
                             heroUrl={heroUrl} setHeroUrl={setHeroUrl}
                             galleryUrls={galleryUrls} setGalleryUrls={setGalleryUrls}
                             bgTheme={bgTheme} setBgTheme={setBgTheme}
-                            accentColor={accentColor} setAccentColor={setAccentColor}
-                            secondaryColor={secondaryColor} setSecondaryColor={setSecondaryColor}
+                            accentColor={accentColor} secondaryColor={secondaryColor}
+                            customColors={customColors} setCustomColor={setCustomColor}
                             colorMode={colorMode} setColorMode={setColorMode}
                             extractedColors={extractedColors} setExtractedColors={setExtractedColors}
                             uploadingPhoto={uploadingPhoto} uploadPhoto={uploadPhoto}
@@ -817,19 +921,27 @@ export default function SetupWizard({
                     </>
                 )}
 
-                {/* Step 4 — manages its own banners and cards */}
+                {/* Step 4 — its own QuestionCard (no outer wrapper) */}
                 {step === 4 && (
                     <StepParticipants
                         isOrg={isOrg} isLaunched={isLaunched}
+                        organizerInfo={organizerInfo}
+                        allowParticipantPhoto={allowParticipantPhoto}
+                        onToggleAllowPhoto={setAllowParticipantPhoto}
+                        onUploadProfilePhoto={uploadProfilePhoto}
                         members={members}
                         addFirst={addFirst} setAddFirst={setAddFirst}
                         addLast={addLast} setAddLast={setAddLast}
                         addEmail={addEmail} setAddEmail={setAddEmail}
                         addPhone={addPhone} setAddPhone={setAddPhone}
+                        addPhotoUrl={addPhotoUrl} setAddPhotoUrl={setAddPhotoUrl}
                         addingMember={addingMember}
                         onAddParticipant={addParticipant}
                         onRemoveParticipant={removeParticipant}
                         onImportParticipants={importParticipants}
+                        onEditParticipant={editParticipantField}
+                        onSaveParticipant={saveParticipant}
+                        onSetParticipantPhoto={setParticipantPhoto}
                         donors={donors}
                         dFirst={dFirst} setDFirst={setDFirst}
                         dLast={dLast} setDLast={setDLast}
@@ -839,16 +951,17 @@ export default function SetupWizard({
                         onAddDonor={addDonor}
                         onRemoveDonor={removeDonor}
                         onImportDonors={importDonors}
-                        organizerInfo={organizerInfo}
+                        onEditDonor={editDonorField}
+                        onSaveDonor={saveDonor}
                     />
                 )}
 
-                {/* Step 5 — manages its own layout */}
+                {/* Step 5 — its own QuestionCard (no outer wrapper) */}
                 {step === 5 && (
                     <StepThankYou
                         thankYou={thankYou} setThankYou={setThankYou}
                         fieldErrors={fieldErrors} clearFE={clearFE}
-                        isOrg={isOrg} orgDisplayName={orgDisplayName}
+                        isOrg={isOrg} goalType={goalType} orgDisplayName={orgDisplayName}
                         members={campaign.members}
                     />
                 )}

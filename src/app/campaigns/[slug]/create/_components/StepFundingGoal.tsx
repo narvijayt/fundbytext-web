@@ -113,9 +113,36 @@ export default function StepFundingGoal({
     const goalTypes = isOrg ? ORG_GOALS : INDIVIDUAL_GOALS;
     const selected = goalTypes.find((g) => g.value === goalType);
     const amountLocked = goalType === "open_ended" && isLaunched;
+    const isParticipantGoal = isOrg && goalType === "participant_goal";
     const totalLabel = isOrg
-        ? goalType === "participant_goal" ? "Total Participant Goal" : "Total Organization Goal"
+        ? isParticipantGoal ? "Total Participant Goal" : "Total Organization Goal"
         : "Total Campaign Goal";
+
+    // Card 2 asks "how many people should each participant reach out to" for both
+    // org goal types — same underlying count (stored in donors_per_participant),
+    // only the wording differs: "donors" for an org goal, "contacts" for a
+    // participant goal.
+    const perParticipantCard = isParticipantGoal
+        ? {
+            title: "Target contacts per participant?",
+            description: "Tell us how many people you'd like each participant to reach out to. The more contacts they make, the more money you'll raise.",
+            heading: "Hey there buddy, a tip on contact targets!",
+            suggestions: [
+                "Aim for around 15–25 contacts per participant.",
+                "More contacts generally means more raised.",
+                "You can adjust this anytime before launch.",
+            ],
+        }
+        : {
+            title: "Number of donors per participant",
+            description: "Tell us how many donors you'd like each participant to reach out to. The more donors they contact, the more money you'll raise.",
+            heading: "Hey there buddy, a tip on donor targets!",
+            suggestions: [
+                "Aim for around 15–25 donors per participant.",
+                "More contacts generally means more raised.",
+                "You can adjust this anytime before launch.",
+            ],
+        };
 
     return (
         <div className="space-y-4 sm:space-y-6 lg:space-y-8">
@@ -207,15 +234,11 @@ export default function StepFundingGoal({
             {isOrg && (
                 <QuestionCard
                     icon="/assets/campaigns/question-people.svg"
-                    title="Number of donors per participant"
-                    description="Tell us how many donors you'd like each participant to reach out to. The more donors they contact, the more money you'll raise."
+                    title={perParticipantCard.title}
+                    description={perParticipantCard.description}
                     askBuddyText="Ask FundBuddy for additional context."
-                    askBuddySuggestionsHeading="Hey there buddy, a tip on donor targets!"
-                    askBuddySuggestions={[
-                        "Aim for around 15–25 donors per participant.",
-                        "More contacts generally means more raised.",
-                        "You can adjust this anytime before launch.",
-                    ]}
+                    askBuddySuggestionsHeading={perParticipantCard.heading}
+                    askBuddySuggestions={perParticipantCard.suggestions}
                 >
                     <div className="w-full max-w-[300px] mx-auto">
                         <Stepper value={donorsPerParticipant} onChange={(v) => { setDonorsPerParticipant(v); clearFE("donors_per_participant"); }} step={1} min={1} placeholder="20" />
@@ -265,8 +288,10 @@ export default function StepFundingGoal({
                         </div>
                     </div>
 
-                    {/* Organization name (org only) */}
-                    {isOrg && (
+                    {/* Organization name — only for a shared Organization Goal.
+                        Individual and Participant-Goal campaigns pay out to a person,
+                        so the org name isn't collected here (matches Figma). */}
+                    {isOrg && !isParticipantGoal && (
                         <div className="space-y-2.5 sm:space-y-3">
                             <SectionLabel>Organization Name</SectionLabel>
                             <input

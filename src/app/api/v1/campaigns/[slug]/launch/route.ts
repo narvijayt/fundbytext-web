@@ -41,6 +41,7 @@ export async function POST(req: NextRequest, ctx: Ctx) {
                         first_name: true,
                         last_name: true,
                         email: true,
+                        profile_photo_url: true,
                         invite_token: true,
                         roles: { select: { role: true } },
                         user_id: true,
@@ -173,6 +174,7 @@ export async function POST(req: NextRequest, ctx: Ctx) {
                         last_name:     p.last_name,
                         email:         p.email,
                         password_hash,
+                        profile_photo_url: p.profile_photo_url ?? null,
                     },
                 });
                 await prisma.campaignMember.update({

@@ -1,5 +1,5 @@
 // GET    /api/v1/campaigns/:slug/members/:memberId — view member details (organizer)
-// PATCH  /api/v1/campaigns/:slug/members/:memberId — update phone / can_upload_photo (organizer)
+// PATCH  /api/v1/campaigns/:slug/members/:memberId — update name / contact / target_donors (organizer)
 // DELETE /api/v1/campaigns/:slug/members/:memberId — remove participant (organizer, not self)
 
 import { NextRequest, NextResponse } from "next/server";
@@ -67,9 +67,12 @@ export async function GET(req: NextRequest, ctx: Ctx) {
 // ── PATCH ─────────────────────────────────────────────────────────────────────
 
 const patchSchema = z.object({
-    target_donors: z.number().int().min(0).optional(),
-    first_name:    z.string().min(1).max(100).optional(),
-    last_name:     z.string().min(1).max(100).optional(),
+    target_donors:     z.number().int().min(0).optional(),
+    first_name:        z.string().min(1).max(100).optional(),
+    last_name:         z.string().min(1).max(100).optional(),
+    email:             z.string().email().max(255).transform(s => s.toLowerCase().trim()).nullable().optional(),
+    phone:             z.string().max(20).nullable().optional(),
+    profile_photo_url: z.string().url().max(2048).nullable().optional(),
 });
 
 export async function PATCH(req: NextRequest, ctx: Ctx) {
@@ -86,14 +89,45 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
     if (!parsed.success) return NextResponse.json({ error: "Invalid data" }, { status: 422 });
 
     const updateData: Record<string, unknown> = {};
-    if (parsed.data.target_donors !== undefined) updateData.target_donors = parsed.data.target_donors;
-    if (parsed.data.first_name    !== undefined) updateData.first_name    = parsed.data.first_name.trim();
-    if (parsed.data.last_name     !== undefined) updateData.last_name     = parsed.data.last_name.trim();
+    if (parsed.data.target_donors     !== undefined) updateData.target_donors     = parsed.data.target_donors;
+    if (parsed.data.first_name        !== undefined) updateData.first_name        = parsed.data.first_name.trim();
+    if (parsed.data.last_name         !== undefined) updateData.last_name         = parsed.data.last_name.trim();
+    if (parsed.data.phone             !== undefined) updateData.phone             = parsed.data.phone?.trim() || null;
+    if (parsed.data.profile_photo_url !== undefined) updateData.profile_photo_url = parsed.data.profile_photo_url;
+    if (parsed.data.email             !== undefined) {
+        // Editing the email must not collide with another member in the same campaign
+        // (the campaign_id + email pair is unique).
+        if (parsed.data.email) {
+            const clash = await prisma.campaignMember.findUnique({
+                where:  { campaign_id_email: { campaign_id: c.campaign.id, email: parsed.data.email } },
+                select: { id: true },
+            });
+            if (clash && clash.id !== c.memberId) {
+                return NextResponse.json(
+                    { error: "A participant with this email is already in the campaign." },
+                    { status: 409 }
+                );
+            }
+        }
+        updateData.email = parsed.data.email;
+    }
 
     await prisma.campaignMember.updateMany({
         where: { id: c.memberId, campaign_id: c.campaign.id },
         data:  updateData,
     });
+
+    // Keep the participant's user account in sync — the member photo IS their
+    // account profile photo (they can change it later from their dashboard).
+    if (parsed.data.profile_photo_url !== undefined) {
+        const target = c.campaign.members.find((m) => m.id === c.memberId);
+        if (target?.user_id) {
+            await prisma.user.update({
+                where: { id: target.user_id },
+                data:  { profile_photo_url: parsed.data.profile_photo_url },
+            }).catch(() => {});
+        }
+    }
 
     return NextResponse.json({ ok: true });
 }

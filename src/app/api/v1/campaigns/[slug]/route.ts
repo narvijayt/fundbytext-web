@@ -127,6 +127,7 @@ const patchSchema = z.object({
     background_theme: z.nativeEnum(BackgroundTheme).optional(),
     accent_color:     z.string().regex(/^#[0-9a-fA-F]{6}$/).optional().nullable(),
     secondary_color:  z.string().regex(/^#[0-9a-fA-F]{6}$/).optional().nullable(),
+    tertiary_color:   z.string().regex(/^#[0-9a-fA-F]{6}$/).optional().nullable(),
     media:            z.array(mediaItemSchema).optional(),
 
     // Step 6 — Thank You

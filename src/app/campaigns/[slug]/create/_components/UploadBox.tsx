@@ -3,21 +3,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import Image from "next/image";
-
-/* The 12-segment loader exported 1:1 from the Figma design, rotated one
-   segment at a time so the bright head sweeps around. */
-function Spinner() {
-    return (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-            src="/assets/campaigns/loader-spinner.svg"
-            alt="Uploading"
-            role="status"
-            className="w-9 h-9 sm:w-10 sm:h-10"
-            style={{ animation: "loaderSpin 1s steps(12) infinite" }}
-        />
-    );
-}
+import { Loader } from "./ui";
 
 /* Shimmering skeleton placeholder shown while a photo is still loading. */
 function Skeleton() {
@@ -179,24 +165,26 @@ export default function UploadBox({
 
             {uploading ? (
                 <div className="flex h-full w-full items-center justify-center rounded-xl bg-[#f4f8f9] border-2 border-dashed border-[#d4dee7]">
-                    <Spinner />
+                    <Loader className="w-9 h-9 sm:w-10 sm:h-10" />
                 </div>
             ) : url ? (
                 <>
+                    {/* Skeleton sits BEHIND the image as a placeholder. The image
+                    renders on top at full opacity, so it appears the instant the
+                    browser can paint it (and immediately for cached/CDN photos via
+                    the ref check) — no waiting for a full-load fade, which made the
+                    card look half-finished while photos streamed in. */}
                     {!imgLoaded && <Skeleton />}
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
-                        // Cached/complete images (e.g. CDN photos when editing) may
-                        // finish loading before React attaches onLoad — detect that
-                        // via the ref so the image shows and the edit badge stays
-                        // clickable instead of being stuck behind the skeleton.
                         ref={(el) => { if (el && el.complete && el.naturalWidth > 0 && loadedUrl !== url) setLoadedUrl(url); }}
                         src={url}
                         alt=""
                         decoding="async"
+                        fetchPriority="high"
                         onLoad={() => setLoadedUrl(url)}
                         onError={() => setLoadedUrl(url)}
-                        className={`h-full w-full rounded-xl object-cover transition-opacity duration-300 ${imgLoaded ? "opacity-100" : "opacity-0"}`}
+                        className="relative z-[1] h-full w-full rounded-xl object-cover"
                     />
                     <button
                         ref={badgeRef}
