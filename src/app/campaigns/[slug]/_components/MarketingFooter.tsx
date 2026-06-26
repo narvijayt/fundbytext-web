@@ -2,7 +2,14 @@ import Image from "next/image";
 import Link from "next/link";
 
 const A = "/assets/marketing";
-const NAV_LINKS = ["Browse Campaigns", "How It Works", "FAQs", "Resources", "About Us", "Help & Support"];
+const NAV_LINKS = [
+    { label: "Browse Campaigns", href: "#" },
+    { label: "How It Works", href: "/how-it-works" },
+    { label: "FAQs", href: "#" },
+    { label: "Resources", href: "#" },
+    { label: "About Us", href: "/about" },
+    { label: "Help & Support", href: "/contact" },
+];
 
 /* ── Footer — white info card + accent CTA card on midnight blue. ── */
 export default function MarketingFooter({ accent }: { accent: string }) {
@@ -18,7 +25,7 @@ export default function MarketingFooter({ accent }: { accent: string }) {
                         <div className="flex w-full md:flex-1 flex-col gap-[24px] items-start min-w-0">
                             <p className="font-black text-[12px] text-[#aeb5bd] tracking-[1px] uppercase leading-none w-full">navigate</p>
                             <div className="flex flex-col gap-[12px] items-start w-full font-normal text-[16px] text-[#003060]" style={{ lineHeight: 1.4 }}>
-                                {NAV_LINKS.map((link) => <Link key={link} href="/" className="w-full hover:underline">{link}</Link>)}
+                                {NAV_LINKS.map((link) => <Link key={link.label} href={link.href} className="w-full hover:underline">{link.label}</Link>)}
                             </div>
                         </div>
                         <div className="flex w-full md:flex-1 flex-col gap-[24px] items-start min-w-0">
@@ -58,7 +65,7 @@ export default function MarketingFooter({ accent }: { accent: string }) {
                         <Link href="/campaigns/create" className="bg-[#f47435] flex gap-[8px] items-center justify-center px-[24px] py-[20px] rounded-[12px] w-full transition-opacity hover:opacity-90" style={{ boxShadow: "0px 20px 20px 0px rgba(234,103,37,0.2), 0px 20px 40px 0px rgba(244,116,53,0.2)" }}>
                             <span className="font-black text-[12px] text-white tracking-[1px] uppercase leading-none whitespace-nowrap">Get Started for Free</span>
                         </Link>
-                        <Link href="/" className="border border-[rgba(255,255,255,0.2)] flex gap-[8px] items-center justify-center px-[24px] py-[20px] rounded-[12px] w-full transition-colors hover:bg-white/10">
+                        <Link href="/how-it-works" className="border border-[rgba(255,255,255,0.2)] flex gap-[8px] items-center justify-center px-[24px] py-[20px] rounded-[12px] w-full transition-colors hover:bg-white/10">
                             <span className="font-black text-[12px] text-white tracking-[1px] uppercase leading-none whitespace-nowrap">See how it works</span>
                         </Link>
                     </div>
@@ -67,7 +74,7 @@ export default function MarketingFooter({ accent }: { accent: string }) {
 
             <div className="flex flex-col gap-[4px] items-start md:flex-row md:items-center md:justify-between px-[8px] w-full max-w-[1152px] font-normal text-[14px] text-white leading-none">
                 <p style={{ lineHeight: 1.25 }}>© FundbyText 2026 — All Rights Reserved.</p>
-                <p className="md:text-right" style={{ lineHeight: 1.25 }}>Privacy. Terms &amp; Conditions.</p>
+                <p className="md:text-right" style={{ lineHeight: 1.25 }}><Link href="/privacy" className="hover:underline">Privacy.</Link> <Link href="/terms" className="hover:underline">Terms &amp; Conditions.</Link></p>
             </div>
         </div>
     );

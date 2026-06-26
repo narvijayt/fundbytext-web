@@ -9,7 +9,7 @@ import SidebarCampaignsDropdown from "./SidebarCampaignsDropdown";
 import NewCampaignButton from "../dashboard/_components/NewCampaignButton";
 
 export default async function Sidebar({ user }: { user: AuthUser }) {
-    const [memberships, orgCampaign] = await Promise.all([
+    const [memberships, orgCampaign, unreadContacts] = await Promise.all([
         prisma.campaignMember.findMany({
             where: {
                 user_id: user.id,
@@ -29,6 +29,9 @@ export default async function Sidebar({ user }: { user: AuthUser }) {
             select: { campaign: { select: { org_display_name: true } } },
             orderBy: { created_at: "desc" },
         }),
+        user.role === "admin"
+            ? prisma.contactSubmission.count({ where: { is_read: false } })
+            : Promise.resolve(0),
     ]);
 
     const activeCampaigns = memberships.map((m) => ({
@@ -129,6 +132,18 @@ export default async function Sidebar({ user }: { user: AuthUser }) {
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                             </svg>
                             Organizations
+                        </Link>
+                        <Link
+                            href="/admin/contact"
+                            className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-[#0268c0] hover:bg-[#0268c0]/8 text-sm font-medium transition-colors"
+                        >
+                            <svg className="w-4.5 h-4.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                            </svg>
+                            <span className="flex-1">Contact</span>
+                            {unreadContacts > 0 && (
+                                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-[#f47435] text-white min-w-[18px] text-center">{unreadContacts}</span>
+                            )}
                         </Link>
                     </>
                 )}

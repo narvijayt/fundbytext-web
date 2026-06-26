@@ -421,3 +421,19 @@ model CampaignNotification {
 
     @@map("campaign_notifications")
 }
+
+// Contact-form submissions from the public /contact page. Emailed to the
+// site contact inbox and viewable by admins.
+model ContactSubmission {
+    id           String   @id @default(uuid()) @db.Uuid
+    inquiry_type String   @db.VarChar(60)
+    first_name   String   @db.VarChar(100)
+    last_name    String   @db.VarChar(100)
+    email        String   @db.VarChar(255)
+    message      String   @db.Text
+    is_read      Boolean  @default(false)
+    created_at   DateTime @default(now()) @db.Timestamptz(3)
+
+    @@index([created_at])
+    @@map("contact_submissions")
+}

@@ -452,7 +452,7 @@ export default async function HomePage() {
                         backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20'%3E%3Crect width='2' height='2' fill='rgba(33%2C150%2C253%2C0.14)'/%3E%3C/svg%3E")`,
                         backgroundRepeat: "repeat",
                     }}>
-                        <div className="grid grid-cols-2 lg:flex lg:items-center lg:justify-center divide-x divide-y lg:divide-y-0 divide-[#eaeef3]/60">
+                        <div className="grid grid-cols-2 md:flex md:items-center md:justify-center">
                             {[
                                 { img: A_STAT_CAMPAIGNS, imgH: 96, imgW: 80,  smH: 60, smW: 50, value: "200+",             label: "Campaigns Launched" },
                                 { img: A_STAT_GOALS,     imgH: 70, imgW: 77,  smH: 44, smW: 48, value: "97%",              label: "Goals Met" },
@@ -460,7 +460,7 @@ export default async function HomePage() {
                                 { img: A_STAT_RAISED,    imgH: 88, imgW: 82,  smH: 55, smW: 52, value: totalRaisedDisplay, label: "Raised & Counting" },
                             ].map((s) => (
                                 <div key={s.label}
-                                    className="flex items-center gap-3 lg:gap-5 px-4 lg:px-8 py-3 lg:py-4 lg:min-w-[230px] xl:min-w-[260px]">
+                                    className="flex items-center gap-3 md:gap-3 lg:gap-5 px-4 md:px-3 lg:px-8 py-3 lg:py-4 lg:min-w-[230px] xl:min-w-[260px]">
                                     <div className="shrink-0">
                                         <img alt="" src={s.img} className="object-contain lg:hidden"
                                             style={{ width: s.smW, height: s.smH }} />
@@ -485,16 +485,17 @@ export default async function HomePage() {
                 <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-[144px]">
                     <div className="flex flex-col items-center gap-4 mb-10 lg:mb-16">
                         <SectionBadge label="HOW it works" />
-                        <h2 className="font-black text-[#003060] text-3xl sm:text-4xl lg:text-5xl leading-[1.1] text-center">
+                        <h2 className="font-black text-[#003060] text-3xl sm:text-4xl lg:text-[56px] lg:tracking-[-1px] leading-[1.1] text-center">
                             Fundraising made easy
                         </h2>
                     </div>
 
-                    <div className="flex flex-col lg:flex-row items-center gap-10 lg:gap-16">
+                    <div className="flex flex-col md:flex-row items-center gap-10 md:gap-8 lg:gap-16">
 
-                        {/* Phone mockup — desktop only. Sits on a blue panel with a coded
-                            dot grid + faint "F" watermark + a soft chevron (all CSS/SVG). */}
-                        <div className="hidden lg:flex relative flex-none w-[536px] items-center justify-center" style={{ height: 623 }}>
+                        {/* Phone mockup — visible at all breakpoints (stacked above on mobile,
+                            left of the list on tablet, side-by-side on desktop). Sits on a blue
+                            panel with a coded dot grid + faint "F" watermark + a soft chevron. */}
+                        <div className="flex relative flex-none w-full max-w-[340px] md:max-w-[300px] lg:w-[536px] lg:max-w-none items-center justify-center h-[580px] lg:h-[623px]">
                             <div className="absolute inset-0 overflow-hidden rounded-[32px]"
                                 style={{ background: "linear-gradient(155deg,#0a6fd0 0%,#0257ad 60%,#024a96 100%)" }}>
                                 {/* dot grid */}
@@ -610,17 +611,22 @@ export default async function HomePage() {
 
                         {/* Steps list */}
                         <div className="flex-1 flex flex-col gap-0 w-full">
-                            <div className="space-y-0">
+                            <div className="space-y-0 w-full">
                                 {STEPS.map((s, i) => (
                                     <div key={s.n}
-                                        className={`flex items-start gap-4 py-4 lg:py-5 ${i < STEPS.length - 1 ? "border-b border-[#eaeef3]" : ""}`}>
-                                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${i === 0 ? "bg-[#003060] text-white" : "bg-[#f2f2f2] text-[#7e8a96]"}`}>
+                                        className={`relative flex items-start gap-4 py-4 lg:py-5 ${i < STEPS.length - 1 && i !== 0 ? "border-b border-[#eaeef3]" : ""}`}>
+                                        <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${i === 0 ? "bg-[#28c45d] text-white shadow-[0_12px_32px_-2px_#28C45D99,0_4px_8px_-2px_#28C45D99]" : "bg-[#f2f2f2] text-[#7e8a96]"}`}>
                                             <StepIcon icon={s.icon} />
                                         </div>
                                         <div className="flex-1 pt-1">
-                                            <p className={`font-black text-base ${i === 0 ? "text-[#003060]" : "text-[#aeb5bd]"}`}>{s.title}</p>
+                                            <p className={`font-black text-base ${i === 0 ? "text-[#0278de]" : "text-[#aeb5bd]"}`}>{s.title}</p>
                                             {i === 0 && <p className="text-[#7e8a96] text-sm leading-relaxed mt-1">{s.desc}</p>}
                                         </div>
+                                        {/* Green→gray progress line under the active step (Figma) */}
+                                        {i === 0 && (
+                                            <div className="absolute bottom-0 left-0 right-0 h-[2px] rounded-full"
+                                                style={{ background: "linear-gradient(to right,#28c45d 0%,#28c45d 58%,#eaeef3 58%,#eaeef3 100%)" }} />
+                                        )}
                                     </div>
                                 ))}
                             </div>
@@ -642,9 +648,9 @@ export default async function HomePage() {
                 <div className="relative rounded-[40px] sm:rounded-[60px] lg:rounded-[100px] overflow-hidden py-8 lg:py-11 shadow-[0_12px_24px_-12px_rgba(0,48,96,0.6),0_30px_60px_-12px_rgba(0,48,96,0.2)]"
                     style={{ background: "#003060" }}>
                     {/* Fade edges — desktop only */}
-                    <div className="hidden lg:block absolute left-0 top-0 bottom-0 w-[160px] pointer-events-none z-10"
+                    <div className="hidden lg:block absolute left-0 top-0 bottom-0 w-[400px] pointer-events-none z-10"
                         style={{ background: "linear-gradient(to right,#003060,transparent)" }} />
-                    <div className="hidden lg:block absolute right-0 top-0 bottom-0 w-[160px] pointer-events-none z-10"
+                    <div className="hidden lg:block absolute right-0 top-0 bottom-0 w-[400px] pointer-events-none z-10"
                         style={{ background: "linear-gradient(to left,#003060,transparent)" }} />
                     <div className="overflow-x-auto lg:overflow-visible px-6 sm:px-12 lg:px-20"
                         style={{ WebkitOverflowScrolling: "touch" }}>
@@ -667,7 +673,7 @@ export default async function HomePage() {
             {/* ═══════════════════════════════════════════════════════════
                 VIDEO
             ═══════════════════════════════════════════════════════════ */}
-            <section className="relative overflow-hidden rounded-tl-[32px] rounded-tr-[32px] lg:rounded-tl-[64px] lg:rounded-tr-[64px] pt-14 lg:pt-28 pb-14 lg:pb-20 px-4 sm:px-6 lg:px-[144px] flex flex-col items-center gap-8 lg:gap-12"
+            <section className="relative overflow-hidden rounded-tl-[32px] rounded-tr-[32px] lg:rounded-tl-[64px] lg:rounded-tr-[64px] pt-10 md:pt-20 lg:pt-28 pb-10 lg:pb-20 px-4 sm:px-6 lg:px-[144px] flex flex-col items-center gap-8 lg:gap-12"
                 style={{ background: "linear-gradient(to bottom,#2196fd 0%,#ffffff 57.6%)" }}>
                 {/* Soft ellipse glow (coded radial blur) behind the heading */}
                 <div className="absolute left-1/2 -translate-x-1/2 -top-40 w-[1400px] h-[700px] rounded-[50%] pointer-events-none"
@@ -675,12 +681,12 @@ export default async function HomePage() {
                 {/* Film grain (coded feTurbulence, not a raster image) */}
                 <div className="absolute inset-0 mix-blend-overlay opacity-20 pointer-events-none"
                     style={{ backgroundImage: NOISE_URI, backgroundRepeat: "repeat" }} />
-                <h2 className="relative z-10 font-black text-3xl sm:text-4xl lg:text-5xl leading-none tracking-[-1px] text-center bg-clip-text text-transparent w-full"
+                <h2 className="relative z-10 font-black text-[32px] md:text-[46px] lg:text-[56px] leading-none tracking-[-1px] text-center text-[#003060] lg:text-transparent lg:bg-clip-text w-full"
                     style={{ backgroundImage: "linear-gradient(172deg,rgb(38,91,145) 30.5%,rgb(0,48,96) 69.5%)" }}>
                     See How It Works
                 </h2>
-                <div className="relative z-10 w-full rounded-2xl lg:rounded-3xl overflow-hidden shadow-[0_20px_20px_-14px_rgba(2,104,192,0.2),0_40px_40px_-16px_rgba(2,104,192,0.2)]"
-                    style={{ maxWidth: 1152, aspectRatio: "16/9", background: "#f2f2f2" }}>
+                <div className="relative z-10 w-full h-[377px] md:h-[500px] rounded-2xl lg:rounded-3xl overflow-hidden shadow-[0_20px_20px_-14px_rgba(2,104,192,0.2),0_40px_40px_-16px_rgba(2,104,192,0.2)]"
+                    style={{ maxWidth: 1152, background: "#f2f2f2" }}>
                     <img alt="FundByText in action" src={A_VID_THUMB}
                         className="absolute w-full h-full object-cover pointer-events-none" />
                     <div className="absolute inset-0 flex items-center justify-center">
@@ -701,7 +707,7 @@ export default async function HomePage() {
                 <div className="max-w-[1632px] mx-auto px-4 sm:px-6 lg:px-[144px] mb-10 lg:mb-20">
                     <div className="flex flex-col items-center gap-4">
                         <SectionBadge label="what's the difference?" />
-                        <h2 className="font-black text-[#003060] text-3xl sm:text-4xl lg:text-5xl leading-[1.1] text-center">
+                        <h2 className="font-black text-[#003060] text-3xl sm:text-4xl lg:text-[56px] lg:tracking-[-1px] leading-[1.1] text-center">
                             Organization vs. Individual
                         </h2>
                         <p className="text-[#2f3a45] text-base lg:text-lg text-center max-w-[1152px]">
@@ -783,7 +789,7 @@ export default async function HomePage() {
                 <div className="max-w-[1632px] mx-auto px-4 sm:px-6 lg:px-[144px] pb-16 lg:pb-24">
                     <div className="flex flex-col items-center gap-4 mb-10 lg:mb-16">
                         <SectionBadge label="real stories" />
-                        <h2 className="font-black text-[#003060] text-3xl sm:text-4xl lg:text-5xl leading-[1.1] text-center">
+                        <h2 className="font-black text-[#003060] text-3xl sm:text-4xl lg:text-[56px] lg:tracking-[-1px] leading-[1.1] text-center">
                             How people use FundbyText
                         </h2>
                     </div>
@@ -810,9 +816,9 @@ export default async function HomePage() {
                             </div>
                         ))}
                     </div>
-                    <div className="flex items-center justify-center gap-6 mt-8">
-                        <div className="w-6 h-2 rounded-full bg-[#003060]" />
+                    <div className="flex items-center justify-center gap-4 mt-8">
                         <div className="w-2 h-2 rounded-full bg-[#eaeef3]" />
+                        <div className="w-6 h-2 rounded-full bg-[#003060]" />
                         <div className="w-2 h-2 rounded-full bg-[#eaeef3]" />
                         <div className="w-2 h-2 rounded-full bg-[#eaeef3]" />
                         <div className="w-2 h-2 rounded-full bg-[#eaeef3]" />
@@ -826,10 +832,10 @@ export default async function HomePage() {
                     <div className="absolute right-1/4 top-20 w-[400px] h-[300px] rounded-full bg-[#0268c0]/15 blur-3xl pointer-events-none" />
                     <div className="max-w-[1632px] mx-auto px-4 sm:px-6 lg:px-[144px] relative z-10">
                         <div className="flex flex-col items-center gap-4 lg:gap-6 py-16 lg:py-28">
-                            <h2 className="font-black text-[#003060] text-4xl sm:text-5xl lg:text-6xl leading-[1.1] text-center">
+                            <h2 className="font-black text-[#003060] text-4xl sm:text-5xl lg:text-[56px] lg:tracking-[-1px] leading-[1.1] text-center">
                                 Ready to Inspire?
                             </h2>
-                            <p className="font-bold text-[#003060] text-lg lg:text-2xl text-center">
+                            <p className="font-normal text-[#2f3a45] text-lg lg:text-[22px] text-center">
                                 Start Your FundbyText Campaign Today.
                             </p>
                             <Link href="/campaigns/create"
@@ -846,8 +852,8 @@ export default async function HomePage() {
             {/* ═══════════════════════════════════════════════════════════
                 FOOTER
             ═══════════════════════════════════════════════════════════ */}
-            <footer style={{ background: "#00224a" }} className="px-4 sm:px-6 lg:px-10 pt-14 lg:pt-24 pb-8">
-                <div className="max-w-[1280px] mx-auto flex flex-col lg:flex-row gap-5">
+            <footer style={{ background: "#003060" }} className="px-4 sm:px-6 lg:px-10 pt-14 lg:pt-24 pb-8">
+                <div className="max-w-[1280px] mx-auto flex flex-col-reverse lg:flex-row gap-5">
 
                     {/* Left — white card */}
                     <div className="flex-1 bg-white rounded-[24px] p-7 sm:p-10 lg:p-12">
@@ -908,7 +914,7 @@ export default async function HomePage() {
 
                     {/* Right — blue CTA card with coded F watermark */}
                     <div className="relative overflow-hidden rounded-[24px] p-8 lg:p-10 flex flex-col shrink-0 w-full lg:w-[340px]"
-                        style={{ background: "linear-gradient(155deg,#0a6fd0 0%,#0257ad 100%)" }}>
+                        style={{ background: "#0268c0" }}>
                         <div className="absolute inset-0 pointer-events-none"
                             style={{ backgroundImage: fWatermarkUri(0.07), backgroundRepeat: "repeat", backgroundSize: "200px 200px" }} />
                         <div className="relative z-10 flex flex-col h-full">
@@ -917,7 +923,7 @@ export default async function HomePage() {
                             <div className="mt-auto space-y-3">
                                 <Link href="/campaigns/create"
                                     className="flex items-center justify-center w-full py-3.5 rounded-[14px] text-white font-black text-xs tracking-[1px] uppercase transition hover:brightness-105"
-                                    style={{ background: "#ea6725" }}>
+                                    style={{ background: "#f47435" }}>
                                     Get Started for Free
                                 </Link>
                                 <Link href="/how-it-works"

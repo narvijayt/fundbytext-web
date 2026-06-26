@@ -411,3 +411,46 @@ export async function sendDonorInviteEmail({
         `),
     });
 }
+
+// ── Contact form submission (sent to the site contact inbox) ─────────────────
+
+export async function sendContactEmail({
+    to,
+    inquiryType,
+    firstName,
+    lastName,
+    email,
+    message,
+}: {
+    to: string;
+    inquiryType: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    message: string;
+}) {
+    await transporter.sendMail({
+        from,
+        to,
+        replyTo: `"${firstName} ${lastName}" <${email}>`,
+        subject: `New contact form submission — ${inquiryType}`,
+        html: emailLayout(`
+            <h2 style="margin:0 0 6px;font-size:22px;font-weight:700;color:#1e293b">New contact form submission</h2>
+            <p style="margin:0 0 24px;font-size:15px;color:#475569;line-height:1.6">
+                Someone reached out through the FundByText contact form.
+            </p>
+            <table cellpadding="0" cellspacing="0" width="100%" style="margin-bottom:24px">
+              <tr><td style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:20px 24px">
+                <p style="margin:0 0 4px;font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:1px">Inquiry Type</p>
+                <p style="margin:0 0 16px;font-size:16px;font-weight:700;color:#1e293b">${inquiryType}</p>
+                <p style="margin:0 0 4px;font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:1px">Name</p>
+                <p style="margin:0 0 16px;font-size:16px;font-weight:600;color:#1e293b">${firstName} ${lastName}</p>
+                <p style="margin:0 0 4px;font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:1px">Email</p>
+                <p style="margin:0;font-size:16px;font-weight:600;color:#1d4ed8"><a href="mailto:${email}" style="color:#1d4ed8;text-decoration:none">${email}</a></p>
+              </td></tr>
+            </table>
+            <p style="margin:0 0 8px;font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:1px">Message</p>
+            <p style="margin:0;font-size:15px;color:#374151;line-height:1.7;border-left:4px solid #f97316;padding-left:16px;white-space:pre-wrap">${message.replace(/[<>&]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;" }[c] as string))}</p>
+        `),
+    });
+}

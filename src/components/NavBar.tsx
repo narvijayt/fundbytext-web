@@ -108,11 +108,11 @@ export default function NavBar({ user }: { user: { id: string } | null }) {
                         <ul>
                             {[
                                 { href: "/",              label: "Home" },
-                                { href: "#how-it-works",  label: "How It Works" },
+                                { href: "/how-it-works",  label: "How It Works" },
                                 { href: "#",              label: "Browse Campaigns" },
                                 { href: "#",              label: "FAQs" },
                                 { href: "#",              label: "Resources" },
-                                { href: "#",              label: "About Us" },
+                                { href: "/about",         label: "About Us" },
                                 { href: "#",              label: "Help & Support" },
                             ].map(item => (
                                 <li key={item.label}>

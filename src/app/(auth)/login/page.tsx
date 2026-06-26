@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import AuthField from "../_components/AuthField";
+import CampaignCardsRow from "../_components/CampaignCardsRow";
 
 const schema = z.object({
     email: z.string().email("Enter a valid email"),
@@ -44,79 +46,70 @@ export default function LoginPage() {
     }
 
     return (
-        <div className="w-full max-w-md bg-white rounded-2xl shadow-lg p-8">
-            <div className="mb-6 text-center">
-                <h1 className="text-2xl font-black text-gray-900">
-                    Login to your <span className="underline decoration-orange-500">account!</span>
+        <>
+            <div className="w-full max-w-[502px] bg-white border border-[#eaeef3] rounded-[24px] p-7 sm:p-10 lg:p-14 flex flex-col gap-8 lg:gap-10 shadow-[0_30px_60px_-20px_rgba(0,48,96,0.25)]">
+            {/* Title */}
+            <div className="flex flex-col items-center gap-4">
+                <h1 className="text-[28px] sm:text-[32px] font-black text-[#003060] tracking-[-1px] text-center leading-[1.15]">
+                    Login to your{" "}
+                    <span className="relative inline-block">
+                        account<span className="font-normal text-[#f47435]">!</span>
+                        <img alt="" src="/figma/underline.svg" className="absolute left-0 -bottom-2.5 w-full h-auto pointer-events-none" />
+                    </span>
                 </h1>
-                <p className="text-sm text-gray-500 mt-1">
+                <p className="text-[#003060] text-base sm:text-lg text-center leading-[1.4]">
                     Welcome back! Login to access your account.
                 </p>
             </div>
 
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-                <div>
-                    <label className="block text-xs font-semibold text-gray-600 mb-1 uppercase tracking-wide">
-                        Email <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                        {...register("email")}
-                        type="email"
-                        placeholder="hello@website.com"
-                        className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400"
-                    />
-                    {errors.email && (
-                        <p className="text-xs text-red-500 mt-1">{errors.email.message}</p>
-                    )}
-                </div>
-
-                <div>
-                    <div className="flex justify-between items-center mb-1">
-                        <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                            Password <span className="text-red-500">*</span>
-                        </label>
-                        <Link
-                            href="/forgot-password"
-                            className="text-xs text-gray-500 hover:text-sky-600"
-                        >
-                            Forgot password?
-                        </Link>
+            {/* Form */}
+            <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-8 lg:gap-10 w-full">
+                <div className="flex flex-col gap-4 w-full">
+                    <div className="flex flex-col gap-6 w-full">
+                        <AuthField
+                            label="Email" icon="mail" type="email" autoComplete="email"
+                            placeholder="hello@website.com"
+                            error={errors.email?.message}
+                            {...register("email")}
+                        />
+                        <AuthField
+                            label="Password" icon="lock" type="password" autoComplete="current-password"
+                            placeholder="Min. 6 characters"
+                            error={errors.password?.message}
+                            rightSlot={
+                                <Link href="/forgot-password" className="text-[14px] font-medium text-[#8f98a3] hover:text-[#0268c0] transition-colors whitespace-nowrap">
+                                    Forgot password?
+                                </Link>
+                            }
+                            {...register("password")}
+                        />
                     </div>
-                    <input
-                        {...register("password")}
-                        type="password"
-                        placeholder="Min. 6 characters"
-                        className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400"
-                    />
-                    {errors.password && (
-                        <p className="text-xs text-red-500 mt-1">{errors.password.message}</p>
-                    )}
+
+                    <label className="flex items-center gap-1.5 cursor-pointer w-fit">
+                        <input {...register("remember_me")} type="checkbox" className="w-4 h-4 rounded border-[#d4dee7] accent-[#0268c0]" />
+                        <span className="text-[16px] font-medium text-[#003060]">Remember me</span>
+                    </label>
+
+                    {serverError && <p className="text-sm text-red-500">{serverError}</p>}
                 </div>
 
-                <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
-                    <input {...register("remember_me")} type="checkbox" className="rounded" />
-                    Remember me
-                </label>
-
-                {serverError && (
-                    <p className="text-sm text-red-500">{serverError}</p>
-                )}
-
-                <button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className="w-full bg-orange-500 hover:bg-orange-600 disabled:opacity-60 text-white font-bold py-3 rounded-lg transition-colors tracking-widest uppercase text-sm"
-                >
-                    {isSubmitting ? "Logging in…" : "Log In"}
-                </button>
+                <div className="flex flex-col items-center gap-6 w-full">
+                    <button
+                        type="submit"
+                        disabled={isSubmitting}
+                        className="w-full h-14 rounded-[16px] bg-[#f47435] text-white font-black text-sm tracking-[1px] uppercase shadow-[0px_20px_20px_-14px_rgba(234,103,37,0.2),0px_20px_40px_-16px_rgba(244,116,53,0.2)] hover:brightness-105 disabled:opacity-60 transition"
+                    >
+                        {isSubmitting ? "Logging in…" : "Log In"}
+                    </button>
+                    <p className="text-[16px] text-center">
+                        <span className="font-medium text-[#8f98a3]">New to FundbyText? </span>
+                        <Link href="/campaigns/create" className="font-bold text-[#0268c0] hover:underline">Sign Up</Link>
+                    </p>
+                </div>
             </form>
+            </div>
 
-            <p className="text-center text-sm text-gray-500 mt-6">
-                Want to start a fundraiser?{" "}
-                <Link href="/campaigns/create" className="text-orange-500 font-semibold hover:underline">
-                    Create a Campaign
-                </Link>
-            </p>
-        </div>
+            <CampaignCardsRow />
+        </>
     );
 }
