@@ -871,3 +871,82 @@ export function LockedField({ value, label }: { value: string; label: string }) 
         </div>
     );
 }
+
+/* ── AlertDialog — centered "message + action" modal used for surfacing
+   errors (and other notices) across the campaign-creation flow. Pass an
+   optional `action` to render a primary action button (e.g. "Log In")
+   alongside the dismiss button; otherwise it shows a single "OK" button. ── */
+export function AlertDialog({
+    message,
+    title,
+    onClose,
+    variant = "error",
+    action,
+    dismissLabel = "Dismiss",
+}: {
+    message: string;
+    title?: string;
+    onClose: () => void;
+    variant?: "error" | "info";
+    action?: { label: string; onClick: () => void };
+    dismissLabel?: string;
+}) {
+    const isInfo = variant === "info";
+    return (
+        <div
+            className="fixed inset-0 z-[300] flex items-center justify-center bg-black/30 backdrop-blur-[2px] px-4"
+            onClick={onClose}
+        >
+            <div
+                role="alertdialog"
+                className="w-full max-w-sm rounded-2xl bg-white p-6 text-center shadow-[0px_24px_48px_-12px_rgba(0,48,96,0.35)]"
+                onClick={(e) => e.stopPropagation()}
+            >
+                <div className={`mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full ${isInfo ? "bg-blue-50" : "bg-red-50"}`}>
+                    {isInfo ? (
+                        <svg className="h-6 w-6 text-[#0268c0]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M12 3a9 9 0 110 18A9 9 0 0112 3z" />
+                        </svg>
+                    ) : (
+                        <svg className="h-6 w-6 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v4m0 4h.01M12 3a9 9 0 110 18A9 9 0 0112 3z" />
+                        </svg>
+                    )}
+                </div>
+                {title && <p className="mb-1 text-base font-bold text-[rgba(0,48,96,1)]">{title}</p>}
+                <p className="text-[15px] leading-relaxed text-[rgba(0,48,96,1)]">{message}</p>
+
+                {action ? (
+                    <div className="mt-6 flex flex-col gap-2">
+                        <button
+                            type="button"
+                            onClick={action.onClick}
+                            autoFocus
+                            className="w-full rounded-xl py-3 text-sm font-semibold text-white transition-colors"
+                            style={{ background: "rgba(2,104,192,1)" }}
+                        >
+                            {action.label}
+                        </button>
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="w-full rounded-xl py-3 text-sm font-semibold text-[rgba(2,104,192,1)] hover:bg-[rgba(2,104,192,0.06)] transition-colors"
+                        >
+                            {dismissLabel}
+                        </button>
+                    </div>
+                ) : (
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        autoFocus
+                        className="mt-6 w-full rounded-xl py-3 text-sm font-semibold text-white transition-colors"
+                        style={{ background: "rgba(2,104,192,1)" }}
+                    >
+                        OK
+                    </button>
+                )}
+            </div>
+        </div>
+    );
+}

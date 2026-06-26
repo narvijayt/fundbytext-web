@@ -6,12 +6,13 @@ import { useRouter } from "next/navigation";
 import DeleteCampaignButton from "@/app/(protected)/dashboard/_components/DeleteCampaignButton";
 import { type Campaign, type Payout, type Member, type Donor, type CsvRow, type ImportResult, STEPS } from "./_components/types";
 import { ProgressBar, BottomNav } from "./_components/WizardNav";
-import { PAGE_GRADIENT, VectorWallpaper, StepBanner, Loader } from "./_components/ui";
+import { PAGE_GRADIENT, VectorWallpaper, StepBanner, Loader, AlertDialog } from "./_components/ui";
 import StepDetails      from "./_components/StepDetails";
 import StepFundingGoal  from "./_components/StepFundingGoal";
 import StepVisual       from "./_components/StepVisual";
 import StepParticipants from "./_components/StepParticipants";
 import StepThankYou     from "./_components/StepThankYou";
+import { downscaleImage, DOWNSCALE_PRESETS } from "./_components/downscaleImage";
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -178,6 +179,7 @@ export default function SetupWizard({
     const [maxStep, setMaxStep] = useState(isLaunched ? STEPS.length + 1 : initialStep);
     const [saving, setSaving]       = useState(false);
     const [launching, setLaunching] = useState(false);
+    const [exiting, setExiting]     = useState(false);
     const [alertMsg, setAlertMsg]   = useState<string | null>(null);
     const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
@@ -246,8 +248,12 @@ export default function SetupWizard({
     async function uploadPhoto(file: File, type: string, key?: string): Promise<string | null> {
         setUploadingPhoto(key ?? type);
         try {
+            // Shrink the photo client-side before upload so we never store or
+            // render multi-megapixel originals — that decode/paint cost is what
+            // made this step lag once all photos were added.
+            const optimized = await downscaleImage(file, DOWNSCALE_PRESETS[type as keyof typeof DOWNSCALE_PRESETS] ?? DOWNSCALE_PRESETS.gallery);
             const fd = new FormData();
-            fd.append("photo", file);
+            fd.append("photo", optimized);
             fd.append("type", type);
             const res  = await fetch("/api/v1/upload/campaign-photo", { method: "POST", body: fd });
             const json = await res.json();
@@ -494,8 +500,14 @@ export default function SetupWizard({
     }
 
     async function exitAndSave() {
-        await saveAllDraft();
+        if (exiting) return;
+        setExiting(true);
+        // Wait for the draft to finish saving before leaving — and keep the
+        // loader visible for a beat even when the save is instant, so the user
+        // sees their progress is being saved rather than a jarring redirect.
+        await Promise.all([saveAllDraft(), new Promise((r) => setTimeout(r, 700))]);
         router.push(isEditMode || isLaunched ? `/dashboard/campaigns/${slug}` : "/dashboard");
+        // `exiting` stays true so the loader persists until navigation completes.
     }
 
     async function handleNext() {
@@ -708,8 +720,9 @@ export default function SetupWizard({
     // blob URL, or null on failure. The URL is then stored on the member record.
     async function uploadProfilePhoto(file: File): Promise<string | null> {
         try {
+            const optimized = await downscaleImage(file, DOWNSCALE_PRESETS.profile);
             const fd = new FormData();
-            fd.append("photo", file);
+            fd.append("photo", optimized);
             const res  = await fetch("/api/v1/upload/profile-photo", { method: "POST", body: fd });
             const json = await res.json();
             if (!res.ok) { setAlertMsg(json.error ?? "Photo upload failed."); return null; }
@@ -982,6 +995,7 @@ export default function SetupWizard({
                 step={step}
                 saving={saving}
                 launching={launching}
+                exiting={exiting}
                 uploadingPhoto={uploadingPhoto}
                 isLaunched={isLaunched}
                 onBack={back}
@@ -996,34 +1010,4 @@ export default function SetupWizard({
     );
 }
 
-/* ── AlertDialog — simple centered "message + OK" modal ──────────────────── */
-function AlertDialog({ message, onClose }: { message: string; onClose: () => void }) {
-    return (
-        <div
-            className="fixed inset-0 z-[300] flex items-center justify-center bg-black/30 backdrop-blur-[2px] px-4"
-            onClick={onClose}
-        >
-            <div
-                role="alertdialog"
-                className="w-full max-w-sm rounded-2xl bg-white p-6 text-center shadow-[0px_24px_48px_-12px_rgba(0,48,96,0.35)]"
-                onClick={(e) => e.stopPropagation()}
-            >
-                <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-50">
-                    <svg className="h-6 w-6 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v4m0 4h.01M12 3a9 9 0 110 18A9 9 0 0112 3z" />
-                    </svg>
-                </div>
-                <p className="text-[15px] leading-relaxed text-[rgba(0,48,96,1)]">{message}</p>
-                <button
-                    type="button"
-                    onClick={onClose}
-                    autoFocus
-                    className="mt-6 w-full rounded-xl py-3 text-sm font-semibold text-white transition-colors"
-                    style={{ background: "rgba(2,104,192,1)" }}
-                >
-                    OK
-                </button>
-            </div>
-        </div>
-    );
-}
+/* AlertDialog now lives in ./_components/ui (shared across the create flow). */

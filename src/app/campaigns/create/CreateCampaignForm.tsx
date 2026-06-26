@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { ProgressBar } from "@/app/campaigns/[slug]/create/_components/WizardNav";
-import { QuestionCard, PAGE_GRADIENT, VectorWallpaper, StepBanner, inputCls, inputErrCls } from "@/app/campaigns/[slug]/create/_components/ui";
+import { QuestionCard, PAGE_GRADIENT, VectorWallpaper, StepBanner, inputCls, inputErrCls, AlertDialog } from "@/app/campaigns/[slug]/create/_components/ui";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 
@@ -26,8 +26,20 @@ export default function CreateCampaignForm() {
     const [accountExists, setAccountExists] = useState(false);
     const [nameTaken, setNameTaken] = useState(false);
 
-    const { register, handleSubmit, watch, setValue, formState: { errors, isSubmitting } } =
+    const { register, handleSubmit, watch, setValue, setError, formState: { errors, isSubmitting } } =
         useForm<FormData>({ resolver: zodResolver(schema) });
+
+    // Until a campaign type is picked, the name/info cards aren't mounted — so a
+    // full validation would flag those (undefined) fields with errors that then
+    // surface inside the still-hidden cards. Validate only the type first.
+    function handleNext() {
+        if (!selectedType) {
+            setError("campaign_type", { type: "manual", message: "Please select a campaign type" });
+            scrollToFirstError();
+            return;
+        }
+        handleSubmit(onSubmit, scrollToFirstError)();
+    }
 
     const selectedType = watch("campaign_type");
     const nameVal = watch("name") ?? "";
@@ -127,7 +139,9 @@ export default function CreateCampaignForm() {
                     askBuddyText={
                         selectedType === "organization"
                             ? "Organizational Campaigns are for groups of people, like sports teams, bands, clubs, schools — you name it."
-                            : "Individual Campaigns are for a single person like yourself."
+                            : selectedType === "individual"
+                                ? "Individual Campaigns are for a single person like yourself."
+                                : "Not sure which to pick? Choose an option above and I'll explain what it means!"
                     }
                 >
                     <div>
@@ -267,20 +281,6 @@ export default function CreateCampaignForm() {
                             />
                             {errors.email && <p data-field-error className="text-[9px] sm:text-xs text-red-500 mt-1">{errors.email.message}</p>}
                         </div>
-
-                        {accountExists && (
-                            <div className="rounded-xl bg-blue-50 border border-blue-200 p-4 sm:p-5 text-sm sm:text-base text-blue-800">
-                                <p className="font-semibold mb-1">You already have an account.</p>
-                                <p className="text-blue-600">
-                                    Please{" "}
-                                    <Link href="/login" className="font-semibold underline hover:text-blue-800">log in</Link>
-                                    {" "}to continue creating your campaign.
-                                </p>
-                            </div>
-                        )}
-                        {serverError && (
-                            <p className="text-sm sm:text-base text-red-500">{serverError}</p>
-                        )}
                     </div>
                 </QuestionCard>
 
@@ -306,9 +306,9 @@ export default function CreateCampaignForm() {
                 </Link>
                 <button
                     type="button"
-                    onClick={handleSubmit(onSubmit, scrollToFirstError)}
+                    onClick={handleNext}
                     disabled={isSubmitting}
-                    className="flex items-center justify-center gap-2 transition-colors disabled:opacity-60"
+                    className="flex items-center justify-center gap-2 transition active:scale-[0.96] disabled:opacity-60 disabled:active:scale-100"
                     style={{
                         minWidth: 114, height: 42, borderRadius: 12, paddingLeft: 16, paddingRight: 16,
                         background: "rgba(2, 104, 192, 1)",
@@ -329,6 +329,21 @@ export default function CreateCampaignForm() {
                     )}
                 </button>
             </div>
+
+            {/* Account-exists notice + any server error — surfaced in the shared
+                create-flow modal (same dialog used for errors elsewhere). */}
+            {accountExists && (
+                <AlertDialog
+                    variant="info"
+                    title="You already have an account"
+                    message="An account with this email already exists. Log in to continue creating your campaign."
+                    action={{ label: "Log In", onClick: () => router.push("/login") }}
+                    onClose={() => setAccountExists(false)}
+                />
+            )}
+            {serverError && (
+                <AlertDialog message={serverError} onClose={() => setServerError(null)} />
+            )}
         </div>
     );
 }

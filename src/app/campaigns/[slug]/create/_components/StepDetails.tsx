@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import Image from "next/image";
 import { LockedField, QuestionCard, inputCls, inputErrCls } from "./ui";
-import { CalendarPopover, TimePopover, TimezonePopover, timezoneLabel } from "./DateTimePicker";
+import { CalendarPopover, TimePopover, TimezoneSelector } from "./DateTimePicker";
 import RichTextEditor from "./RichTextEditor";
 
 /* ── helpers ─────────────────────────────────────────────────────────── */
@@ -50,13 +50,6 @@ function ClockSmIcon() {
         <svg className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
             <circle cx="12" cy="12" r="9" />
             <path strokeLinecap="round" d="M12 7v5l3 3" />
-        </svg>
-    );
-}
-function ChevronDownSmIcon() {
-    return (
-        <svg className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
         </svg>
     );
 }
@@ -217,6 +210,17 @@ export default function StepDetails({
     const { date: startD, time: startT } = splitDateTime(startDate);
     const { date: endD,   time: endT   } = splitDateTime(endDate);
 
+    /* Nudge donors toward a longer run: only flag a duration shorter than a
+       full week, and only once both ends of the range are actually picked. */
+    const ONE_WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+    const isShortRun = (() => {
+        if (!startDate || !endDate) return false;
+        const start = new Date(startDate).getTime();
+        const end = new Date(endDate).getTime();
+        if (Number.isNaN(start) || Number.isNaN(end)) return false;
+        return end > start && end - start < ONE_WEEK_MS;
+    })();
+
     /* Date & time are stored together as one datetime-local string, so neither
        can stand alone. To let the time be set before a date (and vice-versa):
        picking a date fills in the default time if none was chosen yet, and
@@ -299,7 +303,7 @@ export default function StepDetails({
                 title="How long will your campaign last?"
                 icon="/assets/campaigns/question-calendar.svg"
                 description="Choose a start and end date to keep your campaign on track. You can always extend it later if needed!"
-                askBuddyText="Hey there, I saw you're doing something unusual, we recommend campaigns run for at least a week to give your donors time to donate!"
+                askBuddyText={isShortRun ? "Hey there, I saw you're doing something unusual, we recommend campaigns run for at least a week to give your donors time to donate!" : undefined}
             >
                 <div className="space-y-4 sm:space-y-6">
                     {/* Start ── End date row */}
@@ -385,24 +389,11 @@ export default function StepDetails({
                         </p>
                     )}
 
-                    {/* Timezone — same field style as the date/time pickers */}
+                    {/* Timezone — full-width selectable cards instead of a dropdown */}
                     <div>
-                        <PickerField
-                            label="Timezone"
-                            value={timezone}
-                            displayValue={timezoneLabel(timezone)}
-                            placeholder="Select timezone"
-                            icon={<ChevronDownSmIcon />}
-                            renderPopover={(ref, close) => (
-                                <TimezonePopover
-                                    value={timezone}
-                                    anchorRef={ref}
-                                    onSelect={setTimezone}
-                                    onClose={close}
-                                />
-                            )}
-                        />
-                        <p className="text-[9px] sm:text-xs text-gray-400 mt-1 sm:mt-1.5">All dates above are interpreted in this timezone.</p>
+                        <label className="block text-[12px] font-semibold text-gray-500 mb-2 sm:mb-2.5 uppercase tracking-[1px]">Timezone</label>
+                        <TimezoneSelector value={timezone} onSelect={setTimezone} disabled={isCompleted} />
+                        <p className="text-[9px] sm:text-xs text-gray-400 mt-2 sm:mt-2.5">All dates above are interpreted in this timezone.</p>
                     </div>
                 </div>
             </QuestionCard>

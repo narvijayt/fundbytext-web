@@ -22,8 +22,20 @@ export default function AuthCreateCampaignForm() {
     const [serverError, setServerError] = useState<string | null>(null);
     const [nameTaken, setNameTaken] = useState(false);
 
-    const { register, handleSubmit, watch, setValue, formState: { errors, isSubmitting } } =
+    const { register, handleSubmit, watch, setValue, setError, formState: { errors, isSubmitting } } =
         useForm<FormData>({ resolver: zodResolver(schema) });
+
+    // Until a campaign type is picked, the name card isn't mounted — so a full
+    // validation would flag that (undefined) field with an error that then
+    // surfaces inside the still-hidden card. Validate only the type first.
+    function handleNext() {
+        if (!selectedType) {
+            setError("campaign_type", { type: "manual", message: "Please select a campaign type" });
+            scrollToFirstError();
+            return;
+        }
+        handleSubmit(onSubmit, scrollToFirstError)();
+    }
 
     const selectedType = watch("campaign_type");
     const nameVal = watch("name") ?? "";
@@ -115,7 +127,9 @@ export default function AuthCreateCampaignForm() {
                     askBuddyText={
                         selectedType === "organization"
                             ? "Organizational Campaigns are for groups of people, like sports teams, bands, clubs, schools — you name it."
-                            : "Individual Campaigns are for a single person like yourself."
+                            : selectedType === "individual"
+                                ? "Individual Campaigns are for a single person like yourself."
+                                : "Not sure which to pick? Choose an option above and I'll explain what it means!"
                     }
                 >
                     <div>
@@ -239,9 +253,9 @@ export default function AuthCreateCampaignForm() {
                 </Link>
                 <button
                     type="button"
-                    onClick={handleSubmit(onSubmit, scrollToFirstError)}
+                    onClick={handleNext}
                     disabled={isSubmitting}
-                    className="flex items-center justify-center gap-2 transition-colors disabled:opacity-60"
+                    className="flex items-center justify-center gap-2 transition active:scale-[0.96] disabled:opacity-60 disabled:active:scale-100"
                     style={{
                         minWidth: 114, height: 42, borderRadius: 12, paddingLeft: 16, paddingRight: 16,
                         background: "rgba(2, 104, 192, 1)",

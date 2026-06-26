@@ -123,6 +123,7 @@ export default function UploadBox({
     className = "",
     uploadingPhoto,
     uploadPhoto,
+    defaultImage = "/assets/campaigns/photo-placeholder.svg",
 }: {
     url: string | null;
     type: string;
@@ -134,6 +135,9 @@ export default function UploadBox({
     className?: string;
     uploadingPhoto: string | null;
     uploadPhoto: (file: File, type: string, key?: string) => Promise<string | null>;
+    /* Static placeholder shown (filling the box) until the real photo finishes
+       loading. Pass null to fall back to the shimmer skeleton instead. */
+    defaultImage?: string | null;
 }) {
     const inputRef = useRef<HTMLInputElement>(null);
     const badgeRef = useRef<HTMLButtonElement>(null);
@@ -169,12 +173,26 @@ export default function UploadBox({
                 </div>
             ) : url ? (
                 <>
-                    {/* Skeleton sits BEHIND the image as a placeholder. The image
-                    renders on top at full opacity, so it appears the instant the
-                    browser can paint it (and immediately for cached/CDN photos via
-                    the ref check) — no waiting for a full-load fade, which made the
-                    card look half-finished while photos streamed in. */}
-                    {!imgLoaded && <Skeleton />}
+                    {/* A static placeholder fills the box (at the exact size) until the
+                    photo is FULLY loaded; the real photo is kept transparent until then
+                    and cross-fades in over it. So the user never watches the image decode
+                    top-to-bottom (which read as the card "filling in / expanding") and
+                    never stares at an anxious loading shimmer — they see intentional
+                    content the whole time. Cached & CDN photos are detected as
+                    already-complete via the ref check, so they appear instantly. */}
+                    {!imgLoaded && (
+                        defaultImage ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                                src={defaultImage}
+                                alt=""
+                                aria-hidden
+                                className="absolute inset-0 h-full w-full rounded-xl object-cover"
+                            />
+                        ) : (
+                            <Skeleton />
+                        )
+                    )}
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                         ref={(el) => { if (el && el.complete && el.naturalWidth > 0 && loadedUrl !== url) setLoadedUrl(url); }}
@@ -184,7 +202,7 @@ export default function UploadBox({
                         fetchPriority="high"
                         onLoad={() => setLoadedUrl(url)}
                         onError={() => setLoadedUrl(url)}
-                        className="relative z-[1] h-full w-full rounded-xl object-cover"
+                        className={`relative z-[1] h-full w-full rounded-xl object-cover transition-opacity duration-300 ${imgLoaded ? "opacity-100" : "opacity-0"}`}
                     />
                     <button
                         ref={badgeRef}

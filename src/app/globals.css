@@ -304,3 +304,34 @@ input[type=number] {
 @media (prefers-reduced-motion: reduce) {
     .reveal-up { animation: none; }
 }
+/* ── Tactile press feedback ──────────────────────────────────────────────
+   Every enabled <button> dips slightly while pressed so clicks feel
+   responsive. In @layer base so any explicit `active:scale-*` / `transition-*`
+   utility a button sets still wins, and existing transitions aren't clobbered.
+   Uses the `scale` property to match Tailwind v4's scale utilities. */
+@layer base {
+    button:not(:disabled) {
+        transition: scale 0.12s ease;
+    }
+    button:not(:disabled):active {
+        scale: 0.97;
+    }
+    @media (prefers-reduced-motion: reduce) {
+        button:not(:disabled):active { scale: 1; }
+    }
+}
+
+/* ── Campaign-creation splash screen (Gmail-style: centered logo + bar) ── */
+@keyframes splashPulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50%      { opacity: 0.55; transform: scale(0.9); }
+}
+@keyframes splashBar {
+    0%   { transform: translateX(-110%); }
+    100% { transform: translateX(360%); }
+}
+.splash-logo { animation: splashPulse 1.5s ease-in-out infinite; }
+.splash-bar  { animation: splashBar 1.1s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+    .splash-logo, .splash-bar { animation: none; }
+}

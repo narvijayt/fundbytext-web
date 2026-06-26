@@ -314,6 +314,7 @@ export function BottomNav({
     step,
     saving,
     launching,
+    exiting = false,
     uploadingPhoto,
     isLaunched,
     onBack,
@@ -324,6 +325,7 @@ export function BottomNav({
     step: number;
     saving: boolean;
     launching: boolean;
+    exiting?: boolean;
     uploadingPhoto: string | null;
     isLaunched: boolean;
     onBack: () => void;
@@ -332,7 +334,7 @@ export function BottomNav({
     onExit: () => void;
 }) {
     const isLastStep = step === 5;
-    const busy = saving || launching || uploadingPhoto !== null;
+    const busy = saving || launching || exiting || uploadingPhoto !== null;
 
     return (
         <>
@@ -341,13 +343,17 @@ export function BottomNav({
                     type="button"
                     onClick={onExit}
                     disabled={busy}
-                    className="flex items-center gap-3 transition-opacity hover:opacity-70 disabled:opacity-40 text-[rgba(0,48,96,1)] rounded-xl px-0.5 pt-3 pb-3.5"
+                    className={`flex items-center gap-3 transition-opacity text-[rgba(0,48,96,1)] rounded-xl px-0.5 pt-3 pb-3.5 ${exiting ? "cursor-wait" : "hover:opacity-70 disabled:opacity-40"}`}
                 >
-                    <svg className="w-[18px] h-[18px] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round">
-                        <path d="M5 5l14 14M19 5L5 19" />
-                    </svg>
+                    {exiting ? (
+                        <Loader className="w-[18px] h-[18px] shrink-0" />
+                    ) : (
+                        <svg className="w-[18px] h-[18px] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round">
+                            <path d="M5 5l14 14M19 5L5 19" />
+                        </svg>
+                    )}
                     <span className="w-px h-5 bg-[rgba(212,222,231,1)] shrink-0" />
-                    <span className="hidden md:inline text-base font-medium leading-[1.4]">Exit and Save Progress</span>
+                    <span className="hidden md:inline text-base font-medium leading-[1.4]">{exiting ? "Saving Progress…" : "Exit and Save Progress"}</span>
                 </button>
 
                 <div className="flex items-center gap-3">
@@ -356,7 +362,7 @@ export function BottomNav({
                             type="button"
                             onClick={onBack}
                             disabled={busy}
-                            className="flex items-center justify-center transition-colors disabled:opacity-50 rounded-xl border border-[rgba(212,222,231,1)]"
+                            className="flex items-center justify-center transition active:scale-[0.97] disabled:opacity-50 disabled:active:scale-100 rounded-xl border border-[rgba(212,222,231,1)]"
                             style={{
                                 width: 114,
                                 height: 42,
@@ -379,7 +385,7 @@ export function BottomNav({
                                 type="button"
                                 onClick={onLaunch}
                                 disabled={busy}
-                                className="flex items-center justify-center gap-2 rounded-xl px-[18px] text-white transition hover:brightness-105 active:scale-[0.99] disabled:opacity-60 disabled:active:scale-100"
+                                className="flex items-center justify-center gap-2 rounded-xl px-[18px] text-white transition hover:brightness-105 active:scale-[0.96] disabled:opacity-60 disabled:active:scale-100"
                                 style={{ height: 48, background: "linear-gradient(76.24deg, #26BA58 1.19%, #34D56A 98.81%)" }}
                             >
                                 {launching ? (
@@ -397,7 +403,7 @@ export function BottomNav({
                             type="button"
                             onClick={onNext}
                             disabled={busy}
-                            className="flex items-center justify-center transition-colors disabled:opacity-60"
+                            className="flex items-center justify-center transition active:scale-[0.96] disabled:opacity-60 disabled:active:scale-100"
                             style={{
                                 width: 114,
                                 height: 42,

@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { type Payout } from "./types";
 import { QuestionCard, Stepper, inputCls, inputErrCls } from "./ui";
+import { StateSelect } from "./DateTimePicker";
 
 type Props = {
     isOrg: boolean;
@@ -68,7 +69,7 @@ const ORG_GOALS: GoalOpt[] = [
     {
         value: "participant_goal",
         label: "Participant Goal",
-        info: "Each participant gets their own fundraising target, and the campaign total is the sum of everyone's goals.",
+        info: "Participant goals are for each participant within a group to meet an individual goal. Example: 25 people trying to raise $1,000 each would put $1,000 in the box below.",
         icon: (a) => (
             <Image src={a ? "/assets/campaigns/individual-active.svg" : "/assets/campaigns/individual-inactive.svg"} width={32} height={32} alt="" className="w-7 h-7 sm:w-8 sm:h-8" />
         ),
@@ -115,7 +116,7 @@ export default function StepFundingGoal({
     const amountLocked = goalType === "open_ended" && isLaunched;
     const isParticipantGoal = isOrg && goalType === "participant_goal";
     const totalLabel = isOrg
-        ? isParticipantGoal ? "Total Participant Goal" : "Total Organization Goal"
+        ? isParticipantGoal ? "Per Participant Goal" : "Total Organization Goal"
         : "Total Campaign Goal";
 
     // Card 2 asks "how many people should each participant reach out to" for both
@@ -125,6 +126,7 @@ export default function StepFundingGoal({
     const perParticipantCard = isParticipantGoal
         ? {
             title: "Target contacts per participant?",
+            tip: "This is how many people you'd like each participant to reach out to. The more contacts they make, the more you'll raise — around 15–25 per participant is a good target.",
             description: "Tell us how many people you'd like each participant to reach out to. The more contacts they make, the more money you'll raise.",
             heading: "Hey there buddy, a tip on contact targets!",
             suggestions: [
@@ -135,6 +137,7 @@ export default function StepFundingGoal({
         }
         : {
             title: "Number of donors per participant",
+            tip: "This is how many donors you'd like each participant to reach out to. The more donors they contact, the more you'll raise — around 15–25 per participant is a good target.",
             description: "Tell us how many donors you'd like each participant to reach out to. The more donors they contact, the more money you'll raise.",
             heading: "Hey there buddy, a tip on donor targets!",
             suggestions: [
@@ -159,6 +162,7 @@ export default function StepFundingGoal({
             <QuestionCard
                 icon="/assets/campaigns/question-dollar.svg"
                 title="What's your overall funding goal?"
+                titleInfoTip="Your overall funding goal is the total you're aiming to raise. Choose a fixed target, an open-ended goal that keeps growing past it, or a per-participant goal, then enter the amount — you can adjust it anytime before launch."
                 description="Enter your total fundraising target for this campaign."
                 askBuddyText="Ask FundBuddy for additional context."
                 askBuddySuggestionsHeading="Hey there buddy, here's how to set a great goal!"
@@ -235,6 +239,7 @@ export default function StepFundingGoal({
                 <QuestionCard
                     icon="/assets/campaigns/question-people.svg"
                     title={perParticipantCard.title}
+                    titleInfoTip={perParticipantCard.tip}
                     description={perParticipantCard.description}
                     askBuddyText="Ask FundBuddy for additional context."
                     askBuddySuggestionsHeading={perParticipantCard.heading}
@@ -336,13 +341,10 @@ export default function StepFundingGoal({
                                 {fieldErrors.pay_city && <p data-field-error className="text-xs text-red-500 mt-1">{fieldErrors.pay_city}</p>}
                             </div>
                             <div>
-                                <input
+                                <StateSelect
                                     value={payout.state}
-                                    onChange={(e) => { setPayout({ ...payout, state: e.target.value }); clearFE("pay_state"); }}
-                                    placeholder="State"
-                                    aria-label="State"
-                                    maxLength={2}
-                                    className={fieldErrors.pay_state ? inputErrCls : inputCls}
+                                    onChange={(code) => { setPayout({ ...payout, state: code }); clearFE("pay_state"); }}
+                                    error={!!fieldErrors.pay_state}
                                 />
                                 {fieldErrors.pay_state && <p data-field-error className="text-xs text-red-500 mt-1">{fieldErrors.pay_state}</p>}
                             </div>

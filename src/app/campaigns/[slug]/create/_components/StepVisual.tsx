@@ -6,6 +6,25 @@ import { createPortal } from "react-dom";
 import { QuestionCard, InfoTooltip } from "./ui";
 import UploadBox from "./UploadBox";
 
+/* Image that stays transparent until it is fully loaded, then fades in over its
+   container's placeholder — so the user never watches it decode top-to-bottom
+   (which reads as the card / cell "filling in"). Used for the theme swatches and
+   the campaign-preview collage. Cached images are caught as already-complete via
+   the ref check, so they show instantly. */
+function FadeInImg({ src }: { src: string }) {
+    const [loaded, setLoaded] = useState(false);
+    return (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+            ref={(el) => { if (el && el.complete && el.naturalWidth > 0 && !loaded) setLoaded(true); }}
+            src={src}
+            alt=""
+            onLoad={() => setLoaded(true)}
+            className={`w-full h-full object-cover transition-opacity duration-300 ${loaded ? "opacity-100" : "opacity-0"}`}
+        />
+    );
+}
+
 type Props = {
     isOrg: boolean;
     profileUrl: string | null;
@@ -648,11 +667,12 @@ export default function StepVisual({
                                     boxShadow: selected ? "0px 12px 28px -12px rgba(2,104,192,0.45)" : undefined,
                                 }}
                             >
-                                {/* Pattern / branded preview */}
-                                <div className="relative h-[110px] sm:h-[130px]">
+                                {/* Pattern / branded preview — fixed height + a neutral
+                                placeholder so the card never collapses or flashes empty
+                                while the theme image loads. */}
+                                <div className="relative h-[110px] sm:h-[130px] min-h-[110px] sm:min-h-[130px] bg-[#eaeef3]">
                                     {t.img ? (
-                                        // eslint-disable-next-line @next/next/no-img-element
-                                        <img src={t.img} alt="" className="w-full h-full object-cover" />
+                                        <FadeInImg src={t.img} />
                                     ) : (
                                         <div className="w-full h-full flex items-center justify-center" style={{ background: "#003060" }}>
                                             <span className="px-2 text-center font-black text-white text-[12px] sm:text-[13px] leading-tight uppercase tracking-wide">
@@ -751,17 +771,11 @@ function CampaignPreview({
             <div className="bg-white p-2 sm:p-3">
                 <div className="grid grid-cols-4 grid-rows-2 gap-1.5 sm:gap-2 h-[150px] sm:h-[190px]">
                     <div className="col-span-2 row-span-2 rounded-lg overflow-hidden" style={{ background: secondaryColor }}>
-                        {heroUrl && (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img src={heroUrl} alt="" className="w-full h-full object-cover" />
-                        )}
+                        {heroUrl && <FadeInImg src={heroUrl} />}
                     </div>
                     {[0, 1, 2, 3].map((i) => (
                         <div key={i} className="rounded-lg overflow-hidden bg-[#eaeef3]">
-                            {gallery[i] && (
-                                // eslint-disable-next-line @next/next/no-img-element
-                                <img src={gallery[i]} alt="" className="w-full h-full object-cover" />
-                            )}
+                            {gallery[i] && <FadeInImg src={gallery[i]} />}
                         </div>
                     ))}
                 </div>
