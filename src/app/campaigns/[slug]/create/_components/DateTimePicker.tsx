@@ -34,10 +34,14 @@ function useAnchoredRect(anchorRef: React.RefObject<HTMLElement | null>) {
 function AnchoredPopover({
     anchorRef,
     width,
+    matchAnchorWidth,
     children,
 }: {
     anchorRef: React.RefObject<HTMLElement | null>;
-    width: number;
+    /** Fixed popover width. Ignored when `matchAnchorWidth` is set. */
+    width?: number;
+    /** Stretch the popover to the trigger's full width (e.g. the timezone dropdown). */
+    matchAnchorWidth?: boolean;
     children: React.ReactNode;
 }) {
     const rect = useAnchoredRect(anchorRef);
@@ -47,20 +51,32 @@ function AnchoredPopover({
     // state) — flipping above the trigger when there's no room below, e.g. a
     // date field near the bottom of the viewport. Mutating style here avoids
     // the extra render cycle/flicker a setState-based reposition would cause.
+    // A ResizeObserver re-places it whenever its own height changes (e.g. the
+    // timezone "Other regions" section expanding/collapsing), so a flipped-above
+    // popover doesn't end up overlapping the trigger after it grows.
     useLayoutEffect(() => {
         const el = popRef.current;
         if (!rect || !el) return;
-        const gap = 8;
-        const margin = 12;
-        const popHeight = el.offsetHeight;
-        const spaceBelow = window.innerHeight - rect.bottom - margin;
-        const spaceAbove = rect.top - margin;
-        const placeAbove = popHeight > spaceBelow && spaceAbove > spaceBelow;
-        const top = placeAbove ? rect.top - popHeight - gap : rect.bottom + gap;
-        const left = Math.min(Math.max(rect.left, margin), window.innerWidth - width - margin);
-        el.style.top = `${top}px`;
-        el.style.left = `${left}px`;
-        el.style.visibility = "visible";
+        function place() {
+            if (!el) return;
+            const gap = 8;
+            const margin = 12;
+            const w = matchAnchorWidth ? rect!.width : (width ?? 320);
+            const popHeight = el.offsetHeight;
+            const spaceBelow = window.innerHeight - rect!.bottom - margin;
+            const spaceAbove = rect!.top - margin;
+            const placeAbove = popHeight > spaceBelow && spaceAbove > spaceBelow;
+            const top = placeAbove ? rect!.top - popHeight - gap : rect!.bottom + gap;
+            const left = Math.min(Math.max(rect!.left, margin), window.innerWidth - w - margin);
+            el.style.width = `${w}px`;
+            el.style.top = `${Math.max(margin, top)}px`;
+            el.style.left = `${left}px`;
+            el.style.visibility = "visible";
+        }
+        place();
+        const ro = new ResizeObserver(place);
+        ro.observe(el);
+        return () => ro.disconnect();
     });
 
     if (typeof document === "undefined" || !rect) return null;
@@ -72,7 +88,7 @@ function AnchoredPopover({
             style={{
                 top: rect.bottom + 8,
                 left: rect.left,
-                width,
+                width: matchAnchorWidth ? rect.width : (width ?? 320),
                 visibility: "hidden",
                 boxShadow: "0px 24px 32px -12px rgba(2,104,192,0.25), 0px 8px 8px -6px rgba(2,104,192,0.06)",
             }}
@@ -611,6 +627,45 @@ export function TimezoneSelector({
                 )}
             </div>
         </div>
+    );
+}
+
+/* ── TimezoneBoxesPopover ──────────────────────────────────────────────────
+   The selectable timezone cards (above) rendered inside a full-width dropdown
+   popover — opened from a PickerField trigger. Picking a card closes it. */
+export function TimezoneBoxesPopover({
+    value,
+    anchorRef,
+    onSelect,
+    onClose,
+}: {
+    value: string;
+    anchorRef: React.RefObject<HTMLElement | null>;
+    onSelect: (tz: string) => void;
+    onClose: () => void;
+}) {
+    const ref = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        function onDown(e: MouseEvent) {
+            const t = e.target as Node;
+            if (ref.current && !ref.current.contains(t) && anchorRef.current && !anchorRef.current.contains(t)) onClose();
+        }
+        function onKey(e: KeyboardEvent) { if (e.key === "Escape") onClose(); }
+        document.addEventListener("mousedown", onDown);
+        document.addEventListener("keydown", onKey);
+        return () => {
+            document.removeEventListener("mousedown", onDown);
+            document.removeEventListener("keydown", onKey);
+        };
+    }, [onClose, anchorRef]);
+
+    return (
+        <AnchoredPopover anchorRef={anchorRef} matchAnchorWidth>
+            <div ref={ref} className="max-h-[55vh] overflow-y-auto -m-1 p-1">
+                <TimezoneSelector value={value} onSelect={(tz) => { onSelect(tz); onClose(); }} />
+            </div>
+        </AnchoredPopover>
     );
 }
 

@@ -154,7 +154,9 @@ export default function StepFundingGoal({
                     <svg className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M12 3a9 9 0 110 18A9 9 0 0112 3z" />
                     </svg>
-                    Goal type is locked after launch. Goal amounts and donor targets can still be updated.
+                    {isOrg
+                        ? "Goal type is locked after launch. Goal amounts, donor targets, and payout details can still be updated."
+                        : "Goal type is locked after launch. Your goal amount and payout details can still be updated."}
                 </div>
             )}
 

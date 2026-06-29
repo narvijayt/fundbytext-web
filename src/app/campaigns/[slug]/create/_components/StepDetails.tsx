@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import Image from "next/image";
 import { LockedField, QuestionCard, inputCls, inputErrCls } from "./ui";
-import { CalendarPopover, TimePopover, TimezoneSelector } from "./DateTimePicker";
+import { CalendarPopover, TimePopover, TimezoneBoxesPopover, timezoneLabel } from "./DateTimePicker";
 import RichTextEditor from "./RichTextEditor";
 
 /* ── helpers ─────────────────────────────────────────────────────────── */
@@ -50,6 +50,15 @@ function ClockSmIcon() {
         <svg className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
             <circle cx="12" cy="12" r="9" />
             <path strokeLinecap="round" d="M12 7v5l3 3" />
+        </svg>
+    );
+}
+function GlobeSmIcon() {
+    return (
+        <svg className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round">
+            <circle cx="12" cy="12" r="9" />
+            <path d="M3 12h18" />
+            <path d="M12 3c2.6 2.7 2.6 15.3 0 18M12 3c-2.6 2.7-2.6 15.3 0 18" />
         </svg>
     );
 }
@@ -226,14 +235,17 @@ export default function StepDetails({
        picking a date fills in the default time if none was chosen yet, and
        picking a time falls back to today's date so the choice isn't discarded. */
     const todayLocal = () => new Date().toLocaleDateString("en-CA"); // YYYY-MM-DD
-    function handleStartDate(d: string) { setStartDate(joinDateTime(d, startT || DEFAULT_START_TIME)); }
-    function handleStartTime(t: string) { setStartDate(joinDateTime(startD || todayLocal(), t)); }
+    function handleStartDate(d: string) { setStartDate(joinDateTime(d, startT || DEFAULT_START_TIME)); clearFE("start_date"); }
+    function handleStartTime(t: string) { setStartDate(joinDateTime(startD || todayLocal(), t)); clearFE("start_date"); }
     function handleEndDate(d: string)   { setEndDate(joinDateTime(d, endT || DEFAULT_END_TIME)); clearFE("end_date"); }
     function handleEndTime(t: string)   { setEndDate(joinDateTime(endD || todayLocal(), t)); clearFE("end_date"); }
 
     return (
         <div className="space-y-4 sm:space-y-6 lg:space-y-8">
-            {isLaunched && (
+            {/* Only org campaigns have launch-locked fields visible here (e.g. the
+            organization name). Individual campaigns only show fields that stay
+            editable, so the "locked" notice would be misleading. */}
+            {isLaunched && isOrg && (
                 <div className="flex items-center gap-2 px-4 py-2.5 sm:px-5 sm:py-3 bg-amber-50 border border-amber-200 rounded-xl sm:rounded-2xl text-xs sm:text-sm text-amber-700">
                     <svg className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M12 3a9 9 0 110 18A9 9 0 0112 3z" />
@@ -311,14 +323,17 @@ export default function StepDetails({
                         <PickerField
                             className="sm:flex-1"
                             label="Start Date"
+                            required
                             value={startD}
                             displayValue={formatDate(startD)}
                             placeholder="Select date"
                             icon={<CalendarSmIcon />}
                             disabled={isCompleted}
+                            error={fieldErrors.start_date}
                             renderPopover={(ref, close) => (
                                 <CalendarPopover
                                     value={startD}
+                                    minDate={todayLocal()}
                                     anchorRef={ref}
                                     onSelect={handleStartDate}
                                     onClose={close}
@@ -338,7 +353,7 @@ export default function StepDetails({
                             renderPopover={(ref, close) => (
                                 <CalendarPopover
                                     value={endD}
-                                    minDate={startD || undefined}
+                                    minDate={startD && startD > todayLocal() ? startD : todayLocal()}
                                     anchorRef={ref}
                                     onSelect={handleEndDate}
                                     onClose={close}
@@ -389,10 +404,19 @@ export default function StepDetails({
                         </p>
                     )}
 
-                    {/* Timezone — full-width selectable cards instead of a dropdown */}
+                    {/* Timezone — full-width dropdown that opens the selectable cards */}
                     <div>
-                        <label className="block text-[12px] font-semibold text-gray-500 mb-2 sm:mb-2.5 uppercase tracking-[1px]">Timezone</label>
-                        <TimezoneSelector value={timezone} onSelect={setTimezone} disabled={isCompleted} />
+                        <PickerField
+                            label="Timezone"
+                            value={timezone}
+                            displayValue={timezoneLabel(timezone)}
+                            placeholder="Select timezone"
+                            icon={<GlobeSmIcon />}
+                            disabled={isCompleted}
+                            renderPopover={(ref, close) => (
+                                <TimezoneBoxesPopover value={timezone} anchorRef={ref} onSelect={setTimezone} onClose={close} />
+                            )}
+                        />
                         <p className="text-[9px] sm:text-xs text-gray-400 mt-2 sm:mt-2.5">All dates above are interpreted in this timezone.</p>
                     </div>
                 </div>

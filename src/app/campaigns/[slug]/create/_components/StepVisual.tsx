@@ -120,28 +120,62 @@ async function extractColorsFromUrl(url: string): Promise<[string, string, strin
         img.crossOrigin = "anonymous";
         img.onload = () => {
             try {
+                const SIZE = 96;
                 const canvas = document.createElement("canvas");
-                canvas.width = 50; canvas.height = 50;
-                const ctx = canvas.getContext("2d");
+                canvas.width = SIZE; canvas.height = SIZE;
+                const ctx = canvas.getContext("2d", { willReadFrequently: true });
                 if (!ctx) { resolve(DEFAULT_COLORS); return; }
-                ctx.drawImage(img, 0, 0, 50, 50);
-                const pixels = ctx.getImageData(0, 0, 50, 50).data;
-                const freq = new Map<string, number>();
+                ctx.drawImage(img, 0, 0, SIZE, SIZE);
+                const pixels = ctx.getImageData(0, 0, SIZE, SIZE).data;
+
+                // Cluster pixels into colour buckets (16 levels/channel) while keeping a
+                // running average, so each candidate is the true centre of its cluster.
+                type Bucket = { r: number; g: number; b: number; n: number };
+                const buckets = new Map<number, Bucket>();
                 for (let i = 0; i < pixels.length; i += 4) {
-                    if (pixels[i + 3] < 128) continue;
-                    const r = Math.round(pixels[i] / 32) * 32;
-                    const g = Math.round(pixels[i + 1] / 32) * 32;
-                    const b = Math.round(pixels[i + 2] / 32) * 32;
-                    if (r > 230 && g > 230 && b > 230) continue;
-                    if (r < 25 && g < 25 && b < 25) continue;
-                    const hex = rgbToHex(r, g, b);
-                    freq.set(hex, (freq.get(hex) ?? 0) + 1);
+                    if (pixels[i + 3] < 128) continue;             // transparent
+                    const r = pixels[i], g = pixels[i + 1], b = pixels[i + 2];
+                    const mx = Math.max(r, g, b), mn = Math.min(r, g, b);
+                    if (mx > 244 && mn > 232) continue;            // drop white-ish background
+                    if (mx < 16) continue;                          // drop pure black
+                    const key = ((r >> 4) << 8) | ((g >> 4) << 4) | (b >> 4);
+                    const bk = buckets.get(key);
+                    if (bk) { bk.r += r; bk.g += g; bk.b += b; bk.n++; }
+                    else buckets.set(key, { r, g, b, n: 1 });
                 }
-                const sorted = [...freq.entries()].sort((a, b) => b[1] - a[1]);
+                if (buckets.size === 0) { resolve(DEFAULT_COLORS); return; }
+
+                // Rank by how much each colour POPS, not just how much area it covers:
+                // population × vibrancy, where vibrancy is driven by saturation (the
+                // "highlighted" feel) and a healthy mid-brightness. This surfaces a
+                // logo's bright brand colours instead of large pale / grey fills.
+                const scored = [...buckets.values()].map((bk) => {
+                    const r = bk.r / bk.n, g = bk.g / bk.n, b = bk.b / bk.n;
+                    const [h, s, v] = rgbToHsv(r, g, b);
+                    const vibrancy = (0.12 + s) ** 2 * (0.55 + 0.45 * (1 - Math.abs(v - 0.6)));
+                    return { hex: rgbToHex(r, g, b), h, score: bk.n * vibrancy };
+                }).sort((a, b) => b.score - a.score);
+
+                // Take the 3 strongest that are visually distinct (different hue, or far
+                // apart in RGB for near-greys) so we never return 3 shades of one colour.
+                const picked: typeof scored = [];
+                for (const c of scored) {
+                    if (picked.length === 3) break;
+                    const distinct = picked.every((p) => {
+                        const dh = Math.min(Math.abs(p.h - c.h), 360 - Math.abs(p.h - c.h));
+                        const [pr, pg, pb] = hexToRgb(p.hex);
+                        const [cr, cg, cb] = hexToRgb(c.hex);
+                        return dh > 28 || Math.hypot(pr - cr, pg - cg, pb - cb) > 64;
+                    });
+                    if (distinct) picked.push(c);
+                }
+                // Top up if the logo genuinely doesn't have 3 distinct colours.
+                for (const c of scored) { if (picked.length === 3) break; if (!picked.includes(c)) picked.push(c); }
+
                 resolve([
-                    sorted[0]?.[0] ?? DEFAULT_ACCENT,
-                    sorted[2]?.[0] ?? sorted[1]?.[0] ?? DEFAULT_SECONDARY,
-                    sorted[4]?.[0] ?? sorted[3]?.[0] ?? DEFAULT_TERTIARY,
+                    picked[0]?.hex ?? DEFAULT_ACCENT,
+                    picked[1]?.hex ?? DEFAULT_SECONDARY,
+                    picked[2]?.hex ?? DEFAULT_TERTIARY,
                 ]);
             } catch {
                 resolve(DEFAULT_COLORS);
@@ -394,30 +428,41 @@ function CheckBadge({ selected }: { selected: boolean }) {
 
 /* ── Colour-option box ("Your Logo Colors" / "Custom Colors") ─────────── */
 function ColorBox({
-    label, info, selected, showSelectedLabel = true, onSelect, children,
+    label, info, selected, disabled = false, disabledHint, showSelectedLabel = true, onSelect, children,
 }: {
     label: string;
     info?: string;
     selected: boolean;
+    /* When set, the option can't be picked (e.g. logo colours before a logo
+       is uploaded) — it dims, shows the hint, and the select target is inert. */
+    disabled?: boolean;
+    disabledHint?: string;
     showSelectedLabel?: boolean;
     onSelect: () => void;
     children: React.ReactNode;
 }) {
+    const isSelected = selected && !disabled;
     return (
         <div
-            className="relative flex-1 rounded-2xl"
+            className={`relative flex-1 rounded-2xl ${disabled ? "opacity-55" : ""}`}
             style={{
-                border: selected ? "2px solid transparent" : "2px solid #d4dee7",
-                backgroundImage: selected
+                border: isSelected ? "2px solid transparent" : "2px solid #d4dee7",
+                backgroundImage: isSelected
                     ? "linear-gradient(white, white), linear-gradient(95.84deg, #0278DE 40.72%, #AED9FE 50%, #0278DE 59.28%)"
                     : undefined,
-                backgroundOrigin: selected ? "border-box" : undefined,
-                backgroundClip: selected ? "padding-box, border-box" : undefined,
-                boxShadow: selected ? "0px 12px 28px -12px rgba(2,104,192,0.4)" : undefined,
+                backgroundOrigin: isSelected ? "border-box" : undefined,
+                backgroundClip: isSelected ? "padding-box, border-box" : undefined,
+                boxShadow: isSelected ? "0px 12px 28px -12px rgba(2,104,192,0.4)" : undefined,
             }}
         >
             {/* Full-box select target (behind the content). */}
-            <button type="button" onClick={onSelect} aria-label={`Use ${label}`} className="absolute inset-0 z-0 rounded-2xl" />
+            <button
+                type="button"
+                onClick={onSelect}
+                disabled={disabled}
+                aria-label={`Use ${label}`}
+                className={`absolute inset-0 z-0 rounded-2xl ${disabled ? "cursor-not-allowed" : "cursor-pointer"}`}
+            />
             <div className="relative z-10 p-5 sm:p-6 pointer-events-none">
                 <div className="flex items-start justify-between gap-2">
                     <div>
@@ -425,13 +470,18 @@ function ColorBox({
                             <span className="text-[15px] sm:text-[16px] font-bold text-[#003060]">{label}</span>
                             {info && <InfoTooltip tip={info} />}
                         </div>
-                        {selected && showSelectedLabel && (
+                        {isSelected && showSelectedLabel && (
                             <span className="block mt-1 text-[10px] sm:text-[12px] font-bold uppercase tracking-[1px] text-[#0268c0]">
                                 Selected
                             </span>
                         )}
+                        {disabled && disabledHint && (
+                            <span className="block mt-1 text-[10px] sm:text-[12px] font-medium text-[#8f98a3]">
+                                {disabledHint}
+                            </span>
+                        )}
                     </div>
-                    <CheckBadge selected={selected} />
+                    <CheckBadge selected={isSelected} />
                 </div>
                 <div className="flex gap-2.5 sm:gap-3 mt-4">
                     {children}
@@ -471,6 +521,15 @@ export default function StepVisual({
         setExtractedColors(null);
         setPicking(null);
     }
+
+    // Logo colours are only available while the organization logo is present.
+    // If it's removed, its extracted colours are stale — drop them and fall back
+    // to custom so the campaign never keeps colours from a photo that's gone.
+    useEffect(() => {
+        if (!isOrg || profileUrl) return;
+        if (extractedColors) setExtractedColors(null);
+        if (colorMode === "logo") setColorMode("custom");
+    }, [isOrg, profileUrl, colorMode, extractedColors, setColorMode, setExtractedColors]);
 
     return (
         <div className="space-y-4 sm:space-y-6 lg:space-y-8">
@@ -591,9 +650,12 @@ export default function StepVisual({
                             <ColorBox
                                 label="Your Logo Colors"
                                 selected={mode === "logo"}
+                                disabled={!profileUrl}
+                                disabledHint="Add your logo above to use its colors"
                                 onSelect={() => {
+                                    if (!profileUrl) return;
                                     setColorMode("logo");
-                                    if (profileUrl && !extractedColors) applyLogoColors(profileUrl);
+                                    if (!extractedColors) applyLogoColors(profileUrl);
                                 }}
                             >
                                 {[0, 1, 2].map((i) => (
@@ -743,8 +805,17 @@ function CampaignPreview({
             {/* Header band */}
             <div className="relative px-4 py-4 sm:px-6 sm:py-5" style={{ background: accentColor }}>
                 {theme?.img && (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={theme.img} alt="" className="absolute inset-0 w-full h-full object-cover opacity-15" />
+                    /* Tile at the native motif size (matches the theme picker) rather
+                       than stretching one copy across the band. */
+                    <div
+                        aria-hidden
+                        className="absolute inset-0 opacity-15"
+                        style={{
+                            backgroundImage: `url('${theme.img}')`,
+                            backgroundRepeat: "repeat",
+                            backgroundSize: "217px auto",
+                        }}
+                    />
                 )}
                 <div className="relative flex items-center gap-3">
                     {profileUrl ? (

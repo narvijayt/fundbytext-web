@@ -342,21 +342,27 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
         // set rather than per-type — otherwise removing the last photo of a
         // type (e.g. all gallery photos) leaves no item to trigger its delete
         // and the records linger in the DB.
-        if (media && media.length > 0) {
+        if (media) {
             const existing = await prisma.campaignMedia.findMany({
                 where: { campaign_id: ids.campaignId },
                 select: { url: true },
             });
+            // Replace the whole set. An EMPTY array is valid and means "remove all
+            // media" (e.g. the user deleted the only photo / logo): clear the rows
+            // and skip the insert, so nothing lingers pointing at a blob we're
+            // about to delete just below.
             await prisma.$transaction([
                 prisma.campaignMedia.deleteMany({ where: { campaign_id: ids.campaignId } }),
-                prisma.campaignMedia.createMany({
-                    data: media.map((m) => ({
-                        campaign_id: ids.campaignId,
-                        media_type:  m.media_type as MediaType,
-                        url:         m.url,
-                        sort_order:  m.sort_order,
-                    })),
-                }),
+                ...(media.length > 0
+                    ? [prisma.campaignMedia.createMany({
+                        data: media.map((m) => ({
+                            campaign_id: ids.campaignId,
+                            media_type:  m.media_type as MediaType,
+                            url:         m.url,
+                            sort_order:  m.sort_order,
+                        })),
+                    })]
+                    : []),
             ]);
 
             // Best-effort: delete blobs that are no longer referenced so removed

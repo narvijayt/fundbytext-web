@@ -103,7 +103,7 @@ export async function POST(req: NextRequest) {
             }
 
             const chars = "ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz0123456789!@#$%^&*";
-            generatedPassword = Array.from(crypto.randomBytes(16)).map((b) => chars[(b as number) % chars.length]).join("");
+            generatedPassword = Array.from(crypto.randomBytes(10)).map((b) => chars[(b as number) % chars.length]).join("");
             const password_hash = await bcrypt.hash(generatedPassword, 12);
 
             // If an old soft-deleted record still holds this email (pre-mangling),

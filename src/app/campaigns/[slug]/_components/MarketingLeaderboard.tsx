@@ -165,8 +165,17 @@ export default function MarketingLeaderboard({
     return (
         <div className="relative overflow-hidden pt-[40px] md:pt-[80px] xl:pt-[112px] pb-[40px] md:pb-[80px] xl:pb-[112px]" style={{ background: accent }}>
             {theme.themeImage && (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={theme.themeImage} alt="" aria-hidden className="absolute inset-x-0 top-0 h-[1047px] w-full object-cover opacity-[0.1] pointer-events-none" />
+                /* Tile at native motif size (matches the theme picker / hero) instead of
+                   stretching one copy down a tall band, which ballooned the motif. */
+                <div
+                    aria-hidden
+                    className="absolute inset-x-0 top-0 h-[1047px] opacity-[0.1] pointer-events-none"
+                    style={{
+                        backgroundImage: `url('${theme.themeImage}')`,
+                        backgroundRepeat: "repeat",
+                        backgroundSize: "217px auto",
+                    }}
+                />
             )}
             <span aria-hidden className="absolute inset-0 pointer-events-none" style={{ background: `linear-gradient(180deg, ${theme.secondary}33 0%, transparent 40%)` }} />
 

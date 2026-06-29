@@ -35,8 +35,18 @@ export default function MarketingHero({
                 style={{ background: `linear-gradient(157deg, ${theme.accent} 0%, ${theme.secondary} 100%)` }}
             >
                 {theme.themeImage && (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={theme.themeImage} alt="" className="absolute inset-0 w-full h-full object-cover opacity-[0.12]" />
+                    /* Tile the pattern at its native motif size (the same size shown in
+                       the theme picker) instead of stretching one copy to cover the band —
+                       stretching blew the motif up several times larger than intended. */
+                    <div
+                        aria-hidden
+                        className="absolute inset-0 opacity-[0.12]"
+                        style={{
+                            backgroundImage: `url('${theme.themeImage}')`,
+                            backgroundRepeat: "repeat",
+                            backgroundSize: "217px auto",
+                        }}
+                    />
                 )}
                 <span aria-hidden className="absolute inset-0" style={{ background: "radial-gradient(120% 80% at 80% 0%, rgba(255,255,255,0.18) 0%, transparent 60%)" }} />
             </div>

@@ -15,7 +15,7 @@ import { publishStatusChange } from "@/lib/ably";
 
 function generatePassword(): string {
     const chars = "ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz0123456789!@#$%^&*";
-    return Array.from(crypto.randomBytes(16))
+    return Array.from(crypto.randomBytes(10))
         .map((b) => chars[b % chars.length])
         .join("");
 }
@@ -72,6 +72,14 @@ export async function POST(req: NextRequest, ctx: Ctx) {
         if (missing.length > 0) {
             return NextResponse.json(
                 { error: `Missing required fields: ${missing.join(", ")}.` },
+                { status: 422 }
+            );
+        }
+
+        // Don't launch a campaign whose end date has already passed.
+        if (campaign.end_date && campaign.end_date.getTime() <= Date.now()) {
+            return NextResponse.json(
+                { error: "End date must be in the future. Update the campaign duration before launching." },
                 { status: 422 }
             );
         }

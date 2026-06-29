@@ -14,7 +14,10 @@ export default async function ProtectedLayout({
     }
 
     return (
-        <div className="flex min-h-screen bg-gray-50">
+        // h-screen + overflow-hidden pins the shell to the viewport so the sidebar
+        // stays fixed and ONLY <main> scrolls (the sidebar has its own internal
+        // scroll for long nav).
+        <div className="flex h-screen overflow-hidden bg-gray-50">
             <Sidebar user={user} />
             <main className="flex-1 overflow-y-auto p-8">
                 {children}

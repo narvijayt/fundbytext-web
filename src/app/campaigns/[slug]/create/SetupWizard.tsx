@@ -202,6 +202,22 @@ export default function SetupWizard({
             document.querySelector("[data-field-error]")?.scrollIntoView({ behavior: "smooth", block: "center" });
         }, 0);
     }
+
+    // True when the chosen end datetime (interpreted in the campaign's timezone)
+    // is at or before "now" — used to stop a campaign launching after it's
+    // already over. Maps a launch-time error field back to the step it lives on
+    // so we can jump there (errors on other steps aren't otherwise visible).
+    const endInPast = (local: string) => {
+        if (!local) return false;
+        const iso = localToUTCISO(local, timezone);
+        return !!iso && new Date(iso).getTime() <= Date.now();
+    };
+    const STEP_OF_FIELD: Record<string, number> = {
+        name: 1, org_display_name: 1, start_date: 1, end_date: 1,
+        goal_type: 2, goal_amount: 2, donors_per_participant: 2,
+        pay_first: 2, pay_last: 2, pay_street: 2, pay_city: 2, pay_state: 2, pay_zip: 2,
+        profile: 3, hero: 3, thank_you: 5,
+    };
     function clearFE(key: string) {
         setFieldErrors((prev) => {
             if (!prev[key]) return prev;
@@ -285,7 +301,10 @@ export default function SetupWizard({
                 secondary_color:  secondaryColor,
                 tertiary_color:   tertiaryColor,
             };
-            if (media.length > 0) data.media = media;
+            // Always send media — including an empty array — so removing the last
+            // photo (e.g. the logo) clears it server-side and deletes its blob,
+            // instead of leaving the old record/file behind.
+            data.media = media;
             setAutosaveStatus("saving");
             fetch(`/api/v1/campaigns/${slug}`, {
                 method:  "PATCH",
@@ -322,8 +341,10 @@ export default function SetupWizard({
         const errs: Record<string, string> = {};
         if (!name.trim()) errs.name     = "Campaign name is required.";
         if (isOrg && !orgDisplayName.trim()) errs.org_display_name = "Organization display name is required.";
+        if (!startDate)                                  errs.start_date = "Start date is required.";
         if (!endDate)                                    errs.end_date = "End date is required.";
         else if (startDate && endDate <= startDate)      errs.end_date = "End date must be after the start date.";
+        else if (endInPast(endDate))                     errs.end_date = "End date can't be in the past.";
         if (Object.keys(errs).length) { setFieldErrors(errs); scrollToFirstError(); return; }
         setFieldErrors({});
         const ok = await patch({
@@ -384,7 +405,7 @@ export default function SetupWizard({
         if (!heroUrl)    errs.hero    = "A campaign photo is required.";
         // If validation fails, leave the pending auto-save in place so the visual
         // changes still persist; only cancel it once we're committing a full save.
-        if (Object.keys(errs).length) { setFieldErrors(errs); return; }
+        if (Object.keys(errs).length) { setFieldErrors(errs); scrollToFirstError(); return; }
         setFieldErrors({});
         cancelAutosave();
         const media: { media_type: string; url: string; sort_order: number }[] = [];
@@ -485,7 +506,7 @@ export default function SetupWizard({
         if (safeProfileUrl) media.push({ media_type: "profile", url: safeProfileUrl, sort_order: 0 });
         if (safeHeroUrl)    media.push({ media_type: "hero",    url: safeHeroUrl,    sort_order: 0 });
         galleryUrls.forEach((u, i) => { if (u) media.push({ media_type: "gallery", url: u, sort_order: i }); });
-        if (media.length > 0) data.media = media;
+        data.media = media; // send even when empty so removals persist + orphan blobs are cleaned
         try {
             const res = await fetch(`/api/v1/campaigns/${slug}`, {
                 method:  "PATCH",
@@ -523,9 +544,16 @@ export default function SetupWizard({
     async function launch() {
         const errs: Record<string, string> = {};
         if (!name.trim())                 errs.name        = "Campaign name is required.";
+        if (isOrg && !orgDisplayName.trim()) errs.org_display_name = "Organization display name is required.";
+        if (!startDate)                   errs.start_date  = "Start date is required.";
         if (!endDate)                     errs.end_date    = "End date is required.";
+        else if (startDate && endDate <= startDate) errs.end_date = "End date must be after the start date.";
+        else if (endInPast(endDate))      errs.end_date    = "End date must be in the future.";
         if (!goalType)                    errs.goal_type   = "Fundraising goal type is required.";
         if (!goalAmount)                  errs.goal_amount = "Fundraising goal amount is required.";
+        if (isOrg && !donorsPerParticipant) errs.donors_per_participant = goalType === "participant_goal"
+            ? "Target contacts per participant is required."
+            : "Donors per participant is required.";
         if (!payout.recipient_first_name) errs.pay_first   = "Payout recipient first name is required.";
         if (!payout.recipient_last_name)  errs.pay_last    = "Payout recipient last name is required.";
         if (!payout.street_address)       errs.pay_street  = "Payout street address is required.";
@@ -537,6 +565,10 @@ export default function SetupWizard({
         if (!thankYou.trim())             errs.thank_you   = "Thank you message is required.";
         if (Object.keys(errs).length) {
             setFieldErrors(errs);
+            // A launch error can belong to an earlier step than this final one —
+            // jump to the first offending step so the user can see and fix it.
+            const target = Math.min(...Object.keys(errs).map((k) => STEP_OF_FIELD[k] ?? 5));
+            if (target !== step) setStep(target);
             scrollToFirstError();
             return;
         }

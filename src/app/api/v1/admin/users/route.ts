@@ -14,7 +14,7 @@ const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 const PASS_CHARS = "ABCDEFGHIJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz0123456789!@#$%^&*";
 
 function generatePassword(): string {
-    const bytes = crypto.randomBytes(16);
+    const bytes = crypto.randomBytes(10);
     return Array.from(bytes).map((b) => PASS_CHARS[b % PASS_CHARS.length]).join("");
 }
 

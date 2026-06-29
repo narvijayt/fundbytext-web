@@ -191,7 +191,7 @@ function Toggle({ checked, onChange, label, disabled }: {
 }) {
     return (
         <div
-            className="flex items-center justify-center gap-6 rounded-2xl border border-[#eaeef3] bg-[#f4f8f9] p-6"
+            className={`flex items-center justify-center gap-6 rounded-2xl border border-[#eaeef3] bg-[#f4f8f9] p-6 ${disabled ? "opacity-60" : ""}`}
             style={{ boxShadow: "0px 20px 20px -14px rgba(2,104,192,0.2)" }}
         >
             <span className="flex-1 text-[15px] sm:text-[18px] font-medium leading-[1.4] text-[#57728d]">{label}</span>
@@ -677,6 +677,7 @@ export default function StepParticipants({
                         label="Allow participants to upload profile photo?"
                         checked={allowParticipantPhoto}
                         onChange={onToggleAllowPhoto}
+                        disabled={isLaunched}
                     />
                 )}
 
