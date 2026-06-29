@@ -4,40 +4,29 @@ const STATUS_TABS = [
     { key: "all",       label: "All Campaigns" },
     { key: "active",    label: "Active"        },
     { key: "upcoming",  label: "Upcoming"      },
-    { key: "draft",     label: "Draft"         },
+    { key: "draft",     label: "Drafts"        },
     { key: "completed", label: "Completed"     },
 ] as const;
 
 type TabKey = (typeof STATUS_TABS)[number]["key"];
 
-type Props = {
-    activeTab: TabKey;
-    counts: Record<TabKey, number>;
-};
-
-export default function StatusTabs({ activeTab, counts }: Props) {
+export default function StatusTabs({ activeTab, query }: { activeTab: TabKey; query?: string }) {
+    const qPart = query ? `q=${encodeURIComponent(query)}` : "";
     return (
-        <div className="flex gap-1 border-b border-gray-200 mb-6 overflow-x-auto">
+        <div className="flex gap-5 overflow-x-auto overflow-y-hidden border-b border-[#e7e9eb] -mx-1 px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {STATUS_TABS.map(({ key, label }) => {
                 const isActive = activeTab === key;
+                const params = [key !== "all" ? `filter=${key}` : "", qPart].filter(Boolean).join("&");
+                const href = params ? `/dashboard?${params}` : "/dashboard";
                 return (
                     <Link
                         key={key}
-                        href={key === "all" ? "/dashboard" : `/dashboard?filter=${key}`}
-                        className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
-                            isActive
-                                ? "border-orange-500 text-orange-600"
-                                : "border-transparent text-gray-500 hover:text-gray-700"
+                        href={href}
+                        className={`relative shrink-0 whitespace-nowrap border-b-2 py-3 text-[12px] font-black uppercase leading-none tracking-[1px] transition-colors ${
+                            isActive ? "border-[#0268c0] text-[#0268c0]" : "border-transparent text-[#7e8a96] hover:text-[#003060]"
                         }`}
                     >
                         {label}
-                        {counts[key] > 0 && (
-                            <span className={`text-xs rounded-full px-1.5 py-0.5 font-semibold ${
-                                isActive ? "bg-orange-100 text-orange-600" : "bg-gray-100 text-gray-500"
-                            }`}>
-                                {counts[key]}
-                            </span>
-                        )}
                     </Link>
                 );
             })}
