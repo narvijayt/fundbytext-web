@@ -286,7 +286,7 @@ export default function DonationChart({
         new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(n);
 
     return (
-        <div ref={containerRef} className="bg-white rounded-2xl border border-[#e7e9eb] shadow-[0px_4px_30px_0px_rgba(0,91,172,0.08)] px-2 pt-5 pb-2">
+        <div ref={containerRef} className="bg-white rounded-2xl border border-[#e7e9eb] shadow-[0px_4px_30px_0px_rgba(0,91,172,0.08)] px-2 pt-5 pb-4">
             <div className="-mx-2 -mt-5 mb-4 flex items-center justify-between border-b border-[#e7e9eb] px-6 py-4">
                 <h2 className="text-[18px] font-bold text-[#003060]">{title}</h2>
                 {showToggle && (
