@@ -376,22 +376,7 @@ export default async function CampaignDetailPage({
                     <CopyUrlButton slug={slug} />
                 </div>
                 {isOrganizer && !isParticipantView && (
-                    <div className="flex items-center gap-2 shrink-0">
-                        {(campaign.status === CampaignStatus.draft ||
-                          (campaign.status === CampaignStatus.upcoming && donationTotal === 0)) && (
-                            <DeleteCampaignButton
-                                slug={slug}
-                                campaignName={campaign.name ?? null}
-                            />
-                        )}
-                        <CampaignControls
-                            campaignSlug={slug}
-                            visibility={campaign.visibility}
-                            donationsEnabled={campaign.donations_enabled}
-                            donationsDisabledMessage={campaign.donations_disabled_message ?? null}
-                            status={campaign.status}
-                            endDate={campaign.end_date}
-                        />
+                    <div className="flex flex-col items-end gap-2 shrink-0">
                         <CampaignNavLink
                             href={`/campaigns/${slug}/edit`}
                             overlayText="Loading…"
@@ -402,6 +387,21 @@ export default async function CampaignDetailPage({
                             </svg>
                             <span className="hidden sm:inline">Edit Campaign</span>
                         </CampaignNavLink>
+                        <CampaignControls
+                            campaignSlug={slug}
+                            visibility={campaign.visibility}
+                            donationsEnabled={campaign.donations_enabled}
+                            donationsDisabledMessage={campaign.donations_disabled_message ?? null}
+                            status={campaign.status}
+                            endDate={campaign.end_date}
+                        />
+                        {(campaign.status === CampaignStatus.draft ||
+                          (campaign.status === CampaignStatus.upcoming && donationTotal === 0)) && (
+                            <DeleteCampaignButton
+                                slug={slug}
+                                campaignName={campaign.name ?? null}
+                            />
+                        )}
                     </div>
                 )}
             </div>
