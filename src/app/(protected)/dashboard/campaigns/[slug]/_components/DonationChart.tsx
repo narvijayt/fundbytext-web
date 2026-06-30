@@ -181,7 +181,7 @@ export default function DonationChart({
     const yMax        = yTicks[yTicks.length - 1];
 
     const W  = 560, H = 220;
-    const PL = 38, PR = 44, PT = 18, PB = 36;
+    const PL = 38, PR = 44, PT = 18, PB = 50;
     const pw = W - PL - PR;
     const ph = H - PT - PB;
 
