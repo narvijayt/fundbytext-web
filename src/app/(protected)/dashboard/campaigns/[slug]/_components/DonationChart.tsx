@@ -287,8 +287,8 @@ export default function DonationChart({
 
     return (
         <div ref={containerRef} className="bg-white rounded-2xl border border-[#e7e9eb] shadow-[0px_4px_30px_0px_rgba(0,91,172,0.08)] p-6">
-            <div className="flex items-center justify-between mb-4">
-                <h2 className="text-[15px] font-bold text-[#003060]">{title}</h2>
+            <div className="-mx-6 -mt-6 mb-5 flex items-center justify-between border-b border-[#e7e9eb] px-6 py-4">
+                <h2 className="text-[18px] font-bold text-[#003060]">{title}</h2>
                 {showToggle && (
                     <div className="flex items-center gap-1 p-0.5 bg-gray-100 rounded-lg">
                         <button
@@ -321,8 +321,8 @@ export default function DonationChart({
             >
                 <defs>
                     <linearGradient id="dcBlueGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%"   stopColor="#4a98ee" stopOpacity="0.35" />
-                        <stop offset="100%" stopColor="#9cc9f7" stopOpacity="0.02" />
+                        <stop offset="0%"   stopColor="#73b2f4" stopOpacity="0.45" />
+                        <stop offset="100%" stopColor="#cfe6fc" stopOpacity="0.03" />
                     </linearGradient>
                     <clipPath id="dcAreaClip">
                         <rect x={PL} y={PT} width={pw} height={ph} />
