@@ -1,13 +1,13 @@
 <svg width="90" height="67" viewBox="0 0 90 67" fill="none" xmlns="http://www.w3.org/2000/svg">
-<rect width="90" height="67" fill="#C1C1C1"/>
+
 <g id="Single Campaign Overview-Desktop">
-<rect width="1920" height="11221" transform="translate(-957 -593)" fill="#F4F8F9"/>
+
 <g id="body">
 <g id="PRogress Bar + Donation Feed">
 <g id="Column 1">
-<g id="Progress Statistics days" filter="url(#filter0_d_5416_24318)">
-<rect x="-627" y="-166" width="1230" height="426" rx="16" fill="white"/>
-<rect x="-626.5" y="-165.5" width="1229" height="425" rx="15.5" stroke="#E7E9EB"/>
+<g id="Progress Statistics days">
+
+
 <g id="Rocket">
 <g id="Group">
 <path id="Vector" opacity="0.19" d="M51.8551 48.499L37.2597 17.9528L5.51886e-05 35.7559L14.5955 66.3021L51.8551 48.499Z" fill="url(#paint0_linear_5416_24318)"/>
@@ -50,16 +50,7 @@
 </g>
 </g>
 <defs>
-<filter id="filter0_d_5416_24318" x="-657" y="-192" width="1290" height="486" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
-<feFlood flood-opacity="0" result="BackgroundImageFix"/>
-<feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
-<feOffset dy="4"/>
-<feGaussianBlur stdDeviation="15"/>
-<feComposite in2="hardAlpha" operator="out"/>
-<feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0.356863 0 0 0 0 0.67451 0 0 0 0.08 0"/>
-<feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_5416_24318"/>
-<feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_5416_24318" result="shape"/>
-</filter>
+
 <linearGradient id="paint0_linear_5416_24318" x1="44.5574" y1="33.2258" x2="7.29778" y2="51.0289" gradientUnits="userSpaceOnUse">
 <stop stop-color="#606060"/>
 <stop offset="1" stop-color="white" stop-opacity="0"/>
