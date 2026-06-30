@@ -101,6 +101,15 @@ export default function SidebarCampaignsDropdown({ campaigns }: { campaigns: Cam
                         {/* Sub-links */}
                         {openSlugs.has(c.slug) && (
                             <div className="ml-2 space-y-0.5 mb-2">
+                                {/* Main link to the campaign overview page — the row above is open/close only */}
+                                <CampaignNavLink
+                                    href={isActive ? "#" : `/dashboard/campaigns/${c.slug}`}
+                                    overlayText="Loading…"
+                                    className="flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-[14px] font-medium text-[#0268c0] transition-colors hover:bg-[#0268c0]/8"
+                                >
+                                    <LinkIcon src="/assets/dashboard/sidebar-overview.svg" />
+                                    <span className="truncate">Campaign Overview</span>
+                                </CampaignNavLink>
                                 {CAMPAIGN_LINKS.filter((link) => {
                                     if (link.organizerOnly  && viewingAsParticipant)               return false;
                                     if (link.participantOnly && !viewingAsParticipant)              return false;

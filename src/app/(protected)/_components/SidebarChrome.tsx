@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import SidebarUserMenu from "./SidebarUserMenu";
 import SidebarCampaignsDropdown from "./SidebarCampaignsDropdown";
@@ -25,6 +26,12 @@ export type SidebarData = {
 const HomeIcon = (
     <svg className="h-[18px] w-[18px]" viewBox="0 0 20 20" fill="none" stroke="currentColor">
         <path strokeWidth={1.5} d="M7.78549 3.02344C8.7217 2.29929 10.2277 2.21939 11.2679 2.81152L11.4701 2.93848L16.2699 6.29688C16.607 6.5329 16.9451 6.93633 17.1996 7.42383C17.454 7.9113 17.5921 8.41941 17.5921 8.83301V14.4824C17.5921 16.1932 16.2023 17.583 14.4915 17.583H5.50815C3.79971 17.5828 2.40864 16.1873 2.40854 14.4746V8.72461C2.40854 8.34295 2.5327 7.86044 2.76498 7.38867C2.99704 6.91749 3.30541 6.5211 3.61166 6.28223L7.78647 3.02441L7.78549 3.02344ZM10.0003 11.124C9.24459 11.124 8.62555 11.7433 8.62534 12.499V14.999C8.62534 15.7549 9.24446 16.374 10.0003 16.374C10.7562 16.374 11.3753 15.7549 11.3753 14.999V12.499C11.3751 11.7905 10.8308 11.2025 10.14 11.1318L10.0003 11.124Z" />
+    </svg>
+);
+const FlagIcon = (
+    <svg className="h-[18px] w-[18px]" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+        <path d="M4.2916 1.66602V18.3327" />
+        <path d="M4.2916 3.33398H13.6249C15.8749 3.33398 16.3749 4.58398 14.7916 6.16732L13.7916 7.16732C13.1249 7.83398 13.1249 8.91732 13.7916 9.50065L14.7916 10.5007C16.3749 12.084 15.7916 13.334 13.6249 13.334H4.2916" />
     </svg>
 );
 function AdminIcon({ d }: { d: string }) {
@@ -117,6 +124,41 @@ function FullContent({ data, onNavigate, desktop }: { data: SidebarData; onNavig
     );
 }
 
+// ── Icon rail (tablet) — collapsed; logo F, +, icons, avatar, and an expand (→)
+// button that opens the full sidebar as an overlay (so the campaign dropdown fits).
+function RailContent({ data, onExpand }: { data: SidebarData; onExpand: () => void }) {
+    const initial = (data.firstName?.[0] ?? "?").toUpperCase();
+    return (
+        <>
+            <Link href="/dashboard" className="mb-6 mt-6 flex justify-center">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/assets/campaigns/app-logo.svg" alt="FundbyText" className="h-9 w-auto" />
+            </Link>
+            <div className="mb-6 flex justify-center"><NewCampaign compact /></div>
+            <nav className="flex min-h-0 flex-1 flex-col items-center gap-2 overflow-y-auto px-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                <NavLink href="/dashboard" icon={HomeIcon} label="Dashboard" compact />
+                <button onClick={onExpand} title="My Campaigns" aria-label="My Campaigns" className="flex h-11 w-11 items-center justify-center rounded-xl text-[#003060] transition-colors hover:bg-[#0268c0]/8">
+                    {FlagIcon}
+                </button>
+                {data.isAdmin && (
+                    <>
+                        <div className="my-2 h-px w-8 bg-gray-200" />
+                        {ADMIN.map((a) => <NavLink key={a.href} href={a.href} icon={<AdminIcon d={a.d} />} label={a.label} compact />)}
+                    </>
+                )}
+            </nav>
+            <div className="flex flex-col items-center gap-3 py-5">
+                <Link href="/dashboard/profile" title={`${data.firstName} ${data.lastName}`} className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-[#aed9fe] text-[16px] font-bold text-[#0268c0]">
+                    {data.photoUrl ? <Image src={data.photoUrl} alt="" width={40} height={40} className="h-10 w-10 rounded-full object-cover" /> : initial}
+                </Link>
+                <button onClick={onExpand} aria-label="Expand sidebar" title="Expand menu" className="flex h-9 w-9 items-center justify-center rounded-full bg-[#0268c0] text-white shadow-sm transition-transform hover:scale-105">
+                    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+                </button>
+            </div>
+        </>
+    );
+}
+
 // ── Responsive shell ─────────────────────────────────────────────────────────
 export default function SidebarChrome({ data }: { data: SidebarData }) {
     const [open, setOpen] = useState(false);
@@ -129,8 +171,14 @@ export default function SidebarChrome({ data }: { data: SidebarData }) {
 
     return (
         <>
-            <aside className="hidden md:flex w-64 shrink-0 flex-col h-screen" style={{ background: GRADIENT }}>
+            {/* Browser (lg+): full sidebar */}
+            <aside className="hidden lg:flex w-64 shrink-0 flex-col h-screen" style={{ background: GRADIENT }}>
                 <FullContent data={data} desktop />
+            </aside>
+
+            {/* Tablet (md–lg): icon rail; the → button expands to the full sidebar */}
+            <aside className="hidden md:flex lg:hidden w-[72px] shrink-0 flex-col h-screen" style={{ background: GRADIENT }}>
+                <RailContent data={data} onExpand={() => setOpen(true)} />
             </aside>
 
             <header className="fixed inset-x-0 top-0 z-40 flex h-16 items-center justify-between border-b border-[#e7e9eb] bg-white px-4 md:hidden">
@@ -142,7 +190,7 @@ export default function SidebarChrome({ data }: { data: SidebarData }) {
             </header>
 
             {open && (
-                <div className="fixed inset-0 z-50 md:hidden">
+                <div className="fixed inset-0 z-50 lg:hidden">
                     <div className="absolute inset-0 bg-black/40" onClick={() => setOpen(false)} />
                     <aside className="absolute left-0 top-0 flex h-full w-[280px] flex-col shadow-2xl" style={{ background: GRADIENT }}>
                         <button type="button" onClick={() => setOpen(false)} aria-label="Close menu" className="absolute right-3 top-4 z-10 flex h-9 w-9 items-center justify-center rounded-lg text-[#003060] hover:bg-[#0268c0]/8">
