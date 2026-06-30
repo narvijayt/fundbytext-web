@@ -31,6 +31,11 @@ function fmtDate(d: Date | null, tz: string) {
     return new Intl.DateTimeFormat("en-US", { timeZone: tz, month: "short", day: "numeric", year: "numeric" }).format(d);
 }
 
+function fmtDateTime(d: Date | null, tz: string) {
+    if (!d) return "—";
+    return new Intl.DateTimeFormat("en-US", { timeZone: tz, month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" }).format(d);
+}
+
 export default async function CampaignDetailPage({
     params,
     searchParams,
@@ -369,7 +374,7 @@ export default async function CampaignDetailPage({
                                 <svg className="h-4 w-4 shrink-0 text-[#9aa7b8]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.7}>
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                 </svg>
-                                Started {fmtDate(campaign.start_date, campaign.timezone ?? "America/New_York")}
+                                Started {fmtDateTime(campaign.start_date, campaign.timezone ?? "America/New_York")}
                             </span>
                         )}
                     </div>
@@ -380,7 +385,7 @@ export default async function CampaignDetailPage({
                         <CampaignNavLink
                             href={`/campaigns/${slug}/edit`}
                             overlayText="Loading…"
-                            className="inline-flex items-center gap-2 rounded-[12px] bg-gradient-to-b from-[#ff8c53] to-[#f47435] px-3 py-2.5 sm:px-5 text-[13px] font-bold uppercase tracking-[0.5px] text-white shadow-[0px_8px_15px_-8px_#ea6725] transition-[filter] hover:brightness-105"
+                            className="inline-flex items-center gap-2 rounded-[12px] bg-gradient-to-b from-[#ff8c53] to-[#f47435] px-3 py-2.5 sm:px-5 text-[13px] font-bold uppercase tracking-[0.5px] text-white shadow-[0px_8px_15px_-8px_#ea6725] transition-all duration-150 hover:brightness-105 active:scale-[0.97]"
                         >
                             <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
