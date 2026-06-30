@@ -11,50 +11,14 @@ const MONTH_MS = 30 * DAY_MS;
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 /**
- * Monotone cubic spline (Fritsch-Carlson) — smooth curves with zero overshoot.
- * Guarantees the interpolated curve stays monotone when the data is monotone,
- * so no backward loops on flat-to-spike transitions.
+ * Straight-segment (polyline) path — sharp, angular joints between points with
+ * no smoothing, matching the zig-zag look in the design.
  */
-function monotonePath(pts: [number, number][]): string {
-    const n = pts.length;
-    if (n === 0) return "";
-    if (n === 1) return `M ${pts[0][0].toFixed(2)} ${pts[0][1].toFixed(2)}`;
-
-    // Step 1: segment slopes
-    const dx: number[] = [];
-    const dy: number[] = [];
-    const d:  number[] = [];
-    for (let i = 0; i < n - 1; i++) {
-        dx[i] = pts[i + 1][0] - pts[i][0];
-        dy[i] = pts[i + 1][1] - pts[i][1];
-        d[i]  = dx[i] === 0 ? 0 : dy[i] / dx[i];
-    }
-
-    // Step 2: tangents at each point
-    const m: number[] = new Array(n);
-    m[0]     = d[0];
-    m[n - 1] = d[n - 2];
-    for (let i = 1; i < n - 1; i++) {
-        m[i] = (d[i - 1] + d[i]) / 2;
-    }
-
-    // Step 3: Fritsch-Carlson monotonicity fix
-    for (let i = 0; i < n - 1; i++) {
-        if (d[i] === 0) { m[i] = 0; m[i + 1] = 0; continue; }
-        const α = m[i]     / d[i];
-        const β = m[i + 1] / d[i];
-        const h = Math.sqrt(α * α + β * β);
-        if (h > 3) { m[i] = (3 / h) * α * d[i]; m[i + 1] = (3 / h) * β * d[i]; }
-    }
-
-    // Step 4: build cubic Bezier path
+function linearPath(pts: [number, number][]): string {
+    if (pts.length === 0) return "";
     let path = `M ${pts[0][0].toFixed(2)} ${pts[0][1].toFixed(2)}`;
-    for (let i = 0; i < n - 1; i++) {
-        const cp1x = pts[i][0]     + dx[i] / 3;
-        const cp1y = pts[i][1]     + m[i]     * dx[i] / 3;
-        const cp2x = pts[i + 1][0] - dx[i] / 3;
-        const cp2y = pts[i + 1][1] - m[i + 1] * dx[i] / 3;
-        path += ` C ${cp1x.toFixed(2)} ${cp1y.toFixed(2)} ${cp2x.toFixed(2)} ${cp2y.toFixed(2)} ${pts[i + 1][0].toFixed(2)} ${pts[i + 1][1].toFixed(2)}`;
+    for (let i = 1; i < pts.length; i++) {
+        path += ` L ${pts[i][0].toFixed(2)} ${pts[i][1].toFixed(2)}`;
     }
     return path;
 }
@@ -190,7 +154,7 @@ export default function DonationChart({
     const yOf = (v: number)   => PT + ph - (v / yMax) * ph;
 
     const pts: [number, number][] = plottedWithOrigin.map(({ index, cum }) => [xOf(index), yOf(cum)]);
-    const linePath = monotonePath(pts);
+    const linePath = linearPath(pts);
     const baseY    = PT + ph;
     const areaPath = pts.length > 0
         ? `${linePath} L ${pts[pts.length - 1][0].toFixed(2)} ${baseY} L ${pts[0][0].toFixed(2)} ${baseY} Z`
@@ -411,7 +375,7 @@ export default function DonationChart({
                         stroke="#0278de"
                         strokeWidth="2.5"
                         strokeLinecap="round"
-                        strokeLinejoin="round"
+                        strokeLinejoin="miter"
                         clipPath="url(#dcAreaClip)"
                     />
                 )}
