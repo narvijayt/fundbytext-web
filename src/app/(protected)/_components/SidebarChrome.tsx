@@ -6,6 +6,7 @@ import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import SidebarUserMenu from "./SidebarUserMenu";
 import SidebarCampaignsDropdown from "./SidebarCampaignsDropdown";
+import EditProfileModal from "./EditProfileModal";
 
 const GRADIENT = "linear-gradient(to bottom, #0268c0 0%, #ffffff 28%, #ffffff 100%)";
 
@@ -91,7 +92,7 @@ function NewCampaign({ compact, onNavigate }: { compact?: boolean; onNavigate?: 
 }
 
 // ── Full content (lg aside + mobile drawer) ──────────────────────────────────
-function FullContent({ data, onNavigate, desktop }: { data: SidebarData; onNavigate?: () => void; desktop?: boolean }) {
+function FullContent({ data, onNavigate, desktop, onEditProfile }: { data: SidebarData; onNavigate?: () => void; desktop?: boolean; onEditProfile: () => void }) {
     return (
         <>
             {/* Browser: centered + slightly smaller. Mobile drawer: left-aligned. */}
@@ -118,7 +119,7 @@ function FullContent({ data, onNavigate, desktop }: { data: SidebarData; onNavig
                 )}
             </nav>
             <div className="px-5 pb-5 pt-4">
-                <SidebarUserMenu firstName={data.firstName} lastName={data.lastName} photoUrl={data.photoUrl} orgName={data.orgName} role={data.role} />
+                <SidebarUserMenu firstName={data.firstName} lastName={data.lastName} photoUrl={data.photoUrl} orgName={data.orgName} role={data.role} onEditProfile={onEditProfile} />
             </div>
         </>
     );
@@ -126,7 +127,7 @@ function FullContent({ data, onNavigate, desktop }: { data: SidebarData; onNavig
 
 // ── Icon rail (tablet) — collapsed; logo F, +, icons, avatar, and an expand (→)
 // button that opens the full sidebar as an overlay (so the campaign dropdown fits).
-function RailContent({ data, onExpand }: { data: SidebarData; onExpand: () => void }) {
+function RailContent({ data, onExpand, onEditProfile }: { data: SidebarData; onExpand: () => void; onEditProfile: () => void }) {
     const initial = (data.firstName?.[0] ?? "?").toUpperCase();
     return (
         <>
@@ -148,9 +149,9 @@ function RailContent({ data, onExpand }: { data: SidebarData; onExpand: () => vo
                 )}
             </nav>
             <div className="flex flex-col items-center gap-3 py-5">
-                <Link href="/dashboard/profile" title={`${data.firstName} ${data.lastName}`} className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-[#aed9fe] text-[16px] font-bold text-[#0268c0]">
+                <button onClick={onEditProfile} title={`${data.firstName} ${data.lastName}`} aria-label="Edit profile" className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-[#aed9fe] text-[16px] font-bold text-[#0268c0]">
                     {data.photoUrl ? <Image src={data.photoUrl} alt="" width={40} height={40} className="h-10 w-10 rounded-full object-cover" /> : initial}
-                </Link>
+                </button>
                 <button onClick={onExpand} aria-label="Expand sidebar" title="Expand menu" className="flex h-9 w-9 items-center justify-center rounded-full bg-[#0268c0] text-white shadow-sm transition-transform hover:scale-105">
                     <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
                 </button>
@@ -162,6 +163,8 @@ function RailContent({ data, onExpand }: { data: SidebarData; onExpand: () => vo
 // ── Responsive shell ─────────────────────────────────────────────────────────
 export default function SidebarChrome({ data }: { data: SidebarData }) {
     const [open, setOpen] = useState(false);
+    const [editProfileOpen, setEditProfileOpen] = useState(false);
+    const openEditProfile = () => { setOpen(false); setEditProfileOpen(true); };
     const pathname = usePathname();
     useEffect(() => { setOpen(false); }, [pathname]);
     useEffect(() => {
@@ -173,12 +176,12 @@ export default function SidebarChrome({ data }: { data: SidebarData }) {
         <>
             {/* Browser (lg+): full sidebar */}
             <aside className="hidden lg:flex w-64 shrink-0 flex-col h-screen" style={{ background: GRADIENT }}>
-                <FullContent data={data} desktop />
+                <FullContent data={data} desktop onEditProfile={openEditProfile} />
             </aside>
 
             {/* Tablet (md–lg): icon rail; the → button expands to the full sidebar */}
             <aside className="hidden md:flex lg:hidden w-[72px] shrink-0 flex-col h-screen" style={{ background: GRADIENT }}>
-                <RailContent data={data} onExpand={() => setOpen(true)} />
+                <RailContent data={data} onExpand={() => setOpen(true)} onEditProfile={openEditProfile} />
             </aside>
 
             <header className="fixed inset-x-0 top-0 z-40 flex h-16 items-center justify-between border-b border-[#e7e9eb] bg-white px-4 md:hidden">
@@ -196,10 +199,12 @@ export default function SidebarChrome({ data }: { data: SidebarData }) {
                         <button type="button" onClick={() => setOpen(false)} aria-label="Close menu" className="absolute right-3 top-4 z-10 flex h-9 w-9 items-center justify-center rounded-lg text-[#003060] hover:bg-[#0268c0]/8">
                             <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
                         </button>
-                        <FullContent data={data} onNavigate={() => setOpen(false)} />
+                        <FullContent data={data} onNavigate={() => setOpen(false)} onEditProfile={openEditProfile} />
                     </aside>
                 </div>
             )}
+
+            {editProfileOpen && <EditProfileModal onClose={() => setEditProfileOpen(false)} />}
         </>
     );
 }

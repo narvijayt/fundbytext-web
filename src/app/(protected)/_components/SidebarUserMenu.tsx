@@ -11,12 +11,14 @@ export default function SidebarUserMenu({
     photoUrl,
     orgName,
     role,
+    onEditProfile,
 }: {
     firstName: string;
     lastName:  string;
     photoUrl:  string | null;
     orgName:   string | null;
     role?:     string | null;
+    onEditProfile: () => void;
 }) {
     const [open, setOpen] = useState(false);
     const [imgError, setImgError] = useState(false);
@@ -74,35 +76,32 @@ export default function SidebarUserMenu({
                         </svg>
                     </div>
 
-                    {/* Menu items */}
+                    {/* Menu items — Edit Profile + Log Out use the Figma vuesax icons;
+                        Change Password keeps a matching blue lock (Figma has no icon for it). */}
                     <div className="py-1">
-                        <Link
-                            href="/dashboard/profile"
-                            onClick={() => setOpen(false)}
-                            className="flex items-center gap-3 px-4 py-3 text-sm text-blue-700 hover:bg-gray-50 transition-colors"
+                        <button
+                            onClick={() => { setOpen(false); onEditProfile(); }}
+                            className="w-full flex items-center gap-3 px-4 py-3 text-left text-sm font-medium text-[#005bac] hover:bg-gray-50 transition-colors"
                         >
-                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                            </svg>
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src="/assets/dashboard/menu-edit.svg" alt="" className="h-5 w-5" />
                             Edit Profile
-                        </Link>
+                        </button>
                         <Link
                             href="/dashboard/change-password"
                             onClick={() => setOpen(false)}
-                            className="flex items-center gap-3 px-4 py-3 text-sm text-blue-700 hover:bg-gray-50 transition-colors"
+                            className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-[#005bac] hover:bg-gray-50 transition-colors"
                         >
-                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                            </svg>
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src="/assets/dashboard/menu-lock.svg" alt="" className="h-5 w-5" />
                             Change Password
                         </Link>
                         <button
                             onClick={handleLogout}
-                            className="w-full flex items-center gap-3 px-4 py-3 text-sm text-blue-700 hover:bg-gray-50 transition-colors"
+                            className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-[#005bac] hover:bg-gray-50 transition-colors"
                         >
-                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                            </svg>
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src="/assets/dashboard/menu-logout.svg" alt="" className="h-5 w-5" />
                             Log Out
                         </button>
                     </div>

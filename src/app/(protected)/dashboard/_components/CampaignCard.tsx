@@ -103,7 +103,9 @@ export default function CampaignCard({ campaign }: { campaign: CampaignCardData 
     const status = campaign.status as CampaignStatus;
     const isOrganizer = campaign.myRoles.includes(MemberRole.organizer);
     const heroUrl = campaign.media.find((m) => m.media_type === "hero")?.url ?? null;
-    const location = campaign.payout ? `${campaign.payout.city}, ${campaign.payout.state}` : null;
+    const location = campaign.payout
+        ? [campaign.payout.city, campaign.payout.state].map((s) => (s ?? "").trim()).filter(Boolean).join(", ")
+        : "";
 
     const goalAmt = campaign.goal_amount ? parseFloat(campaign.goal_amount.toString()) : 0;
     const initialGoalAmt = campaign.initial_goal_amount ? parseFloat(campaign.initial_goal_amount.toString()) : null;
