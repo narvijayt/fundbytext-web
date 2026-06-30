@@ -28,18 +28,36 @@ export type DonationFeedItem = {
     created_at:         number;   // Unix timestamp (ms)
 };
 
+// Donors aren't users (no photo) — give each a stable, varied colour so the feed
+// looks like the Figma's colourful avatars; anonymous donors get a neutral grey.
+const AVATAR_PALETTE = [
+    { bg: "#d6f5e3", fg: "#1a9d52" },
+    { bg: "#aed9fe", fg: "#0268c0" },
+    { bg: "#ffe0cc", fg: "#e0651f" },
+    { bg: "#e9d8fd", fg: "#7c3aed" },
+    { bg: "#cdeef0", fg: "#0e8a99" },
+    { bg: "#fdd8e8", fg: "#c63a78" },
+];
+function avatarColor(key: string) {
+    let h = 0;
+    for (let i = 0; i < key.length; i++) h = (h * 31 + key.charCodeAt(i)) >>> 0;
+    return AVATAR_PALETTE[h % AVATAR_PALETTE.length];
+}
+
 function DonorRow({ d }: { d: DonationFeedItem }) {
-    const realName = [d.donor_first_name, d.donor_last_name].filter(Boolean).join(" ") || "Unknown";
+    const hasName  = Boolean(d.donor_first_name || d.donor_last_name);
+    const realName = hasName ? [d.donor_first_name, d.donor_last_name].filter(Boolean).join(" ") : "Anonymous";
     const initials = realName.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase();
+    const c = d.is_anonymous ? { bg: "#e7e9eb", fg: "#7e8a96" } : avatarColor(realName);
     return (
         <div className="flex items-center gap-3 px-5 py-3">
-            <div className="w-9 h-9 rounded-full bg-[#aed9fe] flex items-center justify-center text-[#0268c0] font-bold text-[11px] shrink-0">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[11px] font-bold" style={{ background: c.bg, color: c.fg }}>
                 {initials}
             </div>
             <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1.5 min-w-0">
                     <p className="text-[14px] font-semibold text-[#003060] truncate">{realName}</p>
-                    {d.is_anonymous && (
+                    {d.is_anonymous && hasName && (
                         <span className="shrink-0 text-[10px] font-semibold px-1.5 py-0.5 rounded bg-gray-100 text-gray-500">
                             Anonymous
                         </span>
