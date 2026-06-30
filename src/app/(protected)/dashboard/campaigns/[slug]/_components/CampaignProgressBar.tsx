@@ -89,7 +89,7 @@ export default function CampaignProgressBar({ raisedAmt, goalAmt, initialGoalAmt
     const urgent = countdown && !countdown.ended && countdown.days <= 2;
 
     return (
-        <div>
+        <div className="pl-6">
             {/* Top row */}
             <div className="flex items-baseline justify-between gap-4 mb-3">
                 <p className="text-[26px] font-black leading-none text-[#003060]">
