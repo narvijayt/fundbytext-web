@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 type Visibility = "private" | "unlisted" | "public";
 
@@ -15,55 +16,82 @@ type Props = {
 };
 
 const VISIBILITY_OPTIONS: { value: Visibility; label: string; description: string }[] = [
-    {
-        value:       "private",
-        label:       "Private",
-        description: "URL returns 404 for everyone except you.",
-    },
-    {
-        value:       "unlisted",
-        label:       "Unlisted",
-        description: "Accessible via direct link, not listed on marketing pages.",
-    },
-    {
-        value:       "public",
-        label:       "Public",
-        description: "Listed on marketing pages and open to anyone.",
-    },
+    { value: "private",  label: "Private",  description: "URL returns 404 for everyone except you." },
+    { value: "unlisted", label: "Unlisted", description: "Accessible via direct link, not listed on marketing pages." },
+    { value: "public",   label: "Public",   description: "Listed on marketing pages and open to anyone." },
 ];
 
+const ClockIcon = ({ className }: { className: string }) => (
+    <svg className={className} fill="currentColor" viewBox="0 0 20 20">
+        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
+    </svg>
+);
+
 export default function CampaignControls({
-    campaignSlug,
-    visibility,
-    donationsEnabled,
-    donationsDisabledMessage,
-    status,
-    endDate,
+    campaignSlug, visibility, donationsEnabled, donationsDisabledMessage, status, endDate,
 }: Props) {
     const router = useRouter();
 
-    const [open,           setOpen]           = useState(false);
-    const [saving,         setSaving]         = useState<"visibility" | "donations" | null>(null);
-    const [completing,     setCompleting]     = useState(false);
-    const [reactivating,   setReactivating]   = useState(false);
-    const [confirmEnd,     setConfirmEnd]     = useState(false);
-    const [error,          setError]          = useState<string | null>(null);
-    const [disabledMsg,    setDisabledMsg]    = useState(donationsDisabledMessage ?? "");
-    const [savingMsg,      setSavingMsg]      = useState(false);
-    const [toast,          setToast]          = useState<string | null>(null);
+    const [open,         setOpen]         = useState(false);
+    const [shown,        setShown]        = useState(false);   // drives slide-in / fade
+    const [saving,       setSaving]       = useState<"visibility" | "donations" | null>(null);
+    const [pendingVis,   setPendingVis]   = useState<Visibility | null>(null);
+    const [pendingDon,   setPendingDon]   = useState<boolean | null>(null);
+    const [completing,   setCompleting]   = useState(false);
+    const [reactivating, setReactivating] = useState(false);
+    const [confirmEnd,   setConfirmEnd]   = useState(false);
+    const [error,        setError]        = useState<string | null>(null);
+    const [disabledMsg,  setDisabledMsg]  = useState(donationsDisabledMessage ?? "");
+    const [savingMsg,    setSavingMsg]    = useState(false);
+    const [msgSaved,     setMsgSaved]     = useState(false);
+
+    const triggerRef = useRef<HTMLButtonElement>(null);
 
     const isActive    = status === "active";
     const isCompleted = status === "completed";
     const isDraft     = status === "draft";
     const isUpcoming  = status === "upcoming";
-
     const endDateInFuture = endDate ? endDate.getTime() > Date.now() : false;
 
+    // Optimistic values so the UI responds instantly; reconciled when the server prop lands.
+    const shownVis = pendingVis ?? visibility;
+    const donOn    = pendingDon ?? (donationsEnabled && isActive);
+
+    useEffect(() => { setPendingVis(null); },                       [visibility]);
+    useEffect(() => { setPendingDon(null); },                       [donationsEnabled]);
+    useEffect(() => { setDisabledMsg(donationsDisabledMessage ?? ""); }, [donationsDisabledMessage]);
+
+    function openDrawer() { setError(null); setOpen(true); }
+
     function close() {
-        setOpen(false);
-        setConfirmEnd(false);
-        setError(null);
+        setShown(false);
+        window.setTimeout(() => {
+            setOpen(false);
+            setConfirmEnd(false);
+            setError(null);
+            triggerRef.current?.focus();
+        }, 240);
     }
+
+    // Slide-in + body-scroll lock while open
+    useEffect(() => {
+        if (!open) return;
+        const raf = requestAnimationFrame(() => setShown(true));
+        const prev = document.body.style.overflow;
+        document.body.style.overflow = "hidden";
+        return () => { cancelAnimationFrame(raf); document.body.style.overflow = prev; };
+    }, [open]);
+
+    // ESC: step back out of the destructive confirm first, otherwise close
+    useEffect(() => {
+        if (!open) return;
+        function onKey(e: KeyboardEvent) {
+            if (e.key === "Escape") { confirmEnd ? setConfirmEnd(false) : close(); }
+        }
+        document.addEventListener("keydown", onKey);
+        return () => document.removeEventListener("keydown", onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [open, confirmEnd]);
 
     async function patch(body: Record<string, unknown>) {
         const res = await fetch(`/api/v1/campaigns/${campaignSlug}`, {
@@ -79,34 +107,32 @@ export default function CampaignControls({
     }
 
     async function setVisibility(v: Visibility) {
+        setPendingVis(v);
         setSaving("visibility");
         setError(null);
         try { await patch({ visibility: v }); }
-        catch (e) { setError((e as Error).message); }
+        catch (e) { setError((e as Error).message); setPendingVis(null); }
         setSaving(null);
     }
 
-    function showToast(msg: string) {
-        setToast(msg);
-        setTimeout(() => setToast(null), 4000);
-    }
-
     async function toggleDonations() {
-        if (isUpcoming) {
-            showToast("Donations are only processed once the campaign goes live.");
-            return;
-        }
+        const next = !donationsEnabled;
+        setPendingDon(next);
         setSaving("donations");
         setError(null);
-        try { await patch({ donations_enabled: !donationsEnabled }); }
-        catch (e) { setError((e as Error).message); }
+        try { await patch({ donations_enabled: next }); }
+        catch (e) { setError((e as Error).message); setPendingDon(null); }
         setSaving(null);
     }
 
     async function saveDisabledMessage() {
         setSavingMsg(true);
         setError(null);
-        try { await patch({ donations_disabled_message: disabledMsg.trim() || null }); }
+        try {
+            await patch({ donations_disabled_message: disabledMsg.trim() || null });
+            setMsgSaved(true);
+            window.setTimeout(() => setMsgSaved(false), 2000);
+        }
         catch (e) { setError((e as Error).message); }
         setSavingMsg(false);
     }
@@ -115,10 +141,8 @@ export default function CampaignControls({
         setCompleting(true);
         setError(null);
         const res = await fetch(`/api/v1/campaigns/${campaignSlug}/complete`, { method: "POST" });
-        if (res.ok) {
-            close();
-            router.refresh();
-        } else {
+        if (res.ok) { close(); router.refresh(); }
+        else {
             const j = await res.json().catch(() => ({}));
             setError(j.error ?? "Failed to end campaign.");
         }
@@ -129,28 +153,28 @@ export default function CampaignControls({
         if (!endDate) return;
         setReactivating(true);
         setError(null);
-        try {
-            await patch({ end_date: endDate.toISOString() });
-            close();
-        } catch (e) {
-            setError((e as Error).message);
-        }
+        try { await patch({ end_date: endDate.toISOString() }); close(); }
+        catch (e) { setError((e as Error).message); }
         setReactivating(false);
     }
 
+    const donHelper =
+        isActive    ? (donationsEnabled ? "Pause donations without ending the campaign" : "Donations are paused for visitors")
+        : isUpcoming  ? "Donations start once the campaign goes live"
+        : isDraft     ? "Available after you launch the campaign"
+        :               "The campaign has ended";
+
+    const msgUnchanged = disabledMsg.trim() === (donationsDisabledMessage ?? "");
+
     return (
         <>
-            {/* Toast — outside drawer so it survives drawer close */}
-            {toast && (
-                <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-200 px-5 py-3 bg-amber-50 border border-amber-200 rounded-xl shadow-lg text-sm text-amber-700 whitespace-nowrap">
-                    {toast}
-                </div>
-            )}
-
-            {/* Trigger button */}
+            {/* Trigger */}
             <button
-                onClick={() => setOpen(true)}
+                ref={triggerRef}
+                onClick={openDrawer}
                 aria-label="Campaign controls"
+                aria-haspopup="dialog"
+                aria-expanded={open}
                 title="Campaign controls"
                 className="inline-flex items-center justify-center gap-2 rounded-[12px] border border-gray-200 bg-white px-3 py-2.5 sm:px-4 text-sm font-semibold text-gray-600 shadow-sm transition-colors hover:border-gray-300 hover:text-gray-800"
             >
@@ -162,143 +186,138 @@ export default function CampaignControls({
 
             {/* Drawer */}
             {open && (
-                <div
-                    className="fixed inset-0 z-50 flex"
-                    style={{ background: "rgba(0,0,0,0.45)" }}
-                >
-                    <div className="ml-auto bg-white w-full max-w-sm h-full flex flex-col shadow-2xl overflow-hidden">
+                <div className="fixed inset-0 z-[100] flex justify-end" onClick={close}>
+                    {/* backdrop */}
+                    <div className={`absolute inset-0 bg-[#0f1d43]/45 backdrop-blur-sm transition-opacity duration-300 motion-reduce:transition-none ${shown ? "opacity-100" : "opacity-0"}`} />
 
-                        {/* Header */}
-                        <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100 shrink-0">
-                            <div>
-                                <h2 className="font-bold text-gray-900 text-base">Campaign Controls</h2>
-                                <p className="text-xs text-gray-400 mt-0.5">Manage visibility and donation settings</p>
+                    {/* panel */}
+                    <div
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="cc-title"
+                        onClick={(e) => e.stopPropagation()}
+                        className={`relative ml-auto flex h-full w-full max-w-[400px] flex-col overflow-hidden rounded-l-2xl bg-white shadow-[0px_16px_40px_-8px_rgba(15,29,67,0.3)] transition-transform duration-300 ease-out motion-reduce:transition-none ${shown ? "translate-x-0" : "translate-x-full"}`}
+                    >
+                        {/* Header — blue bar (matches Edit Profile modal) */}
+                        <div className="flex shrink-0 items-center justify-between gap-3 bg-[#0278de] px-5 py-4">
+                            <div className="min-w-0">
+                                <h2 id="cc-title" className="text-[17px] font-bold leading-tight text-white">Campaign Controls</h2>
+                                <p className="mt-0.5 text-[12px] text-white/75">Visibility, donations &amp; status</p>
                             </div>
                             <button
                                 onClick={close}
-                                className="w-8 h-8 flex items-center justify-center hover:bg-gray-100 text-gray-400 transition-colors"
+                                aria-label="Close"
+                                className="-mr-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white/80 transition-colors hover:bg-white/15 hover:text-white"
                             >
-                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                </svg>
+                                <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
                             </button>
                         </div>
 
-                        <div className="flex-1 overflow-y-auto divide-y divide-gray-100">
+                        <div className="flex-1 divide-y divide-[#eef1f4] overflow-y-auto [scrollbar-width:thin]">
 
                             {/* ── Visibility ── */}
-                            <div className="px-6 py-5 space-y-3">
+                            <div className="space-y-3 px-5 py-5">
                                 <div>
-                                    <p className="text-sm font-semibold text-gray-800">Visibility</p>
-                                    <p className="text-xs text-gray-400 mt-0.5">Controls who can find and access this campaign</p>
+                                    <h3 className="text-[14px] font-bold text-[#003060]">Visibility</h3>
+                                    <p className="mt-0.5 text-[12px] text-[#7e8a96]">Who can find and access this campaign</p>
                                 </div>
-                                <div className="space-y-2">
+                                <div role="radiogroup" aria-label="Visibility" className="space-y-2">
                                     {VISIBILITY_OPTIONS.map((opt) => {
-                                        const active  = visibility === opt.value;
-                                        const loading = saving === "visibility";
+                                        const active     = shownVis === opt.value;
+                                        const loadingOne = saving === "visibility" && pendingVis === opt.value;
                                         return (
                                             <button
                                                 key={opt.value}
+                                                role="radio"
+                                                aria-checked={active}
                                                 onClick={() => !active && setVisibility(opt.value)}
-                                                disabled={loading || isDraft}
-                                                className={`w-full text-left px-4 py-3 rounded-xl border transition-colors disabled:opacity-50 ${
+                                                disabled={saving === "visibility" || isDraft}
+                                                className={`w-full rounded-2xl border p-3.5 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${
                                                     active
-                                                        ? "border-orange-400 bg-orange-50"
-                                                        : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                                                        ? "border-[#0268c0] bg-[#0268c0]/[0.06]"
+                                                        : "border-[#e7e9eb] hover:border-[#cfd9e3] hover:bg-gray-50"
                                                 }`}
                                             >
                                                 <div className="flex items-center gap-2.5">
-                                                    <span className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${
-                                                        active ? "border-orange-500" : "border-gray-300"
-                                                    }`}>
-                                                        {active && <span className="w-2 h-2 rounded-full bg-orange-500" />}
+                                                    <span className={`flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full border-2 ${active ? "border-[#0268c0]" : "border-[#cdd6df]"}`}>
+                                                        {loadingOne
+                                                            ? <span className="h-2.5 w-2.5 animate-spin rounded-full border-2 border-[#0268c0] border-t-transparent" />
+                                                            : active && <span className="h-2 w-2 rounded-full bg-[#0268c0]" />}
                                                     </span>
-                                                    <span className={`text-sm font-semibold ${active ? "text-orange-700" : "text-gray-700"}`}>
-                                                        {opt.label}
-                                                    </span>
+                                                    <span className={`text-[14px] font-semibold ${active ? "text-[#0268c0]" : "text-[#003060]"}`}>{opt.label}</span>
                                                 </div>
-                                                <p className="text-xs text-gray-400 mt-1 ml-6.5 leading-snug">{opt.description}</p>
+                                                <p className="mt-1 pl-[28px] text-[12px] leading-snug text-[#7e8a96]">{opt.description}</p>
                                             </button>
                                         );
                                     })}
                                 </div>
-                                {isDraft && (
-                                    <p className="text-xs text-gray-400">Visibility can be changed after launch.</p>
-                                )}
+                                {isDraft && <p className="text-[12px] text-[#9aa7b8]">Visibility can be changed after launch.</p>}
                             </div>
 
                             {/* ── Donations ── */}
-                            <div className="px-6 py-5 space-y-3">
-                                <div className="flex items-center justify-between gap-4">
+                            <div className="space-y-3 px-5 py-5">
+                                <div className="flex items-start justify-between gap-4">
                                     <div className="min-w-0">
-                                        <p className="text-sm font-semibold text-gray-800">Accept Donations</p>
-                                        <p className="text-xs text-gray-400 mt-0.5">
-                                            {isActive
-                                                ? "Pause or resume donations without ending the campaign"
-                                                : "Only processed while the campaign is active"}
-                                        </p>
+                                        <h3 className="text-[14px] font-bold text-[#003060]">Accept Donations</h3>
+                                        <p className="mt-0.5 text-[12px] text-[#7e8a96]">{donHelper}</p>
                                     </div>
                                     <button
                                         onClick={toggleDonations}
-                                        disabled={saving === "donations" || isCompleted || isDraft}
-                                        aria-label={donationsEnabled ? "Disable donations" : "Enable donations"}
-                                        title={isUpcoming ? "Donations are only processed once the campaign goes live" : undefined}
-                                        className={`relative shrink-0 inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-orange-400 focus:ring-offset-1 disabled:opacity-40 ${
-                                            donationsEnabled && isActive ? "bg-orange-500" : "bg-gray-200"
-                                        }`}
+                                        disabled={saving === "donations" || !isActive}
+                                        role="switch"
+                                        aria-checked={donOn}
+                                        aria-label={donOn ? "Disable donations" : "Enable donations"}
+                                        className={`relative mt-0.5 inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0268c0]/40 disabled:cursor-not-allowed disabled:opacity-50 ${donOn ? "bg-[#28c45d]" : "bg-[#d4dee7]"}`}
                                     >
-                                        <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
-                                            donationsEnabled && isActive ? "translate-x-6" : "translate-x-1"
-                                        }`} />
+                                        <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${donOn ? "translate-x-6" : "translate-x-1"}`} />
                                     </button>
                                 </div>
 
-                                {/* Custom message shown to donors when paused */}
                                 {!donationsEnabled && isActive && (
-                                    <div className="space-y-2">
-                                        <p className="text-xs font-semibold text-gray-500">Message shown to visitors</p>
+                                    <div className="space-y-2 rounded-2xl border border-[#e7e9eb] bg-[#f7f9fb] p-3.5">
+                                        <label className="block text-[12px] font-semibold text-[#003060]">Message shown to visitors while paused</label>
                                         <textarea
                                             value={disabledMsg}
                                             onChange={(e) => setDisabledMsg(e.target.value)}
                                             maxLength={300}
                                             rows={2}
                                             placeholder="e.g. Donations are temporarily paused. Please check back soon."
-                                            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-700 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-400 resize-none"
+                                            className="w-full resize-none rounded-[12px] border border-[#d4dee7] bg-white px-3.5 py-2.5 text-[14px] text-[#003060] placeholder:text-[#9aa7b8] focus:border-[#0268c0] focus:outline-none focus:ring-2 focus:ring-[#0268c0]/20"
                                         />
                                         <div className="flex items-center justify-between gap-2">
-                                            <span className="text-[10px] text-gray-300">{disabledMsg.length}/300</span>
+                                            <span className="text-[11px] text-[#9aa7b8]">{disabledMsg.length}/300</span>
                                             <button
                                                 onClick={saveDisabledMessage}
-                                                disabled={savingMsg}
-                                                className="px-3 py-1.5 bg-gray-800 hover:bg-gray-900 text-white text-xs font-semibold rounded-lg disabled:opacity-50 transition-colors"
+                                                disabled={savingMsg || msgUnchanged}
+                                                className="rounded-[10px] bg-[#0268c0] px-3.5 py-2 text-[13px] font-semibold text-white transition-[filter] hover:brightness-110 disabled:opacity-50"
                                             >
-                                                {savingMsg ? "Saving…" : "Save Message"}
+                                                {savingMsg ? "Saving…" : msgSaved ? "Saved ✓" : "Save Message"}
                                             </button>
                                         </div>
                                     </div>
                                 )}
                             </div>
 
-                            {/* ── Mark as Complete ── */}
+                            {/* ── End early (active) ── */}
                             {isActive && (
-                                <div className="px-6 py-5">
+                                <div className="px-5 py-5">
                                     {confirmEnd ? (
-                                        <div className="space-y-3">
-                                            <p className="text-sm text-gray-700 font-medium">
-                                                End this campaign now? Donations will stop immediately. This cannot be undone.
+                                        <div className="space-y-3 rounded-2xl border border-red-200 bg-red-50 p-4">
+                                            <p className="text-[13px] font-medium leading-snug text-red-700">
+                                                End this campaign now? Donations stop immediately. This can&apos;t be undone.
                                             </p>
                                             <div className="flex gap-2">
                                                 <button
-                                                    onClick={() => setConfirmEnd(false)}
+                                                    onClick={() => { setConfirmEnd(false); setError(null); }}
                                                     disabled={completing}
-                                                    className="flex-1 py-2 text-sm font-semibold rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors"
+                                                    className="flex-1 rounded-[10px] border border-[#d4dee7] bg-white py-2 text-[13px] font-semibold text-[#003060] transition-colors hover:bg-gray-50 disabled:opacity-50"
                                                 >
                                                     Cancel
                                                 </button>
                                                 <button
                                                     onClick={markComplete}
                                                     disabled={completing}
-                                                    className="flex-1 py-2 text-sm font-semibold rounded-xl bg-red-500 hover:bg-red-600 text-white transition-colors disabled:opacity-50"
+                                                    className="flex-1 rounded-[10px] bg-red-500 py-2 text-[13px] font-semibold text-white transition-[filter] hover:brightness-105 disabled:opacity-50"
                                                 >
                                                     {completing ? "Ending…" : "Yes, End It"}
                                                 </button>
@@ -307,12 +326,12 @@ export default function CampaignControls({
                                     ) : (
                                         <div className="flex items-center justify-between gap-4">
                                             <div className="min-w-0">
-                                                <p className="text-sm font-semibold text-gray-800">Mark as Complete</p>
-                                                <p className="text-xs text-gray-400 mt-0.5">End campaign before its scheduled date</p>
+                                                <h3 className="text-[14px] font-bold text-[#003060]">End Campaign Early</h3>
+                                                <p className="mt-0.5 text-[12px] text-[#7e8a96]">Stop before the scheduled end date</p>
                                             </div>
                                             <button
                                                 onClick={() => setConfirmEnd(true)}
-                                                className="shrink-0 px-3 py-2 text-sm font-semibold text-red-600 border border-red-200 hover:bg-red-50 rounded-xl transition-colors"
+                                                className="shrink-0 rounded-[10px] border border-red-200 px-3.5 py-2 text-[13px] font-semibold text-red-600 transition-colors hover:bg-red-50"
                                             >
                                                 End Early
                                             </button>
@@ -321,53 +340,48 @@ export default function CampaignControls({
                                 </div>
                             )}
 
+                            {/* ── Completed ── */}
                             {isCompleted && (
-                                <div className="px-6 py-5 space-y-3">
+                                <div className="space-y-3 px-5 py-5">
                                     {endDateInFuture ? (
-                                        /* Manually ended early — time still remains */
                                         <>
-                                            <div className="flex items-start gap-2.5 px-4 py-3 bg-amber-50 border border-amber-100 rounded-xl">
-                                                <svg className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
-                                                </svg>
-                                                <p className="text-xs text-amber-700 leading-snug">
-                                                    This campaign was ended early. The original end date hasn&apos;t passed yet — you can reactivate it to resume accepting donations.
+                                            <div className="flex items-start gap-2.5 rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3">
+                                                <ClockIcon className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
+                                                <p className="text-[12px] leading-snug text-amber-700">
+                                                    This campaign was ended early. The original end date hasn&apos;t passed yet — reactivate it to resume accepting donations.
                                                 </p>
                                             </div>
                                             <div className="flex items-center justify-between gap-4">
                                                 <div className="min-w-0">
-                                                    <p className="text-sm font-semibold text-gray-800">Reactivate Campaign</p>
-                                                    <p className="text-xs text-gray-400 mt-0.5">Resume accepting donations immediately</p>
+                                                    <h3 className="text-[14px] font-bold text-[#003060]">Reactivate Campaign</h3>
+                                                    <p className="mt-0.5 text-[12px] text-[#7e8a96]">Resume accepting donations now</p>
                                                 </div>
                                                 <button
                                                     onClick={handleReactivate}
                                                     disabled={reactivating}
-                                                    className="shrink-0 px-3 py-2 text-sm font-semibold text-green-600 border border-green-200 hover:bg-green-50 rounded-xl transition-colors disabled:opacity-50"
+                                                    className="shrink-0 rounded-[10px] border border-green-200 px-3.5 py-2 text-[13px] font-semibold text-green-700 transition-colors hover:bg-green-50 disabled:opacity-50"
                                                 >
                                                     {reactivating ? "Reactivating…" : "Reactivate"}
                                                 </button>
                                             </div>
                                         </>
                                     ) : (
-                                        /* Ended naturally — time has passed */
                                         <>
-                                            <div className="flex items-start gap-2.5 px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl">
-                                                <svg className="w-4 h-4 text-gray-400 shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
-                                                </svg>
-                                                <p className="text-xs text-gray-500 leading-snug">
+                                            <div className="flex items-start gap-2.5 rounded-2xl border border-[#e7e9eb] bg-gray-50 px-4 py-3">
+                                                <ClockIcon className="mt-0.5 h-4 w-4 shrink-0 text-[#9aa7b8]" />
+                                                <p className="text-[12px] leading-snug text-[#7e8a96]">
                                                     This campaign has ended. To accept donations again, extend the end date in Edit Campaign.
                                                 </p>
                                             </div>
-                                            <a
+                                            <Link
                                                 href={`/campaigns/${campaignSlug}/edit`}
-                                                className="flex items-center justify-center gap-2 w-full py-2.5 text-sm font-semibold text-blue-600 border border-blue-200 hover:bg-blue-50 rounded-xl transition-colors"
+                                                className="flex items-center justify-center gap-2 rounded-[10px] border border-[#cfe0f3] bg-[#0268c0]/[0.04] py-2.5 text-[13px] font-semibold text-[#0268c0] transition-all duration-150 hover:bg-[#0268c0]/[0.08] active:scale-[0.98]"
                                             >
-                                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                                 </svg>
                                                 Extend End Date to Reactivate
-                                            </a>
+                                            </Link>
                                         </>
                                     )}
                                 </div>
@@ -375,8 +389,8 @@ export default function CampaignControls({
                         </div>
 
                         {error && (
-                            <div className="px-6 py-4 shrink-0 border-t border-gray-100">
-                                <p className="text-sm text-red-500 bg-red-50 px-4 py-2.5">{error}</p>
+                            <div className="shrink-0 border-t border-[#e8eaee] px-5 py-3">
+                                <p role="alert" className="rounded-lg bg-red-50 px-3.5 py-2.5 text-[13px] font-medium text-red-600">{error}</p>
                             </div>
                         )}
                     </div>
