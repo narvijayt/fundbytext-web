@@ -157,7 +157,8 @@ export default function LiveDonationFeed({ donations, totalCount, campaignSlug, 
                     onClick={() => setShowAll(false)}
                 >
                     <div
-                        className="flex max-h-[85vh] w-full max-w-[396px] flex-col overflow-hidden rounded-2xl border border-[#e7e9eb] bg-white shadow-[0px_16px_40px_-8px_rgba(15,29,67,0.25)]"
+                        className="flex w-full flex-col overflow-hidden rounded-2xl border border-[#e7e9eb] bg-white shadow-[0px_16px_40px_-8px_rgba(15,29,67,0.25)]"
+                        style={{ maxWidth: 396, maxHeight: "85vh" }}
                         onClick={(e) => e.stopPropagation()}
                     >
                         <div className="flex shrink-0 items-center justify-between border-b border-[#e7e9eb] px-6 py-4">
