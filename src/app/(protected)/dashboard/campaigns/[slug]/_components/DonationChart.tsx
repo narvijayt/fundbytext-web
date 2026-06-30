@@ -69,9 +69,9 @@ function niceYTicks(max: number): number[] {
 }
 
 function fmtY(n: number): string {
-    if (n >= 1_000_000) return `$${+(n / 1_000_000).toFixed(1)}M`;
-    if (n >= 1_000)     return `$${+(n / 1_000).toFixed(1)}k`;
-    return `$${n}`;
+    if (n >= 1_000_000) return `${+(n / 1_000_000).toFixed(1)}M`;
+    if (n >= 1_000)     return `${+(n / 1_000).toFixed(1)}k`;
+    return `${n}`;
 }
 
 function xTickStep(total: number): number {
@@ -442,7 +442,7 @@ export default function DonationChart({
 
                 {/* Rocket at tip */}
                 {rocketPt && totalRaised > 0 && (
-                    <text x={rocketPt[0]} y={rocketPt[1] - 12} textAnchor="middle" fontSize="18">🚀</text>
+                    <image href="/assets/campaigns/rocket.svg" x={rocketPt[0] - 20} y={rocketPt[1] - 30} width={46} height={34} style={{ pointerEvents: "none" }} />
                 )}
 
                 {/* ── Click crosshair + dot ── */}
