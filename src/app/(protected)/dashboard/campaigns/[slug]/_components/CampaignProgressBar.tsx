@@ -296,35 +296,35 @@ export default function CampaignProgressBar({ raisedAmt, goalAmt, initialGoalAmt
 
             {/* Bottom row — hidden for upcoming and completed */}
             {!isUpcoming && !isCompleted && (
-                <div className="flex items-center justify-between mt-3 gap-4">
-                    <div className="flex items-center gap-2.5">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src="/assets/campaigns/flag-active.svg" alt="" className="h-10 w-auto -rotate-6 shrink-0" />
-                        {/* Date on top, time-left stacked underneath (per Figma) */}
-                        <div className="flex flex-col gap-0.5">
+                <div className="mt-3 flex items-center gap-2.5">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src="/assets/campaigns/flag-active.svg" alt="" className="h-10 w-auto -rotate-6 shrink-0" />
+                    {/* Date + donations on the top line; time-left stacked underneath (per Figma) */}
+                    <div className="flex flex-1 flex-col gap-0.5">
+                        <div className="flex items-center justify-between gap-4">
                             {endDate ? (
                                 <span className="text-[15px] font-medium leading-tight text-[#7e8a96]">{fmtDate(endDate, tz)}</span>
                             ) : (
                                 <span className="text-[15px] leading-tight text-[#9aa7b8]">No end date</span>
                             )}
-                            {countdown && endDate && (
-                                countdown.ended ? (
-                                    <span className="text-[12px] font-black uppercase leading-none tracking-[0.5px] text-red-500">Ended</span>
-                                ) : countdown.days > 0 ? (
-                                    <span className={`text-[12px] font-black uppercase leading-none tracking-[0.5px] ${urgent ? "text-red-500" : "text-[#f47435]"}`}>
-                                        {countdown.days} {countdown.days === 1 ? "day" : "days"} left!
-                                    </span>
-                                ) : (
-                                    <span className={`text-[12px] font-black font-mono leading-none tabular-nums ${urgent ? "text-red-500" : "text-[#f47435]"}`}>
-                                        {pad(countdown.hours)}:{pad(countdown.minutes)}:{pad(countdown.seconds)} left!
-                                    </span>
-                                )
-                            )}
+                            <p className="text-[14px] font-medium leading-tight text-[#9aa7b8] shrink-0">
+                                {donationCount} {donationCount === 1 ? "donation" : "donations"}
+                            </p>
                         </div>
+                        {countdown && endDate && (
+                            countdown.ended ? (
+                                <span className="text-[12px] font-black uppercase leading-none tracking-[0.5px] text-red-500">Ended</span>
+                            ) : countdown.days > 0 ? (
+                                <span className={`text-[12px] font-black uppercase leading-none tracking-[0.5px] ${urgent ? "text-red-500" : "text-[#f47435]"}`}>
+                                    {countdown.days} {countdown.days === 1 ? "day" : "days"} left!
+                                </span>
+                            ) : (
+                                <span className={`text-[12px] font-black font-mono leading-none tabular-nums ${urgent ? "text-red-500" : "text-[#f47435]"}`}>
+                                    {pad(countdown.hours)}:{pad(countdown.minutes)}:{pad(countdown.seconds)} left!
+                                </span>
+                            )
+                        )}
                     </div>
-                    <p className="text-[14px] font-medium text-[#9aa7b8] shrink-0">
-                        {donationCount} {donationCount === 1 ? "donation" : "donations"}
-                    </p>
                 </div>
             )}
         </div>
