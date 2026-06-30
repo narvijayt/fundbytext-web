@@ -339,8 +339,15 @@ export default async function CampaignDetailPage({
                             );
                         })()}
                     </div>
-                    <p className="text-sm text-gray-500 mt-0.5">
-                        {campaign.campaign_type === "organization" ? "Organization Campaign" : "Individual Campaign"}
+                    <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[13px] font-medium text-[#7e8a96]">
+                        <span className="inline-flex items-center gap-1.5">
+                            <svg className="h-4 w-4 shrink-0 text-[#9aa7b8]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.7}>
+                                {campaign.campaign_type === "organization"
+                                    ? <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                                    : <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />}
+                            </svg>
+                            {campaign.campaign_type === "organization" ? "Organization Campaign" : "Individual Campaign"}
+                        </span>
                         {campaign.goal_type && (() => {
                             const labels: Record<string, string> = {
                                 open_ended:       "Open-Ended Goal",
@@ -348,10 +355,24 @@ export default async function CampaignDetailPage({
                                 org_goal:         "Shared Goal",
                                 participant_goal: "Per-Participant Goal",
                             };
-                            return ` · ${labels[campaign.goal_type] ?? campaign.goal_type}`;
+                            return (
+                                <span className="inline-flex items-center gap-1.5">
+                                    <svg className="h-4 w-4 shrink-0 text-[#9aa7b8]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.7}>
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 21V4m0 0l8 3 8-3v11l-8 3-8-3" />
+                                    </svg>
+                                    {labels[campaign.goal_type] ?? campaign.goal_type}
+                                </span>
+                            );
                         })()}
-                        {campaign.start_date && ` · Started ${fmtDate(campaign.start_date, campaign.timezone ?? "America/New_York")}`}
-                    </p>
+                        {campaign.start_date && (
+                            <span className="inline-flex items-center gap-1.5">
+                                <svg className="h-4 w-4 shrink-0 text-[#9aa7b8]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.7}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                </svg>
+                                Started {fmtDate(campaign.start_date, campaign.timezone ?? "America/New_York")}
+                            </span>
+                        )}
+                    </div>
                     <CopyUrlButton slug={slug} />
                 </div>
                 {isOrganizer && !isParticipantView && (
