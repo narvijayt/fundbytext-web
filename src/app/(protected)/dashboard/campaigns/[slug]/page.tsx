@@ -1,4 +1,3 @@
-import Link from "next/link";
 import CampaignNavLink from "@/app/(protected)/dashboard/_components/CampaignNavLink";
 import { notFound, redirect } from "next/navigation";
 import { getAuthUser } from "@/lib/session";
@@ -301,15 +300,6 @@ export default async function CampaignDetailPage({
             {/* ── Header ── */}
             <div className="flex items-start justify-between gap-4">
                 <div>
-                    <div className="flex items-center gap-2 mb-1">
-                        <Link href="/dashboard" className="text-sm text-gray-400 hover:text-gray-600 transition-colors">
-                            Campaigns
-                        </Link>
-                        <svg className="w-3.5 h-3.5 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                        </svg>
-                        <span className="text-sm text-gray-600">{campaign.name ?? "Untitled Campaign"}</span>
-                    </div>
                     <div className="flex flex-wrap items-center gap-3">
                         <h1 className="text-[26px] font-black leading-tight text-[#003060]">
                             {isParticipantView ? (
