@@ -106,8 +106,15 @@ export default function LiveDonationFeed({ donations, totalCount, campaignSlug, 
         fetchPage(0, true);
     }
 
+    // Figma modal has no "Load more" footer — load the next page on scroll instead.
+    function onModalScroll(e: React.UIEvent<HTMLDivElement>) {
+        const el = e.currentTarget;
+        if (!loading && modalSkip < modalTotal && el.scrollHeight - el.scrollTop - el.clientHeight < 140) {
+            fetchPage(modalSkip);
+        }
+    }
+
     const hasMore     = totalCount > donations.length;
-    const canLoadMore = modalSkip < modalTotal;
 
     return (
         <>
@@ -143,54 +150,48 @@ export default function LiveDonationFeed({ donations, totalCount, campaignSlug, 
                 </div>
             </div>
 
-            {/* See All modal */}
+            {/* See All modal — matches Figma "Live Donation Feed" dialog (396px, scrollable, no footer) */}
             {showAll && (
                 <div
-                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+                    className="fixed inset-0 z-[100] flex items-center justify-center bg-[#0f1d43]/45 p-4 backdrop-blur-sm"
                     onClick={() => setShowAll(false)}
                 >
                     <div
-                        className="bg-white rounded-2xl shadow-xl w-full max-w-md flex flex-col"
-                        style={{ height: "80vh" }}
+                        className="flex max-h-[85vh] w-full max-w-[396px] flex-col overflow-hidden rounded-2xl border border-[#e7e9eb] bg-white shadow-[0px_16px_40px_-8px_rgba(15,29,67,0.25)]"
                         onClick={(e) => e.stopPropagation()}
                     >
-                        <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between shrink-0">
-                            <div className="flex items-center gap-2">
-                                <span className="w-2 h-2 rounded-full bg-green-500" />
-                                <h2 className="text-sm font-bold text-gray-900">All Donations</h2>
-                                <span className="text-xs text-gray-400">({modalTotal || totalCount})</span>
-                            </div>
+                        <div className="flex shrink-0 items-center justify-between border-b border-[#e7e9eb] px-6 py-4">
+                            <h2 className="text-[16px] font-bold text-[#003060]">Live Donation Feed</h2>
                             <button
                                 onClick={() => setShowAll(false)}
-                                className="text-gray-400 hover:text-gray-600 transition-colors"
+                                aria-label="Close"
+                                className="text-[#9aa7b8] transition-colors hover:text-[#003060]"
                             >
-                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} strokeLinecap="round">
+                                    <path d="M6 6l12 12M18 6L6 18" />
                                 </svg>
                             </button>
                         </div>
 
-                        <div className="overflow-y-auto flex-1 divide-y divide-gray-50">
+                        <div
+                            className="flex-1 divide-y divide-gray-50 overflow-y-auto [scrollbar-width:thin]"
+                            onScroll={onModalScroll}
+                        >
                             {loading && modalItems.length === 0 ? (
                                 <div className="flex items-center justify-center py-12">
-                                    <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                                    <div className="h-5 w-5 animate-spin rounded-full border-2 border-[#0268c0] border-t-transparent" />
                                 </div>
                             ) : (
-                                modalItems.map((d) => <DonorRow key={d.id} d={d} />)
+                                <>
+                                    {modalItems.map((d) => <DonorRow key={d.id} d={d} />)}
+                                    {loading && modalItems.length > 0 && (
+                                        <div className="flex items-center justify-center py-4">
+                                            <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#0268c0] border-t-transparent" />
+                                        </div>
+                                    )}
+                                </>
                             )}
                         </div>
-
-                        {canLoadMore && (
-                            <div className="px-5 py-3 border-t border-gray-100 shrink-0">
-                                <button
-                                    onClick={() => fetchPage(modalSkip)}
-                                    disabled={loading}
-                                    className="w-full py-2 text-sm font-semibold text-blue-600 hover:text-blue-700 disabled:opacity-50 transition-colors"
-                                >
-                                    {loading ? "Loading…" : "Load More"}
-                                </button>
-                            </div>
-                        )}
                     </div>
                 </div>
             )}
