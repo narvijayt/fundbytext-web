@@ -89,15 +89,17 @@ export default function CampaignProgressBar({ raisedAmt, goalAmt, initialGoalAmt
     const urgent = countdown && !countdown.ended && countdown.days <= 2;
 
     return (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm px-6 py-5">
+        <div>
             {/* Top row */}
-            <div className="flex items-baseline justify-between mb-3">
-                <p className="text-xl font-bold text-gray-900">
+            <div className="flex items-baseline justify-between gap-4 mb-3">
+                <p className="text-[26px] font-black leading-none text-[#003060]">
                     {fmtUSD(raisedAmt)}{" "}
-                    <span className="font-normal text-gray-500">raised</span>
+                    <span className="text-[18px] font-medium text-[#7e8a96]">raised</span>
                 </p>
                 {goalAmt ? (
-                    <p className="text-sm text-gray-400">{fmtUSD(goalAmt)} goal</p>
+                    <p className="text-[15px] text-[#9aa7b8]">
+                        {fmtUSD(initialGoalAmt ?? goalAmt)} {initialGoalAmt && initialGoalAmt !== goalAmt ? "initial goal" : "goal"}
+                    </p>
                 ) : null}
             </div>
 
@@ -108,14 +110,18 @@ export default function CampaignProgressBar({ raisedAmt, goalAmt, initialGoalAmt
                     {animGreenPct > 0 && (
                         <div className="absolute inset-y-0 left-0" style={{
                             width: `${animGreenPct}%`,
-                            background: "repeating-linear-gradient(-45deg,#22c55e,#22c55e 6px,#16a34a 6px,#16a34a 12px)",
+                            background: "repeating-linear-gradient(-45deg,#33cc6b,#33cc6b 7px,#23b257 7px,#23b257 14px)",
                         }} />
                     )}
                     {animGoldPct > 0 && (
                         <div className="absolute inset-y-0" style={{
                             left: `${animGreenPct}%`, width: `${animGoldPct}%`,
-                            background: "repeating-linear-gradient(-45deg,#f59e0b,#f59e0b 6px,#d97706 6px,#d97706 12px)",
+                            background: "repeating-linear-gradient(-45deg,#f5b93f,#f5b93f 7px,#e8a423 7px,#e8a423 14px)",
                         }} />
+                    )}
+                    {/* Goal marker — green tick where the bar crosses the (initial) goal into overflow */}
+                    {animGoldPct > 0.5 && (
+                        <div className="absolute inset-y-0 z-[5] w-[3px] bg-[#178a43]" style={{ left: `calc(${animGreenPct}% - 1.5px)` }} />
                     )}
                     {animGreenPct + animGoldPct > 0 && (
                         <div className="absolute inset-y-0 left-0 pointer-events-none" style={{
@@ -292,33 +298,29 @@ export default function CampaignProgressBar({ raisedAmt, goalAmt, initialGoalAmt
             {!isUpcoming && !isCompleted && (
                 <div className="flex items-center justify-between mt-3 gap-4 flex-wrap">
                     <div className="flex items-center gap-2 flex-wrap">
-                        <svg
-                            className={`w-4 h-4 shrink-0 ${urgent ? "text-orange-500" : "text-gray-400"}`}
-                            viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                        >
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M4 21V4m0 0l8 3 8-3v13l-8 3-8-3V4z" />
-                        </svg>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src="/assets/campaigns/flag-active.svg" alt="" className="h-6 w-auto -rotate-6 shrink-0" />
                         {endDate && (
-                            <span className="text-sm text-gray-500">{fmtDate(endDate, tz)}</span>
+                            <span className="text-[15px] font-medium text-[#7e8a96]">{fmtDate(endDate, tz)}</span>
                         )}
                         {!endDate && (
-                            <span className="text-sm text-gray-400">No end date</span>
+                            <span className="text-[15px] text-[#9aa7b8]">No end date</span>
                         )}
                         {countdown && endDate && (
                             countdown.ended ? (
-                                <span className="text-sm font-bold text-red-500">Ended</span>
+                                <span className="text-[13px] font-black uppercase tracking-[0.5px] text-red-500">Ended</span>
                             ) : countdown.days > 0 ? (
-                                <span className={`text-sm font-extrabold uppercase tracking-wide ${urgent ? "text-red-500" : "text-orange-500"}`}>
+                                <span className={`text-[13px] font-black uppercase tracking-[0.5px] ${urgent ? "text-red-500" : "text-[#f47435]"}`}>
                                     {countdown.days} {countdown.days === 1 ? "day" : "days"} left!
                                 </span>
                             ) : (
-                                <span className={`text-sm font-bold font-mono tabular-nums ${urgent ? "text-red-500" : "text-orange-500"}`}>
+                                <span className={`text-[13px] font-black font-mono tabular-nums ${urgent ? "text-red-500" : "text-[#f47435]"}`}>
                                     {pad(countdown.hours)}:{pad(countdown.minutes)}:{pad(countdown.seconds)} left!
                                 </span>
                             )
                         )}
                     </div>
-                    <p className="text-sm text-gray-400 shrink-0">
+                    <p className="text-[14px] font-medium text-[#9aa7b8] shrink-0">
                         {donationCount} {donationCount === 1 ? "donation" : "donations"}
                     </p>
                 </div>

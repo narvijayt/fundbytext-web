@@ -286,9 +286,9 @@ export default function DonationChart({
         new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(n);
 
     return (
-        <div ref={containerRef} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+        <div ref={containerRef} className="bg-white rounded-2xl border border-[#e7e9eb] shadow-[0px_4px_30px_0px_rgba(0,91,172,0.08)] p-6">
             <div className="flex items-center justify-between mb-4">
-                <h2 className="text-sm font-bold text-gray-800">{title}</h2>
+                <h2 className="text-[15px] font-bold text-[#003060]">{title}</h2>
                 {showToggle && (
                     <div className="flex items-center gap-1 p-0.5 bg-gray-100 rounded-lg">
                         <button
@@ -321,8 +321,8 @@ export default function DonationChart({
             >
                 <defs>
                     <linearGradient id="dcBlueGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%"   stopColor="#3b82f6" stopOpacity="0.2" />
-                        <stop offset="100%" stopColor="#3b82f6" stopOpacity="0.01" />
+                        <stop offset="0%"   stopColor="#4a98ee" stopOpacity="0.35" />
+                        <stop offset="100%" stopColor="#9cc9f7" stopOpacity="0.02" />
                     </linearGradient>
                     <clipPath id="dcAreaClip">
                         <rect x={PL} y={PT} width={pw} height={ph} />
@@ -336,14 +336,15 @@ export default function DonationChart({
                         <g key={i}>
                             <line
                                 x1={PL} y1={y} x2={PL + pw} y2={y}
-                                stroke="#e5e7eb"
-                                strokeWidth={v === 0 ? 1 : 0.8}
-                                strokeDasharray={v === 0 ? undefined : "3 5"}
+                                stroke="#e7e9eb"
+                                strokeWidth={1}
+                                strokeDasharray={v === 0 ? undefined : "0.5 6"}
+                                strokeLinecap="round"
                             />
                             <text
                                 x={PL - 8} y={y}
                                 textAnchor="end" dominantBaseline="middle"
-                                fontSize="10" fill="#9ca3af"
+                                fontSize="12" fill="#7e8a96"
                                 fontFamily="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif"
                             >
                                 {fmtY(v)}
@@ -407,8 +408,8 @@ export default function DonationChart({
                         ref={lineRef}
                         d={linePath}
                         fill="none"
-                        stroke="#3b82f6"
-                        strokeWidth="2"
+                        stroke="#0278de"
+                        strokeWidth="2.5"
                         strokeLinecap="round"
                         strokeLinejoin="round"
                         clipPath="url(#dcAreaClip)"
@@ -422,7 +423,7 @@ export default function DonationChart({
                         <text
                             key={idx}
                             x={xOf(idx)} y={PT + ph + 16}
-                            textAnchor="middle" fontSize="9" fill="#9ca3af"
+                            textAnchor="middle" fontSize="11" fill="#7e8a96"
                             fontFamily="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif"
                         >
                             {idx === 0 ? "0" : effectiveMode === "months" ? `M${idx}` : idx}
@@ -433,7 +434,7 @@ export default function DonationChart({
                 {/* X-axis label */}
                 <text
                     x={PL + pw / 2} y={H - 4}
-                    textAnchor="middle" fontSize="10" fontWeight="600" fill="#6b7280"
+                    textAnchor="middle" fontSize="13" fontWeight="700" fill="#003060"
                     fontFamily="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif"
                 >
                     {xAxisLabel}

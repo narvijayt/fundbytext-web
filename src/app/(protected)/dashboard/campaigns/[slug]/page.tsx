@@ -310,13 +310,13 @@ export default async function CampaignDetailPage({
                         </svg>
                         <span className="text-sm text-gray-600">{campaign.name ?? "Untitled Campaign"}</span>
                     </div>
-                    <div className="flex items-center gap-3">
-                        <h1 className="text-2xl font-bold text-gray-900">
+                    <div className="flex flex-wrap items-center gap-3">
+                        <h1 className="text-[26px] font-black leading-tight text-[#003060]">
                             {isParticipantView ? (
                                 <>
                                     {campaign.name ?? <span className="text-gray-400 italic">Untitled Campaign</span>}
-                                    <span className="text-gray-300 mx-2 font-light">|</span>
-                                    <span className="text-gray-700">{myMembership.first_name} {myMembership.last_name}</span>
+                                    <span className="mx-2 font-light text-[#9aa7b8]">|</span>
+                                    <span className="text-[#0268c0]">{myMembership.first_name} {myMembership.last_name}</span>
                                 </>
                             ) : (
                                 campaign.name ?? <span className="text-gray-400 italic">Untitled Campaign</span>
@@ -366,7 +366,7 @@ export default async function CampaignDetailPage({
                         <CampaignNavLink
                             href={`/campaigns/${slug}/edit`}
                             overlayText="Loading…"
-                            className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 hover:border-gray-300 text-gray-700 text-sm font-semibold rounded-lg transition-colors shadow-sm"
+                            className="inline-flex items-center gap-2 rounded-[12px] bg-gradient-to-b from-[#ff8c53] to-[#f47435] px-5 py-2.5 text-[13px] font-bold uppercase tracking-[0.5px] text-white shadow-[0px_8px_15px_-8px_#ea6725] transition-[filter] hover:brightness-105"
                         >
                             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -721,19 +721,6 @@ export default async function CampaignDetailPage({
             {/* ── Organizer view ── */}
             {!isParticipantView && (
                 <>
-                    <CampaignProgressBar
-                        raisedAmt={raisedAmt}
-                        goalAmt={effectiveGoalAmt}
-                        initialGoalAmt={initialGoalAmt}
-                        donationCount={donationTotal}
-                        endDate={campaign.end_date}
-                        startDate={campaign.start_date}
-                        daysLeft={daysLeft}
-                        status={campaign.status}
-                        goalType={campaign.goal_type}
-                        timezone={campaign.timezone}
-                    />
-
                     {campaign.status === CampaignStatus.completed && (() => {
                         const donatedCount  = donors.filter((d) => d.donations.length > 0).length;
                         const donationCount = donors.reduce((s, d) => s + d.donations.length, 0);
@@ -758,29 +745,43 @@ export default async function CampaignDetailPage({
                         );
                     })()}
 
-<div id="fundraising-goal" className="flex gap-6 items-start scroll-mt-6">
+<div id="fundraising-goal" className="flex flex-col gap-6 lg:flex-row lg:items-start scroll-mt-6">
                         <div className="flex-1 min-w-0 space-y-6">
+                            <CampaignProgressBar
+                                raisedAmt={raisedAmt}
+                                goalAmt={effectiveGoalAmt}
+                                initialGoalAmt={initialGoalAmt}
+                                donationCount={donationTotal}
+                                endDate={campaign.end_date}
+                                startDate={campaign.start_date}
+                                daysLeft={daysLeft}
+                                status={campaign.status}
+                                goalType={campaign.goal_type}
+                                timezone={campaign.timezone}
+                            />
                             <DonationChart startTs={campaign.start_date?.getTime() ?? null} endTs={campaign.end_date?.getTime() ?? null} donations={chartDonations} goalAmount={effectiveGoalAmt} initialGoalAmount={initialGoalAmt} />
-                            {isOrganizer && campaign.campaign_type === "organization" && (
-                                <div id="participants" className="scroll-mt-6">
-                                <ParticipantsTable
-                                    participants={participants}
-                                    isOrganizer={isOrganizer}
-                                    campaignSlug={slug}
-                                    goalAmount={effectiveGoalAmt}
-                                    myMemberId={myMembership.id}
-                                    donorsPerParticipant={campaign.donors_per_participant}
-                                    isCompleted={campaign.status === CampaignStatus.completed}
-                                />
-                                </div>
-                            )}
-                            <div id="campaign-notifications" className="scroll-mt-6">
-                                <NotificationsTable title="Campaign Notifications" notifications={campaignNotifs} totalCount={campaignNotifTotal} campaignSlug={slug} />
-                            </div>
                         </div>
-                        <div className="w-80 shrink-0">
+                        <div className="w-full shrink-0 lg:w-80">
                             <LiveDonationFeed donations={feedDonations} totalCount={donationTotal} campaignSlug={slug} isCompleted={campaign.status === CampaignStatus.completed} />
                         </div>
+                    </div>
+
+                    {/* Participants + notifications — full width below the chart/feed */}
+                    {isOrganizer && campaign.campaign_type === "organization" && (
+                        <div id="participants" className="scroll-mt-6">
+                            <ParticipantsTable
+                                participants={participants}
+                                isOrganizer={isOrganizer}
+                                campaignSlug={slug}
+                                goalAmount={effectiveGoalAmt}
+                                myMemberId={myMembership.id}
+                                donorsPerParticipant={campaign.donors_per_participant}
+                                isCompleted={campaign.status === CampaignStatus.completed}
+                            />
+                        </div>
+                    )}
+                    <div id="campaign-notifications" className="scroll-mt-6">
+                        <NotificationsTable title="Campaign Notifications" notifications={campaignNotifs} totalCount={campaignNotifTotal} campaignSlug={slug} />
                     </div>
 
                     {/* Donors table — full width */}

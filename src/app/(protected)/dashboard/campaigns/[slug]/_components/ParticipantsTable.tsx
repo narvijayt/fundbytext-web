@@ -8,6 +8,19 @@ function fmt(n: number) {
     return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(n);
 }
 
+// Top-3 get gold/silver/bronze medals; everyone else a plain number (per Figma).
+function RankBadge({ rank }: { rank: number }) {
+    const medal: Record<number, string> = {
+        1: "bg-gradient-to-b from-[#fcd34d] to-[#f1a417] ring-[#fcd34d]/40",
+        2: "bg-gradient-to-b from-[#dfe4ea] to-[#a7b0bd] ring-[#cbd2da]/50",
+        3: "bg-gradient-to-b from-[#f0b487] to-[#c2710c] ring-[#e6a877]/40",
+    };
+    if (medal[rank]) {
+        return <span className={`inline-flex h-7 w-7 items-center justify-center rounded-full text-xs font-black text-white shadow-sm ring-2 ${medal[rank]}`}>{rank}</span>;
+    }
+    return <span className="inline-flex w-7 justify-center text-sm font-bold text-[#003060]">{rank}</span>;
+}
+
 export type ParticipantRow = {
     id:              string;
     name:            string;
@@ -54,6 +67,7 @@ export default function ParticipantsTable({ participants, isOrganizer, campaignS
         ? donorsPerParticipant * participants.length
         : participants.reduce((s, p) => s + p.targetDonors, 0);
     const totalRaised       = participants.reduce((s, p) => s + p.raised, 0);
+    const maxRaised         = Math.max(1, ...participants.map((p) => p.raised));
     // goalAmount is already the effective total (pre-multiplied by participants.length on the server)
     const effectiveGoal = goalAmount ?? null;
     const donorPct          = totalTargetDonors > 0 ? Math.min(100, Math.round((totalDonorsAdded / totalTargetDonors) * 100)) : 0;
@@ -64,14 +78,14 @@ export default function ParticipantsTable({ participants, isOrganizer, campaignS
             <div id="participants" className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden scroll-mt-6">
                 {/* Header */}
                 <div className="px-6 py-4 border-b border-gray-100 flex flex-wrap items-center gap-3">
-                    <h2 className="text-base font-bold text-gray-900 flex-1">Participants</h2>
+                    <h2 className="flex-1 text-[18px] font-black text-[#003060]">Participants</h2>
                     <span className="text-xs font-semibold bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">
                         {filtered.length}
                     </span>
                     {isOrganizer && !isCompleted && (
                         <button
                             onClick={() => setAddOpen(true)}
-                            className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-500 hover:bg-orange-600 text-white text-xs font-semibold rounded-lg transition-colors"
+                            className="flex items-center gap-1.5 rounded-lg bg-[#28c45d] px-3.5 py-2 text-xs font-semibold text-white transition-colors hover:brightness-105"
                         >
                             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4"/>
@@ -155,12 +169,12 @@ export default function ParticipantsTable({ participants, isOrganizer, campaignS
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm">
                             <thead>
-                                <tr className="border-b border-gray-100">
-                                    <th className="text-left px-6 py-3 text-xs font-semibold uppercase tracking-wide text-gray-400">Rank</th>
-                                    <th className="text-left px-6 py-3 text-xs font-semibold uppercase tracking-wide text-gray-400">Name</th>
-                                    <th className="text-right px-6 py-3 text-xs font-semibold uppercase tracking-wide text-gray-400">Donors Added</th>
-                                    <th className="text-right px-6 py-3 text-xs font-semibold uppercase tracking-wide text-gray-400">Amount Raised</th>
-                                    <th className="px-6 py-3" />
+                                <tr className="bg-[#0268c0] text-white">
+                                    <th className="text-left px-6 py-3.5 text-xs font-bold uppercase tracking-wide">Rank</th>
+                                    <th className="text-left px-6 py-3.5 text-xs font-bold uppercase tracking-wide">Name</th>
+                                    <th className="text-left px-6 py-3.5 text-xs font-bold uppercase tracking-wide">Donors Added</th>
+                                    <th className="text-left px-6 py-3.5 text-xs font-bold uppercase tracking-wide">Amount Raised</th>
+                                    <th className="px-6 py-3.5" />
                                 </tr>
                             </thead>
                             <tbody>
@@ -172,14 +186,10 @@ export default function ParticipantsTable({ participants, isOrganizer, campaignS
                                         : 0;
                                     return (
                                         <tr key={p.id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
-                                            <td className="px-6 py-3.5">
-                                                <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold ${rank === 1 ? "bg-orange-100 text-orange-600" : "bg-gray-100 text-gray-500"}`}>
-                                                    {rank}
-                                                </span>
-                                            </td>
+                                            <td className="px-6 py-3.5"><RankBadge rank={rank} /></td>
                                             <td className="px-6 py-3.5">
                                                 <div className="flex items-center gap-2.5">
-                                                    <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 font-bold text-xs shrink-0 overflow-hidden">
+                                                    <div className="w-9 h-9 rounded-full bg-[#aed9fe] flex items-center justify-center text-[#0268c0] font-bold text-xs shrink-0 overflow-hidden">
                                                         {p.profilePhotoUrl ? (
                                                             // eslint-disable-next-line @next/next/no-img-element
                                                             <img src={p.profilePhotoUrl} alt={p.name} className="w-full h-full object-cover" />
@@ -189,7 +199,7 @@ export default function ParticipantsTable({ participants, isOrganizer, campaignS
                                                     </div>
                                                     <div>
                                                         <div className="flex items-center gap-1.5">
-                                                            <p className="font-semibold text-gray-900">{p.name}</p>
+                                                            <p className="font-semibold text-[#003060]">{p.name}</p>
                                                             {p.id === myMemberId && (
                                                                 <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-50 text-[#0268c0] border border-[#0268c0]/20 uppercase tracking-wide">You</span>
                                                             )}
@@ -200,24 +210,27 @@ export default function ParticipantsTable({ participants, isOrganizer, campaignS
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td className="px-6 py-3.5 text-right">
-                                                <p className="font-medium text-gray-700">
+                                            <td className="px-6 py-3.5">
+                                                <p className="text-[13px] font-bold text-[#003060]">
                                                     {p.donorsAdded}
-                                                    {target > 0 && (
-                                                        <span className="text-gray-400 font-normal"> of {target}</span>
-                                                    )}
+                                                    {target > 0 && (<span className="font-medium text-[#9aa7b8]"> of {target}</span>)}
                                                 </p>
                                                 {target > 0 && (
-                                                    <div className="h-1 bg-gray-100 rounded-full mt-1 w-20 ml-auto overflow-hidden">
-                                                        <div
-                                                            className="h-full bg-orange-400 rounded-full"
-                                                            style={{ width: `${donorPct}%` }}
-                                                        />
+                                                    <div className="mt-1.5 h-1.5 w-28 overflow-hidden rounded-full bg-gray-100">
+                                                        <div className="h-full rounded-full bg-[#f47435]" style={{ width: `${donorPct}%` }} />
                                                     </div>
                                                 )}
                                             </td>
-                                            <td className="px-6 py-3.5 text-right font-bold text-gray-900">
-                                                {p.raised > 0 ? fmt(p.raised) : <span className="text-gray-300">—</span>}
+                                            <td className="px-6 py-3.5">
+                                                <p className="text-[13px] font-bold text-[#003060]">
+                                                    {p.raised > 0 ? fmt(p.raised) : <span className="text-gray-300">—</span>}
+                                                    {p.raised > 0 && (<span className="font-medium text-[#9aa7b8]"> raised</span>)}
+                                                </p>
+                                                {p.raised > 0 && (
+                                                    <div className="mt-1.5 h-1.5 w-28 overflow-hidden rounded-full bg-gray-100">
+                                                        <div className="h-full rounded-full bg-[#28c45d]" style={{ width: `${Math.round((p.raised / maxRaised) * 100)}%` }} />
+                                                    </div>
+                                                )}
                                             </td>
                                             <td className="px-6 py-3.5 text-right">
                                                 <button

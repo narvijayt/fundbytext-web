@@ -32,22 +32,22 @@ function DonorRow({ d }: { d: DonationFeedItem }) {
     const realName = [d.donor_first_name, d.donor_last_name].filter(Boolean).join(" ") || "Unknown";
     const initials = realName.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase();
     return (
-        <div className="flex items-center gap-3 px-5 py-3.5">
-            <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 font-bold text-xs shrink-0">
+        <div className="flex items-center gap-3 px-5 py-3">
+            <div className="w-9 h-9 rounded-full bg-[#aed9fe] flex items-center justify-center text-[#0268c0] font-bold text-[11px] shrink-0">
                 {initials}
             </div>
             <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1.5 min-w-0">
-                    <p className="text-sm font-semibold text-gray-900 truncate">{realName}</p>
+                    <p className="text-[14px] font-semibold text-[#003060] truncate">{realName}</p>
                     {d.is_anonymous && (
                         <span className="shrink-0 text-[10px] font-semibold px-1.5 py-0.5 rounded bg-gray-100 text-gray-500">
                             Anonymous
                         </span>
                     )}
                 </div>
-                <p className="text-xs text-gray-400">{timeAgo(d.created_at)}</p>
+                <p className="text-[12px] text-[#9aa7b8]">{timeAgo(d.created_at)}</p>
             </div>
-            <span className="text-sm font-bold text-gray-900 shrink-0">
+            <span className="text-[14px] font-bold text-[#003060] shrink-0">
                 {fmt(parseFloat(d.amount))}
             </span>
         </div>
@@ -94,25 +94,24 @@ export default function LiveDonationFeed({ donations, totalCount, campaignSlug, 
     return (
         <>
             {/* Preview card */}
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden sticky top-6">
+            <div className="bg-white rounded-2xl border border-[#e7e9eb] shadow-[0px_4px_30px_0px_rgba(0,91,172,0.08)] overflow-hidden sticky top-6">
                 <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
                     <div className="flex items-center gap-2">
                         {!isCompleted && <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />}
-                        <h2 className="text-sm font-bold text-gray-900">
+                        <h2 className="text-[15px] font-bold text-[#003060]">
                             {isCompleted ? "All Donations" : "Live Donation Feed"}
                         </h2>
                     </div>
-                    <div className="flex items-center gap-3">
+                    {hasMore ? (
+                        <button
+                            onClick={openModal}
+                            className="text-[13px] font-semibold text-[#0268c0] transition-colors hover:text-[#0268c0]/80"
+                        >
+                            See all
+                        </button>
+                    ) : (
                         <span className="text-xs text-gray-400">{totalCount} total</span>
-                        {hasMore && (
-                            <button
-                                onClick={openModal}
-                                className="text-xs font-semibold text-blue-600 hover:text-blue-700 transition-colors"
-                            >
-                                See All
-                            </button>
-                        )}
-                    </div>
+                    )}
                 </div>
                 <div className="divide-y divide-gray-50">
                     {donations.length === 0 ? (
