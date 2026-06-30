@@ -138,7 +138,7 @@ export default function SidebarCampaignsDropdown({ campaigns }: { campaigns: Cam
                                         <CampaignNavLink
                                             href={`/campaigns/${c.slug}/edit`}
                                             overlayText="Loading…"
-                                            className="flex items-center overflow-hidden rounded-[14px] bg-gradient-to-b from-[#ff8c53] to-[#f47435] pr-0.5 text-white"
+                                            className="flex items-center overflow-hidden rounded-[14px] bg-gradient-to-b from-[#ff8c53] to-[#f47435] pr-0.5 text-white transition-all duration-150 hover:brightness-105 active:scale-[0.97]"
                                         >
                                             <span className="flex-1 py-2.5 text-center text-[14px] font-medium leading-[1.4]">Edit Campaign</span>
                                             <span className="flex h-11 w-11 items-center justify-center border-l border-white/[0.12]">
