@@ -10,7 +10,7 @@ import EditProfileModal from "./EditProfileModal";
 
 const GRADIENT = "linear-gradient(to bottom, #0268c0 0%, #ffffff 28%, #ffffff 100%)";
 
-type Campaign = { slug: string; name: string | null; campaign_type: string; isOrganizer: boolean; isParticipant: boolean };
+type Campaign = { slug: string; name: string | null; campaign_type: string; coverImageUrl: string | null; isOrganizer: boolean; isParticipant: boolean };
 
 export type SidebarData = {
     campaigns: Campaign[];

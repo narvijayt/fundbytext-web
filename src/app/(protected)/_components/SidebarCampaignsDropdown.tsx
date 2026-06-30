@@ -10,6 +10,7 @@ type Campaign = {
     slug:          string;
     name:          string | null;
     campaign_type: string;
+    coverImageUrl: string | null;
     isOrganizer:   boolean;
     isParticipant: boolean;
 };
@@ -83,10 +84,15 @@ export default function SidebarCampaignsDropdown({ campaigns }: { campaigns: Cam
                             className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-[#0268c0]/8"
                         >
                             <span className="shrink-0 text-[#003060]">
-                                <svg className="h-[18px] w-[18px]" fill="none" viewBox="0 0 20 20" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
-                                    <path d="M4.2916 1.66602V18.3327" />
-                                    <path d="M4.2916 3.33398H13.6249C15.8749 3.33398 16.3749 4.58398 14.7916 6.16732L13.7916 7.16732C13.1249 7.83398 13.1249 8.91732 13.7916 9.50065L14.7916 10.5007C16.3749 12.084 15.7916 13.334 13.6249 13.334H4.2916" />
-                                </svg>
+                                {c.coverImageUrl ? (
+                                    // eslint-disable-next-line @next/next/no-img-element
+                                    <img src={c.coverImageUrl} alt="" className="h-5 w-5 rounded-[5px] object-cover" />
+                                ) : (
+                                    <svg className="h-[18px] w-[18px]" fill="none" viewBox="0 0 20 20" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M4.2916 1.66602V18.3327" />
+                                        <path d="M4.2916 3.33398H13.6249C15.8749 3.33398 16.3749 4.58398 14.7916 6.16732L13.7916 7.16732C13.1249 7.83398 13.1249 8.91732 13.7916 9.50065L14.7916 10.5007C16.3749 12.084 15.7916 13.334 13.6249 13.334H4.2916" />
+                                    </svg>
+                                )}
                             </span>
                             <span className="flex-1 min-w-0 text-[15px] font-medium leading-tight text-[#003060] line-clamp-2">
                                 {c.name ?? "Untitled"}

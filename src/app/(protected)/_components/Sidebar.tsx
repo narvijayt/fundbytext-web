@@ -8,7 +8,14 @@ export default async function Sidebar({ user }: { user: AuthUser }) {
         prisma.campaignMember.findMany({
             where: { user_id: user.id, campaign: { status: CampaignStatus.active } },
             select: {
-                campaign: { select: { slug: true, name: true, campaign_type: true } },
+                campaign: {
+                    select: {
+                        slug: true,
+                        name: true,
+                        campaign_type: true,
+                        media: { select: { url: true, media_type: true } },
+                    },
+                },
                 roles: { select: { role: true } },
             },
             orderBy: { campaign: { name: "asc" } },
@@ -24,8 +31,11 @@ export default async function Sidebar({ user }: { user: AuthUser }) {
     ]);
 
     const activeCampaigns = memberships.map((m) => ({
-        ...m.campaign,
-        isOrganizer: m.roles.some((r) => r.role === "organizer"),
+        slug:          m.campaign.slug,
+        name:          m.campaign.name,
+        campaign_type: m.campaign.campaign_type,
+        coverImageUrl: m.campaign.media.find((x) => x.media_type === "hero")?.url ?? null,
+        isOrganizer:   m.roles.some((r) => r.role === "organizer"),
         isParticipant: m.roles.some((r) => r.role === "participant"),
     }));
 
