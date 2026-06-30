@@ -20,7 +20,7 @@ export default async function ProtectedLayout({
         <div className="flex h-screen overflow-hidden bg-gray-50">
             <Sidebar user={user} />
             {/* pt-20 on mobile clears the fixed top bar; md+ has the in-flow sidebar */}
-            <main className="flex-1 overflow-y-auto p-4 pt-20 md:p-8">
+            <main className="flex-1 min-w-0 overflow-x-hidden overflow-y-auto p-4 pt-20 md:p-8">
                 {children}
             </main>
         </div>

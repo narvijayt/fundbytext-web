@@ -24,7 +24,7 @@ export default function CopyUrlButton({ slug }: { slug: string }) {
                 <circle cx="12" cy="12" r="9" />
                 <path strokeLinecap="round" strokeLinejoin="round" d="M3 12h18M12 3c2.5 2.5 2.5 15.5 0 18M12 3c-2.5 2.5-2.5 15.5 0 18" />
             </svg>
-            <span className="truncate font-mono text-[13px] text-[#7e8a96]">{url}</span>
+            <span className="min-w-0 truncate font-mono text-[13px] text-[#7e8a96]">{url}</span>
 
             <button
                 onClick={copy}

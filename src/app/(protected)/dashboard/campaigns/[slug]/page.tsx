@@ -298,8 +298,8 @@ export default async function CampaignDetailPage({
             <AblyDashboardUpdater campaignSlug={slug} />
 
             {/* ── Header ── */}
-            <div className="flex items-start justify-between gap-4">
-                <div>
+            <div className="flex items-start justify-between gap-3 sm:gap-4">
+                <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2.5">
                         <h1 className="text-[26px] font-black leading-tight text-[#003060]">
                             {isParticipantView ? (
@@ -395,12 +395,12 @@ export default async function CampaignDetailPage({
                         <CampaignNavLink
                             href={`/campaigns/${slug}/edit`}
                             overlayText="Loading…"
-                            className="inline-flex items-center gap-2 rounded-[12px] bg-gradient-to-b from-[#ff8c53] to-[#f47435] px-5 py-2.5 text-[13px] font-bold uppercase tracking-[0.5px] text-white shadow-[0px_8px_15px_-8px_#ea6725] transition-[filter] hover:brightness-105"
+                            className="inline-flex items-center gap-2 rounded-[12px] bg-gradient-to-b from-[#ff8c53] to-[#f47435] px-3 py-2.5 sm:px-5 text-[13px] font-bold uppercase tracking-[0.5px] text-white shadow-[0px_8px_15px_-8px_#ea6725] transition-[filter] hover:brightness-105"
                         >
-                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                             </svg>
-                            Edit Campaign
+                            <span className="hidden sm:inline">Edit Campaign</span>
                         </CampaignNavLink>
                     </div>
                 )}
@@ -613,7 +613,7 @@ export default async function CampaignDetailPage({
                             </>
                         )}
 
-                        <div id="fundraising-goal" className="flex gap-6 items-start scroll-mt-6">
+                        <div id="fundraising-goal" className="flex flex-col gap-6 lg:flex-row lg:items-start scroll-mt-6">
                             {/* Left — chart + notifications */}
                             <div className="flex-1 min-w-0 space-y-6">
                                 <DonationChart startTs={campaign.start_date?.getTime() ?? null} endTs={campaign.end_date?.getTime() ?? null} donations={chartDonations} goalAmount={effectiveGoalAmt} initialGoalAmount={initialGoalAmt} title="Campaign Fundraising Progress" />
@@ -629,7 +629,7 @@ export default async function CampaignDetailPage({
                             </div>
 
                             {/* Right — live feed + rankings */}
-                            <div className="w-80 shrink-0 space-y-4">
+                            <div className="w-full shrink-0 space-y-4 lg:w-80">
                                 <LiveDonationFeed donations={feedDonations} totalCount={donationTotal} campaignSlug={slug} isCompleted={campaign.status === CampaignStatus.completed} />
                                 <ParticipantRankings
                                     participants={participants}
