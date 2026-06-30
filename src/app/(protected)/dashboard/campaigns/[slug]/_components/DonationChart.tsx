@@ -181,7 +181,7 @@ export default function DonationChart({
     const yMax        = yTicks[yTicks.length - 1];
 
     const W  = 560, H = 220;
-    const PL = 52, PR = 16, PT = 16, PB = 44;
+    const PL = 38, PR = 44, PT = 18, PB = 36;
     const pw = W - PL - PR;
     const ph = H - PT - PB;
 
@@ -286,7 +286,7 @@ export default function DonationChart({
         new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(n);
 
     return (
-        <div ref={containerRef} className="bg-white rounded-2xl border border-[#e7e9eb] shadow-[0px_4px_30px_0px_rgba(0,91,172,0.08)] px-2 py-5">
+        <div ref={containerRef} className="bg-white rounded-2xl border border-[#e7e9eb] shadow-[0px_4px_30px_0px_rgba(0,91,172,0.08)] px-2 pt-5 pb-2">
             <div className="-mx-2 -mt-5 mb-4 flex items-center justify-between border-b border-[#e7e9eb] px-6 py-4">
                 <h2 className="text-[18px] font-bold text-[#003060]">{title}</h2>
                 {showToggle && (
@@ -344,7 +344,7 @@ export default function DonationChart({
                             <text
                                 x={PL - 8} y={y}
                                 textAnchor="end" dominantBaseline="middle"
-                                fontSize="12" fill="#7e8a96"
+                                fontSize="11" fill="#7e8a96"
                                 fontFamily="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif"
                             >
                                 {fmtY(v)}
@@ -360,8 +360,8 @@ export default function DonationChart({
                             <g>
                                 <line x1={PL} y1={yOf(initialGoalAmount)} x2={PL + pw} y2={yOf(initialGoalAmount)}
                                     stroke="#22c55e" strokeWidth="1.5" strokeDasharray="5 4" opacity="0.8" />
-                                <text x={PL + pw + 4} y={yOf(initialGoalAmount)}
-                                    dominantBaseline="middle" fontSize="9" fill="#22c55e"
+                                <text x={W - 12} y={yOf(initialGoalAmount)}
+                                    textAnchor="end" dominantBaseline="middle" fontSize="10" fill="#22c55e"
                                     fontFamily="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif">
                                     Initial
                                 </text>
@@ -371,8 +371,8 @@ export default function DonationChart({
                             <g>
                                 <line x1={PL} y1={yOf(goalAmount)} x2={PL + pw} y2={yOf(goalAmount)}
                                     stroke="#f59e0b" strokeWidth="1.5" strokeDasharray="5 4" opacity="0.8" />
-                                <text x={PL + pw + 4} y={yOf(goalAmount)}
-                                    dominantBaseline="middle" fontSize="9" fill="#f59e0b"
+                                <text x={W - 12} y={yOf(goalAmount)}
+                                    textAnchor="end" dominantBaseline="middle" fontSize="10" fill="#f59e0b"
                                     fontFamily="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif">
                                     Scaled
                                 </text>
@@ -383,8 +383,8 @@ export default function DonationChart({
                     <g>
                         <line x1={PL} y1={yOf(goalAmount)} x2={PL + pw} y2={yOf(goalAmount)}
                             stroke="#22c55e" strokeWidth="1.5" strokeDasharray="5 4" opacity="0.7" />
-                        <text x={PL + pw + 4} y={yOf(goalAmount)}
-                            dominantBaseline="middle" fontSize="9" fill="#22c55e"
+                        <text x={W - 12} y={yOf(goalAmount)}
+                            textAnchor="end" dominantBaseline="middle" fontSize="10" fill="#22c55e"
                             fontFamily="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif">
                             Goal
                         </text>
@@ -418,7 +418,11 @@ export default function DonationChart({
 
                 {/* X-axis tick labels */}
                 {allIndices.map((idx) => {
-                    if (idx !== 0 && idx !== totalBuckets && idx % step !== 0) return null;
+                    const isStep = idx % step === 0;
+                    const isEnd  = idx === totalBuckets;
+                    // Drop the final tick when it crowds the last step multiple (e.g. "25 26")
+                    const endCrowds = isEnd && !isStep && totalBuckets % step < step * 0.6;
+                    if (idx !== 0 && !isStep && !(isEnd && !endCrowds)) return null;
                     return (
                         <text
                             key={idx}
