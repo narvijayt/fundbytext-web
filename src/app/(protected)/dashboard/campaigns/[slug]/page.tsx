@@ -300,11 +300,9 @@ export default async function CampaignDetailPage({
     const badge = STATUS_BADGE[campaign.status as CampaignStatus];
 
     // Cover image + campaign owner (primary organizer) for the header
-    const coverUrl      = campaign.media.find((m) => m.media_type === "hero")?.url ?? null;
-    const ownerMember   = campaign.members.find((m) => m.roles.some((r) => r.role === MemberRole.organizer)) ?? campaign.members[0];
-    const ownerName     = ownerMember ? `${ownerMember.first_name} ${ownerMember.last_name}`.trim() : null;
-    const ownerPhoto    = ownerMember?.user?.profile_photo_url ?? null;
-    const ownerInitials = ownerName ? ownerName.split(" ").filter(Boolean).map((n) => n[0]).join("").slice(0, 2).toUpperCase() : "";
+    const coverUrl    = campaign.media.find((m) => m.media_type === "hero")?.url ?? null;
+    const ownerMember = campaign.members.find((m) => m.roles.some((r) => r.role === MemberRole.organizer)) ?? campaign.members[0];
+    const ownerName   = ownerMember ? `${ownerMember.first_name} ${ownerMember.last_name}`.trim() : null;
 
     return (
         <div className="space-y-6">
@@ -313,18 +311,6 @@ export default async function CampaignDetailPage({
             {/* ── Header ── */}
             <div className="flex items-start justify-between gap-3 sm:gap-4">
                 <div className="min-w-0">
-                    {/* Campaign owner badge */}
-                    {ownerName && (
-                        <div className="mb-2.5 inline-flex max-w-full items-center gap-2 rounded-full border border-[#e7e9eb] bg-white py-1 pl-1 pr-3 shadow-[0px_1px_2px_0px_rgba(0,48,96,0.04)]">
-                            {ownerPhoto ? (
-                                // eslint-disable-next-line @next/next/no-img-element
-                                <img src={ownerPhoto} alt="" className="h-6 w-6 shrink-0 rounded-full object-cover" />
-                            ) : (
-                                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#0268c0]/10 text-[10px] font-bold text-[#0268c0]">{ownerInitials}</span>
-                            )}
-                            <span className="truncate text-[12px] font-medium text-[#7e8a96]">Organized by <span className="font-bold text-[#003060]">{ownerName}</span></span>
-                        </div>
-                    )}
                     {/* Cover image + campaign name */}
                     <div className="flex items-start gap-3">
                         {coverUrl ? (
@@ -339,7 +325,7 @@ export default async function CampaignDetailPage({
                             </div>
                         )}
                     <div className="flex min-w-0 flex-wrap items-center gap-2.5">
-                        <h1 className="text-[26px] font-black leading-tight text-[#003060]">
+                        <h1 className="text-[22px] sm:text-[26px] lg:text-[30px] xl:text-[34px] font-black leading-tight text-[#003060]">
                             {isParticipantView ? (
                                 <>
                                     {campaign.name ?? <span className="text-gray-400 italic">Untitled Campaign</span>}
@@ -379,6 +365,14 @@ export default async function CampaignDetailPage({
                     </div>
                     </div>
                     <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[13px] font-medium text-[#7e8a96]">
+                        {ownerName && (
+                            <span className="inline-flex items-center gap-1.5">
+                                <svg className="h-4 w-4 shrink-0 text-[#9aa7b8]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.7}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                </svg>
+                                Organized by&nbsp;<span className="font-semibold text-[#003060]">{ownerName}</span>
+                            </span>
+                        )}
                         <span className="inline-flex items-center gap-1.5">
                             <svg className="h-4 w-4 shrink-0 text-[#9aa7b8]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.7}>
                                 {campaign.campaign_type === "organization"
