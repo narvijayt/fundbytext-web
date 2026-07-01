@@ -119,7 +119,7 @@ export default function LiveDonationFeed({ donations, totalCount, campaignSlug, 
     return (
         <>
             {/* Preview card */}
-            <div className="bg-white rounded-2xl border border-[#e7e9eb] shadow-[0px_4px_30px_0px_rgba(0,91,172,0.08)] overflow-hidden sticky top-6">
+            <div className="bg-white rounded-2xl border border-[#e7e9eb] shadow-[0px_4px_30px_0px_rgba(0,91,172,0.08)] overflow-hidden">
                 <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
                     <div className="flex items-center gap-2">
                         {!isCompleted && <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />}

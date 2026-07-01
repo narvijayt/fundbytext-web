@@ -26,17 +26,17 @@ function NotifRow({ n }: { n: NotifItem }) {
     const dateStr = fmtDateTime(n.sent_at ?? n.scheduled_at);
 
     return (
-        <div className="flex items-start gap-3 px-4 py-3">
-            <div className="w-7 h-7 rounded-full bg-blue-50 flex items-center justify-center shrink-0 mt-0.5">
-                <svg className="w-3.5 h-3.5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <div className="flex items-start gap-3 px-5 py-3">
+            <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#eef5fc]">
+                <svg className="h-3.5 w-3.5 text-[#0268c0]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                 </svg>
             </div>
-            <div className="flex-1 min-w-0">
-                <p className="text-xs font-semibold text-gray-800 leading-snug">
+            <div className="min-w-0 flex-1">
+                <p className="text-xs font-semibold leading-snug text-[#003060]">
                     {n.message ?? n.trigger_event ?? "Notification"}
                 </p>
-                {dateStr && <p className="text-[10px] text-gray-400 mt-0.5">{dateStr}</p>}
+                {dateStr && <p className="mt-0.5 text-[10px] text-[#9aa7b8]">{dateStr}</p>}
             </div>
         </div>
     );
@@ -80,24 +80,25 @@ export default function ParticipantNotifications({ notifications, totalCount, ca
 
     return (
         <>
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-                <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
-                    <h3 className="text-sm font-bold text-gray-900">My Notifications</h3>
-                    <div className="flex items-center gap-2">
-                        <span className="text-xs text-gray-400">{totalCount} total</span>
-                        {hasMore && (
+            <div className="overflow-hidden rounded-2xl border border-[#e7e9eb] bg-white shadow-[0px_4px_30px_0px_rgba(0,91,172,0.08)]">
+                <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
+                    <h3 className="text-[15px] font-bold text-[#003060]">My Notifications</h3>
+                    <div className="flex items-center gap-3">
+                        {hasMore ? (
                             <button
                                 onClick={openModal}
-                                className="text-xs font-semibold text-blue-600 hover:text-blue-700 transition-colors"
+                                className="text-[13px] font-semibold text-[#0268c0] transition-colors hover:text-[#0268c0]/80"
                             >
-                                See All
+                                See all
                             </button>
+                        ) : (
+                            <span className="text-xs text-[#9aa7b8]">{totalCount} total</span>
                         )}
                     </div>
                 </div>
                 <div className="divide-y divide-gray-50">
                     {notifications.length === 0 ? (
-                        <p className="px-4 py-6 text-xs text-gray-400 text-center italic">No notifications yet.</p>
+                        <p className="px-5 py-6 text-center text-xs italic text-[#9aa7b8]">No notifications yet.</p>
                     ) : (
                         notifications.map((n) => <NotifRow key={n.id} n={n} />)
                     )}
@@ -106,33 +107,34 @@ export default function ParticipantNotifications({ notifications, totalCount, ca
 
             {showAll && (
                 <div
-                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+                    className="fixed inset-0 z-[100] flex items-center justify-center bg-[#0f1d43]/45 p-4 backdrop-blur-sm"
                     onClick={() => setShowAll(false)}
                 >
                     <div
-                        className="bg-white rounded-2xl shadow-xl w-full max-w-md flex flex-col"
-                        style={{ height: "80vh" }}
+                        className="flex w-full flex-col overflow-hidden rounded-2xl border border-[#e7e9eb] bg-white shadow-[0px_16px_40px_-8px_rgba(15,29,67,0.25)]"
+                        style={{ maxWidth: 448, height: "80vh" }}
                         onClick={(e) => e.stopPropagation()}
                     >
-                        <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between shrink-0">
-                            <h2 className="text-sm font-bold text-gray-900">
+                        <div className="flex shrink-0 items-center justify-between border-b border-[#e7e9eb] px-6 py-4">
+                            <h2 className="text-[16px] font-bold text-[#003060]">
                                 My Notifications
-                                <span className="ml-1 text-gray-400 font-normal">({modalTotal || totalCount})</span>
+                                <span className="ml-1 font-normal text-[#9aa7b8]">({modalTotal || totalCount})</span>
                             </h2>
                             <button
                                 onClick={() => setShowAll(false)}
-                                className="text-gray-400 hover:text-gray-600 transition-colors"
+                                aria-label="Close"
+                                className="text-[#9aa7b8] transition-colors hover:text-[#003060]"
                             >
-                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} strokeLinecap="round">
+                                    <path d="M6 6l12 12M18 6L6 18" />
                                 </svg>
                             </button>
                         </div>
 
-                        <div className="overflow-y-auto flex-1 divide-y divide-gray-50">
+                        <div className="flex-1 divide-y divide-gray-50 overflow-y-auto [scrollbar-width:thin]">
                             {loading && modalItems.length === 0 ? (
                                 <div className="flex items-center justify-center py-12">
-                                    <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                                    <div className="h-5 w-5 animate-spin rounded-full border-2 border-[#0268c0] border-t-transparent" />
                                 </div>
                             ) : (
                                 modalItems.map((n) => <NotifRow key={n.id} n={n} />)
@@ -140,11 +142,11 @@ export default function ParticipantNotifications({ notifications, totalCount, ca
                         </div>
 
                         {canLoadMore && (
-                            <div className="px-5 py-3 border-t border-gray-100 shrink-0">
+                            <div className="shrink-0 border-t border-[#e7e9eb] px-5 py-3">
                                 <button
                                     onClick={() => fetchPage(modalSkip)}
                                     disabled={loading}
-                                    className="w-full py-2 text-sm font-semibold text-blue-600 hover:text-blue-700 disabled:opacity-50 transition-colors"
+                                    className="w-full py-2 text-sm font-semibold text-[#0268c0] transition-colors hover:text-[#0268c0]/80 disabled:opacity-50"
                                 >
                                     {loading ? "Loading…" : "Load More"}
                                 </button>

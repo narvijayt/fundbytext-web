@@ -22,20 +22,20 @@ type Props = {
 
 function RankRow({ p, rank, isMe }: { p: Participant; rank: number; isMe: boolean }) {
     return (
-        <div className={`flex items-center gap-3 px-4 py-3 ${isMe ? "bg-orange-50" : ""}`}>
-            <span className={`text-xs font-bold w-5 text-center shrink-0 ${rank === 1 ? "text-orange-500" : "text-gray-400"}`}>
+        <div className={`flex items-center gap-3 px-5 py-3 ${isMe ? "bg-[#eef5fc]" : ""}`}>
+            <span className={`w-5 shrink-0 text-center text-xs font-bold ${rank === 1 ? "text-[#0268c0]" : "text-[#9aa7b8]"}`}>
                 #{rank}
             </span>
-            <div className="w-7 h-7 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 font-bold text-[10px] shrink-0">
+            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#aed9fe] text-[10px] font-bold text-[#0268c0]">
                 {p.name.split(" ").map((n) => n[0]).join("").slice(0, 2)}
             </div>
-            <div className="flex-1 min-w-0">
-                <p className={`text-xs font-semibold truncate ${isMe ? "text-orange-700" : "text-gray-800"}`}>
+            <div className="min-w-0 flex-1">
+                <p className={`truncate text-xs font-semibold ${isMe ? "text-[#0268c0]" : "text-[#003060]"}`}>
                     {p.name}{isMe && " (You)"}
                 </p>
-                <p className="text-[10px] text-gray-400">{p.donorsAdded} donors</p>
+                <p className="text-[10px] text-[#9aa7b8]">{p.donorsAdded} donors</p>
             </div>
-            <p className="text-xs font-bold text-gray-800 shrink-0">{fmtUSD(p.raised)}</p>
+            <p className="shrink-0 text-xs font-bold text-[#003060]">{fmtUSD(p.raised)}</p>
         </div>
     );
 }
@@ -58,18 +58,19 @@ export default function ParticipantRankings({ participants, myMemberId }: Props)
 
     return (
         <>
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-                <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
-                    <h3 className="text-sm font-bold text-gray-900">Participant Rankings</h3>
+            <div className="overflow-hidden rounded-2xl border border-[#e7e9eb] bg-white shadow-[0px_4px_30px_0px_rgba(0,91,172,0.08)]">
+                <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
+                    <h3 className="text-[15px] font-bold text-[#003060]">Participant Rankings</h3>
                     <div className="flex items-center gap-3">
-                        <span className="text-xs text-gray-400">{total} total</span>
-                        {hasMore && (
+                        {hasMore ? (
                             <button
                                 onClick={openModal}
-                                className="text-xs font-semibold text-blue-600 hover:text-blue-700 transition-colors"
+                                className="text-[13px] font-semibold text-[#0268c0] transition-colors hover:text-[#0268c0]/80"
                             >
-                                See All
+                                See all
                             </button>
+                        ) : (
+                            <span className="text-xs text-[#9aa7b8]">{total} total</span>
                         )}
                     </div>
                 </div>
@@ -78,7 +79,7 @@ export default function ParticipantRankings({ participants, myMemberId }: Props)
                         <RankRow key={p.id} p={p} rank={i + 1} isMe={p.id === myMemberId} />
                     ))}
                     {total === 0 && (
-                        <p className="text-xs text-gray-400 text-center py-4">No participants yet</p>
+                        <p className="py-6 text-center text-xs text-[#9aa7b8]">No participants yet</p>
                     )}
                 </div>
             </div>
@@ -86,40 +87,41 @@ export default function ParticipantRankings({ participants, myMemberId }: Props)
             {/* See All modal */}
             {showAll && (
                 <div
-                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+                    className="fixed inset-0 z-[100] flex items-center justify-center bg-[#0f1d43]/45 p-4 backdrop-blur-sm"
                     onClick={() => setShowAll(false)}
                 >
                     <div
-                        className="bg-white rounded-2xl shadow-xl w-full max-w-md flex flex-col"
-                        style={{ height: "80vh" }}
+                        className="flex w-full flex-col overflow-hidden rounded-2xl border border-[#e7e9eb] bg-white shadow-[0px_16px_40px_-8px_rgba(15,29,67,0.25)]"
+                        style={{ maxWidth: 448, height: "80vh" }}
                         onClick={(e) => e.stopPropagation()}
                     >
-                        <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between shrink-0">
-                            <h2 className="text-sm font-bold text-gray-900">
+                        <div className="flex shrink-0 items-center justify-between border-b border-[#e7e9eb] px-6 py-4">
+                            <h2 className="text-[16px] font-bold text-[#003060]">
                                 All Participants
-                                <span className="ml-1 text-gray-400 font-normal">({total})</span>
+                                <span className="ml-1 font-normal text-[#9aa7b8]">({total})</span>
                             </h2>
                             <button
                                 onClick={() => setShowAll(false)}
-                                className="text-gray-400 hover:text-gray-600 transition-colors"
+                                aria-label="Close"
+                                className="text-[#9aa7b8] transition-colors hover:text-[#003060]"
                             >
-                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} strokeLinecap="round">
+                                    <path d="M6 6l12 12M18 6L6 18" />
                                 </svg>
                             </button>
                         </div>
 
-                        <div className="overflow-y-auto flex-1 divide-y divide-gray-50">
+                        <div className="flex-1 divide-y divide-gray-50 overflow-y-auto [scrollbar-width:thin]">
                             {modalItems.map((p, i) => (
                                 <RankRow key={p.id} p={p} rank={i + 1} isMe={p.id === myMemberId} />
                             ))}
                         </div>
 
                         {canLoadMore && (
-                            <div className="px-5 py-3 border-t border-gray-100 shrink-0">
+                            <div className="shrink-0 border-t border-[#e7e9eb] px-5 py-3">
                                 <button
                                     onClick={() => setModalShown((n) => n + MODAL_PAGE)}
-                                    className="w-full py-2 text-sm font-semibold text-blue-600 hover:text-blue-700 transition-colors"
+                                    className="w-full py-2 text-sm font-semibold text-[#0268c0] transition-colors hover:text-[#0268c0]/80"
                                 >
                                     Load More
                                 </button>

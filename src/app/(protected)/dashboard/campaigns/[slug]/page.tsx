@@ -518,19 +518,19 @@ export default async function CampaignDetailPage({
                                 rank === 3 ? "bg-orange-50 text-orange-700 border-orange-200" :
                                              "bg-gray-50 text-gray-500 border-gray-100";
                             return (
-                                <div className="flex items-center gap-2 px-4 py-2.5 bg-blue-50 border border-blue-100 rounded-xl text-sm text-blue-700">
-                                    <svg className="w-4 h-4 shrink-0 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <div className="flex items-center gap-2.5 rounded-xl border border-[#cfe0f3] bg-[#eef5fc] px-4 py-2.5 text-sm text-[#0268c0]">
+                                    <svg className="h-4 w-4 shrink-0 text-[#0268c0]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                                     </svg>
                                     <span>
                                         You&apos;ve personally raised{" "}
-                                        <span className="font-bold">{fmt(myRaised)}</span>
+                                        <span className="font-bold text-[#003060]">{fmt(myRaised)}</span>
                                         {pct > 0 && (
                                             <> — <span className="font-semibold">{pct}%</span> of the total raised</>
                                         )}
                                     </span>
                                     {rank > 0 && participants.length >= 2 && (
-                                        <span className={`ml-auto inline-flex items-center text-xs font-bold px-2.5 py-1 rounded-full border ${rankColors}`}>
+                                        <span className={`ml-auto inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-bold ${rankColors}`}>
                                             #{rank} in Rankings
                                         </span>
                                     )}
@@ -543,9 +543,9 @@ export default async function CampaignDetailPage({
                             const pct       = Math.min(100, Math.round((myRaised / goalAmt) * 100));
                             const remaining = goalAmt - myRaised;
                             return (
-                                <div className="px-5 py-4 bg-white border border-gray-100 rounded-2xl shadow-sm space-y-3">
+                                <div className="space-y-3 rounded-2xl border border-[#e7e9eb] bg-white px-5 py-4 shadow-[0px_4px_30px_0px_rgba(0,91,172,0.08)]">
                                     <div className="flex items-center justify-between">
-                                        <p className="text-sm font-bold text-gray-900">Your Fundraising Goal</p>
+                                        <p className="text-[15px] font-bold text-[#003060]">Your Fundraising Goal</p>
                                         <div className="flex items-center gap-2">
                                             {(() => {
                                                 const rank = participants.findIndex((p) => p.id === myMembership.id) + 1;
@@ -556,19 +556,19 @@ export default async function CampaignDetailPage({
                                                     rank === 3 ? "bg-orange-50 text-orange-700 border-orange-200" :
                                                                  "bg-gray-50 text-gray-500 border-gray-100";
                                                 return (
-                                                    <span className={`inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full border ${colors}`}>
+                                                    <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-bold ${colors}`}>
                                                         #{rank} in Rankings
                                                     </span>
                                                 );
                                             })()}
-                                            <span className="text-xs font-semibold text-gray-500">{fmt(myRaised)} of {fmt(goalAmt)}</span>
+                                            <span className="text-xs font-semibold text-[#7e8a96]">{fmt(myRaised)} of {fmt(goalAmt)}</span>
                                         </div>
                                     </div>
-                                    <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
-                                        <div className="h-full bg-orange-500 rounded-full transition-all" style={{ width: `${pct}%` }} />
+                                    <div className="h-2.5 overflow-hidden rounded-full bg-[#eef1f4]">
+                                        <div className="h-full rounded-full bg-orange-500 transition-all" style={{ width: `${pct}%` }} />
                                     </div>
-                                    <p className="text-xs text-gray-500">
-                                        <span className="font-semibold text-gray-700">{pct}%</span> of your goal reached
+                                    <p className="text-xs text-[#7e8a96]">
+                                        <span className="font-semibold text-[#003060]">{pct}%</span> of your goal reached
                                         {" · "}
                                         <span className="font-semibold text-orange-600">{fmt(remaining)}</span> remaining
                                     </p>
@@ -577,8 +577,8 @@ export default async function CampaignDetailPage({
                         })()}
 
                         {campaign.goal_type === "participant_goal" && goalAmt && myRaised >= goalAmt && (campaign.status === CampaignStatus.active || campaign.status === CampaignStatus.completed) && (
-                            <div className="flex items-center gap-4 px-5 py-4 bg-green-50 border border-green-200 rounded-2xl shadow-sm">
-                                <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center shrink-0">
+                            <div className="flex items-center gap-4 rounded-2xl border border-green-200 bg-green-50 px-5 py-4 shadow-[0px_4px_30px_0px_rgba(0,91,172,0.08)]">
+                                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-green-100">
                                     <svg className="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
                                     </svg>
@@ -657,9 +657,9 @@ export default async function CampaignDetailPage({
                         </div>
 
                         {/* My Donor Outreach — full width, above donors table */}
-                        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-                            <div className="flex items-center justify-between mb-4">
-                                <h2 className="text-base font-bold text-gray-900">My Donor Outreach</h2>
+                        <div className="rounded-2xl border border-[#e7e9eb] bg-white p-6 shadow-[0px_4px_30px_0px_rgba(0,91,172,0.08)]">
+                            <div className="mb-5 flex items-center justify-between">
+                                <h2 className="text-[16px] font-bold text-[#003060]">My Donor Outreach</h2>
                                 {(() => {
                                     const rank = participants.findIndex((p) => p.id === myMembership.id) + 1;
                                     if (rank === 0 || participants.length < 2) return null;
@@ -669,36 +669,36 @@ export default async function CampaignDetailPage({
                                         rank === 3 ? "bg-orange-50 text-orange-700 border-orange-200" :
                                                      "bg-gray-50 text-gray-500 border-gray-100";
                                     return (
-                                        <span className={`inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full border ${colors}`}>
+                                        <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-bold ${colors}`}>
                                             #{rank} in Rankings
                                         </span>
                                     );
                                 })()}
                             </div>
-                            <div className="grid grid-cols-3 gap-4 mb-5">
+                            <div className="mb-5 grid grid-cols-3 gap-4">
                                 <div className="text-center">
-                                    <p className="text-2xl font-extrabold text-gray-900">{myAdded}</p>
-                                    <p className="text-xs text-gray-400 mt-0.5">Contacts Added</p>
+                                    <p className="text-[22px] font-bold text-[#003060]">{myAdded}</p>
+                                    <p className="mt-1 text-[11px] font-bold uppercase tracking-[0.5px] text-[#7e8a96]">Contacts Added</p>
                                 </div>
-                                <div className="text-center border-x border-gray-100">
-                                    <p className="text-2xl font-extrabold text-green-600">{myDonated}</p>
-                                    <p className="text-xs text-gray-400 mt-0.5">Have Donated</p>
+                                <div className="border-x border-[#eef1f4] text-center">
+                                    <p className="text-[22px] font-bold text-[#28c45d]">{myDonated}</p>
+                                    <p className="mt-1 text-[11px] font-bold uppercase tracking-[0.5px] text-[#7e8a96]">Have Donated</p>
                                 </div>
                                 <div className="text-center">
-                                    <p className="text-2xl font-extrabold text-gray-900">
+                                    <p className="text-[22px] font-bold text-[#003060]">
                                         {myAdded > 0 ? `${Math.round((myDonated / myAdded) * 100)}%` : "—"}
                                     </p>
-                                    <p className="text-xs text-gray-400 mt-0.5">Conversion</p>
+                                    <p className="mt-1 text-[11px] font-bold uppercase tracking-[0.5px] text-[#7e8a96]">Conversion</p>
                                 </div>
                             </div>
                             {myTarget > 0 && (
                                 <div>
-                                    <div className="flex items-center justify-between mb-1.5">
-                                        <span className="text-xs font-semibold text-gray-500">Donor target progress</span>
-                                        <span className="text-xs font-bold text-gray-700">{myAdded} of {myTarget}</span>
+                                    <div className="mb-1.5 flex items-center justify-between">
+                                        <span className="text-xs font-semibold text-[#7e8a96]">Donor target progress</span>
+                                        <span className="text-xs font-bold text-[#003060]">{myAdded} of {myTarget}</span>
                                     </div>
-                                    <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                                        <div className="h-full bg-orange-500 rounded-full transition-all" style={{ width: `${donorPct}%` }} />
+                                    <div className="h-2 overflow-hidden rounded-full bg-[#eef1f4]">
+                                        <div className="h-full rounded-full bg-orange-500 transition-all" style={{ width: `${donorPct}%` }} />
                                     </div>
                                 </div>
                             )}
