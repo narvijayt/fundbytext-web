@@ -8,6 +8,7 @@ import DonorInfoModal from "./DonorInfoModal";
 import AssignDonorModal from "./AssignDonorModal";
 import EditDonorModal from "./EditDonorModal";
 import RemoveDonorModal from "./RemoveDonorModal";
+import TableEmptyState from "./TableEmptyState";
 
 export type DonorRow = {
     id:               string;
@@ -254,6 +255,19 @@ export default function DonorsTable({ donors: initialDonors, initialTotal, campa
     }
 
     const totalPages = Math.ceil(total / pageSize);
+    const hasFilters = search.trim() !== "" || statusFilter !== "all" || memberFilter !== "all" || sourceFilter !== "all" || emailValid !== "all";
+    const isEmpty    = donors.length === 0 && !loading;
+    const trulyEmpty = isEmpty && !hasFilters; // brand-new campaign — hide filters/pager chrome
+
+    function clearFilters() {
+        setSearch("");
+        setStatusFilter("all");
+        setMemberFilter("all");
+        setSourceFilter("all");
+        setEmailValid("all");
+        setPage(1);
+        fetchPage({ page: 1, search: "", status: "all", member: "all", source: "all", emailValid: "all", sort });
+    }
 
     return (
         <>
@@ -275,7 +289,8 @@ export default function DonorsTable({ donors: initialDonors, initialTotal, campa
                     )}
                 </div>
 
-                {/* Filters */}
+                {/* Filters — hidden for a brand-new (truly empty) campaign */}
+                {!trulyEmpty && (
                 <div className="mb-4 flex flex-wrap items-center gap-2">
                     <div className="relative min-w-[200px] flex-1">
                         <svg className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#9aa7b8]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -315,21 +330,10 @@ export default function DonorsTable({ donors: initialDonors, initialTotal, campa
                         <option value="name_asc">Name A–Z</option>
                     </select>
                 </div>
+                )}
 
                 {/* Table card */}
                 <div className="overflow-hidden rounded-2xl border border-[#e7e9eb] bg-white shadow-[0px_4px_30px_0px_rgba(0,91,172,0.08)]">
-                    {donors.length === 0 && !loading ? (
-                        <div className="px-6 py-12 text-center">
-                            <svg className="mx-auto mb-3 h-10 w-10 text-gray-200" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                            <p className="text-sm text-gray-400">No donors yet</p>
-                            {!isCompleted && (
-                                <button onClick={() => setAddOpen(true)} className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-[#28c45d] px-4 py-2 text-xs font-semibold text-white transition-[filter] hover:brightness-105">
-                                    <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
-                                    Add First Donor
-                                </button>
-                            )}
-                        </div>
-                    ) : (
                         <div className="overflow-x-auto">
                             <table className="w-full min-w-[960px] table-fixed text-sm">
                                 <colgroup>
@@ -358,7 +362,7 @@ export default function DonorsTable({ donors: initialDonors, initialTotal, campa
                                         </th>
                                     </tr>
                                 </thead>
-                                {!collapsed && (
+                                {!isEmpty && !collapsed && (
                                     <tbody>
                                         {loading
                                             ? Array.from({ length: Math.min(pageSize, 6) }).map((_, i) => <SkeletonRow key={`sk${i}`} showAssignment={showAssignment} />)
@@ -477,18 +481,34 @@ export default function DonorsTable({ donors: initialDonors, initialTotal, campa
                                 )}
                             </table>
                         </div>
-                    )}
+                        {isEmpty && (
+                            hasFilters ? (
+                                <TableEmptyState
+                                    title="No donors match your filters"
+                                    subtitle="Try adjusting your search or filters to find what you're looking for."
+                                    action={{ label: "Clear filters", onClick: clearFilters, variant: "secondary" }}
+                                />
+                            ) : (
+                                <TableEmptyState
+                                    title="No donors yet"
+                                    subtitle="Let's make this place lively with your first Donor."
+                                    action={!isCompleted ? { label: "Add First Donor", onClick: () => setAddOpen(true) } : undefined}
+                                />
+                            )
+                        )}
                 </div>
 
                 {/* Pagination + Export */}
                 <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
                     <div className="flex flex-wrap items-center gap-4">
+                        {total > 0 && (
                         <label className="flex items-center gap-2 text-[13px] font-medium text-[#7e8a96]">
                             Show per page:
                             <select value={pageSize} onChange={(e) => handlePageSizeChange(Number(e.target.value))} className="rounded-lg border border-[#e7e9eb] bg-white px-2.5 py-1.5 text-[13px] font-semibold text-[#003060] focus:border-[#0268c0] focus:outline-none">
                                 {[5, 10, 25, 50].map((s) => <option key={s} value={s}>{s}</option>)}
                             </select>
                         </label>
+                        )}
                         {totalPages > 1 && (
                         <div className="flex items-center gap-1.5">
                             <button onClick={() => goToPage(Math.max(1, page - 1))} disabled={page === 1 || loading} aria-label="Previous page" className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#e7e9eb] text-[#7e8a96] transition-colors hover:bg-gray-50 disabled:opacity-40">

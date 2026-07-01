@@ -6,6 +6,7 @@ import AddParticipantModal from "./AddParticipantModal";
 import ParticipantDetailModal from "./ParticipantDetailModal";
 import EditParticipantModal from "./EditParticipantModal";
 import RemoveParticipantModal from "./RemoveParticipantModal";
+import TableEmptyState from "./TableEmptyState";
 
 function fmt(n: number) {
     return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(n);
@@ -113,6 +114,8 @@ export default function ParticipantsTable({ participants, isOrganizer, campaignS
     const totalPages = Math.max(1, Math.ceil(ordered.length / pageSize));
     const pageClamped = Math.min(page, totalPages);
     const paginated  = ordered.slice((pageClamped - 1) * pageSize, pageClamped * pageSize);
+    const isEmpty        = paginated.length === 0;
+    const noParticipants = participants.length === 0; // brand-new campaign vs. search returning nothing
 
     const viewedParticipant = participants.find((p) => p.id === viewMemberId);
     const maxRaised = Math.max(1, ...participants.map((p) => p.raised));
@@ -178,7 +181,8 @@ export default function ParticipantsTable({ participants, isOrganizer, campaignS
                 )}
             </div>
 
-            {/* Search */}
+            {/* Search — hidden for a brand-new (no participants) campaign */}
+            {!noParticipants && (
             <div className="relative mb-4 w-full sm:w-[320px]">
                 <svg className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#9aa7b8]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <circle cx="11" cy="11" r="7" /><path strokeLinecap="round" d="M21 21l-4.3-4.3" />
@@ -191,19 +195,11 @@ export default function ParticipantsTable({ participants, isOrganizer, campaignS
                     className="w-full rounded-xl border border-[#e7e9eb] bg-white py-2.5 pl-10 pr-3 text-sm text-[#003060] placeholder:text-[#9aa7b8] shadow-[0px_1px_2px_0px_rgba(0,48,96,0.04)] focus:border-[#0268c0] focus:outline-none focus:ring-2 focus:ring-[#0268c0]/20"
                 />
             </div>
+            )}
 
             {/* Table card */}
             <div className="overflow-hidden rounded-2xl border border-[#e7e9eb] bg-white shadow-[0px_4px_30px_0px_rgba(0,91,172,0.08)]">
-                {paginated.length === 0 ? (
-                    <div className="px-6 py-12 text-center">
-                        <svg className="mx-auto mb-3 h-10 w-10 text-gray-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
-                        </svg>
-                        <p className="text-sm text-gray-400">{search ? "No participants match your search" : "No participants yet"}</p>
-                    </div>
-                ) : (
-                    <>
-                        {/* ── Desktop / tablet table ── */}
+                {/* ── Desktop / tablet table (blue header retained even when empty) ── */}
                         <div className="hidden md:block">
                             <table className="w-full table-fixed text-sm">
                                 <colgroup>
@@ -230,7 +226,7 @@ export default function ParticipantsTable({ participants, isOrganizer, campaignS
                                         </th>
                                     </tr>
                                 </thead>
-                                {!collapsed && (
+                                {!isEmpty && !collapsed && (
                                     <tbody>
                                         {paginated.map((p) => {
                                             const rank = rankOf(p);
@@ -277,7 +273,7 @@ export default function ParticipantsTable({ participants, isOrganizer, campaignS
                                     <svg className={`h-4 w-4 transition-transform ${collapsed ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 15l6-6 6 6" /></svg>
                                 </button>
                             </div>
-                            {!collapsed && paginated.map((p) => {
+                            {!isEmpty && !collapsed && paginated.map((p) => {
                                 const rank = rankOf(p);
                                 return (
                                     <div key={p.id} className="border-b border-[#eef1f4] px-4 py-3.5 last:border-0">
@@ -302,7 +298,20 @@ export default function ParticipantsTable({ participants, isOrganizer, campaignS
                                 );
                             })}
                         </div>
-                    </>
+                {isEmpty && (
+                    noParticipants ? (
+                        <TableEmptyState
+                            title="No participants yet"
+                            subtitle="Add your first participant to start building your fundraising team."
+                            action={isOrganizer && !isCompleted ? { label: "Add First Participant", onClick: () => setAddOpen(true) } : undefined}
+                        />
+                    ) : (
+                        <TableEmptyState
+                            title="No matching participants"
+                            subtitle="No participants match your search. Try a different name or keyword."
+                            action={{ label: "Clear search", onClick: () => { setSearch(""); setPage(1); }, variant: "secondary" }}
+                        />
+                    )
                 )}
             </div>
 
