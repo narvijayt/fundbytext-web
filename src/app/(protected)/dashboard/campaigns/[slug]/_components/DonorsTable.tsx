@@ -131,6 +131,7 @@ export default function DonorsTable({ donors: initialDonors, initialTotal, campa
     const [collapsed,    setCollapsed]    = useState(false);
     const [pageSize,     setPageSize]     = useState(PAGE_SIZE);
     const searchTimer   = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const sectionRef    = useRef<HTMLElement>(null);
     const fetchStateRef = useRef<FetchParams>({ page: 1, search: "", status: "all", member: "all", source: "all", emailValid: "all", sort: "date_desc" });
 
     // Keep ref in sync so the event listener below always has current values
@@ -198,12 +199,16 @@ export default function DonorsTable({ donors: initialDonors, initialTotal, campa
     function goToPage(p: number) {
         setPage(p);
         fetchPage({ ...currentFilters(), page: p });
+        // Keep the user on the table — a shorter page can otherwise shift the
+        // scroll position past this section.
+        sectionRef.current?.scrollIntoView({ block: "start" });
     }
 
     function handlePageSizeChange(n: number) {
         setPageSize(n);
         setPage(1);
         fetchPage({ ...currentFilters(), page: 1 }, n);
+        sectionRef.current?.scrollIntoView({ block: "start" });
     }
 
     // Portalled action menu (three-dots) — positioned relative to the button, closed on outside interaction
@@ -278,7 +283,7 @@ export default function DonorsTable({ donors: initialDonors, initialTotal, campa
 
     return (
         <>
-            <section id="donors" className="scroll-mt-6">
+            <section ref={sectionRef} id="donors" className="scroll-mt-6">
                 {/* Title + Add */}
                 <div className="mb-4 flex items-center justify-between gap-3">
                     <div className="flex items-center gap-2.5">

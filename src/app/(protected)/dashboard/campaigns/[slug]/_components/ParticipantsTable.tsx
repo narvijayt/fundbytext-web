@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import AddParticipantModal from "./AddParticipantModal";
 import ParticipantDetailModal from "./ParticipantDetailModal";
@@ -74,6 +74,7 @@ export default function ParticipantsTable({ participants, isOrganizer, campaignS
     const [search,       setSearch]       = useState("");
     const [page,         setPage]         = useState(1);
     const [pageSize,     setPageSize]     = useState(10);
+    const sectionRef                      = useRef<HTMLElement>(null);
     const [sortDesc,     setSortDesc]     = useState(true);
     const [collapsed,    setCollapsed]    = useState(false);
     const [addOpen,      setAddOpen]      = useState(false);
@@ -128,7 +129,11 @@ export default function ParticipantsTable({ participants, isOrganizer, campaignS
         ? Math.min(100, Math.round((p.raised / perParticipantGoal) * 100))
         : Math.min(100, Math.round((p.raised / maxRaised) * 100));
 
-    function goPage(n: number) { setPage(Math.min(totalPages, Math.max(1, n))); }
+    function goPage(n: number) {
+        setPage(Math.min(totalPages, Math.max(1, n)));
+        // Keep the user on the table — a shorter page can otherwise shift the scroll past this section.
+        sectionRef.current?.scrollIntoView({ block: "start" });
+    }
 
     function Avatar({ p, size }: { p: ParticipantRow; size: string }) {
         return (
@@ -166,7 +171,7 @@ export default function ParticipantsTable({ participants, isOrganizer, campaignS
     );
 
     return (
-        <section id="participants" className="scroll-mt-6">
+        <section ref={sectionRef} id="participants" className="scroll-mt-6">
             {/* Title + Add */}
             <div className="mb-4 flex items-center justify-between gap-3">
                 <h2 className="text-[20px] font-black text-[#003060]">Participants</h2>
@@ -322,7 +327,7 @@ export default function ParticipantsTable({ participants, isOrganizer, campaignS
                         Show per page:
                         <select
                             value={pageSize}
-                            onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1); }}
+                            onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1); sectionRef.current?.scrollIntoView({ block: "start" }); }}
                             className="rounded-lg border border-[#e7e9eb] bg-white px-2.5 py-1.5 text-[13px] font-semibold text-[#003060] focus:border-[#0268c0] focus:outline-none"
                         >
                             {PAGE_SIZES.map((s) => <option key={s} value={s}>{s}</option>)}
