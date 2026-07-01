@@ -12,6 +12,7 @@ import LiveDonationFeed from "./_components/LiveDonationFeed";
 import ParticipantRankings from "./_components/ParticipantRankings";
 import ParticipantNotifications from "./_components/ParticipantNotifications";
 import CampaignStatsBars from "./_components/CampaignStatsBars";
+import FundBuddyOnboarding from "./_components/FundBuddyOnboarding";
 import DonorsTable, { type DonorRow } from "./_components/DonorsTable";
 import RemoveParticipantRoleButton from "./_components/RemoveParticipantRoleButton";
 import CampaignControls from "./_components/CampaignControls";
@@ -478,9 +479,21 @@ export default async function CampaignDetailPage({
                 const myAdded      = myMembership._count.donors;
                 const myDonated    = donors.filter((d) => d.status === "donated").length;
                 const donorPct     = myTarget > 0 ? Math.min(100, Math.round((myAdded / myTarget) * 100)) : 0;
+                const launchLabel  = campaign.status === CampaignStatus.upcoming && campaign.start_date
+                    ? new Intl.DateTimeFormat("en-US", { timeZone: campaign.timezone ?? "America/New_York", month: "long", day: "numeric", year: "numeric" }).format(campaign.start_date)
+                    : null;
 
                 return (
                     <>
+                        {/* FundBuddy onboarding welcome — shown to a new participant who hasn't added any donors yet */}
+                        {myAdded === 0 && campaign.status !== CampaignStatus.completed && (
+                            <FundBuddyOnboarding
+                                campaignName={campaign.name ?? "this campaign"}
+                                donorTarget={myTarget}
+                                launchLabel={launchLabel}
+                            />
+                        )}
+
                         {!campaign.donations_enabled && campaign.status === CampaignStatus.active && (
                             <div className="flex items-center gap-3 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl">
                                 <svg className="w-4 h-4 shrink-0 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
