@@ -1,9 +1,13 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import AddDonorModal from "./AddDonorModal";
-import DonorDetailModal from "./DonorDetailModal";
+import DonorInfoModal from "./DonorInfoModal";
+import AssignDonorModal from "./AssignDonorModal";
+import EditDonorModal from "./EditDonorModal";
+import RemoveDonorModal from "./RemoveDonorModal";
 
 export type DonorRow = {
     id:               string;
@@ -109,6 +113,12 @@ export default function DonorsTable({ donors: initialDonors, initialTotal, campa
     const [loading,      setLoading]      = useState(false);
     const [addOpen,      setAddOpen]      = useState(false);
     const [viewDonorId,  setViewDonorId]  = useState<string | null>(null);
+    const [assignId,     setAssignId]     = useState<string | null>(null);
+    const [editId,       setEditId]       = useState<string | null>(null);
+    const [removeId,     setRemoveId]     = useState<string | null>(null);
+    const [menuFor,      setMenuFor]      = useState<string | null>(null);
+    const [menuPos,      setMenuPos]      = useState<{ top: number; right: number }>({ top: 0, right: 0 });
+    const [menuMounted,  setMenuMounted]  = useState(false);
     const [copiedId,     setCopiedId]     = useState<string | null>(null);
     const [collapsed,    setCollapsed]    = useState(false);
     const [pageSize,     setPageSize]     = useState(PAGE_SIZE);
@@ -187,6 +197,29 @@ export default function DonorsTable({ donors: initialDonors, initialTotal, campa
         setPage(1);
         fetchPage({ ...currentFilters(), page: 1 }, n);
     }
+
+    // Portalled action menu (three-dots) — positioned relative to the button, closed on outside interaction
+    useEffect(() => { setMenuMounted(true); }, []);
+    function openMenu(e: React.MouseEvent<HTMLButtonElement>, id: string) {
+        const r = e.currentTarget.getBoundingClientRect();
+        setMenuPos({ top: r.bottom + 6, right: Math.max(8, window.innerWidth - r.right) });
+        setMenuFor((cur) => (cur === id ? null : id));
+    }
+    useEffect(() => {
+        if (!menuFor) return;
+        const close = () => setMenuFor(null);
+        const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setMenuFor(null); };
+        window.addEventListener("mousedown", close);
+        window.addEventListener("scroll", close, true);
+        window.addEventListener("resize", close);
+        window.addEventListener("keydown", onKey);
+        return () => {
+            window.removeEventListener("mousedown", close);
+            window.removeEventListener("scroll", close, true);
+            window.removeEventListener("resize", close);
+            window.removeEventListener("keydown", onKey);
+        };
+    }, [menuFor]);
 
     async function handleExport() {
         const params = new URLSearchParams({ skip: "0", take: "10000", search, status: statusFilter, member_id: memberFilter, source: sourceFilter, email_valid: emailValid, sort });
@@ -425,10 +458,13 @@ export default function DonorsTable({ donors: initialDonors, initialTotal, campa
                                                                 </button>
                                                             )}
                                                             <button
-                                                                onClick={() => setViewDonorId(d.id)}
+                                                                onMouseDown={(e) => e.stopPropagation()}
+                                                                onClick={(e) => openMenu(e, d.id)}
                                                                 aria-label={`Actions for ${d.first_name} ${d.last_name}`}
-                                                                title="View details"
-                                                                className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[#9aa7b8] transition-colors hover:bg-gray-100 hover:text-[#003060]"
+                                                                aria-haspopup="menu"
+                                                                aria-expanded={menuFor === d.id}
+                                                                title="Actions"
+                                                                className={`inline-flex h-8 w-8 items-center justify-center rounded-lg transition-colors hover:bg-gray-100 hover:text-[#003060] ${menuFor === d.id ? "bg-gray-100 text-[#003060]" : "text-[#9aa7b8]"}`}
                                                             >
                                                                 <svg className="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.7" /><circle cx="12" cy="12" r="1.7" /><circle cx="19" cy="12" r="1.7" /></svg>
                                                             </button>
@@ -497,18 +533,97 @@ export default function DonorsTable({ donors: initialDonors, initialTotal, campa
                 />
             )}
 
-            {viewDonorId && (
-                <DonorDetailModal
-                    donorId={viewDonorId}
-                    campaignSlug={campaignSlug}
-                    isOrganizer={isOrganizer}
-                    currentMemberId={myMemberId ?? ""}
-                    participants={participants}
-                    isCompleted={isCompleted}
-                    onClose={() => setViewDonorId(null)}
-                    onRefresh={() => fetchPage(currentFilters())}
-                />
-            )}
+            {/* Three-dots action menu (portalled so the table's overflow doesn't clip it) */}
+            {menuMounted && menuFor && (() => {
+                const d = donors.find((x) => x.id === menuFor);
+                if (!d) return null;
+                const hasDonated = d.donations.length > 0;
+                const item = "flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-[13px] font-medium transition-colors";
+                return createPortal(
+                    <div
+                        role="menu"
+                        onMouseDown={(e) => e.stopPropagation()}
+                        style={{ position: "fixed", top: menuPos.top, right: menuPos.right, zIndex: 90 }}
+                        className="w-56 overflow-hidden rounded-xl border border-[#e7e9eb] bg-white py-1.5 shadow-[0px_12px_32px_-8px_rgba(15,29,67,0.25)]"
+                    >
+                        <button role="menuitem" onClick={() => { setViewDonorId(d.id); setMenuFor(null); }} className={`${item} text-[#003060] hover:bg-[#f4f8f9]`}>
+                            <svg className="h-4 w-4 text-[#7e8a96]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M2.5 12S5.5 5.5 12 5.5 21.5 12 21.5 12 18.5 18.5 12 18.5 2.5 12 2.5 12z" /><circle cx="12" cy="12" r="2.5" /></svg>
+                            View Donor Info
+                        </button>
+                        {showAssignment && !hasDonated && !isCompleted && (
+                            <button role="menuitem" onClick={() => { setAssignId(d.id); setMenuFor(null); }} className={`${item} text-[#003060] hover:bg-[#f4f8f9]`}>
+                                <svg className="h-4 w-4 text-[#7e8a96]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8zM19 8v6M22 11h-6" /></svg>
+                                Assign to Participant
+                            </button>
+                        )}
+                        {!isCompleted && (
+                            <button role="menuitem" onClick={() => { setEditId(d.id); setMenuFor(null); }} className={`${item} text-[#003060] hover:bg-[#f4f8f9]`}>
+                                <svg className="h-4 w-4 text-[#7e8a96]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>
+                                Edit Donor
+                            </button>
+                        )}
+                        {isOrganizer && !isCompleted && (
+                            <button role="menuitem" onClick={() => { setRemoveId(d.id); setMenuFor(null); }} className={`${item} text-red-600 hover:bg-red-50`}>
+                                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6M10 11v6M14 11v6" /></svg>
+                                Remove
+                            </button>
+                        )}
+                    </div>,
+                    document.body
+                );
+            })()}
+
+            {viewDonorId && (() => {
+                const d = donors.find((x) => x.id === viewDonorId);
+                return d ? (
+                    <DonorInfoModal donor={d} isOrganizer={isOrganizer} myMemberId={myMemberId} onClose={() => setViewDonorId(null)} />
+                ) : null;
+            })()}
+
+            {assignId && (() => {
+                const d = donors.find((x) => x.id === assignId);
+                return d ? (
+                    <AssignDonorModal
+                        donorId={d.id}
+                        campaignSlug={campaignSlug}
+                        donorName={`${d.first_name} ${d.last_name}`}
+                        currentAssigned={d.assigned_member?.id ?? ""}
+                        participants={participants}
+                        onClose={() => setAssignId(null)}
+                        onRefresh={() => fetchPage(currentFilters())}
+                    />
+                ) : null;
+            })()}
+
+            {editId && (() => {
+                const d = donors.find((x) => x.id === editId);
+                return d ? (
+                    <EditDonorModal
+                        donorId={d.id}
+                        campaignSlug={campaignSlug}
+                        initialFirst={d.first_name}
+                        initialLast={d.last_name}
+                        email={d.email}
+                        initialPhone={d.phone}
+                        onClose={() => setEditId(null)}
+                        onRefresh={() => fetchPage(currentFilters())}
+                    />
+                ) : null;
+            })()}
+
+            {removeId && (() => {
+                const d = donors.find((x) => x.id === removeId);
+                return d ? (
+                    <RemoveDonorModal
+                        donorId={d.id}
+                        campaignSlug={campaignSlug}
+                        name={`${d.first_name} ${d.last_name}`}
+                        hasDonated={d.donations.length > 0}
+                        onClose={() => setRemoveId(null)}
+                        onRefresh={() => fetchPage(currentFilters())}
+                    />
+                ) : null;
+            })()}
         </>
     );
 }
