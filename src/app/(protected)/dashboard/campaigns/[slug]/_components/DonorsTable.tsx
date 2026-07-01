@@ -55,6 +55,22 @@ function pageList(current: number, total: number): (number | "…")[] {
 const SELECT_CLS = "rounded-xl border border-[#e7e9eb] bg-white px-3 py-2.5 text-[13px] font-medium text-[#003060] shadow-[0px_1px_2px_0px_rgba(0,48,96,0.04)] transition-colors focus:border-[#0268c0] focus:outline-none focus:ring-2 focus:ring-[#0268c0]/20";
 const TH_CLS     = "px-4 py-3.5 text-left text-[13px] font-semibold";
 
+const Bar = ({ w }: { w: string }) => <div className={`h-3.5 ${w} rounded-full bg-gray-200`} />;
+function SkeletonRow({ showAssignment }: { showAssignment: boolean }) {
+    return (
+        <tr className="border-b border-[#eef1f4] last:border-0">
+            <td className="py-4 pl-5 pr-4"><div className="animate-pulse"><Bar w="w-32" /></div></td>
+            <td className="px-4 py-4"><div className="animate-pulse space-y-1.5"><Bar w="w-28" /><Bar w="w-16" /></div></td>
+            {showAssignment && <td className="px-4 py-4"><div className="animate-pulse"><Bar w="w-24" /></div></td>}
+            <td className="px-4 py-4"><div className="h-5 w-16 animate-pulse rounded-full bg-gray-200" /></td>
+            <td className="px-4 py-4"><div className="animate-pulse"><Bar w="w-14" /></div></td>
+            <td className="px-4 py-4"><div className="animate-pulse space-y-1.5"><Bar w="w-20" /><Bar w="w-12" /></div></td>
+            <td className="px-4 py-4"><div className="animate-pulse space-y-1.5"><Bar w="w-20" /><Bar w="w-12" /></div></td>
+            <td className="py-4 pl-2 pr-5"><div className="ml-auto h-5 w-5 animate-pulse rounded bg-gray-200" /></td>
+        </tr>
+    );
+}
+
 function fmt(n: number) {
     return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(n);
 }
@@ -95,18 +111,19 @@ export default function DonorsTable({ donors: initialDonors, initialTotal, campa
     const [viewDonorId,  setViewDonorId]  = useState<string | null>(null);
     const [copiedId,     setCopiedId]     = useState<string | null>(null);
     const [collapsed,    setCollapsed]    = useState(false);
+    const [pageSize,     setPageSize]     = useState(PAGE_SIZE);
     const searchTimer   = useRef<ReturnType<typeof setTimeout> | null>(null);
     const fetchStateRef = useRef<FetchParams>({ page: 1, search: "", status: "all", member: "all", source: "all", emailValid: "all", sort: "date_desc" });
 
     // Keep ref in sync so the event listener below always has current values
     fetchStateRef.current = { page, search, status: statusFilter, member: memberFilter, source: sourceFilter, emailValid, sort };
 
-    async function fetchPage({ page: p, search: q, status: s, member: m, source: src, emailValid: ev, sort: srt }: FetchParams) {
+    async function fetchPage({ page: p, search: q, status: s, member: m, source: src, emailValid: ev, sort: srt }: FetchParams, size: number = pageSize) {
         setLoading(true);
         try {
             const params = new URLSearchParams({
-                skip:        String((p - 1) * PAGE_SIZE),
-                take:        String(PAGE_SIZE),
+                skip:        String((p - 1) * size),
+                take:        String(size),
                 search:      q,
                 status:      s,
                 member_id:   m,
@@ -165,6 +182,12 @@ export default function DonorsTable({ donors: initialDonors, initialTotal, campa
         fetchPage({ ...currentFilters(), page: p });
     }
 
+    function handlePageSizeChange(n: number) {
+        setPageSize(n);
+        setPage(1);
+        fetchPage({ ...currentFilters(), page: 1 }, n);
+    }
+
     async function handleExport() {
         const params = new URLSearchParams({ skip: "0", take: "10000", search, status: statusFilter, member_id: memberFilter, source: sourceFilter, email_valid: emailValid, sort });
         const res  = await fetch(`/api/v1/campaigns/${campaignSlug}/donors?${params}`);
@@ -197,7 +220,7 @@ export default function DonorsTable({ donors: initialDonors, initialTotal, campa
         URL.revokeObjectURL(url);
     }
 
-    const totalPages = Math.ceil(total / PAGE_SIZE);
+    const totalPages = Math.ceil(total / pageSize);
 
     return (
         <>
@@ -274,12 +297,7 @@ export default function DonorsTable({ donors: initialDonors, initialTotal, campa
                             )}
                         </div>
                     ) : (
-                        <div className="relative overflow-x-auto">
-                            {loading && (
-                                <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/60">
-                                    <div className="h-5 w-5 animate-spin rounded-full border-2 border-[#0268c0] border-t-transparent" />
-                                </div>
-                            )}
+                        <div className="overflow-x-auto">
                             <table className="w-full min-w-[960px] table-fixed text-sm">
                                 <colgroup>
                                     <col className="w-[19%]" />
@@ -309,7 +327,9 @@ export default function DonorsTable({ donors: initialDonors, initialTotal, campa
                                 </thead>
                                 {!collapsed && (
                                     <tbody>
-                                        {donors.map((d) => {
+                                        {loading
+                                            ? Array.from({ length: Math.min(pageSize, 6) }).map((_, i) => <SkeletonRow key={`sk${i}`} showAssignment={showAssignment} />)
+                                            : donors.map((d) => {
                                             const sb             = STATUS_BADGE[d.status] ?? STATUS_BADGE.not_donated;
                                             const donated        = d.donations.reduce((s, don) => s + don.amount, 0);
                                             const latestDonation = d.donations.length > 0
@@ -321,26 +341,23 @@ export default function DonorsTable({ donors: initialDonors, initialTotal, campa
                                                 <tr key={d.id} className="border-b border-[#eef1f4] align-middle transition-colors last:border-0 hover:bg-[#f7f9fb]">
                                                     {/* Name */}
                                                     <td className="py-3.5 pl-5 pr-4">
-                                                        <div className="flex items-center gap-2.5">
-                                                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#aed9fe] text-xs font-bold text-[#0268c0]">{d.first_name[0]}{d.last_name[0]}</div>
-                                                            <div className="min-w-0">
-                                                                <div className="flex items-center gap-1.5">
-                                                                    <p className="truncate font-semibold text-[#003060]">{d.first_name} {d.last_name}</p>
-                                                                    {!d.invite_token && <span className="shrink-0 whitespace-nowrap rounded bg-purple-50 px-1.5 py-0.5 text-[10px] font-semibold text-purple-600">Walk-in</span>}
-                                                                </div>
-                                                                <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
-                                                                    {!d.email_valid && <span className="text-[10px] text-red-500">Invalid email</span>}
-                                                                    {d.added_by_member && d.source !== "link_self" && d.source !== "self_added" && (() => {
-                                                                        const addedByMe  = d.added_by_member.id === myMemberId;
-                                                                        const adderIsOrg = d.added_by_member.roles.some(r => r.role === "organizer");
-                                                                        if (!adderIsOrg) return null;
-                                                                        if (isOrganizer && addedByMe)
-                                                                            return <span className="whitespace-nowrap rounded bg-orange-50 px-1.5 py-0.5 text-[10px] font-semibold text-orange-600">Added by me</span>;
-                                                                        if (!isOrganizer)
-                                                                            return <span className="whitespace-nowrap rounded bg-blue-50 px-1.5 py-0.5 text-[10px] font-semibold text-blue-600">Pre-assigned by organizer</span>;
-                                                                        return null;
-                                                                    })()}
-                                                                </div>
+                                                        <div className="min-w-0">
+                                                            <div className="flex items-center gap-1.5">
+                                                                <p className="truncate font-semibold text-[#003060]">{d.first_name} {d.last_name}</p>
+                                                                {!d.invite_token && <span className="shrink-0 whitespace-nowrap rounded bg-purple-50 px-1.5 py-0.5 text-[10px] font-semibold text-purple-600">Walk-in</span>}
+                                                            </div>
+                                                            <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
+                                                                {!d.email_valid && <span className="text-[10px] text-red-500">Invalid email</span>}
+                                                                {d.added_by_member && d.source !== "link_self" && d.source !== "self_added" && (() => {
+                                                                    const addedByMe  = d.added_by_member.id === myMemberId;
+                                                                    const adderIsOrg = d.added_by_member.roles.some(r => r.role === "organizer");
+                                                                    if (!adderIsOrg) return null;
+                                                                    if (isOrganizer && addedByMe)
+                                                                        return <span className="whitespace-nowrap rounded bg-orange-50 px-1.5 py-0.5 text-[10px] font-semibold text-orange-600">Added by me</span>;
+                                                                    if (!isOrganizer)
+                                                                        return <span className="whitespace-nowrap rounded bg-blue-50 px-1.5 py-0.5 text-[10px] font-semibold text-blue-600">Pre-assigned by organizer</span>;
+                                                                    return null;
+                                                                })()}
                                                             </div>
                                                         </div>
                                                     </td>
@@ -429,7 +446,14 @@ export default function DonorsTable({ donors: initialDonors, initialTotal, campa
 
                 {/* Pagination + Export */}
                 <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-                    {totalPages > 1 ? (
+                    <div className="flex flex-wrap items-center gap-4">
+                        <label className="flex items-center gap-2 text-[13px] font-medium text-[#7e8a96]">
+                            Show per page:
+                            <select value={pageSize} onChange={(e) => handlePageSizeChange(Number(e.target.value))} className="rounded-lg border border-[#e7e9eb] bg-white px-2.5 py-1.5 text-[13px] font-semibold text-[#003060] focus:border-[#0268c0] focus:outline-none">
+                                {[5, 10, 25, 50].map((s) => <option key={s} value={s}>{s}</option>)}
+                            </select>
+                        </label>
+                        {totalPages > 1 && (
                         <div className="flex items-center gap-1.5">
                             <button onClick={() => goToPage(Math.max(1, page - 1))} disabled={page === 1 || loading} aria-label="Previous page" className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#e7e9eb] text-[#7e8a96] transition-colors hover:bg-gray-50 disabled:opacity-40">
                                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15 18l-6-6 6-6" /></svg>
@@ -445,7 +469,8 @@ export default function DonorsTable({ donors: initialDonors, initialTotal, campa
                                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 18l6-6-6-6" /></svg>
                             </button>
                         </div>
-                    ) : <span />}
+                        )}
+                    </div>
                     <button onClick={handleExport} className="inline-flex items-center gap-1.5 rounded-xl border border-[#e7e9eb] bg-white px-3.5 py-2 text-[13px] font-semibold text-[#003060] shadow-[0px_1px_2px_0px_rgba(0,48,96,0.04)] transition-colors hover:bg-gray-50 active:bg-gray-100">
                         <svg className="h-4 w-4 text-[#7e8a96]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
                         Export
