@@ -47,20 +47,20 @@ function EyeIcon() {
 }
 
 function msgOf(n: NotificationRow) { return n.message ?? n.trigger_event ?? "Notification"; }
-function whenOf(n: NotificationRow) { return n.scheduled_at ?? n.sent_at; }
+function whenOf(n: NotificationRow) { return n.sent_at ?? n.scheduled_at; }
+function whenStr(n: NotificationRow) {
+    const date = fmtDate(whenOf(n)), time = fmtTime(whenOf(n));
+    return date ? `${date}${time ? ` · ${time}` : ""}` : "—";
+}
 
 // Stacked row — used for mobile cards + the "See all" modal (narrow surfaces).
 function NotifCard({ n }: { n: NotificationRow }) {
-    const date = fmtDate(whenOf(n));
-    const time = fmtTime(whenOf(n));
     return (
         <div className="flex items-start gap-2.5 px-4 py-3">
             <span className="mt-0.5 shrink-0 text-[#9aa7b8]"><EyeIcon /></span>
             <div className="min-w-0 flex-1">
                 <p className="truncate text-[13px] font-semibold text-[#003060]">{msgOf(n)}</p>
-                <p className="mt-0.5 truncate text-[12px] text-[#7e8a96]">
-                    {n.helper_text ? n.helper_text : (date ? `${date}${time ? ` · ${time}` : ""}` : "—")}
-                </p>
+                <p className="mt-0.5 truncate text-[12px] text-[#7e8a96]">{whenStr(n)}</p>
             </div>
             <span className="shrink-0"><StatusPill status={n.status} /></span>
         </div>
@@ -132,18 +132,14 @@ export default function NotificationsTable({ title, notifications, totalCount, c
                                     <colgroup>
                                         <col className="w-[48px]" />
                                         <col />
-                                        <col className="w-[22%]" />
-                                        <col className="w-[112px]" />
-                                        <col className="w-[92px]" />
-                                        <col className="w-[104px]" />
+                                        <col className="w-[210px]" />
+                                        <col className="w-[124px]" />
                                     </colgroup>
                                     <thead>
                                         <tr className="border-b border-[#e7e9eb] text-left align-top text-[11px] font-bold uppercase tracking-[0.5px] text-[#003060]">
                                             <th className="py-3 pl-5" />
                                             <th className="px-3 py-3">Message</th>
-                                            <th className="px-3 py-3">Helper Text</th>
-                                            <th className="px-3 py-3">Scheduled Date</th>
-                                            <th className="px-3 py-3">Scheduled Time</th>
+                                            <th className="px-3 py-3">Sent</th>
                                             <th className="px-3 py-3 pr-5">Status</th>
                                         </tr>
                                     </thead>
@@ -152,9 +148,7 @@ export default function NotificationsTable({ title, notifications, totalCount, c
                                             <tr key={n.id} className="border-b border-[#eef1f4] last:border-0 align-middle transition-colors hover:bg-[#f7f9fb]">
                                                 <td className="py-3.5 pl-5 text-[#9aa7b8]"><EyeIcon /></td>
                                                 <td className="px-3 py-3.5"><p className="truncate text-[13px] font-medium text-[#003060]">{msgOf(n)}</p></td>
-                                                <td className="px-3 py-3.5"><p className="truncate text-[13px] text-[#7e8a96]">{n.helper_text ?? "—"}</p></td>
-                                                <td className="px-3 py-3.5 text-[13px] text-[#003060]">{fmtDate(whenOf(n)) ?? "—"}</td>
-                                                <td className="px-3 py-3.5 text-[13px] text-[#003060]">{fmtTime(whenOf(n)) ?? "—"}</td>
+                                                <td className="px-3 py-3.5 text-[13px] text-[#003060]">{whenStr(n)}</td>
                                                 <td className="px-3 py-3.5 pr-5"><StatusPill status={n.status} /></td>
                                             </tr>
                                         ))}
