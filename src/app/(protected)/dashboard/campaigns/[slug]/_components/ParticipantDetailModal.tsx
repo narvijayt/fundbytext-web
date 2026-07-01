@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
 type DonationRow = {
     id:                 string;
@@ -32,325 +31,172 @@ type Props = {
     memberId:     string;
     myMemberId?:  string;
     campaignSlug: string;
-    isOrganizer:  boolean;
     raised:       number;
-    isCompleted?: boolean;
     onClose:      () => void;
 };
 
 function fmt(n: number) {
     return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(n);
 }
+function dt(s: string | null) {
+    if (!s) return "—";
+    const d = new Date(s);
+    return `${d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })} · ${d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`;
+}
 
-export default function ParticipantDetailModal({ memberId, myMemberId, campaignSlug, isOrganizer, raised, isCompleted, onClose }: Props) {
-    const router = useRouter();
+// Read-only "View Participant" modal. Editing + removing live in their own modals
+// (opened from the row's action menu), so this stays purely informational.
+export default function ParticipantDetailModal({ memberId, myMemberId, campaignSlug, raised, onClose }: Props) {
     const [member,           setMember]           = useState<MemberDetail | null>(null);
     const [loading,          setLoading]          = useState(true);
-    const [removing,         setRemoving]         = useState(false);
-    const [confirmRemove,    setConfirmRemove]    = useState(false);
     const [error,            setError]            = useState<string | null>(null);
-    const [toast,            setToast]            = useState<string | null>(null);
     const [showAllDonations, setShowAllDonations] = useState(false);
-    const [editingName,      setEditingName]      = useState(false);
-    const [editFirst,        setEditFirst]        = useState("");
-    const [editLast,         setEditLast]         = useState("");
-    const [savingName,       setSavingName]       = useState(false);
-    const [nameError,        setNameError]        = useState<string | null>(null);
-    const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-    function showToast(msg: string) {
-        if (toastTimer.current) clearTimeout(toastTimer.current);
-        setToast(msg);
-        toastTimer.current = setTimeout(() => setToast(null), 4000);
-    }
+    const [shown,            setShown]            = useState(false);
 
     useEffect(() => {
         fetch(`/api/v1/campaigns/${campaignSlug}/members/${memberId}`, { credentials: "include" })
             .then((r) => r.json())
-            .then((d) => {
-                setMember(d.member);
-            })
+            .then((d) => setMember(d.member))
             .catch(() => setError("Failed to load participant."))
             .finally(() => setLoading(false));
     }, [memberId, campaignSlug]);
 
+    useEffect(() => {
+        const raf = requestAnimationFrame(() => setShown(true));
+        const prevOverflow = document.body.style.overflow;
+        document.body.style.overflow = "hidden";
+        function onKey(e: KeyboardEvent) { if (e.key === "Escape") close(); }
+        document.addEventListener("keydown", onKey);
+        return () => {
+            cancelAnimationFrame(raf);
+            document.body.style.overflow = prevOverflow;
+            document.removeEventListener("keydown", onKey);
+        };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    function close() { setShown(false); window.setTimeout(onClose, 170); }
+
     const isSelf = memberId === myMemberId;
-
-    async function handleRemove() {
-        setRemoving(true);
-        const res = await fetch(`/api/v1/campaigns/${campaignSlug}/members/${memberId}`, { method: "DELETE" });
-        if (res.ok || res.status === 204) { router.refresh(); onClose(); }
-        else { const j = await res.json().catch(() => ({})); setError(j.error ?? "Remove failed."); }
-        setRemoving(false);
-        setConfirmRemove(false);
-    }
-
-    function startEditName() {
-        if (!member) return;
-        setEditFirst(member.first_name);
-        setEditLast(member.last_name);
-        setNameError(null);
-        setEditingName(true);
-    }
-
-    async function saveName() {
-        if (!editFirst.trim() || !editLast.trim()) {
-            setNameError("First and last name are required.");
-            return;
-        }
-        setSavingName(true);
-        const res = await fetch(`/api/v1/campaigns/${campaignSlug}/members/${memberId}`, {
-            method:  "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body:    JSON.stringify({ first_name: editFirst.trim(), last_name: editLast.trim() }),
-        });
-        if (res.ok) {
-            setMember((m) => m ? { ...m, first_name: editFirst.trim(), last_name: editLast.trim() } : m);
-            setEditingName(false);
-            router.refresh();
-            showToast("Name updated.");
-        } else {
-            const j = await res.json().catch(() => ({}));
-            setNameError(j.error ?? "Failed to save.");
-        }
-        setSavingName(false);
-    }
-
-    const isTargetParticipant = member?.roles.some((r) => r.role === "participant");
-    const hasDonations = raised > 0;
-    // Allow remove when: organizer viewing another participant (not also an organizer),
-    // OR organizer viewing themselves as participant (to drop their own participant role).
-    const canRemove = isOrganizer && isTargetParticipant;
+    const photo  = member ? (member.user?.profile_photo_url ?? member.profile_photo_url) : null;
 
     return (
-        <>
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.45)" }}>
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md flex flex-col max-h-[calc(100vh-4rem)]">
-                <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 shrink-0">
-                    <h2 className="font-bold text-gray-900">Participant Details</h2>
-                    <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-400">
-                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                        </svg>
+        <div
+            className={`fixed inset-0 z-[100] flex items-center justify-center bg-[#0f1d43]/45 p-4 backdrop-blur-sm transition-opacity duration-200 motion-reduce:transition-none ${shown ? "opacity-100" : "opacity-0"}`}
+            onClick={close}
+        >
+            <div
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="participant-detail-title"
+                onClick={(e) => e.stopPropagation()}
+                className={`flex max-h-[calc(100vh-2rem)] w-full max-w-md flex-col overflow-hidden rounded-2xl bg-white shadow-[0px_16px_40px_-8px_rgba(15,29,67,0.3)] transition-transform duration-200 motion-reduce:transition-none ${shown ? "scale-100" : "scale-95"}`}
+            >
+                {/* Header */}
+                <div className="flex shrink-0 items-center justify-between gap-3 bg-[#0268c0] px-5 py-4 text-white">
+                    <h2 id="participant-detail-title" className="text-[16px] font-bold">Participant Details</h2>
+                    <button onClick={close} aria-label="Close" className="-mr-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white/80 transition-colors hover:bg-white/15 hover:text-white">
+                        <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} strokeLinecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
                     </button>
                 </div>
 
-                <div className="p-6 overflow-y-auto">
-                    {loading && <p className="text-center text-sm text-gray-400 py-8">Loading…</p>}
-                    {error && <p className="text-sm text-red-500 bg-red-50 rounded-lg px-3 py-2 mb-4">{error}</p>}
+                <div className="flex-1 overflow-y-auto p-5">
+                    {loading && (
+                        <div className="flex items-center justify-center py-12">
+                            <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#0268c0] border-t-transparent" />
+                        </div>
+                    )}
+                    {error && <p className="rounded-lg bg-red-50 px-3.5 py-2.5 text-[13px] font-medium text-red-600">{error}</p>}
 
                     {member && !loading && (
-                        <div className="space-y-4">
-                            {/* Avatar + name */}
-                            <div className="flex items-start gap-3">
-                                <div className="w-14 h-14 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 font-bold text-lg shrink-0 overflow-hidden">
-                                    {(member.user?.profile_photo_url ?? member.profile_photo_url)
+                        <div className="space-y-5">
+                            {/* Identity */}
+                            <div className="flex items-center gap-3.5">
+                                <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#aed9fe] text-[18px] font-bold text-[#0268c0]">
+                                    {photo
                                         // eslint-disable-next-line @next/next/no-img-element
-                                        ? <img src={(member.user?.profile_photo_url ?? member.profile_photo_url)!} alt={member.first_name} className="w-full h-full object-cover" />
-                                        : `${member.first_name[0]}${member.last_name[0]}`
-                                    }
+                                        ? <img src={photo} alt="" className="h-full w-full object-cover" />
+                                        : `${member.first_name[0] ?? ""}${member.last_name[0] ?? ""}`}
                                 </div>
-                                <div className="flex-1 min-w-0">
-                                    {editingName ? (
-                                        <div className="space-y-2">
-                                            <div className="flex gap-2">
-                                                <input
-                                                    value={editFirst}
-                                                    onChange={(e) => { setEditFirst(e.target.value); setNameError(null); }}
-                                                    placeholder="First name"
-                                                    className="flex-1 min-w-0 px-2.5 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-300"
-                                                />
-                                                <input
-                                                    value={editLast}
-                                                    onChange={(e) => { setEditLast(e.target.value); setNameError(null); }}
-                                                    placeholder="Last name"
-                                                    className="flex-1 min-w-0 px-2.5 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-300"
-                                                />
-                                            </div>
-                                            {nameError && <p className="text-xs text-red-500">{nameError}</p>}
-                                            <p className="text-[10px] text-gray-400">This only updates their name in this campaign, not their account.</p>
-                                            <div className="flex gap-2">
-                                                <button onClick={() => setEditingName(false)} className="flex-1 py-1.5 text-xs font-semibold border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">Cancel</button>
-                                                <button onClick={saveName} disabled={savingName} className="flex-1 py-1.5 text-xs font-semibold bg-orange-500 hover:bg-orange-600 text-white rounded-lg disabled:opacity-50 transition-colors">
-                                                    {savingName ? "Saving…" : "Save"}
-                                                </button>
-                                            </div>
-                                        </div>
-                                    ) : (
-                                        <div className="flex items-start justify-between gap-2">
-                                            <div>
-                                                <div className="flex items-center gap-1.5">
-                                                    <p className="font-bold text-gray-900">{member.first_name} {member.last_name}</p>
-                                                    {isSelf && (
-                                                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-50 text-[#0268c0] border border-[#0268c0]/20 uppercase tracking-wide">You</span>
-                                                    )}
-                                                </div>
-                                                {member.user?.username && (
-                                                    <p className="text-xs text-blue-500 font-medium">@{member.user.username}</p>
-                                                )}
-                                                {member.email && (
-                                                    <p className="text-xs text-gray-400">{member.email}</p>
-                                                )}
-                                                <div className="flex gap-1 mt-1">
-                                                    {member.roles.map((r) => (
-                                                        <span key={r.role} className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-blue-50 text-blue-600 capitalize">{r.role}</span>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                            {isOrganizer && !isCompleted && (
-                                                <button onClick={startEditName} className="shrink-0 p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors" title="Edit name">
-                                                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                                                    </svg>
-                                                </button>
-                                            )}
-                                        </div>
-                                    )}
+                                <div className="min-w-0">
+                                    <div className="flex flex-wrap items-center gap-1.5">
+                                        <p className="text-[17px] font-bold text-[#003060]">{member.first_name} {member.last_name}</p>
+                                        {isSelf && <span className="rounded bg-blue-50 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#0268c0]">You</span>}
+                                    </div>
+                                    {member.user?.username && <p className="text-[13px] font-medium text-[#0268c0]">@{member.user.username}</p>}
+                                    <div className="mt-1 flex flex-wrap gap-1">
+                                        {member.roles.map((r) => (
+                                            <span key={r.role} className="rounded-full bg-[#eef2f7] px-2 py-0.5 text-[10px] font-semibold capitalize text-[#5b6b7c]">{r.role}</span>
+                                        ))}
+                                    </div>
                                 </div>
                             </div>
 
                             {/* Stats */}
                             <div className="grid grid-cols-2 gap-3">
-                                <div className="bg-gray-50 rounded-xl p-3 text-center">
-                                    <p className="text-lg font-bold text-gray-900">{fmt(raised)}</p>
-                                    <p className="text-[10px] text-gray-400 uppercase tracking-wide">Raised</p>
+                                <div className="rounded-2xl border border-[#e7e9eb] bg-[#f7f9fb] p-3.5 text-center">
+                                    <p className="text-[20px] font-black text-[#003060]">{fmt(raised)}</p>
+                                    <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#9aa7b8]">Raised</p>
                                 </div>
-                                <div className="bg-gray-50 rounded-xl p-3 text-center">
-                                    <p className="text-lg font-bold text-gray-900">{member._count.donors}</p>
-                                    <p className="text-[10px] text-gray-400 uppercase tracking-wide">Donors</p>
+                                <div className="rounded-2xl border border-[#e7e9eb] bg-[#f7f9fb] p-3.5 text-center">
+                                    <p className="text-[20px] font-black text-[#003060]">{member._count.donors}</p>
+                                    <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#9aa7b8]">Donors</p>
                                 </div>
                             </div>
 
-                            <div className="space-y-2 text-sm">
-                                <div className="flex items-center justify-between py-2 border-b border-gray-50">
-                                    <span className="text-gray-400">Phone</span>
-                                    <span className="font-medium">{member.phone ?? "—"}</span>
+                            {/* Contact / meta */}
+                            <div className="text-[13px]">
+                                <div className="flex items-center justify-between gap-4 border-b border-[#eef1f4] py-2.5">
+                                    <span className="text-[#9aa7b8]">Email</span>
+                                    <span className="truncate font-medium text-[#003060]">{member.email ?? "—"}</span>
                                 </div>
-                                {member.joined_at && (
-                                    <div className="flex items-center justify-between py-2 border-b border-gray-50">
-                                        <span className="text-gray-400">Joined</span>
-                                        <span className="font-medium">
-                                            {new Date(member.joined_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
-                                            {" · "}
-                                            {new Date(member.joined_at).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}
-                                        </span>
-                                    </div>
-                                )}
+                                <div className="flex items-center justify-between gap-4 border-b border-[#eef1f4] py-2.5">
+                                    <span className="text-[#9aa7b8]">Phone</span>
+                                    <span className="font-medium text-[#003060]">{member.phone ?? "—"}</span>
+                                </div>
+                                <div className="flex items-center justify-between gap-4 py-2.5">
+                                    <span className="text-[#9aa7b8]">Joined</span>
+                                    <span className="font-medium text-[#003060]">{dt(member.joined_at)}</span>
+                                </div>
                             </div>
 
                             {/* Donations received */}
                             {member.donations.length > 0 && (() => {
-                                const visible = showAllDonations ? member.donations : member.donations.slice(0, 2);
+                                const visible = showAllDonations ? member.donations : member.donations.slice(0, 3);
                                 return (
                                     <div>
-                                        <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2">Donations Received</p>
+                                        <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.5px] text-[#003060]">Donations Received</p>
                                         <div className="space-y-2">
                                             {visible.map((d) => {
                                                 const name = d.is_anonymous
                                                     ? `${d.donor_first_name} ${d.donor_last_name}`
                                                     : (d.donor_display_name ?? `${d.donor_first_name} ${d.donor_last_name}`);
                                                 return (
-                                                    <div key={d.id} className="flex items-center justify-between py-2 px-3 bg-gray-50 rounded-xl">
-                                                        <div>
+                                                    <div key={d.id} className="flex items-center justify-between gap-3 rounded-xl border border-[#eef1f4] bg-[#f7f9fb] px-3 py-2">
+                                                        <div className="min-w-0">
                                                             <div className="flex items-center gap-1.5">
-                                                                <p className="text-sm font-semibold text-gray-800">{name}</p>
-                                                                {d.is_anonymous && (
-                                                                    <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-gray-200 text-gray-500 whitespace-nowrap">
-                                                                        Anonymous
-                                                                    </span>
-                                                                )}
+                                                                <p className="truncate text-[13px] font-semibold text-[#003060]">{name}</p>
+                                                                {d.is_anonymous && <span className="shrink-0 rounded-full bg-gray-200 px-1.5 py-0.5 text-[10px] font-semibold text-gray-500">Anonymous</span>}
                                                             </div>
-                                                            <p className="text-xs text-gray-400">
-                                                                {new Date(d.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
-                                                                {" · "}
-                                                                {new Date(d.created_at).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}
-                                                            </p>
+                                                            <p className="text-[11px] text-[#9aa7b8]">{dt(d.created_at)}</p>
                                                         </div>
-                                                        <span className="text-sm font-bold text-green-600">
-                                                            {fmt(parseFloat(d.amount))}
-                                                        </span>
+                                                        <span className="shrink-0 text-[13px] font-bold text-[#28c45d]">{fmt(parseFloat(d.amount))}</span>
                                                     </div>
                                                 );
                                             })}
                                         </div>
-                                        {member.donations.length > 2 && (
-                                            <button
-                                                onClick={() => setShowAllDonations((v) => !v)}
-                                                className="mt-2 text-xs font-semibold text-orange-500 hover:text-orange-600 transition-colors"
-                                            >
-                                                {showAllDonations
-                                                    ? "Show less"
-                                                    : `See all ${member.donations.length} donations`}
+                                        {member.donations.length > 3 && (
+                                            <button onClick={() => setShowAllDonations((v) => !v)} className="mt-2 text-[12px] font-semibold text-[#0268c0] transition-colors hover:text-[#0268c0]/80">
+                                                {showAllDonations ? "Show less" : `See all ${member.donations.length} donations`}
                                             </button>
                                         )}
                                     </div>
                                 );
                             })()}
-
-                            {isOrganizer && canRemove && !isCompleted && (
-                                <div className="pt-1">
-                                    {confirmRemove ? (
-                                        <div className="rounded-xl border border-red-200 bg-red-50 p-4 space-y-3">
-                                            <p className="text-sm font-semibold text-red-700">
-                                                {isSelf ? "Leave participant role?" : "Remove this participant?"}
-                                            </p>
-                                            <p className="text-xs text-red-500">
-                                                {isSelf
-                                                    ? "Your organizer role will be kept. This cannot be undone."
-                                                    : "This participant will be removed from the campaign. This cannot be undone."}
-                                            </p>
-                                            <div className="flex gap-2">
-                                                <button
-                                                    onClick={() => setConfirmRemove(false)}
-                                                    className="flex-1 py-2 rounded-lg border border-gray-200 bg-white text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors"
-                                                >
-                                                    Cancel
-                                                </button>
-                                                <button
-                                                    onClick={handleRemove}
-                                                    disabled={removing}
-                                                    className="flex-1 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white text-sm font-semibold disabled:opacity-50 transition-colors"
-                                                >
-                                                    {removing ? "Removing…" : "Yes, Remove"}
-                                                </button>
-                                            </div>
-                                        </div>
-                                    ) : (
-                                        <button
-                                            onClick={() => {
-                                                if (hasDonations) {
-                                                    showToast(`Cannot remove — this participant has raised ${fmt(raised)} in donations.`);
-                                                } else {
-                                                    setConfirmRemove(true);
-                                                }
-                                            }}
-                                            className="w-full py-2.5 rounded-xl border border-red-200 text-red-600 text-sm font-semibold hover:bg-red-50 transition-colors"
-                                        >
-                                            {isSelf ? "Leave Participant" : "Remove"}
-                                        </button>
-                                    )}
-                                </div>
-                            )}
                         </div>
                     )}
                 </div>
             </div>
         </div>
-
-        {/* Toast — bottom right */}
-        {toast && (
-            <div className="fixed bottom-6 right-6 z-200 flex items-start gap-3 px-4 py-3 bg-red-600 text-white text-sm font-medium rounded-xl shadow-lg max-w-xs">
-                <svg className="w-4 h-4 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
-                </svg>
-                <span className="flex-1">{toast}</span>
-                <button onClick={() => setToast(null)} className="shrink-0 opacity-70 hover:opacity-100 transition-opacity ml-1">
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/>
-                    </svg>
-                </button>
-            </div>
-        )}
-        </>
     );
 }

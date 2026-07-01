@@ -1,8 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import AddParticipantModal from "./AddParticipantModal";
 import ParticipantDetailModal from "./ParticipantDetailModal";
+import EditParticipantModal from "./EditParticipantModal";
+import RemoveParticipantModal from "./RemoveParticipantModal";
 
 function fmt(n: number) {
     return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(n);
@@ -74,6 +77,33 @@ export default function ParticipantsTable({ participants, isOrganizer, campaignS
     const [collapsed,    setCollapsed]    = useState(false);
     const [addOpen,      setAddOpen]      = useState(false);
     const [viewMemberId, setViewMemberId] = useState<string | null>(null);
+    const [editMemberId, setEditMemberId] = useState<string | null>(null);
+    const [removeId,     setRemoveId]     = useState<string | null>(null);
+    const [menuFor,      setMenuFor]      = useState<string | null>(null);
+    const [menuPos,      setMenuPos]      = useState<{ top: number; right: number }>({ top: 0, right: 0 });
+    const [mounted,      setMounted]      = useState(false);
+    useEffect(() => { setMounted(true); }, []);
+
+    function openMenu(e: React.MouseEvent<HTMLButtonElement>, id: string) {
+        const r = e.currentTarget.getBoundingClientRect();
+        setMenuPos({ top: r.bottom + 6, right: Math.max(8, window.innerWidth - r.right) });
+        setMenuFor((cur) => (cur === id ? null : id));
+    }
+    useEffect(() => {
+        if (!menuFor) return;
+        const close = () => setMenuFor(null);
+        const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setMenuFor(null); };
+        window.addEventListener("mousedown", close);
+        window.addEventListener("scroll", close, true);
+        window.addEventListener("resize", close);
+        window.addEventListener("keydown", onKey);
+        return () => {
+            window.removeEventListener("mousedown", close);
+            window.removeEventListener("scroll", close, true);
+            window.removeEventListener("resize", close);
+            window.removeEventListener("keydown", onKey);
+        };
+    }, [menuFor]);
 
     const filtered = participants.filter((p) => {
         const q = search.toLowerCase();
@@ -225,7 +255,7 @@ export default function ParticipantsTable({ participants, isOrganizer, campaignS
                                                     <td className="px-4 py-4"><DonorsCell p={p} /></td>
                                                     <td className="px-4 py-4"><AmountCell p={p} connector="of" /></td>
                                                     <td className="py-4 pl-2 pr-5 text-right">
-                                                        <button onClick={() => setViewMemberId(p.id)} aria-label={`Actions for ${p.name}`} title="View details" className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[#9aa7b8] transition-colors hover:bg-gray-100 hover:text-[#003060]">
+                                                        <button onMouseDown={(e) => e.stopPropagation()} onClick={(e) => openMenu(e, p.id)} aria-label={`Actions for ${p.name}`} aria-haspopup="menu" aria-expanded={menuFor === p.id} title="Actions" className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[#9aa7b8] transition-colors hover:bg-gray-100 hover:text-[#003060]">
                                                             <Dots />
                                                         </button>
                                                     </td>
@@ -260,7 +290,7 @@ export default function ParticipantsTable({ participants, isOrganizer, campaignS
                                             {p.id === myMemberId && (
                                                 <span className="rounded bg-blue-50 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#0268c0]">You</span>
                                             )}
-                                            <button onClick={() => setViewMemberId(p.id)} aria-label={`Actions for ${p.name}`} className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[#9aa7b8] hover:bg-gray-100 hover:text-[#003060]">
+                                            <button onMouseDown={(e) => e.stopPropagation()} onClick={(e) => openMenu(e, p.id)} aria-label={`Actions for ${p.name}`} aria-haspopup="menu" aria-expanded={menuFor === p.id} className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[#9aa7b8] hover:bg-gray-100 hover:text-[#003060]">
                                                 <Dots />
                                             </button>
                                         </div>
@@ -318,17 +348,60 @@ export default function ParticipantsTable({ participants, isOrganizer, campaignS
             {isOrganizer && addOpen && (
                 <AddParticipantModal campaignSlug={campaignSlug} onClose={() => setAddOpen(false)} />
             )}
+            {/* Row action menu — portalled so the table's overflow doesn't clip it */}
+            {mounted && menuFor && (() => {
+                const p = participants.find((x) => x.id === menuFor);
+                if (!p) return null;
+                const item = "flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-[13px] font-medium transition-colors";
+                return createPortal(
+                    <div role="menu" onMouseDown={(e) => e.stopPropagation()} style={{ position: "fixed", top: menuPos.top, right: menuPos.right, zIndex: 90 }}
+                        className="w-56 overflow-hidden rounded-xl border border-[#e7e9eb] bg-white py-1.5 shadow-[0px_12px_32px_-8px_rgba(15,29,67,0.25)]">
+                        <button role="menuitem" onClick={() => { setViewMemberId(p.id); setMenuFor(null); }} className={`${item} text-[#003060] hover:bg-[#f4f8f9]`}>
+                            <svg className="h-[18px] w-[18px] text-[#9aa7b8]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z" /><circle cx="12" cy="12" r="2.6" /></svg>
+                            View Participant
+                        </button>
+                        {isOrganizer && !isCompleted && (
+                            <button role="menuitem" onClick={() => { setEditMemberId(p.id); setMenuFor(null); }} className={`${item} text-[#003060] hover:bg-[#f4f8f9]`}>
+                                <svg className="h-[18px] w-[18px] text-[#9aa7b8]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>
+                                Edit Participant
+                            </button>
+                        )}
+                        {isOrganizer && !isCompleted && (
+                            <button role="menuitem" onClick={() => { setRemoveId(p.id); setMenuFor(null); }} className={`${item} text-red-600 hover:bg-red-50`}>
+                                <svg className="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6M10 11v6M14 11v6" /></svg>
+                                Remove
+                            </button>
+                        )}
+                    </div>,
+                    document.body
+                );
+            })()}
+
             {viewMemberId && (
                 <ParticipantDetailModal
                     memberId={viewMemberId}
                     myMemberId={myMemberId}
                     campaignSlug={campaignSlug}
-                    isOrganizer={isOrganizer}
                     raised={viewedParticipant?.raised ?? 0}
-                    isCompleted={isCompleted}
                     onClose={() => setViewMemberId(null)}
                 />
             )}
+            {editMemberId && (
+                <EditParticipantModal memberId={editMemberId} campaignSlug={campaignSlug} onClose={() => setEditMemberId(null)} />
+            )}
+            {removeId && (() => {
+                const p = participants.find((x) => x.id === removeId);
+                return (
+                    <RemoveParticipantModal
+                        memberId={removeId}
+                        campaignSlug={campaignSlug}
+                        name={p?.name ?? "this participant"}
+                        raised={p?.raised ?? 0}
+                        isSelf={removeId === myMemberId}
+                        onClose={() => setRemoveId(null)}
+                    />
+                );
+            })()}
         </section>
     );
 }
