@@ -14,15 +14,15 @@ function fmtTime(ts: number | null) {
 }
 
 export type NotificationRow = {
-    id:                  string;
-    notification_type:   string;
-    trigger_event:       string | null;
-    message:             string | null;
-    helper_text:         string | null;
-    scheduled_at:        number | null;
-    sent_at:             number | null;
-    status:              string;
-    recipient_member_id: string | null;
+    id:                   string;
+    notification_type?:   string;
+    trigger_event:        string | null;
+    message:              string | null;
+    helper_text:          string | null;
+    scheduled_at:         number | null;
+    sent_at:              number | null;
+    status:               string;
+    recipient_member_id?: string | null;
 };
 
 const STATUS_STYLES: Record<string, { label: string; cls: string }> = {
@@ -54,9 +54,15 @@ function whenStr(n: NotificationRow) {
 }
 
 // Stacked row — used for mobile cards + the "See all" modal (narrow surfaces).
-function NotifCard({ n }: { n: NotificationRow }) {
+function NotifCard({ n, onClick }: { n: NotificationRow; onClick?: () => void }) {
     return (
-        <div className="flex items-start gap-2.5 px-4 py-3">
+        <div
+            role={onClick ? "button" : undefined}
+            tabIndex={onClick ? 0 : undefined}
+            onClick={onClick}
+            onKeyDown={onClick ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick(); } } : undefined}
+            className={`flex items-start gap-2.5 px-4 py-3 ${onClick ? "cursor-pointer transition-colors hover:bg-[#f7f9fb]" : ""}`}
+        >
             <span className="mt-0.5 shrink-0 text-[#9aa7b8]"><EyeIcon /></span>
             <div className="min-w-0 flex-1">
                 <p className="truncate text-[13px] font-semibold text-[#003060]">{msgOf(n)}</p>
@@ -72,9 +78,11 @@ type Props = {
     notifications: NotificationRow[];
     totalCount:    number;
     campaignSlug:  string;
+    notifType?:    "campaign" | "participant";
+    onRowClick?:   (n: NotificationRow) => void;
 };
 
-export default function NotificationsTable({ title, notifications, totalCount, campaignSlug }: Props) {
+export default function NotificationsTable({ title, notifications, totalCount, campaignSlug, notifType = "campaign", onRowClick }: Props) {
     const [collapsed,  setCollapsed]  = useState(false);
     const [showAll,    setShowAll]    = useState(false);
     const [shown,      setShown]      = useState(false);
@@ -86,7 +94,7 @@ export default function NotificationsTable({ title, notifications, totalCount, c
     const fetchPage = useCallback(async (skip: number, replace = false) => {
         setLoading(true);
         try {
-            const res  = await fetch(`/api/v1/campaigns/${campaignSlug}/notifications-list?skip=${skip}&take=${MODAL_PAGE}&type=campaign`);
+            const res  = await fetch(`/api/v1/campaigns/${campaignSlug}/notifications-list?skip=${skip}&take=${MODAL_PAGE}&type=${notifType}`);
             const data = await res.json() as { notifications: NotificationRow[]; total: number };
             setModalItems((prev) => replace ? data.notifications : [...prev, ...data.notifications]);
             setModalTotal(data.total);
@@ -94,7 +102,7 @@ export default function NotificationsTable({ title, notifications, totalCount, c
         } finally {
             setLoading(false);
         }
-    }, [campaignSlug]);
+    }, [campaignSlug, notifType]);
 
     function openModal() {
         setShowAll(true);
@@ -167,7 +175,7 @@ export default function NotificationsTable({ title, notifications, totalCount, c
                                     </thead>
                                     <tbody>
                                         {notifications.map((n) => (
-                                            <tr key={n.id} className="border-b border-[#eef1f4] last:border-0 align-middle transition-colors hover:bg-[#f7f9fb]">
+                                            <tr key={n.id} onClick={onRowClick ? () => onRowClick(n) : undefined} className={`border-b border-[#eef1f4] align-middle transition-colors last:border-0 hover:bg-[#f7f9fb] ${onRowClick ? "cursor-pointer" : ""}`}>
                                                 <td className="py-3.5 pl-5 text-[#9aa7b8]"><EyeIcon /></td>
                                                 <td className="px-3 py-3.5"><p className="truncate text-[13px] font-medium text-[#003060]">{msgOf(n)}</p></td>
                                                 <td className="px-3 py-3.5 text-[13px] text-[#003060]">{whenStr(n)}</td>
@@ -180,7 +188,7 @@ export default function NotificationsTable({ title, notifications, totalCount, c
 
                             {/* Mobile cards */}
                             <div className="divide-y divide-[#eef1f4] md:hidden">
-                                {notifications.map((n) => <NotifCard key={n.id} n={n} />)}
+                                {notifications.map((n) => <NotifCard key={n.id} n={n} onClick={onRowClick ? () => onRowClick(n) : undefined} />)}
                             </div>
 
                             {hasMore && (
@@ -209,7 +217,7 @@ export default function NotificationsTable({ title, notifications, totalCount, c
                                     <div className="h-5 w-5 animate-spin rounded-full border-2 border-[#0268c0] border-t-transparent" />
                                 </div>
                             ) : (
-                                modalItems.map((n) => <NotifCard key={n.id} n={n} />)
+                                modalItems.map((n) => <NotifCard key={n.id} n={n} onClick={onRowClick ? () => onRowClick(n) : undefined} />)
                             )}
                         </div>
                         {canLoadMore && (

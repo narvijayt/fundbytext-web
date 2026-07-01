@@ -481,19 +481,6 @@ export default async function CampaignDetailPage({
 
                 return (
                     <>
-                        <CampaignProgressBar
-                            raisedAmt={raisedAmt}
-                            goalAmt={effectiveGoalAmt}
-                            initialGoalAmt={initialGoalAmt}
-                            donationCount={donationTotal}
-                            endDate={campaign.end_date}
-                            startDate={campaign.start_date}
-                            daysLeft={daysLeft}
-                            status={campaign.status}
-                            goalType={campaign.goal_type}
-                            timezone={campaign.timezone}
-                        />
-
                         {!campaign.donations_enabled && campaign.status === CampaignStatus.active && (
                             <div className="flex items-center gap-3 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl">
                                 <svg className="w-4 h-4 shrink-0 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -632,22 +619,21 @@ export default async function CampaignDetailPage({
                         )}
 
                         <div id="fundraising-goal" className="flex flex-col gap-6 lg:flex-row lg:items-start scroll-mt-6">
-                            {/* Left — chart + notifications */}
+                            {/* Left — progress bar + chart (matches organizer view) */}
                             <div className="flex-1 min-w-0 space-y-6">
-                                <DonationChart startTs={campaign.start_date?.getTime() ?? null} endTs={campaign.end_date?.getTime() ?? null} donations={chartDonations} goalAmount={effectiveGoalAmt} initialGoalAmount={initialGoalAmt} title="Campaign Fundraising Progress" />
-
-                                {/* Notifications */}
-                                <div id="participant-notifications" className="scroll-mt-6">
-                                <ParticipantNotifications
-                                    notifications={myParticipantNotifs}
-                                    totalCount={participantNotifTotal}
-                                    campaignSlug={slug}
-                                    participantName={`${myMembership.first_name} ${myMembership.last_name}`.trim()}
-                                    organizerName={ownerName}
-                                    organizationName={campaign.campaign_type === "organization" ? (campaign.org_display_name ?? null) : null}
-                                    senderPhotoUrl={ownerMember?.user?.profile_photo_url ?? null}
+                                <CampaignProgressBar
+                                    raisedAmt={raisedAmt}
+                                    goalAmt={effectiveGoalAmt}
+                                    initialGoalAmt={initialGoalAmt}
+                                    donationCount={donationTotal}
+                                    endDate={campaign.end_date}
+                                    startDate={campaign.start_date}
+                                    daysLeft={daysLeft}
+                                    status={campaign.status}
+                                    goalType={campaign.goal_type}
+                                    timezone={campaign.timezone}
                                 />
-                                </div>
+                                <DonationChart startTs={campaign.start_date?.getTime() ?? null} endTs={campaign.end_date?.getTime() ?? null} donations={chartDonations} goalAmount={effectiveGoalAmt} initialGoalAmount={initialGoalAmt} title="Campaign Fundraising Progress" />
                             </div>
 
                             {/* Right — live feed + rankings */}
@@ -660,10 +646,18 @@ export default async function CampaignDetailPage({
                             </div>
                         </div>
 
-                        {/* My Donor Outreach — full width, above donors table */}
+                        {/* My Donor Outreach — custom card (not from Figma) */}
                         <div className="rounded-2xl border border-[#e7e9eb] bg-white p-6 shadow-[0px_4px_30px_0px_rgba(0,91,172,0.08)]">
-                            <div className="mb-5 flex items-center justify-between">
-                                <h2 className="text-[16px] font-bold text-[#003060]">My Donor Outreach</h2>
+                            <div className="mb-5 flex items-start justify-between gap-3">
+                                <div className="flex items-center gap-2.5">
+                                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#eef5fc] text-[#0268c0]">
+                                        <svg className="h-[18px] w-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round"><path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                                    </span>
+                                    <div>
+                                        <h2 className="text-[16px] font-bold text-[#003060]">My Donor Outreach</h2>
+                                        <p className="text-[12px] text-[#9aa7b8]">Your contacts and how they&apos;re converting</p>
+                                    </div>
+                                </div>
                                 {(() => {
                                     const rank = participants.findIndex((p) => p.id === myMembership.id) + 1;
                                     if (rank === 0 || participants.length < 2) return null;
@@ -673,39 +667,53 @@ export default async function CampaignDetailPage({
                                         rank === 3 ? "bg-orange-50 text-orange-700 border-orange-200" :
                                                      "bg-gray-50 text-gray-500 border-gray-100";
                                     return (
-                                        <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-bold ${colors}`}>
+                                        <span className={`inline-flex shrink-0 items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-bold ${colors}`}>
                                             #{rank} in Rankings
                                         </span>
                                     );
                                 })()}
                             </div>
-                            <div className="mb-5 grid grid-cols-3 gap-4">
-                                <div className="text-center">
-                                    <p className="text-[22px] font-bold text-[#003060]">{myAdded}</p>
+                            <div className="mb-5 grid grid-cols-3 gap-3">
+                                <div className="rounded-xl bg-[#eef5fc] p-4 text-center">
+                                    <p className="text-[24px] font-bold text-[#003060]">{myAdded}</p>
                                     <p className="mt-1 text-[11px] font-bold uppercase tracking-[0.5px] text-[#7e8a96]">Contacts Added</p>
                                 </div>
-                                <div className="border-x border-[#eef1f4] text-center">
-                                    <p className="text-[22px] font-bold text-[#28c45d]">{myDonated}</p>
+                                <div className="rounded-xl bg-[#eafaf1] p-4 text-center">
+                                    <p className="text-[24px] font-bold text-[#28c45d]">{myDonated}</p>
                                     <p className="mt-1 text-[11px] font-bold uppercase tracking-[0.5px] text-[#7e8a96]">Have Donated</p>
                                 </div>
-                                <div className="text-center">
-                                    <p className="text-[22px] font-bold text-[#003060]">
+                                <div className="rounded-xl bg-[#f4f6f9] p-4 text-center">
+                                    <p className="text-[24px] font-bold text-[#003060]">
                                         {myAdded > 0 ? `${Math.round((myDonated / myAdded) * 100)}%` : "—"}
                                     </p>
                                     <p className="mt-1 text-[11px] font-bold uppercase tracking-[0.5px] text-[#7e8a96]">Conversion</p>
                                 </div>
                             </div>
                             {myTarget > 0 && (
-                                <div>
-                                    <div className="mb-1.5 flex items-center justify-between">
+                                <div className="rounded-xl border border-[#eef1f4] bg-[#fbfcfd] px-4 py-3.5">
+                                    <div className="mb-2 flex items-center justify-between">
                                         <span className="text-xs font-semibold text-[#7e8a96]">Donor target progress</span>
                                         <span className="text-xs font-bold text-[#003060]">{myAdded} of {myTarget}</span>
                                     </div>
-                                    <div className="h-2 overflow-hidden rounded-full bg-[#eef1f4]">
-                                        <div className="h-full rounded-full bg-orange-500 transition-all" style={{ width: `${donorPct}%` }} />
+                                    <div className="h-2.5 overflow-hidden rounded-full bg-[#e7ecf1]">
+                                        <div className="h-full rounded-full bg-[#0268c0] transition-all" style={{ width: `${donorPct}%` }} />
                                     </div>
+                                    <p className="mt-2 text-[11px] font-medium text-[#9aa7b8]">{donorPct}% of your donor target reached</p>
                                 </div>
                             )}
+                        </div>
+
+                        {/* My Notifications — full-width table (matches organizer Campaign Notifications) */}
+                        <div id="participant-notifications" className="scroll-mt-6">
+                            <ParticipantNotifications
+                                notifications={myParticipantNotifs}
+                                totalCount={participantNotifTotal}
+                                campaignSlug={slug}
+                                participantName={`${myMembership.first_name} ${myMembership.last_name}`.trim()}
+                                organizerName={ownerName}
+                                organizationName={campaign.campaign_type === "organization" ? (campaign.org_display_name ?? null) : null}
+                                senderPhotoUrl={ownerMember?.user?.profile_photo_url ?? null}
+                            />
                         </div>
 
                         {/* Donors table — full width */}
