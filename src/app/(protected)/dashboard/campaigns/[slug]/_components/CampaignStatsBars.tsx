@@ -1,3 +1,5 @@
+import StatBuddyTip from "./StatBuddyTip";
+
 const fmtUSD = (n: number) =>
     new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
 
@@ -19,16 +21,16 @@ type Props =
     | ({ section: "overall";     title?: string } & OverallStats)
     | ({ section: "participant"; title?: string } & ParticipantStats);
 
-type Cell = { label: string; value: string };
+type Cell = { label: string; value: string; tip: string };
 
-// A single stat: uppercase label + FundBuddy mascot, big navy value below.
-function StatCell({ label, value }: Cell) {
+// A single stat: uppercase label + clickable FundBuddy mascot (opens an info
+// popover), big navy value below.
+function StatCell({ label, value, tip }: Cell) {
     return (
         <div className="flex flex-1 flex-col gap-4 p-5 sm:p-6">
             <div className="flex items-center gap-1.5">
                 <span className="min-w-0 text-[11px] font-bold uppercase leading-tight tracking-[1px] text-[#7e8a96]">{label}</span>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/assets/dashboard/fundbuddy.svg" alt="" aria-hidden="true" className="h-7 w-auto shrink-0" />
+                <StatBuddyTip label={label} tip={tip} />
             </div>
             <p className="text-[22px] font-bold tracking-[-0.5px] text-[#003060]">{value}</p>
         </div>
@@ -40,16 +42,24 @@ export default function CampaignStatsBars(props: Props) {
 
     const cells: Cell[] = props.section === "overall"
         ? [
-            { label: "Potential Donors",            value: props.potentialDonors.toLocaleString() },
-            { label: "Donor Engagement %",          value: `${props.donorEngagementPct.toFixed(2)}%` },
-            { label: "Average Donation",            value: fmtUSD(props.avgDonation) },
-            { label: "Average Amount of $ Per Day", value: fmtUSD(props.avgPerDay) },
+            { label: "Potential Donors",            value: props.potentialDonors.toLocaleString(),
+              tip: "This number represents individuals who have shown interest in your campaign but haven't donated yet. They may have interacted with your content, visited your donation page, or signed up for updates. Engage them with personalized outreach to convert their interest into support." },
+            { label: "Donor Engagement %",          value: `${props.donorEngagementPct.toFixed(2)}%`,
+              tip: "The share of your potential donors who have actually made a donation. A higher percentage means your outreach is doing a great job of turning interest into real contributions." },
+            { label: "Average Donation",            value: fmtUSD(props.avgDonation),
+              tip: "The average size of a single completed donation. Use it to set suggested giving amounts and to understand how generous your typical supporter is." },
+            { label: "Average Amount of $ Per Day", value: fmtUSD(props.avgPerDay),
+              tip: "How much your campaign raises on an average day since it started. It's a quick way to gauge momentum and see whether you're on pace to reach your goal." },
           ]
         : [
-            { label: "Amount Raised from Anonymous Donors", value: fmtUSD(props.anonRaised) },
-            { label: "Total Money Raised",                  value: fmtUSD(props.totalRaised) },
-            { label: "Percentage Contributed",              value: props.pctOfGoal !== null ? `${props.pctOfGoal.toFixed(2)}%` : "—" },
-            { label: "Avg Donation Per Donor",              value: fmtUSD(props.avgPerDonor) },
+            { label: "Amount Raised from Anonymous Donors", value: fmtUSD(props.anonRaised),
+              tip: "The total raised by donors who chose to keep their name private. Their contributions still count fully toward your goal — only their identity is hidden." },
+            { label: "Total Money Raised",                  value: fmtUSD(props.totalRaised),
+              tip: "The full amount you've personally raised for this campaign across every donor you've brought in." },
+            { label: "Percentage Contributed",              value: props.pctOfGoal !== null ? `${props.pctOfGoal.toFixed(2)}%` : "—",
+              tip: "Your share of the campaign's overall total — how much of everything raised so far has come through you." },
+            { label: "Avg Donation Per Donor",              value: fmtUSD(props.avgPerDonor),
+              tip: "The average gift size among the donors you've brought in. It helps you see how much each of your supporters typically contributes." },
           ];
 
     return (
