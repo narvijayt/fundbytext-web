@@ -8,34 +8,37 @@ function fmt(n: number) {
     return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(n);
 }
 
-// Top-3 get numbered medal coins (gold/silver/bronze); everyone else a soft numbered badge.
-const MEDALS: Record<number, { ring: [string, string]; disc: [string, string] }> = {
-    1: { ring: ["#F7C948", "#E0951A"], disc: ["#FFE59A", "#F5B72E"] },
-    2: { ring: ["#CBD5E1", "#8E9AAB"], disc: ["#EDF1F6", "#BFC8D4"] },
-    3: { ring: ["#E7AB74", "#B96F31"], disc: ["#F4CBA0", "#DA8A4C"] },
-};
-function RankBadge({ rank }: { rank: number }) {
-    const m = MEDALS[rank];
-    if (m) {
-        const id = `medal-${rank}`;
-        return (
-            <svg viewBox="0 0 32 32" className="h-8 w-8 shrink-0" role="img" aria-label={`Rank ${rank}`}>
-                <defs>
-                    <linearGradient id={`${id}-r`} x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0" stopColor={m.ring[0]} /><stop offset="1" stopColor={m.ring[1]} />
-                    </linearGradient>
-                    <linearGradient id={`${id}-d`} x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0" stopColor={m.disc[0]} /><stop offset="1" stopColor={m.disc[1]} />
-                    </linearGradient>
-                </defs>
-                <circle cx="16" cy="16" r="15" fill={`url(#${id}-r)`} />
-                <circle cx="16" cy="16" r="11" fill={`url(#${id}-d)`} />
-                <circle cx="16" cy="16" r="11" fill="none" stroke="#ffffff" strokeOpacity="0.35" />
-                <text x="16" y="16.5" textAnchor="middle" dominantBaseline="central" fontSize="13" fontWeight="800" fill="#ffffff">{rank}</text>
-            </svg>
-        );
-    }
-    return <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#eef2f7] text-[13px] font-bold text-[#5b6b7c]">{rank}</span>;
+// Ranks 1/2/3 use the exact Figma medal assets; 4+ get a plain number (table) or soft grey coin (cards).
+function Medal({ rank, size = "h-8 w-8" }: { rank: number; size?: string }) {
+    // eslint-disable-next-line @next/next/no-img-element
+    return <img src={`/assets/dashboard/rank-${rank}.svg`} alt={`Rank ${rank}`} className={`${size} shrink-0`} />;
+}
+
+function SortIcon() {
+    return (
+        <svg className="h-3 w-3" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
+            <path d="M4 4.5 6 2.5l2 2M4 7.5l2 2 2-2" />
+        </svg>
+    );
+}
+
+function Dots() {
+    return (
+        <svg className="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="currentColor">
+            <circle cx="5" cy="12" r="1.7" /><circle cx="12" cy="12" r="1.7" /><circle cx="19" cy="12" r="1.7" />
+        </svg>
+    );
+}
+
+// Compact numbered pager: 1 … around-current … N
+function pageList(current: number, total: number): (number | "…")[] {
+    if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+    const out: (number | "…")[] = [1];
+    if (current > 3) out.push("…");
+    for (let i = Math.max(2, current - 1); i <= Math.min(total - 1, current + 1); i++) out.push(i);
+    if (current < total - 2) out.push("…");
+    out.push(total);
+    return out;
 }
 
 export type ParticipantRow = {
@@ -55,16 +58,20 @@ type Props = {
     isOrganizer:           boolean;
     campaignSlug:          string;
     goalAmount?:           number | null;
+    perParticipantGoal?:   number | null;
     myMemberId?:           string;
     donorsPerParticipant?: number | null;
     isCompleted?:          boolean;
 };
 
-const PAGE_SIZE = 10;
+const PAGE_SIZES = [10, 25, 50];
 
-export default function ParticipantsTable({ participants, isOrganizer, campaignSlug, goalAmount, myMemberId, donorsPerParticipant, isCompleted }: Props) {
+export default function ParticipantsTable({ participants, isOrganizer, campaignSlug, perParticipantGoal, myMemberId, donorsPerParticipant, isCompleted }: Props) {
     const [search,       setSearch]       = useState("");
     const [page,         setPage]         = useState(1);
+    const [pageSize,     setPageSize]     = useState(10);
+    const [sortDesc,     setSortDesc]     = useState(true);
+    const [collapsed,    setCollapsed]    = useState(false);
     const [addOpen,      setAddOpen]      = useState(false);
     const [viewMemberId, setViewMemberId] = useState<string | null>(null);
 
@@ -72,238 +79,238 @@ export default function ParticipantsTable({ participants, isOrganizer, campaignS
         const q = search.toLowerCase();
         return !q || p.name.toLowerCase().includes(q) || (p.email ?? "").toLowerCase().includes(q);
     });
-
-    const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-    const paginated  = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+    const ordered   = sortDesc ? filtered : [...filtered].reverse();
+    const totalPages = Math.max(1, Math.ceil(ordered.length / pageSize));
+    const pageClamped = Math.min(page, totalPages);
+    const paginated  = ordered.slice((pageClamped - 1) * pageSize, pageClamped * pageSize);
 
     const viewedParticipant = participants.find((p) => p.id === viewMemberId);
+    const maxRaised = Math.max(1, ...participants.map((p) => p.raised));
 
-    // Summary stats
-    const totalDonorsAdded  = participants.reduce((s, p) => s + p.donorsAdded, 0);
-    const totalTargetDonors = donorsPerParticipant != null
-        ? donorsPerParticipant * participants.length
-        : participants.reduce((s, p) => s + p.targetDonors, 0);
-    const totalRaised       = participants.reduce((s, p) => s + p.raised, 0);
-    const maxRaised         = Math.max(1, ...participants.map((p) => p.raised));
-    // goalAmount is already the effective total (pre-multiplied by participants.length on the server)
-    const effectiveGoal = goalAmount ?? null;
-    const donorPct          = totalTargetDonors > 0 ? Math.min(100, Math.round((totalDonorsAdded / totalTargetDonors) * 100)) : 0;
-    const raisedPct         = effectiveGoal && effectiveGoal > 0 ? Math.min(100, Math.round((totalRaised / effectiveGoal) * 100)) : 0;
+    // Original (desc) index → real rank number, independent of the display sort.
+    const rankOf = (p: ParticipantRow) => filtered.indexOf(p) + 1;
+    const donorBarPct   = (p: ParticipantRow) => { const t = donorsPerParticipant ?? p.targetDonors; return t > 0 ? Math.min(100, Math.round((p.donorsAdded / t) * 100)) : 0; };
+    const targetOf      = (p: ParticipantRow) => donorsPerParticipant ?? p.targetDonors;
+    const raisedBarPct  = (p: ParticipantRow) => perParticipantGoal && perParticipantGoal > 0
+        ? Math.min(100, Math.round((p.raised / perParticipantGoal) * 100))
+        : Math.min(100, Math.round((p.raised / maxRaised) * 100));
+
+    function goPage(n: number) { setPage(Math.min(totalPages, Math.max(1, n))); }
+
+    function Avatar({ p, size }: { p: ParticipantRow; size: string }) {
+        return (
+            <div className={`${size} shrink-0 overflow-hidden rounded-full bg-[#aed9fe] flex items-center justify-center text-[#0268c0] font-bold text-xs`}>
+                {p.profilePhotoUrl
+                    // eslint-disable-next-line @next/next/no-img-element
+                    ? <img src={p.profilePhotoUrl} alt={p.name} className="h-full w-full object-cover" />
+                    : p.name.split(" ").map((n) => n[0]).join("").slice(0, 2)}
+            </div>
+        );
+    }
+
+    const DonorsCell = ({ p }: { p: ParticipantRow }) => (
+        <>
+            <p className="text-[13px] font-bold text-[#003060]">
+                {p.donorsAdded}<span className="font-medium text-[#9aa7b8]"> of {targetOf(p)}</span>
+            </p>
+            <div className="mt-1.5 h-1.5 w-full max-w-[150px] overflow-hidden rounded-full bg-[#eef1f4]">
+                <div className="h-full rounded-full bg-[#f47435]" style={{ width: `${donorBarPct(p)}%` }} />
+            </div>
+        </>
+    );
+    const AmountCell = ({ p, connector }: { p: ParticipantRow; connector: string }) => (
+        <>
+            <p className="text-[13px] font-bold text-[#003060]">
+                {p.raised > 0 ? fmt(p.raised) : <span className="text-gray-300">$0</span>}
+                {perParticipantGoal && perParticipantGoal > 0
+                    ? <span className="font-medium text-[#9aa7b8]"> {connector} {fmt(perParticipantGoal)}{connector === "of" ? " Goal" : ""}</span>
+                    : <span className="font-medium text-[#9aa7b8]"> raised</span>}
+            </p>
+            <div className="mt-1.5 h-1.5 w-full max-w-[190px] overflow-hidden rounded-full bg-[#eef1f4]">
+                <div className="h-full rounded-full bg-[#28c45d]" style={{ width: `${raisedBarPct(p)}%` }} />
+            </div>
+        </>
+    );
 
     return (
-        <>
-            <div id="participants" className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden scroll-mt-6">
-                {/* Header */}
-                <div className="px-6 py-4 border-b border-gray-100 flex flex-wrap items-center gap-3">
-                    <h2 className="flex-1 text-[18px] font-black text-[#003060]">Participants</h2>
-                    <span className="text-xs font-semibold bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">
-                        {filtered.length}
-                    </span>
-                    {isOrganizer && !isCompleted && (
-                        <button
-                            onClick={() => setAddOpen(true)}
-                            className="flex items-center gap-1.5 rounded-lg bg-[#28c45d] px-3.5 py-2 text-xs font-semibold text-white transition-colors hover:brightness-105"
-                        >
-                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4"/>
-                            </svg>
-                            Add Participant
-                        </button>
-                    )}
-                </div>
-
-                {/* Summary progress bars */}
-                {participants.length > 0 && (
-                    <div className="px-6 py-4 border-b border-gray-50 grid grid-cols-2 gap-4">
-                        <div>
-                            <div className="flex items-center justify-between mb-1">
-                                <span className="text-xs font-semibold text-gray-500">Donors Added</span>
-                                <span className="text-xs font-bold text-gray-800">
-                                    {totalDonorsAdded}
-                                    {totalTargetDonors > 0 && (
-                                        <span className="text-gray-400 font-medium"> of {totalTargetDonors}</span>
-                                    )}
-                                </span>
-                            </div>
-                            <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                                <div
-                                    className="h-full bg-orange-400 rounded-full transition-all"
-                                    style={{ width: `${donorPct}%` }}
-                                />
-                            </div>
-                        </div>
-                        {effectiveGoal && effectiveGoal > 0 && (
-                            <div>
-                                <div className="flex items-center justify-between mb-1">
-                                    <span className="text-xs font-semibold text-gray-500">Amount Raised</span>
-                                    <span className="text-xs font-bold text-gray-800">
-                                        {fmt(totalRaised)}
-                                        <span className="text-gray-400 font-medium"> of {fmt(effectiveGoal!)}</span>
-                                    </span>
-                                </div>
-                                <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                                    <div
-                                        className="h-full bg-green-400 rounded-full transition-all"
-                                        style={{ width: `${raisedPct}%` }}
-                                    />
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                )}
-
-                {/* Search */}
-                <div className="px-6 py-3 border-b border-gray-50">
-                    <input
-                        type="text"
-                        placeholder="Search by name or email…"
-                        value={search}
-                        onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-                        className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-300"
-                    />
-                </div>
-
-                {/* Table */}
-                {paginated.length === 0 ? (
-                    <div className="px-6 py-12 text-center">
-                        <svg className="w-10 h-10 text-gray-200 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
-                        </svg>
-                        <p className="text-sm text-gray-400">{search ? "No participants match your search" : "No participants yet"}</p>
-                        {isOrganizer && !isCompleted && !search && (
-                            <button
-                                onClick={() => setAddOpen(true)}
-                                className="mt-3 inline-flex items-center gap-1.5 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white text-xs font-semibold rounded-lg transition-colors"
-                            >
-                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4"/>
-                                </svg>
-                                Add First Participant
-                            </button>
-                        )}
-                    </div>
-                ) : (
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-sm">
-                            <thead>
-                                <tr className="bg-[#0268c0] text-white">
-                                    <th className="text-left px-6 py-3.5 text-xs font-bold uppercase tracking-wide">Rank</th>
-                                    <th className="text-left px-6 py-3.5 text-xs font-bold uppercase tracking-wide">Name</th>
-                                    <th className="text-left px-6 py-3.5 text-xs font-bold uppercase tracking-wide">Donors Added</th>
-                                    <th className="text-left px-6 py-3.5 text-xs font-bold uppercase tracking-wide">Amount Raised</th>
-                                    <th className="px-6 py-3.5" />
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {paginated.map((p, i) => {
-                                    const rank    = (page - 1) * PAGE_SIZE + i + 1;
-                                    const target   = donorsPerParticipant ?? p.targetDonors;
-                                    const donorPct = target > 0
-                                        ? Math.min(100, Math.round((p.donorsAdded / target) * 100))
-                                        : 0;
-                                    return (
-                                        <tr key={p.id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
-                                            <td className="px-6 py-3.5"><RankBadge rank={rank} /></td>
-                                            <td className="px-6 py-3.5">
-                                                <div className="flex items-center gap-2.5">
-                                                    <div className="w-9 h-9 rounded-full bg-[#aed9fe] flex items-center justify-center text-[#0268c0] font-bold text-xs shrink-0 overflow-hidden">
-                                                        {p.profilePhotoUrl ? (
-                                                            // eslint-disable-next-line @next/next/no-img-element
-                                                            <img src={p.profilePhotoUrl} alt={p.name} className="w-full h-full object-cover" />
-                                                        ) : (
-                                                            p.name.split(" ").map((n) => n[0]).join("").slice(0, 2)
-                                                        )}
-                                                    </div>
-                                                    <div>
-                                                        <div className="flex items-center gap-1.5">
-                                                            <p className="font-semibold text-[#003060]">{p.name}</p>
-                                                            {p.id === myMemberId && (
-                                                                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-50 text-[#0268c0] border border-[#0268c0]/20 uppercase tracking-wide">You</span>
-                                                            )}
-                                                        </div>
-                                                        {p.email && (
-                                                            <p className="text-xs text-gray-400">{p.email}</p>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-3.5">
-                                                <p className="text-[13px] font-bold text-[#003060]">
-                                                    {p.donorsAdded}
-                                                    {target > 0 && (<span className="font-medium text-[#9aa7b8]"> of {target}</span>)}
-                                                </p>
-                                                {target > 0 && (
-                                                    <div className="mt-1.5 h-1.5 w-28 overflow-hidden rounded-full bg-gray-100">
-                                                        <div className="h-full rounded-full bg-[#f47435]" style={{ width: `${donorPct}%` }} />
-                                                    </div>
-                                                )}
-                                            </td>
-                                            <td className="px-6 py-3.5">
-                                                <p className="text-[13px] font-bold text-[#003060]">
-                                                    {p.raised > 0 ? fmt(p.raised) : <span className="text-gray-300">—</span>}
-                                                    {p.raised > 0 && (<span className="font-medium text-[#9aa7b8]"> raised</span>)}
-                                                </p>
-                                                {p.raised > 0 && (
-                                                    <div className="mt-1.5 h-1.5 w-28 overflow-hidden rounded-full bg-gray-100">
-                                                        <div className="h-full rounded-full bg-[#28c45d]" style={{ width: `${Math.round((p.raised / maxRaised) * 100)}%` }} />
-                                                    </div>
-                                                )}
-                                            </td>
-                                            <td className="px-6 py-3.5 text-right">
-                                                <button
-                                                    onClick={() => setViewMemberId(p.id)}
-                                                    aria-label={`View ${p.name}`}
-                                                    title="View details"
-                                                    className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[#9aa7b8] transition-colors hover:bg-gray-100 hover:text-[#003060]"
-                                                >
-                                                    <svg className="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="currentColor">
-                                                        <circle cx="5" cy="12" r="1.6" />
-                                                        <circle cx="12" cy="12" r="1.6" />
-                                                        <circle cx="19" cy="12" r="1.6" />
-                                                    </svg>
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    );
-                                })}
-                            </tbody>
-                        </table>
-                    </div>
-                )}
-
-                {/* Pagination */}
-                {totalPages > 1 && (
-                    <div className="px-6 py-3 border-t border-gray-100 flex items-center justify-between">
-                        <p className="text-xs text-gray-400">
-                            {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, filtered.length)} of {filtered.length}
-                        </p>
-                        <div className="flex gap-1">
-                            <button
-                                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                                disabled={page === 1}
-                                className="px-3 py-1.5 text-xs font-semibold text-gray-500 border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-40"
-                            >
-                                ← Prev
-                            </button>
-                            <button
-                                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                                disabled={page === totalPages}
-                                className="px-3 py-1.5 text-xs font-semibold text-gray-500 border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-40"
-                            >
-                                Next →
-                            </button>
-                        </div>
-                    </div>
+        <section id="participants" className="scroll-mt-6">
+            {/* Title + Add */}
+            <div className="mb-4 flex items-center justify-between gap-3">
+                <h2 className="text-[20px] font-black text-[#003060]">Participants</h2>
+                {isOrganizer && !isCompleted && (
+                    <button
+                        onClick={() => setAddOpen(true)}
+                        className="flex shrink-0 items-center justify-center gap-1.5 rounded-xl bg-[#28c45d] text-white transition-[filter] hover:brightness-105 h-10 w-10 sm:h-auto sm:w-auto sm:px-4 sm:py-2.5"
+                    >
+                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                        <span className="hidden sm:inline text-[13px] font-semibold">Add Participant</span>
+                    </button>
                 )}
             </div>
 
-            {isOrganizer && addOpen && (
-                <AddParticipantModal
-                    campaignSlug={campaignSlug}
-                    onClose={() => setAddOpen(false)}
+            {/* Search */}
+            <div className="relative mb-4 w-full sm:w-[320px]">
+                <svg className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#9aa7b8]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <circle cx="11" cy="11" r="7" /><path strokeLinecap="round" d="M21 21l-4.3-4.3" />
+                </svg>
+                <input
+                    type="text"
+                    placeholder="Search by name, email, or Status"
+                    value={search}
+                    onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+                    className="w-full rounded-xl border border-[#e7e9eb] bg-white py-2.5 pl-10 pr-3 text-sm text-[#003060] placeholder:text-[#9aa7b8] shadow-[0px_1px_2px_0px_rgba(0,48,96,0.04)] focus:border-[#0268c0] focus:outline-none focus:ring-2 focus:ring-[#0268c0]/20"
                 />
+            </div>
+
+            {/* Table card */}
+            <div className="overflow-hidden rounded-2xl border border-[#e7e9eb] bg-white shadow-[0px_4px_30px_0px_rgba(0,91,172,0.08)]">
+                {paginated.length === 0 ? (
+                    <div className="px-6 py-12 text-center">
+                        <svg className="mx-auto mb-3 h-10 w-10 text-gray-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                        <p className="text-sm text-gray-400">{search ? "No participants match your search" : "No participants yet"}</p>
+                    </div>
+                ) : (
+                    <>
+                        {/* ── Desktop / tablet table ── */}
+                        <div className="hidden md:block">
+                            <table className="w-full text-sm">
+                                <thead>
+                                    <tr className="bg-[#0268c0] text-white">
+                                        <th className="py-3.5 pl-6 pr-2 text-left">
+                                            <button onClick={() => setSortDesc((s) => !s)} className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide">
+                                                Rank <SortIcon />
+                                            </button>
+                                        </th>
+                                        <th className="px-4 py-3.5 text-left text-xs font-bold uppercase tracking-wide">Name</th>
+                                        <th className="px-4 py-3.5 text-left text-xs font-bold uppercase tracking-wide">Donors Added</th>
+                                        <th className="px-4 py-3.5 text-left text-xs font-bold uppercase tracking-wide">Amount Raised</th>
+                                        <th className="py-3.5 pl-2 pr-5 text-right">
+                                            <button onClick={() => setCollapsed((c) => !c)} aria-label={collapsed ? "Expand" : "Collapse"} className="inline-flex h-6 w-6 items-center justify-center rounded text-white/90 hover:bg-white/15">
+                                                <svg className={`h-4 w-4 transition-transform ${collapsed ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 15l6-6 6 6" /></svg>
+                                            </button>
+                                        </th>
+                                    </tr>
+                                </thead>
+                                {!collapsed && (
+                                    <tbody>
+                                        {paginated.map((p) => {
+                                            const rank = rankOf(p);
+                                            return (
+                                                <tr key={p.id} className="border-b border-[#eef1f4] last:border-0 transition-colors hover:bg-[#f7f9fb]">
+                                                    <td className="py-4 pl-6 pr-2">
+                                                        <span className="inline-flex w-9 justify-center">
+                                                            {rank <= 3 ? <Medal rank={rank} /> : <span className="text-[15px] font-bold text-[#003060]">{rank}</span>}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-4 py-4">
+                                                        <div className="flex items-center gap-2.5">
+                                                            <Avatar p={p} size="h-9 w-9" />
+                                                            <div className="flex items-center gap-1.5">
+                                                                <p className="font-semibold text-[#003060]">{p.name}</p>
+                                                                {p.id === myMemberId && (
+                                                                    <span className="rounded bg-blue-50 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#0268c0]">You</span>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-4 py-4"><DonorsCell p={p} /></td>
+                                                    <td className="px-4 py-4"><AmountCell p={p} connector="of" /></td>
+                                                    <td className="py-4 pl-2 pr-5 text-right">
+                                                        <button onClick={() => setViewMemberId(p.id)} aria-label={`Actions for ${p.name}`} title="View details" className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[#9aa7b8] transition-colors hover:bg-gray-100 hover:text-[#003060]">
+                                                            <Dots />
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })}
+                                    </tbody>
+                                )}
+                            </table>
+                        </div>
+
+                        {/* ── Mobile cards ── */}
+                        <div className="md:hidden">
+                            <div className="flex items-center justify-between bg-[#0268c0] px-4 py-3 text-white">
+                                <button onClick={() => setSortDesc((s) => !s)} className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide">
+                                    Rank <SortIcon />
+                                </button>
+                                <button onClick={() => setCollapsed((c) => !c)} aria-label={collapsed ? "Expand" : "Collapse"} className="inline-flex h-6 w-6 items-center justify-center rounded text-white/90 hover:bg-white/15">
+                                    <svg className={`h-4 w-4 transition-transform ${collapsed ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 15l6-6 6 6" /></svg>
+                                </button>
+                            </div>
+                            {!collapsed && paginated.map((p) => {
+                                const rank = rankOf(p);
+                                return (
+                                    <div key={p.id} className="border-b border-[#eef1f4] px-4 py-3.5 last:border-0">
+                                        <div className="flex items-center gap-2.5">
+                                            <span className="inline-flex w-8 justify-center">
+                                                {rank <= 3 ? <Medal rank={rank} /> : <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#eef2f7] text-[13px] font-bold text-[#5b6b7c]">{rank}</span>}
+                                            </span>
+                                            <Avatar p={p} size="h-9 w-9" />
+                                            <p className="min-w-0 flex-1 truncate font-semibold text-[#003060]">{p.name}</p>
+                                            {p.id === myMemberId && (
+                                                <span className="rounded bg-blue-50 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#0268c0]">You</span>
+                                            )}
+                                            <button onClick={() => setViewMemberId(p.id)} aria-label={`Actions for ${p.name}`} className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[#9aa7b8] hover:bg-gray-100 hover:text-[#003060]">
+                                                <Dots />
+                                            </button>
+                                        </div>
+                                        <div className="mt-2.5 grid grid-cols-2 gap-3 pl-10">
+                                            <div><DonorsCell p={p} /></div>
+                                            <div><AmountCell p={p} connector="out of" /></div>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </>
+                )}
+            </div>
+
+            {/* Pagination */}
+            {paginated.length > 0 && (
+                <div className="mt-4 flex flex-col items-center justify-between gap-3 sm:flex-row">
+                    <label className="flex items-center gap-2 text-[13px] font-medium text-[#7e8a96]">
+                        Show per page:
+                        <select
+                            value={pageSize}
+                            onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1); }}
+                            className="rounded-lg border border-[#e7e9eb] bg-white px-2.5 py-1.5 text-[13px] font-semibold text-[#003060] focus:border-[#0268c0] focus:outline-none"
+                        >
+                            {PAGE_SIZES.map((s) => <option key={s} value={s}>{s}</option>)}
+                        </select>
+                    </label>
+                    {totalPages > 1 && (
+                        <div className="flex items-center gap-1.5">
+                            <button onClick={() => goPage(pageClamped - 1)} disabled={pageClamped === 1} aria-label="Previous page" className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#e7e9eb] text-[#7e8a96] transition-colors hover:bg-gray-50 disabled:opacity-40">
+                                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15 18l-6-6 6-6" /></svg>
+                            </button>
+                            {pageList(pageClamped, totalPages).map((n, i) =>
+                                n === "…" ? (
+                                    <span key={`e${i}`} className="px-1.5 text-sm text-[#9aa7b8]">…</span>
+                                ) : (
+                                    <button
+                                        key={n}
+                                        onClick={() => goPage(n)}
+                                        className={`h-9 min-w-9 rounded-lg px-2 text-sm font-semibold transition-colors ${n === pageClamped ? "bg-[#0268c0] text-white" : "text-[#003060] hover:bg-gray-100"}`}
+                                    >
+                                        {n}
+                                    </button>
+                                )
+                            )}
+                            <button onClick={() => goPage(pageClamped + 1)} disabled={pageClamped === totalPages} aria-label="Next page" className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#e7e9eb] text-[#7e8a96] transition-colors hover:bg-gray-50 disabled:opacity-40">
+                                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 18l6-6-6-6" /></svg>
+                            </button>
+                        </div>
+                    )}
+                </div>
             )}
 
+            {isOrganizer && addOpen && (
+                <AddParticipantModal campaignSlug={campaignSlug} onClose={() => setAddOpen(false)} />
+            )}
             {viewMemberId && (
                 <ParticipantDetailModal
                     memberId={viewMemberId}
@@ -315,6 +322,6 @@ export default function ParticipantsTable({ participants, isOrganizer, campaignS
                     onClose={() => setViewMemberId(null)}
                 />
             )}
-        </>
+        </section>
     );
 }

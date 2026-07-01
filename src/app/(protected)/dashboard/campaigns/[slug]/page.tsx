@@ -799,6 +799,7 @@ export default async function CampaignDetailPage({
                                 isOrganizer={isOrganizer}
                                 campaignSlug={slug}
                                 goalAmount={effectiveGoalAmt}
+                                perParticipantGoal={campaign.goal_type === "participant_goal" ? goalAmt : null}
                                 myMemberId={myMembership.id}
                                 donorsPerParticipant={campaign.donors_per_participant}
                                 isCompleted={campaign.status === CampaignStatus.completed}
