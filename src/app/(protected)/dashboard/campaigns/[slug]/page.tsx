@@ -78,6 +78,7 @@ export default async function CampaignDetailPage({
                     created_at:  true,
                 },
             },
+            media: { select: { url: true, media_type: true } },
         },
     });
 
@@ -298,6 +299,13 @@ export default async function CampaignDetailPage({
 
     const badge = STATUS_BADGE[campaign.status as CampaignStatus];
 
+    // Cover image + campaign owner (primary organizer) for the header
+    const coverUrl      = campaign.media.find((m) => m.media_type === "hero")?.url ?? null;
+    const ownerMember   = campaign.members.find((m) => m.roles.some((r) => r.role === MemberRole.organizer)) ?? campaign.members[0];
+    const ownerName     = ownerMember ? `${ownerMember.first_name} ${ownerMember.last_name}`.trim() : null;
+    const ownerPhoto    = ownerMember?.user?.profile_photo_url ?? null;
+    const ownerInitials = ownerName ? ownerName.split(" ").filter(Boolean).map((n) => n[0]).join("").slice(0, 2).toUpperCase() : "";
+
     return (
         <div className="space-y-6">
             <AblyDashboardUpdater campaignSlug={slug} />
@@ -305,7 +313,32 @@ export default async function CampaignDetailPage({
             {/* ── Header ── */}
             <div className="flex items-start justify-between gap-3 sm:gap-4">
                 <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-2.5">
+                    {/* Campaign owner badge */}
+                    {ownerName && (
+                        <div className="mb-2.5 inline-flex max-w-full items-center gap-2 rounded-full border border-[#e7e9eb] bg-white py-1 pl-1 pr-3 shadow-[0px_1px_2px_0px_rgba(0,48,96,0.04)]">
+                            {ownerPhoto ? (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img src={ownerPhoto} alt="" className="h-6 w-6 shrink-0 rounded-full object-cover" />
+                            ) : (
+                                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#0268c0]/10 text-[10px] font-bold text-[#0268c0]">{ownerInitials}</span>
+                            )}
+                            <span className="truncate text-[12px] font-medium text-[#7e8a96]">Organized by <span className="font-bold text-[#003060]">{ownerName}</span></span>
+                        </div>
+                    )}
+                    {/* Cover image + campaign name */}
+                    <div className="flex items-start gap-3">
+                        {coverUrl ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={coverUrl} alt="" className="h-14 w-14 shrink-0 rounded-xl border border-[#e7e9eb] object-cover" />
+                        ) : (
+                            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl border border-[#e7e9eb] bg-[#f4f8f9] text-[#9aa7b8]">
+                                <svg className="h-6 w-6" fill="none" viewBox="0 0 20 20" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M4.2916 1.66602V18.3327" />
+                                    <path d="M4.2916 3.33398H13.6249C15.8749 3.33398 16.3749 4.58398 14.7916 6.16732L13.7916 7.16732C13.1249 7.83398 13.1249 8.91732 13.7916 9.50065L14.7916 10.5007C16.3749 12.084 15.7916 13.334 13.6249 13.334H4.2916" />
+                                </svg>
+                            </div>
+                        )}
+                    <div className="flex min-w-0 flex-wrap items-center gap-2.5">
                         <h1 className="text-[26px] font-black leading-tight text-[#003060]">
                             {isParticipantView ? (
                                 <>
@@ -343,6 +376,7 @@ export default async function CampaignDetailPage({
                                 </>
                             );
                         })()}
+                    </div>
                     </div>
                     <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[13px] font-medium text-[#7e8a96]">
                         <span className="inline-flex items-center gap-1.5">
