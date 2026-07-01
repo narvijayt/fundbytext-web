@@ -9,6 +9,7 @@ import AssignDonorModal from "./AssignDonorModal";
 import EditDonorModal from "./EditDonorModal";
 import RemoveDonorModal from "./RemoveDonorModal";
 import TableEmptyState from "./TableEmptyState";
+import InfoBadgeTip from "./InfoBadgeTip";
 
 export type DonorRow = {
     id:               string;
@@ -44,6 +45,12 @@ const STATUS_BADGE: Record<string, { label: string; cls: string }> = {
     donated:     { label: "Donated",     cls: "bg-green-100 text-green-700" },
     contacted:   { label: "Contacted",   cls: "bg-blue-100 text-blue-700"   },
     not_donated: { label: "Not Donated", cls: "bg-red-100 text-red-600"     },
+};
+
+const STATUS_TIP: Record<string, string> = {
+    donated:     "This person has donated to the campaign.",
+    contacted:   "This person has been contacted but hasn't donated yet.",
+    not_donated: "This person hasn't donated to the campaign yet.",
 };
 
 // Compact numbered pager: 1 … around-current … N
@@ -419,13 +426,21 @@ export default function DonorsTable({ donors: initialDonors, initialTotal, campa
                                                     <td className="px-4 py-3.5">
                                                         <div className="flex flex-col items-start gap-1">
                                                             {topDonorId === d.id && (
-                                                                <span className="flex items-center gap-0.5 whitespace-nowrap rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-[#0268c0]">
-                                                                    <svg className="h-2.5 w-2.5 fill-[#0268c0]" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
-                                                                    Top Donor
-                                                                </span>
+                                                                <InfoBadgeTip tip="This donor has contributed the most to the campaign.">
+                                                                    <span className="flex items-center gap-0.5 whitespace-nowrap rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-[#0268c0]">
+                                                                        <svg className="h-2.5 w-2.5 fill-[#0268c0]" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                                                                        Top Donor
+                                                                    </span>
+                                                                </InfoBadgeTip>
                                                             )}
-                                                            <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${sb.cls}`}>{sb.label}</span>
-                                                            {isAnonymous && <span className="whitespace-nowrap rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-semibold text-gray-500">Anonymous</span>}
+                                                            <InfoBadgeTip tip={STATUS_TIP[d.status] ?? STATUS_TIP.not_donated}>
+                                                                <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${sb.cls}`}>{sb.label}</span>
+                                                            </InfoBadgeTip>
+                                                            {isAnonymous && (
+                                                                <InfoBadgeTip tip="This donor chose to keep their donation anonymous.">
+                                                                    <span className="whitespace-nowrap rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-semibold text-gray-500">Anonymous</span>
+                                                                </InfoBadgeTip>
+                                                            )}
                                                         </div>
                                                     </td>
                                                     {/* Amount Donated */}
