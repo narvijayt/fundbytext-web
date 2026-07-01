@@ -303,6 +303,7 @@ export default async function CampaignDetailPage({
     const coverUrl    = campaign.media.find((m) => m.media_type === "hero")?.url ?? null;
     const ownerMember = campaign.members.find((m) => m.roles.some((r) => r.role === MemberRole.organizer)) ?? campaign.members[0];
     const ownerName   = ownerMember ? `${ownerMember.first_name} ${ownerMember.last_name}`.trim() : null;
+    const ownerLabel  = ownerMember?.user_id === user.id ? "You" : ownerName;
 
     return (
         <div className="space-y-6">
@@ -365,12 +366,12 @@ export default async function CampaignDetailPage({
                     </div>
                     </div>
                     <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[13px] font-medium text-[#7e8a96]">
-                        {ownerName && (
+                        {ownerLabel && (
                             <span className="inline-flex items-center gap-1.5">
                                 <svg className="h-4 w-4 shrink-0 text-[#9aa7b8]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.7}>
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                                 </svg>
-                                Organized by&nbsp;<span className="font-semibold text-[#003060]">{ownerName}</span>
+                                <span>Organized by <span className="font-semibold text-[#003060]">{ownerLabel}</span></span>
                             </span>
                         )}
                         <span className="inline-flex items-center gap-1.5">
