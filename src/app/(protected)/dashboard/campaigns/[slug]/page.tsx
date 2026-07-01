@@ -325,7 +325,7 @@ export default async function CampaignDetailPage({
                             </div>
                         )}
                     <div className="flex min-w-0 flex-wrap items-center gap-2.5">
-                        <h1 className="text-[22px] sm:text-[26px] lg:text-[30px] xl:text-[34px] font-black leading-tight text-[#003060]">
+                        <h1 className="text-[22px] sm:text-[28px] font-black leading-tight text-[#003060]">
                             {isParticipantView ? (
                                 <>
                                     {campaign.name ?? <span className="text-gray-400 italic">Untitled Campaign</span>}
