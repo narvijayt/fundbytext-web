@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 
 const MODAL_PAGE = 10;
 
@@ -77,6 +77,7 @@ type Props = {
 export default function NotificationsTable({ title, notifications, totalCount, campaignSlug }: Props) {
     const [collapsed,  setCollapsed]  = useState(false);
     const [showAll,    setShowAll]    = useState(false);
+    const [shown,      setShown]      = useState(false);
     const [modalItems, setModalItems] = useState<NotificationRow[]>([]);
     const [modalTotal, setModalTotal] = useState(0);
     const [modalSkip,  setModalSkip]  = useState(0);
@@ -101,6 +102,27 @@ export default function NotificationsTable({ title, notifications, totalCount, c
         setModalSkip(0);
         fetchPage(0, true);
     }
+
+    function closeModal() {
+        setShown(false);
+        window.setTimeout(() => setShowAll(false), 170);
+    }
+
+    // Entrance/exit animation + scroll-lock + ESC (matches the participant modals)
+    useEffect(() => {
+        if (!showAll) return;
+        const raf = requestAnimationFrame(() => setShown(true));
+        const prevOverflow = document.body.style.overflow;
+        document.body.style.overflow = "hidden";
+        function onKey(e: KeyboardEvent) { if (e.key === "Escape") closeModal(); }
+        document.addEventListener("keydown", onKey);
+        return () => {
+            cancelAnimationFrame(raf);
+            document.body.style.overflow = prevOverflow;
+            document.removeEventListener("keydown", onKey);
+        };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [showAll]);
 
     const hasMore     = totalCount > notifications.length;
     const canLoadMore = modalSkip < modalTotal;
@@ -173,11 +195,11 @@ export default function NotificationsTable({ title, notifications, totalCount, c
 
             {/* See all modal */}
             {showAll && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#0f1d43]/45 p-4 backdrop-blur-sm" onClick={() => setShowAll(false)}>
-                    <div className="flex w-full max-w-md flex-col overflow-hidden rounded-2xl bg-white shadow-[0px_16px_40px_-8px_rgba(15,29,67,0.3)]" style={{ maxHeight: "85vh" }} onClick={(e) => e.stopPropagation()}>
+                <div className={`fixed inset-0 z-[100] flex items-center justify-center bg-[#0f1d43]/45 p-4 backdrop-blur-sm transition-opacity duration-200 motion-reduce:transition-none ${shown ? "opacity-100" : "opacity-0"}`} onClick={closeModal}>
+                    <div className={`flex w-full max-w-md flex-col overflow-hidden rounded-2xl bg-white shadow-[0px_16px_40px_-8px_rgba(15,29,67,0.3)] transition-transform duration-200 motion-reduce:transition-none ${shown ? "scale-100" : "scale-95"}`} style={{ maxHeight: "85vh" }} onClick={(e) => e.stopPropagation()}>
                         <div className="flex shrink-0 items-center justify-between bg-[#0268c0] px-5 py-4 text-white">
                             <h2 className="text-[15px] font-bold">{title} <span className="font-normal text-white/70">({modalTotal || totalCount})</span></h2>
-                            <button onClick={() => setShowAll(false)} aria-label="Close" className="text-white/80 transition-colors hover:text-white">
+                            <button onClick={closeModal} aria-label="Close" className="text-white/80 transition-colors hover:text-white">
                                 <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} strokeLinecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
                             </button>
                         </div>
