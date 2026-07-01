@@ -199,7 +199,7 @@ export default function NotificationsTable({ title, notifications, totalCount, c
                     <div className={`flex w-full max-w-md flex-col overflow-hidden rounded-2xl bg-white shadow-[0px_16px_40px_-8px_rgba(15,29,67,0.3)] transition-transform duration-200 motion-reduce:transition-none ${shown ? "scale-100" : "scale-95"}`} style={{ maxHeight: "85vh" }} onClick={(e) => e.stopPropagation()}>
                         <div className="flex shrink-0 items-center justify-between bg-[#0268c0] px-5 py-4 text-white">
                             <h2 className="text-[15px] font-bold">{title} <span className="font-normal text-white/70">({modalTotal || totalCount})</span></h2>
-                            <button onClick={closeModal} aria-label="Close" className="text-white/80 transition-colors hover:text-white">
+                            <button onClick={closeModal} aria-label="Close" className="-mr-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white/80 transition-colors hover:bg-white/15 hover:text-white active:bg-white/25">
                                 <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} strokeLinecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
                             </button>
                         </div>
