@@ -646,6 +646,19 @@ export default async function CampaignDetailPage({
                             </div>
                         </div>
 
+                        {/* My Notifications — full-width table (matches organizer Campaign Notifications) */}
+                        <div id="participant-notifications" className="scroll-mt-6">
+                            <ParticipantNotifications
+                                notifications={myParticipantNotifs}
+                                totalCount={participantNotifTotal}
+                                campaignSlug={slug}
+                                participantName={`${myMembership.first_name} ${myMembership.last_name}`.trim()}
+                                organizerName={ownerName}
+                                organizationName={campaign.campaign_type === "organization" ? (campaign.org_display_name ?? null) : null}
+                                senderPhotoUrl={ownerMember?.user?.profile_photo_url ?? null}
+                            />
+                        </div>
+
                         {/* My Donor Outreach — custom card (not from Figma) */}
                         <div className="rounded-2xl border border-[#e7e9eb] bg-white p-6 shadow-[0px_4px_30px_0px_rgba(0,91,172,0.08)]">
                             <div className="mb-5 flex items-start justify-between gap-3">
@@ -701,19 +714,6 @@ export default async function CampaignDetailPage({
                                     <p className="mt-2 text-[11px] font-medium text-[#9aa7b8]">{donorPct}% of your donor target reached</p>
                                 </div>
                             )}
-                        </div>
-
-                        {/* My Notifications — full-width table (matches organizer Campaign Notifications) */}
-                        <div id="participant-notifications" className="scroll-mt-6">
-                            <ParticipantNotifications
-                                notifications={myParticipantNotifs}
-                                totalCount={participantNotifTotal}
-                                campaignSlug={slug}
-                                participantName={`${myMembership.first_name} ${myMembership.last_name}`.trim()}
-                                organizerName={ownerName}
-                                organizationName={campaign.campaign_type === "organization" ? (campaign.org_display_name ?? null) : null}
-                                senderPhotoUrl={ownerMember?.user?.profile_photo_url ?? null}
-                            />
                         </div>
 
                         {/* Donors table — full width */}

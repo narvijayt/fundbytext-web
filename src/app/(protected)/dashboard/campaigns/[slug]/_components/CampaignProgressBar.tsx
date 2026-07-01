@@ -311,18 +311,24 @@ export default function CampaignProgressBar({ raisedAmt, goalAmt, initialGoalAmt
                                 {donationCount} {donationCount === 1 ? "donation" : "donations"}
                             </p>
                         </div>
-                        {countdown && endDate && (
-                            countdown.ended ? (
-                                <span className="text-[12px] font-black uppercase leading-none tracking-[0.5px] text-red-500">Ended</span>
-                            ) : countdown.days > 0 ? (
-                                <span className={`text-[12px] font-black uppercase leading-none tracking-[0.5px] ${urgent ? "text-red-500" : "text-[#f47435]"}`}>
-                                    {countdown.days} {countdown.days === 1 ? "day" : "days"} left!
-                                </span>
-                            ) : (
-                                <span className={`text-[12px] font-black font-mono leading-none tabular-nums ${urgent ? "text-red-500" : "text-[#f47435]"}`}>
-                                    {pad(countdown.hours)}:{pad(countdown.minutes)}:{pad(countdown.seconds)} left!
-                                </span>
-                            )
+                        {/* Reserve the line's height so the card doesn't shift when the
+                            client-only countdown appears after mount (avoids layout jump). */}
+                        {endDate && (
+                            <div className="flex min-h-[14px] items-center">
+                                {countdown && (
+                                    countdown.ended ? (
+                                        <span className="text-[12px] font-black uppercase leading-none tracking-[0.5px] text-red-500">Ended</span>
+                                    ) : countdown.days > 0 ? (
+                                        <span className={`text-[12px] font-black uppercase leading-none tracking-[0.5px] ${urgent ? "text-red-500" : "text-[#f47435]"}`}>
+                                            {countdown.days} {countdown.days === 1 ? "day" : "days"} left!
+                                        </span>
+                                    ) : (
+                                        <span className={`text-[12px] font-black font-mono leading-none tabular-nums ${urgent ? "text-red-500" : "text-[#f47435]"}`}>
+                                            {pad(countdown.hours)}:{pad(countdown.minutes)}:{pad(countdown.seconds)} left!
+                                        </span>
+                                    )
+                                )}
+                            </div>
                         )}
                     </div>
                 </div>
