@@ -175,17 +175,24 @@ export default function ParticipantsTable({ participants, isOrganizer, campaignS
                     <>
                         {/* ── Desktop / tablet table ── */}
                         <div className="hidden md:block">
-                            <table className="w-full text-sm">
+                            <table className="w-full table-fixed text-sm">
+                                <colgroup>
+                                    <col className="w-[84px]" />
+                                    <col />
+                                    <col className="w-[24%]" />
+                                    <col className="w-[27%]" />
+                                    <col className="w-[56px]" />
+                                </colgroup>
                                 <thead>
                                     <tr className="bg-[#0268c0] text-white">
                                         <th className="py-3.5 pl-6 pr-2 text-left">
-                                            <button onClick={() => setSortDesc((s) => !s)} className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide">
+                                            <button onClick={() => setSortDesc((s) => !s)} className="inline-flex items-center gap-1.5 text-[13px] font-semibold">
                                                 Rank <SortIcon />
                                             </button>
                                         </th>
-                                        <th className="px-4 py-3.5 text-left text-xs font-bold uppercase tracking-wide">Name</th>
-                                        <th className="px-4 py-3.5 text-left text-xs font-bold uppercase tracking-wide">Donors Added</th>
-                                        <th className="px-4 py-3.5 text-left text-xs font-bold uppercase tracking-wide">Amount Raised</th>
+                                        <th className="px-4 py-3.5 text-left text-[13px] font-semibold">Name</th>
+                                        <th className="px-4 py-3.5 text-left text-[13px] font-semibold">Donors Added</th>
+                                        <th className="px-4 py-3.5 text-left text-[13px] font-semibold">Amount Raised</th>
                                         <th className="py-3.5 pl-2 pr-5 text-right">
                                             <button onClick={() => setCollapsed((c) => !c)} aria-label={collapsed ? "Expand" : "Collapse"} className="inline-flex h-6 w-6 items-center justify-center rounded text-white/90 hover:bg-white/15">
                                                 <svg className={`h-4 w-4 transition-transform ${collapsed ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 15l6-6 6 6" /></svg>
@@ -205,12 +212,12 @@ export default function ParticipantsTable({ participants, isOrganizer, campaignS
                                                         </span>
                                                     </td>
                                                     <td className="px-4 py-4">
-                                                        <div className="flex items-center gap-2.5">
+                                                        <div className="flex min-w-0 items-center gap-2.5">
                                                             <Avatar p={p} size="h-9 w-9" />
-                                                            <div className="flex items-center gap-1.5">
-                                                                <p className="font-semibold text-[#003060]">{p.name}</p>
+                                                            <div className="flex min-w-0 items-center gap-1.5">
+                                                                <p className="truncate font-semibold text-[#003060]">{p.name}</p>
                                                                 {p.id === myMemberId && (
-                                                                    <span className="rounded bg-blue-50 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#0268c0]">You</span>
+                                                                    <span className="shrink-0 rounded bg-blue-50 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#0268c0]">You</span>
                                                                 )}
                                                             </div>
                                                         </div>
@@ -233,7 +240,7 @@ export default function ParticipantsTable({ participants, isOrganizer, campaignS
                         {/* ── Mobile cards ── */}
                         <div className="md:hidden">
                             <div className="flex items-center justify-between bg-[#0268c0] px-4 py-3 text-white">
-                                <button onClick={() => setSortDesc((s) => !s)} className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide">
+                                <button onClick={() => setSortDesc((s) => !s)} className="inline-flex items-center gap-1.5 text-[13px] font-semibold">
                                     Rank <SortIcon />
                                 </button>
                                 <button onClick={() => setCollapsed((c) => !c)} aria-label={collapsed ? "Expand" : "Collapse"} className="inline-flex h-6 w-6 items-center justify-center rounded text-white/90 hover:bg-white/15">
