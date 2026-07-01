@@ -642,6 +642,10 @@ export default async function CampaignDetailPage({
                                     notifications={myParticipantNotifs}
                                     totalCount={participantNotifTotal}
                                     campaignSlug={slug}
+                                    participantName={`${myMembership.first_name} ${myMembership.last_name}`.trim()}
+                                    organizerName={ownerName}
+                                    organizationName={campaign.campaign_type === "organization" ? (campaign.org_display_name ?? null) : null}
+                                    senderPhotoUrl={ownerMember?.user?.profile_photo_url ?? null}
                                 />
                                 </div>
                             </div>

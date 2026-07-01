@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import NotificationDetailModal from "./NotificationDetailModal";
 
 const MODAL_PAGE = 10;
 
@@ -22,11 +23,11 @@ export type NotifItem = {
     status:        string;
 };
 
-function NotifRow({ n }: { n: NotifItem }) {
+function NotifRow({ n, onClick }: { n: NotifItem; onClick: () => void }) {
     const dateStr = fmtDateTime(n.sent_at ?? n.scheduled_at);
 
     return (
-        <div className="flex items-start gap-3 px-5 py-3">
+        <button type="button" onClick={onClick} className="flex w-full items-start gap-3 px-5 py-3 text-left transition-colors hover:bg-[#f7f9fb]">
             <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#eef5fc]">
                 <svg className="h-3.5 w-3.5 text-[#0268c0]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
@@ -38,18 +39,23 @@ function NotifRow({ n }: { n: NotifItem }) {
                 </p>
                 {dateStr && <p className="mt-0.5 text-[10px] text-[#9aa7b8]">{dateStr}</p>}
             </div>
-        </div>
+        </button>
     );
 }
 
 type Props = {
-    notifications: NotifItem[];
-    totalCount:    number;
-    campaignSlug:  string;
+    notifications:    NotifItem[];
+    totalCount:       number;
+    campaignSlug:     string;
+    participantName:  string;
+    organizerName:    string | null;
+    organizationName: string | null;
+    senderPhotoUrl:   string | null;
 };
 
-export default function ParticipantNotifications({ notifications, totalCount, campaignSlug }: Props) {
+export default function ParticipantNotifications({ notifications, totalCount, campaignSlug, participantName, organizerName, organizationName, senderPhotoUrl }: Props) {
     const [showAll,    setShowAll]    = useState(false);
+    const [detail,     setDetail]     = useState<NotifItem | null>(null);
     const [modalItems, setModalItems] = useState<NotifItem[]>([]);
     const [modalTotal, setModalTotal] = useState(0);
     const [modalSkip,  setModalSkip]  = useState(0);
@@ -100,7 +106,7 @@ export default function ParticipantNotifications({ notifications, totalCount, ca
                     {notifications.length === 0 ? (
                         <p className="px-5 py-6 text-center text-xs italic text-[#9aa7b8]">No notifications yet.</p>
                     ) : (
-                        notifications.map((n) => <NotifRow key={n.id} n={n} />)
+                        notifications.map((n) => <NotifRow key={n.id} n={n} onClick={() => setDetail(n)} />)
                     )}
                 </div>
             </div>
@@ -137,7 +143,7 @@ export default function ParticipantNotifications({ notifications, totalCount, ca
                                     <div className="h-5 w-5 animate-spin rounded-full border-2 border-[#0268c0] border-t-transparent" />
                                 </div>
                             ) : (
-                                modalItems.map((n) => <NotifRow key={n.id} n={n} />)
+                                modalItems.map((n) => <NotifRow key={n.id} n={n} onClick={() => setDetail(n)} />)
                             )}
                         </div>
 
@@ -154,6 +160,17 @@ export default function ParticipantNotifications({ notifications, totalCount, ca
                         )}
                     </div>
                 </div>
+            )}
+
+            {detail && (
+                <NotificationDetailModal
+                    notif={detail}
+                    participantName={participantName}
+                    organizerName={organizerName}
+                    organizationName={organizationName}
+                    senderPhotoUrl={senderPhotoUrl}
+                    onClose={() => setDetail(null)}
+                />
             )}
         </>
     );
