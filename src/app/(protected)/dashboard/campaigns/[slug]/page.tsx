@@ -485,9 +485,10 @@ export default async function CampaignDetailPage({
 
                 return (
                     <>
-                        {/* FundBuddy onboarding welcome — shown to a new participant who hasn't added any donors yet */}
-                        {myAdded === 0 && campaign.status !== CampaignStatus.completed && (
+                        {/* FundBuddy onboarding welcome — shown once per participant (dismissal persisted client-side) */}
+                        {campaign.status !== CampaignStatus.completed && (
                             <FundBuddyOnboarding
+                                storageKey={`fbt:onboard:${slug}:${myMembership.id}`}
                                 campaignName={campaign.name ?? "this campaign"}
                                 donorTarget={myTarget}
                                 launchLabel={launchLabel}
