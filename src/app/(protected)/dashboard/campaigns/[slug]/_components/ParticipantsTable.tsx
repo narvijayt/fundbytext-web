@@ -8,17 +8,34 @@ function fmt(n: number) {
     return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(n);
 }
 
-// Top-3 get gold/silver/bronze medals; everyone else a plain number (per Figma).
+// Top-3 get numbered medal coins (gold/silver/bronze); everyone else a soft numbered badge.
+const MEDALS: Record<number, { ring: [string, string]; disc: [string, string] }> = {
+    1: { ring: ["#F7C948", "#E0951A"], disc: ["#FFE59A", "#F5B72E"] },
+    2: { ring: ["#CBD5E1", "#8E9AAB"], disc: ["#EDF1F6", "#BFC8D4"] },
+    3: { ring: ["#E7AB74", "#B96F31"], disc: ["#F4CBA0", "#DA8A4C"] },
+};
 function RankBadge({ rank }: { rank: number }) {
-    const medal: Record<number, string> = {
-        1: "bg-gradient-to-b from-[#fcd34d] to-[#f1a417] ring-[#fcd34d]/40",
-        2: "bg-gradient-to-b from-[#dfe4ea] to-[#a7b0bd] ring-[#cbd2da]/50",
-        3: "bg-gradient-to-b from-[#f0b487] to-[#c2710c] ring-[#e6a877]/40",
-    };
-    if (medal[rank]) {
-        return <span className={`inline-flex h-7 w-7 items-center justify-center rounded-full text-xs font-black text-white shadow-sm ring-2 ${medal[rank]}`}>{rank}</span>;
+    const m = MEDALS[rank];
+    if (m) {
+        const id = `medal-${rank}`;
+        return (
+            <svg viewBox="0 0 32 32" className="h-8 w-8 shrink-0" role="img" aria-label={`Rank ${rank}`}>
+                <defs>
+                    <linearGradient id={`${id}-r`} x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0" stopColor={m.ring[0]} /><stop offset="1" stopColor={m.ring[1]} />
+                    </linearGradient>
+                    <linearGradient id={`${id}-d`} x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0" stopColor={m.disc[0]} /><stop offset="1" stopColor={m.disc[1]} />
+                    </linearGradient>
+                </defs>
+                <circle cx="16" cy="16" r="15" fill={`url(#${id}-r)`} />
+                <circle cx="16" cy="16" r="11" fill={`url(#${id}-d)`} />
+                <circle cx="16" cy="16" r="11" fill="none" stroke="#ffffff" strokeOpacity="0.35" />
+                <text x="16" y="16.5" textAnchor="middle" dominantBaseline="central" fontSize="13" fontWeight="800" fill="#ffffff">{rank}</text>
+            </svg>
+        );
     }
-    return <span className="inline-flex w-7 justify-center text-sm font-bold text-[#003060]">{rank}</span>;
+    return <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#eef2f7] text-[13px] font-bold text-[#5b6b7c]">{rank}</span>;
 }
 
 export type ParticipantRow = {
@@ -235,9 +252,15 @@ export default function ParticipantsTable({ participants, isOrganizer, campaignS
                                             <td className="px-6 py-3.5 text-right">
                                                 <button
                                                     onClick={() => setViewMemberId(p.id)}
-                                                    className="px-3 py-1.5 text-xs font-semibold text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
+                                                    aria-label={`View ${p.name}`}
+                                                    title="View details"
+                                                    className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[#9aa7b8] transition-colors hover:bg-gray-100 hover:text-[#003060]"
                                                 >
-                                                    View
+                                                    <svg className="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="currentColor">
+                                                        <circle cx="5" cy="12" r="1.6" />
+                                                        <circle cx="12" cy="12" r="1.6" />
+                                                        <circle cx="19" cy="12" r="1.6" />
+                                                    </svg>
                                                 </button>
                                             </td>
                                         </tr>
