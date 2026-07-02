@@ -5,7 +5,6 @@ import { MemberRole, NotificationType, PaymentStatus } from "@/generated/prisma/
 import CampaignProgressBar from "@/app/(protected)/dashboard/campaigns/[slug]/_components/CampaignProgressBar";
 import DonationChart       from "@/app/(protected)/dashboard/campaigns/[slug]/_components/DonationChart";
 import LiveDonationFeed    from "@/app/(protected)/dashboard/campaigns/[slug]/_components/LiveDonationFeed";
-import ParticipantRankings from "@/app/(protected)/dashboard/campaigns/[slug]/_components/ParticipantRankings";
 import NotificationsTable  from "@/app/(protected)/dashboard/campaigns/[slug]/_components/NotificationsTable";
 import CampaignStatsBars   from "@/app/(protected)/dashboard/campaigns/[slug]/_components/CampaignStatsBars";
 import AblyDashboardUpdater   from "@/app/(protected)/dashboard/campaigns/[slug]/_components/AblyDashboardUpdater";
@@ -55,6 +54,7 @@ export default async function AdminCampaignDetailPage({ params }: Ctx) {
                     roles:     { select: { role: true } },
                     donations: { where: { payment_status: PaymentStatus.completed }, select: { amount: true } },
                     _count:    { select: { donors: true } },
+                    user:      { select: { profile_photo_url: true } },
                 },
                 orderBy: { created_at: "asc" },
             },
@@ -105,6 +105,7 @@ export default async function AdminCampaignDetailPage({ params }: Ctx) {
             donorsAdded: m._count.donors, targetDonors: m.target_donors,
             raised: m.donations.reduce((s, d) => s + parseFloat(d.amount.toString()), 0),
             isOrganizer: m.roles.some((r) => r.role === MemberRole.organizer),
+            profilePhotoUrl: m.user?.profile_photo_url ?? null,
         }))
         .sort((a, b) => b.raised - a.raised);
 
@@ -258,7 +259,6 @@ export default async function AdminCampaignDetailPage({ params }: Ctx) {
                 </div>
                 <div className="w-full shrink-0 space-y-4 lg:w-80">
                     <LiveDonationFeed donations={feedDonations} totalCount={donationTotal} campaignSlug={slug} isCompleted={campaign.status === "completed"} />
-                    {participants.length >= 2 && <ParticipantRankings participants={participants} myMemberId={null} />}
                 </div>
             </div>
 
@@ -274,7 +274,11 @@ export default async function AdminCampaignDetailPage({ params }: Ctx) {
 
             {/* Participants */}
             {campaign.campaign_type === "organization" && participants.length > 0 && (
-                <AdminParticipantsTable participants={participants} goalAmount={effectiveGoalAmt} />
+                <AdminParticipantsTable
+                    participants={participants}
+                    perParticipantGoal={campaign.goal_type === "participant_goal" ? goalAmt : null}
+                    donorsPerParticipant={campaign.donors_per_participant ?? null}
+                />
             )}
 
             {/* Donors */}
