@@ -5,7 +5,7 @@ import { useState } from "react";
 export type DailyPoint = { date: string; amount: number };
 
 const W = 640, H = 176;
-const PL = 46, PR = 14, PT = 14, PB = 44;
+const PL = 34, PR = 14, PT = 14, PB = 44;
 const IW = W - PL - PR;
 const IH = H - PT - PB;
 
@@ -30,9 +30,6 @@ function fmtY(n: number): string {
 function fmtTooltip(n: number): string {
     return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(n);
 }
-function fmtAvg(n: number): string {
-    return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: n < 100 ? 0 : 0 }).format(n);
-}
 
 function parseDate(iso: string) { return new Date(iso + "T12:00:00"); }
 function fmtDate(iso: string): string {
@@ -55,10 +52,6 @@ export default function DailyDonationsChart({ data }: { data: DailyPoint[] }) {
 
     const yTicks: number[] = [];
     for (let v = 0; v <= yMax + 1e-6; v += step) yTicks.push(Math.round(v));
-
-    const total = data.reduce((s, d) => s + d.amount, 0);
-    const avg   = total / Math.max(1, n);
-    const avgY  = yOf(avg);
 
     return (
         <div className="relative select-none">
@@ -122,20 +115,6 @@ export default function DailyDonationsChart({ data }: { data: DailyPoint[] }) {
                         </g>
                     );
                 })}
-
-                {/* Average line + label (self-explains the orange dashed line) */}
-                {avg > 0 && (
-                    <g>
-                        <line x1={PL} y1={avgY} x2={W - PR} y2={avgY}
-                            stroke="#f59e0b" strokeWidth="1.25" strokeDasharray="4 3" />
-                        <text x={PL + 3} y={avgY - 5} textAnchor="start"
-                            fontSize={9} fontWeight={700} fill="#e08a00"
-                            stroke="#ffffff" strokeWidth={2.5} paintOrder="stroke"
-                            fontFamily="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif">
-                            avg {fmtAvg(avg)}/day
-                        </text>
-                    </g>
-                )}
 
                 {/* X-axis: a day number under every bar, month name at month starts */}
                 {data.map((d, i) => {

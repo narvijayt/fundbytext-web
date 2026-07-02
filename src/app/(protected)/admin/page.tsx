@@ -237,14 +237,7 @@ export default async function AdminOverviewPage() {
                 <div className="mb-5 flex items-center justify-between">
                     <div>
                         <h2 className="text-[15px] font-bold text-[#003060]">Daily Donations — Last 30 Days</h2>
-                        <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-[#9aa7b8]">
-                            <span><span className="font-semibold text-[#003060]">{fmtUSD(chartTotal)}</span> total</span>
-                            <span aria-hidden>·</span>
-                            <span className="inline-flex items-center gap-1.5">
-                                <span aria-hidden className="inline-block h-0 w-3.5 border-t-2 border-dashed border-[#f59e0b]" />
-                                daily average
-                            </span>
-                        </p>
+                        <p className="mt-0.5 text-xs text-[#9aa7b8]"><span className="font-semibold text-[#003060]">{fmtUSD(chartTotal)}</span> total</p>
                     </div>
                 </div>
                 <DailyDonationsChart data={chartData} />
