@@ -651,7 +651,7 @@ export default async function CampaignDetailPage({
                                         <span className="font-bold text-[#003060]">{myAdded}</span> / {myTarget} donors
                                     </p>
                                 </div>
-                                <StripedBar pct={donorPct} color="orange" className="h-7" />
+                                <StripedBar pct={donorPct} className="h-7" pitch={7} />
                                 <p className="mt-3 text-xs text-[#9aa7b8]">
                                     <span className="font-semibold text-[#003060]">{donorPct}%</span> of your donor target
                                     <span className="float-right">{Math.max(0, myTarget - myAdded)} more to go</span>

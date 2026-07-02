@@ -6,15 +6,17 @@ import { useEffect, useState } from "react";
    family as the big campaign progress bar (diagonal stripes + shimmer + animated
    fill-in on mount). Green = money, orange = donor counts (matches the
    participants table's bar colors). */
-const FILLS: Record<string, string> = {
-    green:  "repeating-linear-gradient(-45deg,#33cc6b,#33cc6b 5px,#23b257 5px,#23b257 10px)",
-    orange: "repeating-linear-gradient(-45deg,#ff9059,#ff9059 5px,#f47435 5px,#f47435 10px)",
+const FILLS: Record<string, [string, string]> = {
+    green:  ["#33cc6b", "#23b257"],
+    orange: ["#ff9059", "#f47435"],
 };
 
-export default function StripedBar({ pct, color = "green", className = "h-3.5" }: {
+export default function StripedBar({ pct, color = "green", className = "h-3.5", pitch = 5 }: {
     pct:        number;
     color?:     "green" | "orange";
     className?: string;
+    /** Stripe pitch in px — the big campaign bar uses 7. */
+    pitch?:     number;
 }) {
     const [animPct, setAnimPct] = useState(0);
 
@@ -30,7 +32,7 @@ export default function StripedBar({ pct, color = "green", className = "h-3.5" }
                 className="absolute inset-y-0 left-0"
                 style={{
                     width: `${animPct}%`,
-                    background: FILLS[color],
+                    background: `repeating-linear-gradient(-45deg,${FILLS[color][0]},${FILLS[color][0]} ${pitch}px,${FILLS[color][1]} ${pitch}px,${FILLS[color][1]} ${pitch * 2}px)`,
                     transition: "width 1.2s cubic-bezier(0.4,0,0.2,1)",
                 }}
             />
