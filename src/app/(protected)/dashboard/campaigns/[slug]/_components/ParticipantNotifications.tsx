@@ -24,7 +24,7 @@ type Props = {
     senderPhotoUrl:   string | null;
 };
 
-/* The participant's "My Notifications" — same full-width table as the organizer's
+/* The participant's "Participant Notifications" — same full-width table as the organizer's
    Campaign Notifications, but each row is clickable and opens a notification
    detail modal (matching the Figma). */
 export default function ParticipantNotifications({ notifications, totalCount, campaignSlug, participantName, organizerName, organizationName, senderPhotoUrl }: Props) {
@@ -33,7 +33,7 @@ export default function ParticipantNotifications({ notifications, totalCount, ca
     return (
         <>
             <NotificationsTable
-                title="My Notifications"
+                title="Participant Notifications"
                 notifications={notifications}
                 totalCount={totalCount}
                 campaignSlug={campaignSlug}

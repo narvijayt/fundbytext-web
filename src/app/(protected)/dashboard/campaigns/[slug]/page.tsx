@@ -672,7 +672,7 @@ export default async function CampaignDetailPage({
                             />
                         )}
 
-                        {/* My Notifications — full-width table (matches organizer Campaign Notifications) */}
+                        {/* Participant Notifications — full-width table (matches organizer Campaign Notifications) */}
                         <div id="participant-notifications" className="scroll-mt-6">
                             <ParticipantNotifications
                                 notifications={myParticipantNotifs}
