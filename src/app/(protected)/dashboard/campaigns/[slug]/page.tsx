@@ -13,6 +13,7 @@ import ParticipantNotifications from "./_components/ParticipantNotifications";
 import CampaignStatsBars from "./_components/CampaignStatsBars";
 import FundBuddyOnboarding from "./_components/FundBuddyOnboarding";
 import ParticipantGoalCard, { RankBadge } from "./_components/ParticipantGoalCard";
+import StripedBar from "./_components/StripedBar";
 import DonorsTable, { type DonorRow } from "./_components/DonorsTable";
 import RemoveParticipantRoleButton from "./_components/RemoveParticipantRoleButton";
 import CampaignControls from "./_components/CampaignControls";
@@ -681,9 +682,7 @@ export default async function CampaignDetailPage({
                                         <span className="text-xs font-semibold text-[#7e8a96]">Donor target progress</span>
                                         <span className="text-xs font-bold text-[#003060]">{myAdded} of {myTarget}</span>
                                     </div>
-                                    <div className="h-2.5 overflow-hidden rounded-full bg-[#e7ecf1]">
-                                        <div className="h-full rounded-full bg-[#0268c0] transition-all" style={{ width: `${donorPct}%` }} />
-                                    </div>
+                                    <StripedBar pct={donorPct} color="orange" />
                                     <p className="mt-2 text-[11px] font-medium text-[#9aa7b8]">{donorPct}% of your donor target reached</p>
                                 </div>
                             )}
