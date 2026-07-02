@@ -7,9 +7,11 @@ type Props = {
     donationId: string;
     isFlagged:  boolean;
     flagNote:   string;
+    /** Called after a successful flag change so a client-owned table can refetch. */
+    onChanged?: () => void;
 };
 
-export default function FlagDonationButton({ donationId, isFlagged, flagNote }: Props) {
+export default function FlagDonationButton({ donationId, isFlagged, flagNote, onChanged }: Props) {
     const router = useRouter();
 
     const [open, setOpen]       = useState(false);
@@ -33,7 +35,8 @@ export default function FlagDonationButton({ donationId, isFlagged, flagNote }: 
                 return;
             }
             setOpen(false);
-            router.refresh();
+            if (onChanged) onChanged();
+            else router.refresh();
         } catch {
             setError("Network error. Please try again.");
             setLoading(false);
