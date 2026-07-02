@@ -4,18 +4,15 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
 /* Wraps a small badge and shows a blue-gradient info popup explaining it.
-   Opens on hover (desktop) and toggles on click/tap (touch); the popup is
-   portal'd into <body> so the table's overflow can't clip it. Positioned below
-   the badge, flipped above when there's no room; closes on leave / outside
-   click / Escape. */
+   Toggles on click/tap only (no hover); the popup is portal'd into <body> so
+   the table's overflow can't clip it. Positioned below the badge, flipped
+   above when there's no room; closes on outside click / Escape. */
 export default function InfoBadgeTip({ tip, children }: { tip: string; children: React.ReactNode }) {
     const wrapRef  = useRef<HTMLSpanElement>(null);
     const popRef   = useRef<HTMLDivElement>(null);
     const caretRef = useRef<HTMLSpanElement>(null);
-    const [hover,  setHover]  = useState(false);
-    const [pinned, setPinned] = useState(false);
-    const [rect,   setRect]   = useState<DOMRect | null>(null);
-    const open = hover || pinned;
+    const [open, setOpen] = useState(false);
+    const [rect, setRect] = useState<DOMRect | null>(null);
 
     useLayoutEffect(() => {
         if (!open) return;
@@ -49,29 +46,27 @@ export default function InfoBadgeTip({ tip, children }: { tip: string; children:
         }
     });
 
-    // While pinned (tap/click), close on outside click / Escape.
+    // While open, close on outside click / Escape.
     useEffect(() => {
-        if (!pinned) return;
+        if (!open) return;
         function onDown(e: MouseEvent) {
             const w = wrapRef.current, el = popRef.current;
-            if (el && !el.contains(e.target as Node) && w && !w.contains(e.target as Node)) setPinned(false);
+            if (el && !el.contains(e.target as Node) && w && !w.contains(e.target as Node)) setOpen(false);
         }
-        function onKey(e: KeyboardEvent) { if (e.key === "Escape") setPinned(false); }
+        function onKey(e: KeyboardEvent) { if (e.key === "Escape") setOpen(false); }
         document.addEventListener("mousedown", onDown);
         document.addEventListener("keydown", onKey);
         return () => {
             document.removeEventListener("mousedown", onDown);
             document.removeEventListener("keydown", onKey);
         };
-    }, [pinned]);
+    }, [open]);
 
     return (
         <span
             ref={wrapRef}
-            onMouseEnter={() => setHover(true)}
-            onMouseLeave={() => setHover(false)}
-            onClick={(e) => { e.stopPropagation(); setPinned((p) => !p); }}
-            className="inline-flex cursor-help"
+            onClick={(e) => { e.stopPropagation(); setOpen((o) => !o); }}
+            className="inline-flex cursor-pointer"
         >
             {children}
             {open && typeof document !== "undefined" && rect && createPortal(
