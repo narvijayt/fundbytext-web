@@ -22,7 +22,9 @@ export const ORANGE = "#f47435";
 export const THEME_TILES: Record<string, { src: string; size: string }> = {
     athletic:    { src: "/assets/campaigns/tiles/theme-athletic-tile.png",  size: "63.3vw auto"  },
     sports:      { src: "/assets/campaigns/tiles/theme-sports-tile.png",    size: "25.2vw auto"  },
-    trophy_wall: { src: "/assets/campaigns/tiles/theme-trophy-tile.png",    size: "19.65vw auto" },
+    // trophy motifs are much larger within their tile than the doodle sets, so
+    // it takes a smaller display scale to match the other themes' motif size
+    trophy_wall: { src: "/assets/campaigns/tiles/theme-trophy-tile.png",    size: "12.9vw auto"  },
     geometric:   { src: "/assets/campaigns/tiles/theme-geometric-tile.png", size: "18.65vw auto" },
     abstract:    { src: "/assets/campaigns/tiles/theme-abstract-tile.png",  size: "20.2vw auto"  },
     // "logo" has no pattern — the band shows the accent colour alone.
