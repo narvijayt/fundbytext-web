@@ -39,6 +39,8 @@ type Props = {
     myMemberId?:   string;
     topDonorId?:   string | null;
     isCompleted?:  boolean;
+    /** Extra content under the section title (participant view shows its outreach stats here). */
+    headerExtra?:  React.ReactNode;
 };
 
 const STATUS_BADGE: Record<string, { label: string; cls: string }> = {
@@ -100,7 +102,7 @@ const PAGE_SIZE = 5;
 
 type FetchParams = { page: number; search: string; status: string; member: string; source: string; emailValid: string; sort: string };
 
-export default function DonorsTable({ donors: initialDonors, initialTotal, campaignSlug, isOrganizer, participants, myMemberId, topDonorId: initialTopDonorId, isCompleted }: Props) {
+export default function DonorsTable({ donors: initialDonors, initialTotal, campaignSlug, isOrganizer, participants, myMemberId, topDonorId: initialTopDonorId, isCompleted, headerExtra }: Props) {
     const router = useRouter();
     const showAssignment = isOrganizer && participants.length > 0;
     const [donors,       setDonors]       = useState<DonorRow[]>(initialDonors);
@@ -300,6 +302,9 @@ export default function DonorsTable({ donors: initialDonors, initialTotal, campa
                         </button>
                     )}
                 </div>
+
+                {/* Extra header content (e.g. the participant's outreach stats) */}
+                {headerExtra}
 
                 {/* Filters — hidden for a brand-new (truly empty) campaign */}
                 {!trulyEmpty && (

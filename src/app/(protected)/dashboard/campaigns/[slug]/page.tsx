@@ -642,61 +642,44 @@ export default async function CampaignDetailPage({
                             />
                         </div>
 
-                        {/* My Donor Outreach — custom card (not from Figma) */}
-                        <div className="rounded-2xl border border-[#e7e9eb] bg-white p-6 shadow-[0px_4px_30px_0px_rgba(0,91,172,0.08)]">
-                            <div className="mb-5 flex items-start justify-between gap-3">
-                                <div className="flex items-center gap-2.5">
-                                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#eef5fc] text-[#0268c0]">
-                                        <svg className="h-[18px] w-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round"><path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                                    </span>
-                                    <div>
-                                        <h2 className="text-[16px] font-bold text-[#003060]">My Donor Outreach</h2>
-                                        <p className="text-[12px] text-[#9aa7b8]">Your contacts and how they&apos;re converting</p>
-                                    </div>
-                                </div>
-                                {(() => {
-                                    const rank = participants.findIndex((p) => p.id === myMembership.id) + 1;
-                                    if (rank === 0 || participants.length < 2) return null;
-                                    return <RankBadge rank={rank} />;
-                                })()}
-                            </div>
-                            <div className="mb-5 grid grid-cols-3 gap-3">
-                                <div className="rounded-xl bg-[#eef5fc] p-4 text-center">
-                                    <p className="text-[24px] font-bold text-[#003060]">{myAdded}</p>
-                                    <p className="mt-1 text-[11px] font-bold uppercase tracking-[0.5px] text-[#7e8a96]">Contacts Added</p>
-                                </div>
-                                <div className="rounded-xl bg-[#eafaf1] p-4 text-center">
-                                    <p className="text-[24px] font-bold text-[#28c45d]">{myDonated}</p>
-                                    <p className="mt-1 text-[11px] font-bold uppercase tracking-[0.5px] text-[#7e8a96]">Have Donated</p>
-                                </div>
-                                <div className="rounded-xl bg-[#f4f6f9] p-4 text-center">
-                                    <p className="text-[24px] font-bold text-[#003060]">
-                                        {myAdded > 0 ? `${Math.round((myDonated / myAdded) * 100)}%` : "—"}
-                                    </p>
-                                    <p className="mt-1 text-[11px] font-bold uppercase tracking-[0.5px] text-[#7e8a96]">Conversion</p>
-                                </div>
-                            </div>
-                            {myTarget > 0 && (
-                                <div className="space-y-3">
-                                    <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-                                        <p className="text-[18px] font-black leading-none text-[#003060]">
-                                            {myAdded}{" "}
-                                            <span className="text-[13px] font-medium text-[#7e8a96]">donors added</span>
-                                        </p>
-                                        <p className="text-[13px] text-[#9aa7b8]">{myTarget} donor target</p>
-                                    </div>
-                                    <StripedBar pct={donorPct} color="orange" />
-                                    <p className="text-xs text-[#9aa7b8]">
-                                        <span className="font-semibold text-[#003060]">{donorPct}%</span> of your donor target
-                                        <span className="float-right">{Math.max(0, myTarget - myAdded)} more to go</span>
+                        {/* Target Donors — Figma target-donor progress, above the donors listing (no rank badge) */}
+                        {myTarget > 0 && (
+                            <div className="rounded-2xl border border-[#e7e9eb] bg-white p-5 shadow-[0px_4px_30px_0px_rgba(0,91,172,0.08)] sm:p-6">
+                                <div className="mb-3 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+                                    <h2 className="text-[16px] font-bold text-[#003060]">Target Donors</h2>
+                                    <p className="text-[14px] text-[#9aa7b8]">
+                                        <span className="font-bold text-[#003060]">{myAdded}</span> / {myTarget} donors
                                     </p>
                                 </div>
-                            )}
-                        </div>
+                                <StripedBar pct={donorPct} color="orange" className="h-7" />
+                                <p className="mt-3 text-xs text-[#9aa7b8]">
+                                    <span className="font-semibold text-[#003060]">{donorPct}%</span> of your donor target
+                                    <span className="float-right">{Math.max(0, myTarget - myAdded)} more to go</span>
+                                </p>
+                            </div>
+                        )}
 
-                        {/* Donors table — full width */}
+                        {/* Donors table — full width, with the participant's outreach stats inside the section */}
                         <div id="donors" className="scroll-mt-6">
                         <DonorsTable
+                            headerExtra={
+                                <div className="mb-4 grid grid-cols-3 gap-3">
+                                    <div className="rounded-xl border border-[#d8e8f8] bg-[#eef5fc] p-4 text-center">
+                                        <p className="text-[24px] font-bold text-[#003060]">{myAdded}</p>
+                                        <p className="mt-1 text-[11px] font-bold uppercase tracking-[0.5px] text-[#7e8a96]">Contacts Added</p>
+                                    </div>
+                                    <div className="rounded-xl border border-[#d3f2e0] bg-[#eafaf1] p-4 text-center">
+                                        <p className="text-[24px] font-bold text-[#28c45d]">{myDonated}</p>
+                                        <p className="mt-1 text-[11px] font-bold uppercase tracking-[0.5px] text-[#7e8a96]">Have Donated</p>
+                                    </div>
+                                    <div className="rounded-xl border border-[#e7e9eb] bg-white p-4 text-center">
+                                        <p className="text-[24px] font-bold text-[#003060]">
+                                            {myAdded > 0 ? `${Math.round((myDonated / myAdded) * 100)}%` : "—"}
+                                        </p>
+                                        <p className="mt-1 text-[11px] font-bold uppercase tracking-[0.5px] text-[#7e8a96]">Conversion</p>
+                                    </div>
+                                </div>
+                            }
                             donors={donors.slice(0, 5)}
                             initialTotal={donors.length}
                             campaignSlug={slug}
