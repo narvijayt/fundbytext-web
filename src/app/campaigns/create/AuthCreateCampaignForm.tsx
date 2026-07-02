@@ -93,7 +93,7 @@ export default function AuthCreateCampaignForm() {
                             />
                         </Link>
                         <h1
-                            className="text-center font-black text-base md:text-[32px]"
+                            className="text-center font-black text-base md:text-[24px]"
                             style={{ color: "rgba(0,79,149,1)", lineHeight: "115%", letterSpacing: 0 }}
                         >
                             Create Your Campaign
@@ -170,7 +170,7 @@ export default function AuthCreateCampaignForm() {
                                                 />
                                             </span>
                                             <span
-                                                className="truncate text-[14px] sm:text-[20px]"
+                                                className="truncate text-[14px] sm:text-[17px]"
                                                 style={{
                                                     fontFamily: "var(--font-sans)",
                                                     fontWeight: 500,

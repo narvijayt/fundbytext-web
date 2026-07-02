@@ -194,7 +194,7 @@ function Toggle({ checked, onChange, label, disabled }: {
             className={`flex items-center justify-center gap-6 rounded-2xl border border-[#eaeef3] bg-[#f4f8f9] p-6 ${disabled ? "opacity-60" : ""}`}
             style={{ boxShadow: "0px 20px 20px -14px rgba(2,104,192,0.2)" }}
         >
-            <span className="flex-1 text-[15px] sm:text-[18px] font-medium leading-[1.4] text-[#57728d]">{label}</span>
+            <span className="flex-1 text-[15px] sm:text-[15px] font-medium leading-[1.4] text-[#57728d]">{label}</span>
             <button
                 type="button"
                 role="switch"
@@ -219,7 +219,7 @@ function Toggle({ checked, onChange, label, disabled }: {
 // ── Inputs ────────────────────────────────────────────────────────────────────
 
 const fieldCls =
-    "h-14 w-full rounded-xl border border-[#d4dee7] bg-white px-5 text-[15px] sm:text-[16px] font-medium leading-[1.4] text-[#003060] placeholder:text-[#aeb5bd] focus:border-[#0278de] focus:outline-none disabled:bg-[#f4f8f9] disabled:text-[#8f98a3]";
+    "h-14 w-full rounded-xl border border-[#d4dee7] bg-white px-5 text-[15px] sm:text-[14px] font-medium leading-[1.4] text-[#003060] placeholder:text-[#aeb5bd] focus:border-[#0278de] focus:outline-none disabled:bg-[#f4f8f9] disabled:text-[#8f98a3]";
 
 function FieldGroup({ label, children }: { label: string; children: React.ReactNode }) {
     return (
@@ -233,7 +233,7 @@ function FieldGroup({ label, children }: { label: string; children: React.ReactN
 function PhoneField({ value, onChange, disabled }: { value: string; onChange: (v: string) => void; disabled?: boolean }) {
     return (
         <div className="flex h-14 w-full items-center gap-4 rounded-xl border border-[#d4dee7] bg-white px-5 focus-within:border-[#0278de]">
-            <span className="text-[16px] sm:text-[18px] font-medium text-[#8f98a3]">+1</span>
+            <span className="text-[14px] sm:text-[15px] font-medium text-[#8f98a3]">+1</span>
             <span className="h-8 w-px shrink-0 bg-[#d4dee7]" />
             <input
                 type="tel"
@@ -241,7 +241,7 @@ function PhoneField({ value, onChange, disabled }: { value: string; onChange: (v
                 disabled={disabled}
                 onChange={(e) => onChange(e.target.value)}
                 placeholder="(214) 987-6543"
-                className="min-w-0 flex-1 bg-transparent text-[15px] sm:text-[16px] font-medium text-[#003060] placeholder:text-[#aeb5bd] focus:outline-none"
+                className="min-w-0 flex-1 bg-transparent text-[15px] sm:text-[14px] font-medium text-[#003060] placeholder:text-[#aeb5bd] focus:outline-none"
             />
         </div>
     );
@@ -294,11 +294,11 @@ function RowHeader({
     // photo uploader it must not be nested inside another <button>.
     const body = (
         <>
-            <span className="shrink-0 whitespace-nowrap text-[18px] sm:text-[22px] font-black leading-[1.25] text-[#0268c0]">
+            <span className="shrink-0 whitespace-nowrap text-[15px] sm:text-[18px] font-black leading-[1.25] text-[#0268c0]">
                 {label} {index}
             </span>
             {name?.trim()
-                ? <span className="min-w-0 flex-1 truncate text-[14px] sm:text-[18px] font-medium leading-[1.4] text-[#8f98a3]">({name})</span>
+                ? <span className="min-w-0 flex-1 truncate text-[14px] sm:text-[15px] font-medium leading-[1.4] text-[#8f98a3]">({name})</span>
                 : <span className="min-w-0 flex-1" />}
             {rightSlot}
             {status === "valid" && <StatusValid className="size-4 shrink-0" />}
@@ -778,7 +778,7 @@ export default function StepParticipants({
                             <AddButton label="Donor" adding={addingDonor} disabled={addingDonor} onClick={onAddDonor} />
                         )}
 
-                        <p className="text-center text-[15px] sm:text-[16px] font-medium text-[#003060]">
+                        <p className="text-center text-[15px] sm:text-[14px] font-medium text-[#003060]">
                             Have a CSV file?{" "}
                             <button
                                 type="button"

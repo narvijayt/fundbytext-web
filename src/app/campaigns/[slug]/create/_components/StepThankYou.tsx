@@ -58,7 +58,7 @@ export default function StepThankYou({
             <div className="w-full overflow-hidden rounded-2xl border border-[#dde0e3]">
                 {/* Greeting header */}
                 <div className="flex items-center border-b border-[#d4dee7] bg-[#f2f2f2] px-5 py-3.5 sm:px-8 sm:py-5">
-                    <p className="text-[16px] sm:text-[18px] font-bold leading-[1.4] text-[#aeb5bd]">
+                    <p className="text-[14px] sm:text-[15px] font-bold leading-[1.4] text-[#aeb5bd]">
                         Hi {greetingToken},
                     </p>
                 </div>
@@ -72,23 +72,23 @@ export default function StepThankYou({
                         rows={4}
                         placeholder={DEFAULT_PLACEHOLDER}
                         aria-label="Thank you message"
-                        className="w-full resize-none bg-transparent text-[14px] sm:text-[18px] font-medium leading-[1.4] text-[#003060] outline-none placeholder:text-[#aeb5bd]"
+                        className="w-full resize-none bg-transparent text-[14px] sm:text-[15px] font-medium leading-[1.4] text-[#003060] outline-none placeholder:text-[#aeb5bd]"
                     />
 
                     {/* Signature (right-aligned letter sign-off) */}
                     <div className="flex flex-col items-end gap-2 text-right">
-                        <p className="text-[14px] sm:text-[18px] font-medium leading-[1.4] text-[#003060]">
+                        <p className="text-[14px] sm:text-[15px] font-medium leading-[1.4] text-[#003060]">
                             <span className="sm:hidden">Thanks,</span>
                             <span className="hidden sm:inline">Thank you so much,</span>
                         </p>
                         <div className="flex items-center gap-2">
                             <span className="size-4 shrink-0 rounded-full bg-[#d4dee7] sm:size-6" aria-hidden />
-                            <span className="text-[14px] sm:text-[18px] font-medium leading-[1.4] text-[#aeb5bd]">
+                            <span className="text-[14px] sm:text-[15px] font-medium leading-[1.4] text-[#aeb5bd]">
                                 {signerName}
                             </span>
                         </div>
                         {orgLine && (
-                            <p className="text-[14px] sm:text-[18px] font-medium leading-[1.4] text-[#aeb5bd]">
+                            <p className="text-[14px] sm:text-[15px] font-medium leading-[1.4] text-[#aeb5bd]">
                                 {orgLine}
                             </p>
                         )}

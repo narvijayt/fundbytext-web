@@ -160,7 +160,7 @@ function CampaignSummary({ isOrg, name }: { isOrg: boolean; name: string }) {
                         Your campaign
                     </p>
                     <h3
-                        className="font-black text-[18px] sm:text-[22px] leading-[125%] truncate"
+                        className="font-black text-[15px] sm:text-[18px] leading-[125%] truncate"
                         style={{ color: "rgba(0,48,96,1)" }}
                         title={name}
                     >

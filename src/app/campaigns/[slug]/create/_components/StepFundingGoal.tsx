@@ -82,7 +82,7 @@ function FundBuddyInfo({ text }: { text: string }) {
         <div className="flex items-end gap-[16px] mt-[24px]">
             <Image src="/assets/campaigns/ask-buddy.svg" width={64} height={80} alt="" className="shrink-0 w-7.5 h-10 sm:w-[61.8px] sm:h-20" />
             <p
-                className="flex-1 text-xs sm:text-lg"
+                className="flex-1 text-xs sm:text-[15px]"
                 style={{
                     fontFamily: "var(--font-sans)", fontWeight: 400, lineHeight: "140%", letterSpacing: 0,
                     color: "rgba(0,48,96,1)", borderRadius: "16px", padding: "18px 24px 18px 16px",
@@ -200,7 +200,7 @@ export default function StepFundingGoal({
                                     >
                                         <div className="flex items-center gap-2.5 min-w-0">
                                             <span className="shrink-0 w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center">{gt.icon(active)}</span>
-                                            <span className="truncate text-[14px] sm:text-[20px]" style={{ fontFamily: "var(--font-sans)", fontWeight: 500, lineHeight: "150%", color: "rgba(0,48,96,1)" }}>
+                                            <span className="truncate text-[14px] sm:text-[17px]" style={{ fontFamily: "var(--font-sans)", fontWeight: 500, lineHeight: "150%", color: "rgba(0,48,96,1)" }}>
                                                 {gt.label}
                                             </span>
                                         </div>
@@ -222,7 +222,7 @@ export default function StepFundingGoal({
                         <p className={ENTER_AMOUNT_LABEL}>Enter Amount</p>
                         <div className="w-full max-w-[450px] flex flex-col items-center gap-4">
                             <Stepper value={goalAmount} onChange={(v) => { setGoalAmount(v); clearFE("goal_amount"); }} step={500} min={0} prefix="$" placeholder="0" fractionDigits={2} disabled={amountLocked} />
-                            <div className="w-full rounded-2xl border border-[rgba(212,222,231,1)] px-4 py-3.5 text-center text-[16px] sm:text-[18px] font-medium text-[#8f98a3]">
+                            <div className="w-full rounded-2xl border border-[rgba(212,222,231,1)] px-4 py-3.5 text-center text-[14px] sm:text-[15px] font-medium text-[#8f98a3]">
                                 {totalLabel}
                             </div>
                         </div>

@@ -392,7 +392,7 @@ export function BottomNav({
                                     <Loader className="w-5 h-5" light />
                                 ) : (
                                     <>
-                                        <span className="text-[16px] font-bold leading-[1.25]">Launch</span>
+                                        <span className="text-[14px] font-bold leading-[1.25]">Launch</span>
                                         <RocketIcon className="w-[19px] h-[25px]" />
                                     </>
                                 )}

@@ -355,7 +355,7 @@ function ColorPickerPopover({
                         }
                     }}
                     aria-label="Hex colour value"
-                    className="flex-1 min-w-0 bg-transparent text-[14px] sm:text-[16px] font-medium text-[#003060] focus:outline-none uppercase"
+                    className="flex-1 min-w-0 bg-transparent text-[14px] sm:text-[14px] font-medium text-[#003060] focus:outline-none uppercase"
                 />
                 <span className="w-8 h-8 rounded-lg border border-[#d4dee7] shrink-0" style={{ background: currentHex }} />
             </div>
@@ -467,7 +467,7 @@ function ColorBox({
                 <div className="flex items-start justify-between gap-2">
                     <div>
                         <div className="flex items-center gap-1.5">
-                            <span className="text-[15px] sm:text-[16px] font-bold text-[#003060]">{label}</span>
+                            <span className="text-[15px] sm:text-[14px] font-bold text-[#003060]">{label}</span>
                             {info && <InfoTooltip tip={info} />}
                         </div>
                         {isSelected && showSelectedLabel && (
@@ -825,7 +825,7 @@ function CampaignPreview({
                         <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-white/25 border-2 border-white/40" />
                     )}
                     <div className="min-w-0 flex-1">
-                        <p className="font-black text-white text-[15px] sm:text-[18px] leading-tight drop-shadow truncate">
+                        <p className="font-black text-white text-[15px] sm:text-[15px] leading-tight drop-shadow truncate">
                             {campaignName ?? "Your Campaign Name Here"}
                         </p>
                         <p className="text-white/70 text-[10px] sm:text-[12px]">Campaign page preview</p>

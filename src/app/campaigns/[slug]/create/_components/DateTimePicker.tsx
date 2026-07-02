@@ -359,7 +359,7 @@ export function TimePopover({
     }
 
     const tileCls =
-        "flex-1 h-[76px] flex items-center justify-center rounded-2xl text-[44px] leading-none font-black tabular-nums transition-colors focus:outline-none cursor-pointer";
+        "flex-1 h-[76px] flex items-center justify-center rounded-2xl text-[34px] leading-none font-black tabular-nums transition-colors focus:outline-none cursor-pointer";
     const hourActive = active === "hour";
     const minActive = active === "minute";
 
@@ -384,7 +384,7 @@ export function TimePopover({
                     {hour}
                 </button>
 
-                <span className="self-center text-[40px] leading-none font-black text-gray-300">:</span>
+                <span className="self-center text-[30px] leading-none font-black text-gray-300">:</span>
 
                 <button
                     type="button"

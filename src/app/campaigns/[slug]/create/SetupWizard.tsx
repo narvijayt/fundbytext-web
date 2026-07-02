@@ -868,7 +868,7 @@ export default function SetupWizard({
                             />
                         </button>
                         <h1
-                            className="text-center font-black text-base md:text-[32px]"
+                            className="text-center font-black text-base md:text-[24px]"
                             style={{ color: "rgba(0,79,149,1)", lineHeight: "115%", letterSpacing: 0 }}
                         >
                             {isEditMode || isLaunched ? "Edit Your" : "Create Your"} Campaign
@@ -900,7 +900,7 @@ export default function SetupWizard({
                 {launching && (
                     <div className="fixed inset-0 z-200 flex flex-col items-center justify-center bg-white/80 backdrop-blur-sm">
                         <Loader className="w-14 h-14 mb-4" />
-                        <p className="text-lg font-bold text-gray-800">Launching your campaign…</p>
+                        <p className="text-base font-bold text-gray-800">Launching your campaign…</p>
                         <p className="text-sm text-gray-500 mt-1">Please wait a moment</p>
                     </div>
                 )}

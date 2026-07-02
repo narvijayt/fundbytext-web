@@ -101,7 +101,7 @@ export function StepBanner({ title, subtitle }: { title: string; subtitle: strin
                 >
                     <span aria-hidden className="absolute inset-0 rounded-[inherit] pointer-events-none" style={{ boxShadow: "inset 0px -4px 8px 0px rgba(0,48,96,0.1), inset 0px 4px 8px -3px rgba(174,217,254,0.7)" }} />
                     <h2
-                        className="relative font-black text-white text-center whitespace-nowrap leading-none text-[26px] sm:text-[36px]"
+                        className="relative font-black text-white text-center whitespace-nowrap leading-none text-[20px] sm:text-[27px]"
                         style={{ textShadow: "0px 0px 16px #005bac, 0px 0px 4px #005bac", letterSpacing: "-1.2px" }}
                     >
                         {title}
@@ -127,7 +127,7 @@ export function StepBanner({ title, subtitle }: { title: string; subtitle: strin
                 </div>
                 <div className="relative flex items-center justify-center gap-[8px] sm:gap-[12px] px-[32px]">
                     <BannerDot className="size-[6px] sm:size-[9px]" />
-                    <p ref={subRef} className="font-bold text-white text-center whitespace-nowrap text-[11px] sm:text-[16px]" style={{ lineHeight: 1.25 }}>
+                    <p ref={subRef} className="font-bold text-white text-center whitespace-nowrap text-[11px] sm:text-[14px]" style={{ lineHeight: 1.25 }}>
                         {subtitle}
                     </p>
                     <BannerDot className="size-[6px] sm:size-[9px]" />
@@ -141,9 +141,9 @@ const focusGradientCls =
     "focus:outline-none focus:border-transparent focus:[background-image:linear-gradient(#fff,#fff),linear-gradient(95.84deg,#0278DE_40.72%,#AED9FE_50%,#0278DE_59.28%)] focus:[background-origin:border-box] focus:[background-clip:padding-box,border-box]";
 
 export const inputCls =
-    `w-full border-[2px] border-gray-200 rounded-2xl px-4 py-3 sm:px-5 sm:py-3.5 lg:px-6 lg:py-5 text-[14px] sm:text-[18px] font-medium leading-[140%] tracking-normal bg-white text-[rgba(0,48,96,1)] ${focusGradientCls} placeholder:text-[rgba(126,138,150,1)]`;
+    `w-full border-[2px] border-gray-200 rounded-2xl px-4 py-3 sm:px-5 sm:py-3.5 text-[14px] sm:text-[15px] font-medium leading-[140%] tracking-normal bg-white text-[rgba(0,48,96,1)] ${focusGradientCls} placeholder:text-[rgba(126,138,150,1)]`;
 export const inputErrCls =
-    `w-full border-[2px] border-red-400 rounded-2xl px-4 py-3 sm:px-5 sm:py-3.5 lg:px-6 lg:py-5 text-[14px] sm:text-[18px] font-medium leading-[140%] tracking-normal bg-white text-[rgba(0,48,96,1)] ${focusGradientCls} placeholder:text-[rgba(126,138,150,1)]`;
+    `w-full border-[2px] border-red-400 rounded-2xl px-4 py-3 sm:px-5 sm:py-3.5 text-[14px] sm:text-[15px] font-medium leading-[140%] tracking-normal bg-white text-[rgba(0,48,96,1)] ${focusGradientCls} placeholder:text-[rgba(126,138,150,1)]`;
 
 export function SectionTitle({
     children,
@@ -268,12 +268,12 @@ function AskBuddyPopover({
                 className="absolute -left-[8px] top-[16px] w-0 h-0"
                 style={{ borderTop: "8px solid transparent", borderBottom: "8px solid transparent", borderRight: "8px solid #005BAC" }}
             />
-            <h4 className="font-black text-[18px] sm:text-[22px] text-white" style={{ lineHeight: "125%", letterSpacing: 0 }}>
+            <h4 className="font-black text-[15px] sm:text-[18px] text-white" style={{ lineHeight: "125%", letterSpacing: 0 }}>
                 {heading}
             </h4>
             <ul className="list-disc pl-5 flex flex-col gap-1.5">
                 {suggestions.map((s) => (
-                    <li key={s} className="font-medium text-[16px] sm:text-[18px] text-white" style={{ lineHeight: "140%", letterSpacing: 0 }}>
+                    <li key={s} className="font-medium text-[14px] sm:text-[15px] text-white" style={{ lineHeight: "140%", letterSpacing: 0 }}>
                         {s}
                     </li>
                 ))}
@@ -484,7 +484,7 @@ export function QuestionCard({
                         <div className="flex items-center justify-center gap-1.5 mb-[16px]">
                             <Image src={icon} width={24} height={24} alt="" />
                             <h3
-                                className="font-black text-[18px] sm:text-[22px]"
+                                className="font-black text-[15px] sm:text-[18px]"
                                 style={{ lineHeight: "125%", letterSpacing: 0, color: "rgba(2,104,192,1)" }}
                             >
                                 {title}
@@ -493,7 +493,7 @@ export function QuestionCard({
                         </div>
                         {description && (
                             <p
-                                className="text-[16px] sm:text-[20px] leading-[140%]"
+                                className="text-[14px] sm:text-[17px] leading-[140%]"
                                 style={{ letterSpacing: 0, color: "rgba(0,48,96,1)" }}
                             >
                                 {description}
@@ -512,7 +512,7 @@ export function QuestionCard({
                             className="shrink-0 w-7.5 h-10 sm:w-[61.8px] sm:h-20"
                         />
                         <p
-                            className="flex-1 text-xs sm:text-lg"
+                            className="flex-1 text-xs sm:text-[15px]"
                             style={{
                                 fontFamily: "var(--font-sans)",
                                 fontWeight: 400,
@@ -689,7 +689,7 @@ export function Stepper({
                 onFocus={() => setFocused(true)}
                 onBlur={() => setFocused(false)}
                 onChange={(e) => onChange(e.target.value.replace(/[^0-9.]/g, ""))}
-                className="min-w-0 flex-1 bg-transparent text-center text-[26px] sm:text-[32px] font-bold leading-none text-[rgba(0,48,96,1)] focus:outline-none placeholder:text-[rgba(174,181,189,1)] disabled:opacity-50"
+                className="min-w-0 flex-1 bg-transparent text-center text-[20px] sm:text-[24px] font-bold leading-none text-[rgba(0,48,96,1)] focus:outline-none placeholder:text-[rgba(174,181,189,1)] disabled:opacity-50"
             />
             <button type="button" disabled={disabled} onClick={() => set(num + step)} className={btn} aria-label="Increase">
                 <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round"><path d="M12 6v12M6 12h12" /></svg>
@@ -865,7 +865,7 @@ export function LockedField({ value, label }: { value: string; label: string }) 
                 </svg>
                 <span className="normal-case font-normal text-gray-400">locked</span>
             </label>
-            <div className="w-full border-[2px] border-gray-200 rounded-xl sm:rounded-2xl px-4 py-3 sm:px-5 sm:py-3.5 lg:py-4 text-sm sm:text-base lg:text-lg bg-gray-50 text-gray-500 cursor-not-allowed select-none">
+            <div className="w-full border-[2px] border-gray-200 rounded-xl sm:rounded-2xl px-4 py-3 sm:px-5 sm:py-3.5 lg:py-4 text-sm sm:text-[15px] bg-gray-50 text-gray-500 cursor-not-allowed select-none">
                 {value}
             </div>
         </div>
