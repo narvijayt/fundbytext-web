@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 type Props = {
@@ -14,10 +14,26 @@ type Props = {
 export default function FlagDonationButton({ donationId, isFlagged, flagNote, onChanged }: Props) {
     const router = useRouter();
 
-    const [open, setOpen]       = useState(false);
-    const [note, setNote]       = useState(flagNote);
+    const [open,    setOpen]    = useState(false);
+    const [shown,   setShown]   = useState(false);
+    const [note,    setNote]    = useState(flagNote);
     const [loading, setLoading] = useState(false);
-    const [error, setError]     = useState<string | null>(null);
+    const [error,   setError]   = useState<string | null>(null);
+
+    function close() { if (loading) return; setShown(false); window.setTimeout(() => setOpen(false), 170); }
+
+    useEffect(() => {
+        if (!open) return;
+        const raf = requestAnimationFrame(() => setShown(true));
+        const prev = document.body.style.overflow;
+        document.body.style.overflow = "hidden";
+        function onKey(e: KeyboardEvent) { if (e.key === "Escape") close(); }
+        document.addEventListener("keydown", onKey);
+        return () => { cancelAnimationFrame(raf); document.body.style.overflow = prev; document.removeEventListener("keydown", onKey); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [open]);
+
+    function openModal() { setNote(flagNote); setError(null); setOpen(true); }
 
     async function submit(flag: boolean) {
         setLoading(true);
@@ -34,9 +50,14 @@ export default function FlagDonationButton({ donationId, isFlagged, flagNote, on
                 setLoading(false);
                 return;
             }
-            setOpen(false);
-            if (onChanged) onChanged();
-            else router.refresh();
+            // Animate out, then refresh the table.
+            setShown(false);
+            window.setTimeout(() => {
+                setOpen(false);
+                setLoading(false);
+                if (onChanged) onChanged();
+                else router.refresh();
+            }, 170);
         } catch {
             setError("Network error. Please try again.");
             setLoading(false);
@@ -46,7 +67,7 @@ export default function FlagDonationButton({ donationId, isFlagged, flagNote, on
     return (
         <>
             <button
-                onClick={() => { setNote(flagNote); setError(null); setOpen(true); }}
+                onClick={openModal}
                 title={isFlagged ? "Flagged — click to manage" : "Flag this donation"}
                 className={`rounded-lg p-1.5 transition-colors ${
                     isFlagged
@@ -60,8 +81,16 @@ export default function FlagDonationButton({ donationId, isFlagged, flagNote, on
             </button>
 
             {open && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#0f1d43]/45 p-4 backdrop-blur-sm">
-                    <div className="max-h-[calc(100vh-2rem)] w-full max-w-sm overflow-y-auto rounded-2xl bg-white p-6 shadow-[0px_16px_40px_-8px_rgba(15,29,67,0.3)]">
+                <div
+                    className={`fixed inset-0 z-[100] flex items-center justify-center bg-[#0f1d43]/45 p-4 backdrop-blur-sm transition-opacity duration-200 motion-reduce:transition-none ${shown ? "opacity-100" : "opacity-0"}`}
+                    onClick={close}
+                >
+                    <div
+                        role="dialog"
+                        aria-modal="true"
+                        onClick={(e) => e.stopPropagation()}
+                        className={`max-h-[calc(100vh-2rem)] w-full max-w-sm overflow-y-auto rounded-2xl bg-white p-6 shadow-[0px_16px_40px_-8px_rgba(15,29,67,0.3)] transition-transform duration-200 motion-reduce:transition-none ${shown ? "scale-100" : "scale-95"}`}
+                    >
                         <h2 className="mb-1 text-[15px] font-bold text-[#003060]">
                             {isFlagged ? "Manage Flag" : "Flag Donation"}
                         </h2>
@@ -103,7 +132,7 @@ export default function FlagDonationButton({ donationId, isFlagged, flagNote, on
                                 {loading ? "Saving…" : isFlagged ? "Update Flag" : "Flag Donation"}
                             </button>
                             <button
-                                onClick={() => setOpen(false)}
+                                onClick={close}
                                 disabled={loading}
                                 className="flex-1 rounded-xl border border-[#e7e9eb] bg-white py-2.5 text-[13px] font-semibold text-[#003060] transition-colors hover:bg-gray-50 disabled:opacity-50"
                             >
