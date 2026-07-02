@@ -15,11 +15,13 @@ function fmtDate(d: Date) {
 }
 
 const STATUS_COLORS: Record<string, string> = {
-    active:    "bg-green-50 text-green-700 border-green-100",
-    upcoming:  "bg-blue-50 text-blue-700 border-blue-100",
-    draft:     "bg-gray-100 text-gray-500 border-gray-200",
-    completed: "bg-purple-50 text-purple-700 border-purple-100",
+    active:    "bg-green-100 text-green-700",
+    upcoming:  "bg-blue-100 text-blue-700",
+    draft:     "bg-gray-100 text-gray-500",
+    completed: "bg-purple-100 text-purple-700",
 };
+
+const TH_CLS = "px-4 py-3.5 text-left text-[13px] font-semibold";
 
 export default async function AdminCampaignsPage({
     searchParams,
@@ -98,23 +100,23 @@ export default async function AdminCampaignsPage({
     return (
         <div>
             <div className="mb-6">
-                <h1 className="text-2xl font-bold text-gray-900">Campaigns</h1>
-                <p className="text-sm text-gray-400 mt-0.5">{total.toLocaleString()} total</p>
+                <h1 className="text-[22px] font-black text-[#003060]">Campaigns</h1>
+                <p className="mt-0.5 text-[13px] text-[#9aa7b8]">{total.toLocaleString()} total</p>
             </div>
 
             {/* Filters + search */}
-            <div className="flex items-center gap-3 mb-5 flex-wrap">
+            <div className="mb-5 flex flex-wrap items-center gap-3">
                 <Suspense>
                     <AdminCampaignSearchInput defaultValue={query} />
                 </Suspense>
 
-                <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1 text-xs font-semibold">
+                <div className="flex items-center gap-1 rounded-xl border border-[#e7e9eb] bg-white p-1 text-xs font-semibold shadow-[0px_1px_2px_0px_rgba(0,48,96,0.04)]">
                     {(["all", "active", "upcoming", "draft", "completed"] as const).map((f) => (
                         <Link
                             key={f}
                             href={buildUrl({ filter: f !== "all" ? f : undefined, page: undefined })}
-                            className={`px-3 py-1.5 rounded-md capitalize transition-colors ${
-                                filter === f ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"
+                            className={`rounded-lg px-3 py-1.5 capitalize transition-colors ${
+                                filter === f ? "bg-[#0268c0] text-white" : "text-[#7e8a96] hover:bg-gray-50 hover:text-[#003060]"
                             }`}
                         >
                             {f}
@@ -128,77 +130,77 @@ export default async function AdminCampaignsPage({
             </div>
 
             {/* Table */}
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className="overflow-hidden rounded-2xl border border-[#e7e9eb] bg-white shadow-[0px_4px_30px_0px_rgba(0,91,172,0.08)]">
                 <table className="w-full text-sm">
                     <thead>
-                        <tr className="border-b border-gray-100 text-xs text-gray-400 font-semibold uppercase tracking-wide">
-                            <th className="text-left px-5 py-3">Campaign</th>
-                            <th className="text-left px-5 py-3">Organizer</th>
-                            <th className="text-left px-5 py-3">Status</th>
-                            <th className="text-right px-5 py-3">Raised</th>
-                            <th className="text-right px-5 py-3">Donations</th>
-                            <th className="text-left px-5 py-3">Created</th>
-                            <th className="px-5 py-3" />
+                        <tr className="bg-[#0268c0] text-white">
+                            <th className={`${TH_CLS} pl-5`}>Campaign</th>
+                            <th className={TH_CLS}>Organizer</th>
+                            <th className={TH_CLS}>Status</th>
+                            <th className={`${TH_CLS} text-right`}>Raised</th>
+                            <th className={`${TH_CLS} text-right`}>Donations</th>
+                            <th className={TH_CLS}>Created</th>
+                            <th className={`${TH_CLS} pr-5`} />
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-50">
+                    <tbody>
                         {campaigns.length === 0 && (
                             <tr>
-                                <td colSpan={7} className="text-center py-12 text-gray-400">No campaigns found.</td>
+                                <td colSpan={7} className="px-5 py-10 text-center text-sm italic text-[#9aa7b8]">No campaigns found.</td>
                             </tr>
                         )}
                         {campaigns.map((c) => {
                             const organizer = c.members[0];
                             return (
-                                <tr key={c.id} className="hover:bg-gray-50 transition-colors">
-                                    <td className="px-5 py-3">
+                                <tr key={c.id} className="border-b border-[#eef1f4] transition-colors last:border-0 hover:bg-[#f7f9fb]">
+                                    <td className="py-3.5 pl-5 pr-4">
                                         <div className="flex items-center gap-3">
                                             {c.media[0]?.url ? (
                                                 <img
                                                     src={c.media[0].url}
                                                     alt=""
-                                                    className="w-10 h-10 rounded-lg object-cover shrink-0 border border-gray-100"
+                                                    className="h-10 w-10 shrink-0 rounded-lg border border-[#e7e9eb] object-cover"
                                                 />
                                             ) : (
-                                                <div className="w-10 h-10 rounded-lg bg-gray-100 shrink-0 flex items-center justify-center">
-                                                    <svg className="w-5 h-5 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#eef2f7]">
+                                                    <svg className="h-5 w-5 text-[#9aa7b8]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                                     </svg>
                                                 </div>
                                             )}
                                             <div>
-                                                <p className="font-medium text-gray-900">{c.name ?? <span className="italic text-gray-400">Untitled</span>}</p>
-                                                <p className="text-xs text-gray-400 capitalize">{c.campaign_type}</p>
+                                                <p className="text-[13px] font-semibold text-[#003060]">{c.name ?? <span className="font-medium italic text-[#9aa7b8]">Untitled</span>}</p>
+                                                <p className="text-xs capitalize text-[#9aa7b8]">{c.campaign_type}</p>
                                             </div>
                                         </div>
                                     </td>
-                                    <td className="px-5 py-3 text-gray-500">
+                                    <td className="px-4 py-3.5 text-[#7e8a96]">
                                         {organizer ? (
                                             organizer.user_id ? (
                                                 <Link href={`/admin/users/${organizer.user_id}`} className="group">
-                                                    <p className="font-medium text-[#0268c0] group-hover:underline">{organizer.first_name} {organizer.last_name}</p>
-                                                    <p className="text-xs text-gray-400">{organizer.email}</p>
+                                                    <p className="text-[13px] font-medium text-[#0268c0] group-hover:underline">{organizer.first_name} {organizer.last_name}</p>
+                                                    <p className="text-xs text-[#9aa7b8]">{organizer.email}</p>
                                                 </Link>
                                             ) : (
                                                 <>
-                                                    <p className="font-medium text-gray-700">{organizer.first_name} {organizer.last_name}</p>
-                                                    <p className="text-xs text-gray-400">{organizer.email}</p>
+                                                    <p className="text-[13px] font-medium text-[#003060]">{organizer.first_name} {organizer.last_name}</p>
+                                                    <p className="text-xs text-[#9aa7b8]">{organizer.email}</p>
                                                 </>
                                             )
-                                        ) : "—"}
+                                        ) : <span className="text-gray-300">—</span>}
                                     </td>
-                                    <td className="px-5 py-3">
-                                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border capitalize ${STATUS_COLORS[c.status] ?? ""}`}>
+                                    <td className="px-4 py-3.5">
+                                        <span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold capitalize ${STATUS_COLORS[c.status] ?? "bg-gray-100 text-gray-500"}`}>
                                             {c.status}
                                         </span>
                                     </td>
-                                    <td className="px-5 py-3 text-right font-semibold text-gray-700">
+                                    <td className="px-4 py-3.5 text-right text-[13px] font-bold text-[#003060]">
                                         {fmtUSD(parseFloat(c.total_raised.toString()))}
                                     </td>
-                                    <td className="px-5 py-3 text-right text-gray-500">{c._count.donations}</td>
-                                    <td className="px-5 py-3 text-gray-400">{fmtDate(c.created_at)}</td>
-                                    <td className="px-5 py-3 text-right">
-                                        <Link href={`/admin/campaigns/${c.slug}`} className="text-xs font-semibold text-[#0268c0] hover:underline">
+                                    <td className="px-4 py-3.5 text-right text-[13px] text-[#7e8a96]">{c._count.donations}</td>
+                                    <td className="px-4 py-3.5 text-[13px] text-[#9aa7b8]">{fmtDate(c.created_at)}</td>
+                                    <td className="py-3.5 pl-4 pr-5 text-right">
+                                        <Link href={`/admin/campaigns/${c.slug}`} className="text-[13px] font-semibold text-[#0268c0] hover:underline">
                                             View
                                         </Link>
                                     </td>
@@ -211,14 +213,20 @@ export default async function AdminCampaignsPage({
 
             {/* Pagination */}
             {totalPages > 1 && (
-                <div className="flex items-center justify-between mt-4 text-sm text-gray-500">
-                    <span>Page {page} of {totalPages}</span>
+                <div className="mt-4 flex items-center justify-between">
+                    <span className="text-[13px] font-medium text-[#7e8a96]">Page {page} of {totalPages}</span>
                     <div className="flex items-center gap-2">
                         {page > 1 && (
-                            <Link href={buildUrl({ page: String(page - 1) })} className="px-3 py-1.5 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">Previous</Link>
+                            <Link href={buildUrl({ page: String(page - 1) })} className="inline-flex items-center gap-1 rounded-xl border border-[#e7e9eb] bg-white px-3.5 py-2 text-[13px] font-semibold text-[#003060] shadow-[0px_1px_2px_0px_rgba(0,48,96,0.04)] transition-colors hover:bg-gray-50">
+                                <svg className="h-3.5 w-3.5 text-[#7e8a96]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15 18l-6-6 6-6" /></svg>
+                                Previous
+                            </Link>
                         )}
                         {page < totalPages && (
-                            <Link href={buildUrl({ page: String(page + 1) })} className="px-3 py-1.5 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">Next</Link>
+                            <Link href={buildUrl({ page: String(page + 1) })} className="inline-flex items-center gap-1 rounded-xl border border-[#e7e9eb] bg-white px-3.5 py-2 text-[13px] font-semibold text-[#003060] shadow-[0px_1px_2px_0px_rgba(0,48,96,0.04)] transition-colors hover:bg-gray-50">
+                                Next
+                                <svg className="h-3.5 w-3.5 text-[#7e8a96]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 18l6-6-6-6" /></svg>
+                            </Link>
                         )}
                     </div>
                 </div>

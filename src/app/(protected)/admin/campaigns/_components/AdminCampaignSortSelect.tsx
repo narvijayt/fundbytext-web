@@ -22,7 +22,7 @@ export default function AdminCampaignSortSelect({ defaultValue }: { defaultValue
         <select
             defaultValue={defaultValue}
             onChange={handleChange}
-            className="px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0268c0]/30 bg-white text-gray-700"
+            className="rounded-xl border border-[#e7e9eb] bg-white px-3 py-2.5 text-[13px] font-medium text-[#003060] shadow-[0px_1px_2px_0px_rgba(0,48,96,0.04)] focus:border-[#0268c0] focus:outline-none focus:ring-2 focus:ring-[#0268c0]/20"
         >
             <option value="newest">Newest first</option>
             <option value="oldest">Oldest first</option>

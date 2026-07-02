@@ -53,29 +53,28 @@ export default function OrgFilters() {
     // Cleanup debounce on unmount
     useEffect(() => () => { if (debounceRef.current) clearTimeout(debounceRef.current); }, []);
 
+    const selectCls = "rounded-xl border border-[#e7e9eb] bg-white px-3 py-2.5 text-[13px] font-medium text-[#003060] shadow-[0px_1px_2px_0px_rgba(0,48,96,0.04)] transition-colors focus:border-[#0268c0] focus:outline-none focus:ring-2 focus:ring-[#0268c0]/20";
+
     return (
-        <div className="mb-5 flex flex-wrap items-center gap-3">
+        <div className="mb-4 flex flex-wrap items-center gap-2">
             {/* Search */}
-            <div className="relative">
-                <svg
-                    className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300 pointer-events-none"
-                    fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 11A6 6 0 111 11a6 6 0 0116 0z" />
+            <div className="relative min-w-[220px] flex-1 sm:max-w-72">
+                <svg className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#9aa7b8]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <circle cx="11" cy="11" r="7" /><path strokeLinecap="round" d="M21 21l-4.3-4.3" />
                 </svg>
                 <input
                     value={query}
                     onChange={(e) => handleQuery(e.target.value)}
                     placeholder="Search by name or creator…"
-                    className="w-72 pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0268c0]/20 focus:border-[#0268c0] transition-colors"
+                    className="w-full rounded-xl border border-[#e7e9eb] bg-white py-2.5 pl-10 pr-9 text-sm text-[#003060] placeholder:text-[#9aa7b8] shadow-[0px_1px_2px_0px_rgba(0,48,96,0.04)] focus:border-[#0268c0] focus:outline-none focus:ring-2 focus:ring-[#0268c0]/20"
                 />
                 {query && (
                     <button
                         onClick={() => handleQuery("")}
-                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-300 hover:text-gray-500 transition-colors"
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded p-0.5 text-[#9aa7b8] transition-colors hover:text-[#003060]"
                         aria-label="Clear search"
                     >
-                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                         </svg>
                     </button>
@@ -86,7 +85,7 @@ export default function OrgFilters() {
             <select
                 value={filter}
                 onChange={(e) => handleFilter(e.target.value)}
-                className="px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-[#0268c0]/20 focus:border-[#0268c0] transition-colors text-gray-600"
+                className={selectCls}
             >
                 <option value="all">All Organizations</option>
                 <option value="has_active">Has Active Campaigns</option>
@@ -97,7 +96,7 @@ export default function OrgFilters() {
             <select
                 value={sort}
                 onChange={(e) => handleSort(e.target.value)}
-                className="px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-[#0268c0]/20 focus:border-[#0268c0] transition-colors text-gray-600"
+                className={selectCls}
             >
                 <option value="newest">Newest First</option>
                 <option value="oldest">Oldest First</option>

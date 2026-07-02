@@ -37,18 +37,18 @@ export default async function AdminContactPage({
         <div>
             <div className="mb-6 flex items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900">Contact Submissions</h1>
-                    <p className="text-sm text-gray-400 mt-0.5">{total.toLocaleString()} total · {unread.toLocaleString()} unread</p>
+                    <h1 className="text-[22px] font-black text-[#003060]">Contact Submissions</h1>
+                    <p className="mt-0.5 text-[13px] text-[#9aa7b8]">{total.toLocaleString()} total · {unread.toLocaleString()} unread</p>
                 </div>
             </div>
 
             {/* Filter tabs */}
-            <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1 text-xs font-semibold w-fit mb-5">
+            <div className="mb-5 flex w-fit items-center gap-1 rounded-xl border border-[#e7e9eb] bg-white p-1 text-xs font-semibold shadow-[0px_1px_2px_0px_rgba(0,48,96,0.04)]">
                 {(["all", "unread"] as const).map((f) => (
                     <Link
                         key={f}
                         href={f === "all" ? "/admin/contact" : "/admin/contact?filter=unread"}
-                        className={`px-3 py-1.5 rounded-md capitalize transition-colors ${filter === f ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+                        className={`rounded-lg px-3 py-1.5 capitalize transition-colors ${filter === f ? "bg-[#0268c0] text-white" : "text-[#7e8a96] hover:text-[#003060]"}`}
                     >
                         {f}{f === "unread" && unread > 0 ? ` (${unread})` : ""}
                     </Link>
@@ -56,44 +56,44 @@ export default async function AdminContactPage({
             </div>
 
             {/* Table */}
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className="overflow-hidden rounded-2xl border border-[#e7e9eb] bg-white shadow-[0px_4px_30px_0px_rgba(0,91,172,0.08)]">
                 <table className="w-full text-sm">
                     <thead>
-                        <tr className="border-b border-gray-100 text-xs text-gray-400 font-semibold uppercase tracking-wide">
-                            <th className="text-left px-5 py-3 w-[200px]">From</th>
-                            <th className="text-left px-5 py-3 w-[150px]">Inquiry Type</th>
-                            <th className="text-left px-5 py-3">Message</th>
-                            <th className="text-left px-5 py-3 w-[150px]">Received</th>
-                            <th className="px-5 py-3 w-[110px]" />
+                        <tr className="bg-[#0268c0] text-white">
+                            <th className="w-[200px] px-4 py-3.5 pl-5 text-left text-[13px] font-semibold">From</th>
+                            <th className="w-[150px] px-4 py-3.5 text-left text-[13px] font-semibold">Inquiry Type</th>
+                            <th className="px-4 py-3.5 text-left text-[13px] font-semibold">Message</th>
+                            <th className="w-[150px] px-4 py-3.5 text-left text-[13px] font-semibold">Received</th>
+                            <th className="w-[110px] py-3.5 pl-4 pr-5" />
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-50">
+                    <tbody>
                         {submissions.length === 0 && (
-                            <tr><td colSpan={5} className="text-center py-12 text-gray-400">No contact submissions yet.</td></tr>
+                            <tr><td colSpan={5} className="px-5 py-10 text-center text-sm italic text-[#9aa7b8]">No contact submissions yet.</td></tr>
                         )}
                         {submissions.map((s) => (
-                            <tr key={s.id} className={`align-top transition-colors ${s.is_read ? "hover:bg-gray-50" : "bg-blue-50/40 hover:bg-blue-50/70"}`}>
-                                <td className="px-5 py-4 font-medium text-gray-900">
+                            <tr key={s.id} className={`border-b border-[#eef1f4] align-top transition-colors last:border-0 ${s.is_read ? "hover:bg-[#f7f9fb]" : "bg-blue-50/40 hover:bg-blue-50/70"}`}>
+                                <td className="py-4 pl-5 pr-4">
                                     <div className="flex items-start gap-2">
-                                        {!s.is_read && <span className="mt-1.5 w-2 h-2 rounded-full bg-[#0268c0] shrink-0" title="Unread" />}
+                                        {!s.is_read && <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-[#0268c0]" title="Unread" />}
                                         <div className="min-w-0">
-                                            <p className="truncate">{s.first_name} {s.last_name}</p>
-                                            <a href={`mailto:${s.email}`} className="text-xs text-[#0268c0] hover:underline break-all">{s.email}</a>
+                                            <p className="truncate text-[13px] font-semibold text-[#003060]">{s.first_name} {s.last_name}</p>
+                                            <a href={`mailto:${s.email}`} className="break-all text-xs text-[#0268c0] hover:underline">{s.email}</a>
                                         </div>
                                     </div>
                                 </td>
-                                <td className="px-5 py-4">
-                                    <span className="inline-flex items-center text-xs font-semibold px-2 py-0.5 rounded-full bg-[#feece4] text-[#f47435]">{s.inquiry_type}</span>
+                                <td className="px-4 py-4">
+                                    <span className="inline-flex items-center rounded-full bg-[#feece4] px-2.5 py-1 text-[11px] font-semibold text-[#f47435]">{s.inquiry_type}</span>
                                 </td>
-                                <td className="px-5 py-4 text-gray-600 max-w-md">
+                                <td className="max-w-md px-4 py-4 text-[13px] text-[#7e8a96]">
                                     <p className="whitespace-pre-wrap leading-relaxed">{s.message}</p>
                                 </td>
-                                <td className="px-5 py-4 text-gray-500 whitespace-nowrap">{fmtDate(s.created_at)}</td>
-                                <td className="px-5 py-4 text-right">
+                                <td className="whitespace-nowrap px-4 py-4 text-[13px] text-[#7e8a96]">{fmtDate(s.created_at)}</td>
+                                <td className="py-4 pl-4 pr-5 text-right">
                                     <form action={toggleRead}>
                                         <input type="hidden" name="id" value={s.id} />
                                         <input type="hidden" name="next" value={String(!s.is_read)} />
-                                        <button type="submit" className="text-xs font-semibold text-[#0268c0] hover:underline whitespace-nowrap">
+                                        <button type="submit" className="whitespace-nowrap rounded-lg px-2.5 py-1.5 text-xs font-semibold text-[#0268c0] transition-colors hover:bg-[#0268c0]/10">
                                             {s.is_read ? "Mark unread" : "Mark read"}
                                         </button>
                                     </form>

@@ -12,7 +12,7 @@ export default function Loading() {
             {/* KPI cards */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 {Array.from({ length: 4 }).map((_, i) => (
-                    <div key={i} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-3">
+                    <div key={i} className="space-y-3 rounded-2xl border border-[#e7e9eb] bg-white p-5 shadow-[0px_4px_30px_0px_rgba(0,91,172,0.08)]">
                         <div className="flex items-center justify-between">
                             <Sk className="h-3 w-20" />
                             <Sk className="h-8 w-8 rounded-lg" />

@@ -74,10 +74,10 @@ export default function DailyDonationsChart({ data }: { data: DailyPoint[] }) {
                     return (
                         <g key={v}>
                             <line x1={PL} y1={y} x2={W - PR} y2={y}
-                                stroke={v === 0 ? "#d1d5db" : "#f3f4f6"}
+                                stroke={v === 0 ? "#e7e9eb" : "#eef1f4"}
                                 strokeWidth={v === 0 ? 1 : 0.75} />
                             <text x={PL - 6} y={y} textAnchor="end" dominantBaseline="middle"
-                                fontSize={9} fill="#9ca3af"
+                                fontSize={9} fill="#9aa7b8"
                                 fontFamily="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif">
                                 {fmtY(v)}
                             </text>

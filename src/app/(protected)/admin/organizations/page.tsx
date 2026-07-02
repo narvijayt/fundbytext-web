@@ -101,12 +101,14 @@ export default async function AdminOrganizationsPage({
         return `/admin/organizations${qs ? `?${qs}` : ""}`;
     };
 
+    const TH_CLS = "px-4 py-3.5 text-left text-[13px] font-semibold";
+
     return (
         <div>
             <div className="mb-6 flex items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900">Organizations</h1>
-                    <p className="text-sm text-gray-400 mt-0.5">{total.toLocaleString()} total</p>
+                    <h1 className="text-[22px] font-black text-[#003060]">Organizations</h1>
+                    <p className="mt-0.5 text-[13px] text-[#9aa7b8]">{total.toLocaleString()} total</p>
                 </div>
             </div>
 
@@ -116,60 +118,60 @@ export default async function AdminOrganizationsPage({
             </Suspense>
 
             {/* Table */}
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className="overflow-hidden rounded-2xl border border-[#e7e9eb] bg-white shadow-[0px_4px_30px_0px_rgba(0,91,172,0.08)]">
                 <div className="overflow-x-auto">
                     <table className="w-full text-sm">
                         <thead>
-                            <tr className="border-b border-gray-100 text-xs text-gray-400 font-semibold uppercase tracking-wide">
-                                <th className="text-left px-5 py-3">Organization</th>
-                                <th className="text-left px-5 py-3">Creator</th>
-                                <th className="text-left px-5 py-3">Campaigns</th>
-                                <th className="text-left px-5 py-3">Total Raised</th>
-                                <th className="text-left px-5 py-3">Created</th>
-                                <th className="px-5 py-3" />
+                            <tr className="bg-[#0268c0] text-white">
+                                <th className={`${TH_CLS} pl-5`}>Organization</th>
+                                <th className={TH_CLS}>Creator</th>
+                                <th className={TH_CLS}>Campaigns</th>
+                                <th className={TH_CLS}>Total Raised</th>
+                                <th className={TH_CLS}>Created</th>
+                                <th className="py-3.5 pl-4 pr-5" />
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-50">
+                        <tbody>
                             {orgs.length === 0 && (
                                 <tr>
-                                    <td colSpan={6} className="text-center py-12 text-gray-400">No organizations found.</td>
+                                    <td colSpan={6} className="px-5 py-10 text-center text-sm italic text-[#9aa7b8]">No organizations found.</td>
                                 </tr>
                             )}
                             {orgs.map((org) => {
                                 const totalRaised     = totalRaisedMap[org.id]  ?? 0;
                                 const activeCampaigns = activeCountMap[org.id]  ?? 0;
                                 return (
-                                    <tr key={org.id} className="hover:bg-gray-50 transition-colors">
-                                        <td className="px-5 py-3 font-medium text-gray-900">
+                                    <tr key={org.id} className="border-b border-[#eef1f4] transition-colors last:border-0 hover:bg-[#f7f9fb]">
+                                        <td className="py-3.5 pl-5 pr-4 text-[13px] font-medium text-[#003060]">
                                             <div className="flex items-center gap-3">
                                                 {org.logo_url ? (
-                                                    <img src={org.logo_url} alt="" className="w-8 h-8 rounded-lg object-cover shrink-0 border border-gray-100" />
+                                                    <img src={org.logo_url} alt="" className="h-8 w-8 shrink-0 rounded-lg border border-[#e7e9eb] object-cover" />
                                                 ) : (
-                                                    <div className="w-8 h-8 rounded-lg bg-gray-100 shrink-0 flex items-center justify-center text-xs font-bold text-gray-400 uppercase">
+                                                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#eef2f7] text-xs font-bold uppercase text-[#7e8a96]">
                                                         {org.name[0]}
                                                     </div>
                                                 )}
                                                 <span>{org.name}</span>
                                             </div>
                                         </td>
-                                        <td className="px-5 py-3 text-gray-500">
-                                            <Link href={`/admin/users/${org.creator.id}`} className="hover:text-[#0268c0] hover:underline">
+                                        <td className="px-4 py-3.5 text-[13px] text-[#7e8a96]">
+                                            <Link href={`/admin/users/${org.creator.id}`} className="font-medium text-[#003060] hover:text-[#0268c0] hover:underline">
                                                 {org.creator.first_name} {org.creator.last_name}
                                             </Link>
-                                            <p className="text-xs text-gray-400">{org.creator.email}</p>
+                                            <p className="text-xs text-[#9aa7b8]">{org.creator.email}</p>
                                         </td>
-                                        <td className="px-5 py-3 text-gray-500">
+                                        <td className="px-4 py-3.5 text-[13px] text-[#7e8a96]">
                                             <span>{org._count.campaigns}</span>
                                             {activeCampaigns > 0 && (
-                                                <span className="ml-2 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-green-50 text-green-600 border border-green-100">
+                                                <span className="ml-2 rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-semibold text-green-700">
                                                     {activeCampaigns} active
                                                 </span>
                                             )}
                                         </td>
-                                        <td className="px-5 py-3 font-semibold text-gray-700">{fmtUSD(totalRaised)}</td>
-                                        <td className="px-5 py-3 text-gray-500">{fmtDate(org.created_at)}</td>
-                                        <td className="px-5 py-3 text-right">
-                                            <Link href={`/admin/organizations/${org.id}`} className="text-xs font-semibold text-[#0268c0] hover:underline">
+                                        <td className="px-4 py-3.5 text-[13px] font-bold text-[#003060]">{fmtUSD(totalRaised)}</td>
+                                        <td className="whitespace-nowrap px-4 py-3.5 text-[13px] text-[#7e8a96]">{fmtDate(org.created_at)}</td>
+                                        <td className="py-3.5 pl-4 pr-5 text-right">
+                                            <Link href={`/admin/organizations/${org.id}`} className="text-[13px] font-semibold text-[#0268c0] hover:underline">
                                                 View
                                             </Link>
                                         </td>
@@ -183,16 +185,16 @@ export default async function AdminOrganizationsPage({
 
             {/* Pagination */}
             {totalPages > 1 && (
-                <div className="flex items-center justify-between mt-4 text-sm text-gray-500">
-                    <span>Page {page} of {totalPages}</span>
-                    <div className="flex items-center gap-2">
+                <div className="mt-4 flex items-center justify-between">
+                    <span className="text-[13px] font-medium text-[#7e8a96]">Page {page} of {totalPages}</span>
+                    <div className="flex items-center gap-1.5">
                         {page > 1 && (
-                            <Link scroll={false} href={buildUrl({ page: String(page - 1) })} className="px-3 py-1.5 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                            <Link scroll={false} href={buildUrl({ page: String(page - 1) })} className="flex h-9 items-center rounded-lg border border-[#e7e9eb] px-3 text-[13px] font-semibold text-[#003060] transition-colors hover:bg-gray-50">
                                 Previous
                             </Link>
                         )}
                         {page < totalPages && (
-                            <Link scroll={false} href={buildUrl({ page: String(page + 1) })} className="px-3 py-1.5 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                            <Link scroll={false} href={buildUrl({ page: String(page + 1) })} className="flex h-9 items-center rounded-lg border border-[#e7e9eb] px-3 text-[13px] font-semibold text-[#003060] transition-colors hover:bg-gray-50">
                                 Next
                             </Link>
                         )}
