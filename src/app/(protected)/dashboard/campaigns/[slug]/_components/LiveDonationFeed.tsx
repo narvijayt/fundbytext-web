@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 
 const MODAL_PAGE = 10;
 
@@ -81,6 +81,7 @@ type Props = {
 
 export default function LiveDonationFeed({ donations, totalCount, campaignSlug, isCompleted }: Props) {
     const [showAll,    setShowAll]    = useState(false);
+    const [shown,      setShown]      = useState(false);
     const [modalItems, setModalItems] = useState<DonationFeedItem[]>([]);
     const [modalTotal, setModalTotal] = useState(0);
     const [modalSkip,  setModalSkip]  = useState(0);
@@ -105,6 +106,27 @@ export default function LiveDonationFeed({ donations, totalCount, campaignSlug, 
         setModalSkip(0);
         fetchPage(0, true);
     }
+
+    function closeModal() {
+        setShown(false);
+        window.setTimeout(() => setShowAll(false), 170);
+    }
+
+    // Entrance/exit animation + scroll-lock + ESC (matches the other dashboard modals)
+    useEffect(() => {
+        if (!showAll) return;
+        const raf = requestAnimationFrame(() => setShown(true));
+        const prevOverflow = document.body.style.overflow;
+        document.body.style.overflow = "hidden";
+        function onKey(e: KeyboardEvent) { if (e.key === "Escape") closeModal(); }
+        document.addEventListener("keydown", onKey);
+        return () => {
+            cancelAnimationFrame(raf);
+            document.body.style.overflow = prevOverflow;
+            document.removeEventListener("keydown", onKey);
+        };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [showAll]);
 
     // Figma modal has no "Load more" footer — load the next page on scroll instead.
     function onModalScroll(e: React.UIEvent<HTMLDivElement>) {
@@ -153,18 +175,18 @@ export default function LiveDonationFeed({ donations, totalCount, campaignSlug, 
             {/* See All modal — matches Figma "Live Donation Feed" dialog (396px, scrollable, no footer) */}
             {showAll && (
                 <div
-                    className="fixed inset-0 z-[100] flex items-center justify-center bg-[#0f1d43]/45 p-4 backdrop-blur-sm"
-                    onClick={() => setShowAll(false)}
+                    className={`fixed inset-0 z-[100] flex items-center justify-center bg-[#0f1d43]/45 p-4 backdrop-blur-sm transition-opacity duration-200 motion-reduce:transition-none ${shown ? "opacity-100" : "opacity-0"}`}
+                    onClick={closeModal}
                 >
                     <div
-                        className="flex w-full flex-col overflow-hidden rounded-2xl border border-[#e7e9eb] bg-white shadow-[0px_16px_40px_-8px_rgba(15,29,67,0.25)]"
+                        className={`flex w-full flex-col overflow-hidden rounded-2xl border border-[#e7e9eb] bg-white shadow-[0px_16px_40px_-8px_rgba(15,29,67,0.25)] transition-transform duration-200 motion-reduce:transition-none ${shown ? "scale-100" : "scale-95"}`}
                         style={{ maxWidth: 396, maxHeight: "85vh" }}
                         onClick={(e) => e.stopPropagation()}
                     >
                         <div className="flex shrink-0 items-center justify-between border-b border-[#e7e9eb] px-6 py-4">
                             <h2 className="text-[16px] font-bold text-[#003060]">Live Donation Feed</h2>
                             <button
-                                onClick={() => setShowAll(false)}
+                                onClick={closeModal}
                                 aria-label="Close"
                                 className="text-[#9aa7b8] transition-colors hover:text-[#003060]"
                             >
