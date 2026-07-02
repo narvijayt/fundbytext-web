@@ -12,7 +12,7 @@ import LiveDonationFeed from "./_components/LiveDonationFeed";
 import ParticipantNotifications from "./_components/ParticipantNotifications";
 import CampaignStatsBars from "./_components/CampaignStatsBars";
 import FundBuddyOnboarding from "./_components/FundBuddyOnboarding";
-import ParticipantGoalCard from "./_components/ParticipantGoalCard";
+import ParticipantGoalCard, { RankBadge } from "./_components/ParticipantGoalCard";
 import DonorsTable, { type DonorRow } from "./_components/DonorsTable";
 import RemoveParticipantRoleButton from "./_components/RemoveParticipantRoleButton";
 import CampaignControls from "./_components/CampaignControls";
@@ -513,11 +513,6 @@ export default async function CampaignDetailPage({
                             const fmt = (n: number) => new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(n);
                             const pct = raisedAmt > 0 ? parseFloat(((myRaised / raisedAmt) * 100).toFixed(2)) : 0;
                             const rank = participants.findIndex((p) => p.id === myMembership.id) + 1;
-                            const rankColors =
-                                rank === 1 ? "bg-amber-50 text-amber-700 border-amber-200" :
-                                rank === 2 ? "bg-gray-100 text-gray-600 border-gray-200" :
-                                rank === 3 ? "bg-orange-50 text-orange-700 border-orange-200" :
-                                             "bg-gray-50 text-gray-500 border-gray-100";
                             return (
                                 <div className="flex items-center gap-2.5 rounded-xl border border-[#cfe0f3] bg-[#eef5fc] px-4 py-2.5 text-sm text-[#0268c0]">
                                     <svg className="h-4 w-4 shrink-0 text-[#0268c0]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -530,11 +525,7 @@ export default async function CampaignDetailPage({
                                             <> — <span className="font-semibold">{pct}%</span> of the total raised</>
                                         )}
                                     </span>
-                                    {rank > 0 && participants.length >= 2 && (
-                                        <span className={`ml-auto inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-bold ${rankColors}`}>
-                                            #{rank} in Rankings
-                                        </span>
-                                    )}
+                                    {rank > 0 && participants.length >= 2 && <RankBadge rank={rank} className="ml-auto" />}
                                 </div>
                             );
                         })()}
@@ -563,16 +554,7 @@ export default async function CampaignDetailPage({
                                         {(() => {
                                             const rank = participants.findIndex((p) => p.id === myMembership.id) + 1;
                                             if (rank === 0 || participants.length < 2) return null;
-                                            const colors =
-                                                rank === 1 ? "bg-amber-50 text-amber-700 border-amber-200" :
-                                                rank === 2 ? "bg-gray-100 text-gray-600 border-gray-200" :
-                                                rank === 3 ? "bg-orange-50 text-orange-700 border-orange-200" :
-                                                             "bg-gray-50 text-gray-500 border-gray-100";
-                                            return (
-                                                <span className={`inline-flex items-center text-xs font-bold px-2 py-0.5 rounded-full border ${colors}`}>
-                                                    #{rank} in Rankings
-                                                </span>
-                                            );
+                                            return <RankBadge rank={rank} />;
                                         })()}
                                     </div>
                                     <p className="text-xs text-green-600 mt-0.5">
@@ -674,16 +656,7 @@ export default async function CampaignDetailPage({
                                 {(() => {
                                     const rank = participants.findIndex((p) => p.id === myMembership.id) + 1;
                                     if (rank === 0 || participants.length < 2) return null;
-                                    const colors =
-                                        rank === 1 ? "bg-amber-50 text-amber-700 border-amber-200" :
-                                        rank === 2 ? "bg-gray-100 text-gray-600 border-gray-200" :
-                                        rank === 3 ? "bg-orange-50 text-orange-700 border-orange-200" :
-                                                     "bg-gray-50 text-gray-500 border-gray-100";
-                                    return (
-                                        <span className={`inline-flex shrink-0 items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-bold ${colors}`}>
-                                            #{rank} in Rankings
-                                        </span>
-                                    );
+                                    return <RankBadge rank={rank} />;
                                 })()}
                             </div>
                             <div className="mb-5 grid grid-cols-3 gap-3">
