@@ -12,6 +12,7 @@ import LiveDonationFeed from "./_components/LiveDonationFeed";
 import ParticipantNotifications from "./_components/ParticipantNotifications";
 import CampaignStatsBars from "./_components/CampaignStatsBars";
 import FundBuddyOnboarding from "./_components/FundBuddyOnboarding";
+import ParticipantGoalCard from "./_components/ParticipantGoalCard";
 import DonorsTable, { type DonorRow } from "./_components/DonorsTable";
 import RemoveParticipantRoleButton from "./_components/RemoveParticipantRoleButton";
 import CampaignControls from "./_components/CampaignControls";
@@ -539,40 +540,13 @@ export default async function CampaignDetailPage({
                         })()}
 
                         {campaign.goal_type === "participant_goal" && goalAmt && myRaised < goalAmt && campaign.status === CampaignStatus.active && (() => {
-                            const fmt = (n: number) => new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(n);
-                            const pct       = Math.min(100, Math.round((myRaised / goalAmt) * 100));
-                            const remaining = goalAmt - myRaised;
+                            const rank = participants.findIndex((p) => p.id === myMembership.id) + 1;
                             return (
-                                <div className="space-y-3 rounded-2xl border border-[#e7e9eb] bg-white px-5 py-4 shadow-[0px_4px_30px_0px_rgba(0,91,172,0.08)]">
-                                    <div className="flex items-center justify-between">
-                                        <p className="text-[15px] font-bold text-[#003060]">Your Fundraising Goal</p>
-                                        <div className="flex items-center gap-2">
-                                            {(() => {
-                                                const rank = participants.findIndex((p) => p.id === myMembership.id) + 1;
-                                                if (rank === 0 || participants.length < 2) return null;
-                                                const colors =
-                                                    rank === 1 ? "bg-amber-50 text-amber-700 border-amber-200" :
-                                                    rank === 2 ? "bg-gray-100 text-gray-600 border-gray-200" :
-                                                    rank === 3 ? "bg-orange-50 text-orange-700 border-orange-200" :
-                                                                 "bg-gray-50 text-gray-500 border-gray-100";
-                                                return (
-                                                    <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-bold ${colors}`}>
-                                                        #{rank} in Rankings
-                                                    </span>
-                                                );
-                                            })()}
-                                            <span className="text-xs font-semibold text-[#7e8a96]">{fmt(myRaised)} of {fmt(goalAmt)}</span>
-                                        </div>
-                                    </div>
-                                    <div className="h-2.5 overflow-hidden rounded-full bg-[#eef1f4]">
-                                        <div className="h-full rounded-full bg-orange-500 transition-all" style={{ width: `${pct}%` }} />
-                                    </div>
-                                    <p className="text-xs text-[#7e8a96]">
-                                        <span className="font-semibold text-[#003060]">{pct}%</span> of your goal reached
-                                        {" · "}
-                                        <span className="font-semibold text-orange-600">{fmt(remaining)}</span> remaining
-                                    </p>
-                                </div>
+                                <ParticipantGoalCard
+                                    raised={myRaised}
+                                    goal={goalAmt}
+                                    rank={rank > 0 && participants.length >= 2 ? rank : null}
+                                />
                             );
                         })()}
 
