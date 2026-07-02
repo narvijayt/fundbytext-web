@@ -3,13 +3,14 @@
 import { useState } from "react";
 import CreateUserModal from "./CreateUserModal";
 
-export default function CreateUserButton() {
+export default function CreateUserButton({ onCreated }: { onCreated?: () => void }) {
     const [open,  setOpen]  = useState(false);
     const [toast, setToast] = useState(false);
 
     function handleSaved() {
         setToast(true);
         setTimeout(() => setToast(false), 4000);
+        onCreated?.();
     }
 
     return (
