@@ -66,11 +66,13 @@ type Props = {
     myMemberId?:           string;
     donorsPerParticipant?: number | null;
     isCompleted?:          boolean;
+    /** Hide all row actions (three-dots menu) — participant view shows the rankings read-only. */
+    readOnly?:             boolean;
 };
 
 const PAGE_SIZES = [10, 25, 50];
 
-export default function ParticipantsTable({ participants, isOrganizer, campaignSlug, perParticipantGoal, myMemberId, donorsPerParticipant, isCompleted }: Props) {
+export default function ParticipantsTable({ participants, isOrganizer, campaignSlug, perParticipantGoal, myMemberId, donorsPerParticipant, isCompleted, readOnly }: Props) {
     const [search,       setSearch]       = useState("");
     const [page,         setPage]         = useState(1);
     const [pageSize,     setPageSize]     = useState(10);
@@ -256,9 +258,11 @@ export default function ParticipantsTable({ participants, isOrganizer, campaignS
                                                     <td className="px-4 py-4"><DonorsCell p={p} /></td>
                                                     <td className="px-4 py-4"><AmountCell p={p} connector="of" /></td>
                                                     <td className="py-4 pl-2 pr-5 text-right">
-                                                        <button onMouseDown={(e) => e.stopPropagation()} onClick={(e) => openMenu(e, p.id)} aria-label={`Actions for ${p.name}`} aria-haspopup="menu" aria-expanded={menuFor === p.id} title="Actions" className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[#9aa7b8] transition-colors hover:bg-gray-100 hover:text-[#003060]">
-                                                            <Dots />
-                                                        </button>
+                                                        {!readOnly && (
+                                                            <button onMouseDown={(e) => e.stopPropagation()} onClick={(e) => openMenu(e, p.id)} aria-label={`Actions for ${p.name}`} aria-haspopup="menu" aria-expanded={menuFor === p.id} title="Actions" className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[#9aa7b8] transition-colors hover:bg-gray-100 hover:text-[#003060]">
+                                                                <Dots />
+                                                            </button>
+                                                        )}
                                                     </td>
                                                 </tr>
                                             );
@@ -291,9 +295,11 @@ export default function ParticipantsTable({ participants, isOrganizer, campaignS
                                             {p.id === myMemberId && (
                                                 <span className="rounded bg-blue-50 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#0268c0]">You</span>
                                             )}
-                                            <button onMouseDown={(e) => e.stopPropagation()} onClick={(e) => openMenu(e, p.id)} aria-label={`Actions for ${p.name}`} aria-haspopup="menu" aria-expanded={menuFor === p.id} className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[#9aa7b8] hover:bg-gray-100 hover:text-[#003060]">
-                                                <Dots />
-                                            </button>
+                                            {!readOnly && (
+                                                <button onMouseDown={(e) => e.stopPropagation()} onClick={(e) => openMenu(e, p.id)} aria-label={`Actions for ${p.name}`} aria-haspopup="menu" aria-expanded={menuFor === p.id} className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[#9aa7b8] hover:bg-gray-100 hover:text-[#003060]">
+                                                    <Dots />
+                                                </button>
+                                            )}
                                         </div>
                                         <div className="mt-2.5 grid grid-cols-2 gap-3 pl-10">
                                             <div><DonorsCell p={p} /></div>
@@ -363,7 +369,7 @@ export default function ParticipantsTable({ participants, isOrganizer, campaignS
                 <AddParticipantModal campaignSlug={campaignSlug} onClose={() => setAddOpen(false)} />
             )}
             {/* Row action menu — portalled so the table's overflow doesn't clip it */}
-            {mounted && menuFor && (() => {
+            {!readOnly && mounted && menuFor && (() => {
                 const p = participants.find((x) => x.id === menuFor);
                 if (!p) return null;
                 const item = "flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-[13px] font-medium transition-colors";

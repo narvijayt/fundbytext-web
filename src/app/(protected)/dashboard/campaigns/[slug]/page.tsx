@@ -9,7 +9,6 @@ import DonationChart from "./_components/DonationChart";
 import ParticipantsTable from "./_components/ParticipantsTable";
 import NotificationsTable from "./_components/NotificationsTable";
 import LiveDonationFeed from "./_components/LiveDonationFeed";
-import ParticipantRankings from "./_components/ParticipantRankings";
 import ParticipantNotifications from "./_components/ParticipantNotifications";
 import CampaignStatsBars from "./_components/CampaignStatsBars";
 import FundBuddyOnboarding from "./_components/FundBuddyOnboarding";
@@ -650,15 +649,26 @@ export default async function CampaignDetailPage({
                                 <DonationChart startTs={campaign.start_date?.getTime() ?? null} endTs={campaign.end_date?.getTime() ?? null} donations={chartDonations} goalAmount={effectiveGoalAmt} initialGoalAmount={initialGoalAmt} title="Campaign Fundraising Progress" />
                             </div>
 
-                            {/* Right — live feed + rankings */}
-                            <div className="w-full shrink-0 space-y-4 lg:w-80">
+                            {/* Right — live feed */}
+                            <div className="w-full shrink-0 lg:w-80">
                                 <LiveDonationFeed donations={feedDonations} totalCount={donationTotal} campaignSlug={slug} isCompleted={campaign.status === CampaignStatus.completed} />
-                                <ParticipantRankings
-                                    participants={participants}
-                                    myMemberId={myMembership.id}
-                                />
                             </div>
                         </div>
+
+                        {/* Participant rankings — same card as the organizer view, read-only (no actions) */}
+                        {campaign.campaign_type === "organization" && (
+                            <ParticipantsTable
+                                participants={participants}
+                                isOrganizer={false}
+                                readOnly
+                                campaignSlug={slug}
+                                goalAmount={effectiveGoalAmt}
+                                perParticipantGoal={campaign.goal_type === "participant_goal" ? goalAmt : null}
+                                myMemberId={myMembership.id}
+                                donorsPerParticipant={campaign.donors_per_participant}
+                                isCompleted={campaign.status === CampaignStatus.completed}
+                            />
+                        )}
 
                         {/* My Notifications — full-width table (matches organizer Campaign Notifications) */}
                         <div id="participant-notifications" className="scroll-mt-6">
