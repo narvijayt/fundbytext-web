@@ -44,7 +44,7 @@ export default function MarketingHero({
                         style={{
                             backgroundImage: `url('${theme.themeImage}')`,
                             backgroundRepeat: "repeat",
-                            backgroundSize: "217px auto",
+                            backgroundSize: theme.themeSize,
                         }}
                     />
                 )}

@@ -10,12 +10,19 @@
 
 export const ORANGE = "#f47435";
 
-const THEME_IMAGES: Record<string, string> = {
-    athletic:    "/assets/campaigns/theme-athletic.png",
-    sports:      "/assets/campaigns/theme-sports.png",
-    trophy_wall: "/assets/campaigns/theme-trophy.png",
-    geometric:   "/assets/campaigns/theme-geometric.png",
-    abstract:    "/assets/campaigns/theme-abstract.png",
+/* Seamless tiles derived from the Figma swatch exports (the raw swatches are
+   crops with a baked border/rounded corners and don't tile). Each tile is
+   either an exact measured repeat period of the pattern (geometric: both axes;
+   trophy/sports/abstract: horizontal; athletic: vertical) or mirror-completed
+   on the axis whose period doesn't fit inside the crop. `size` is the CSS
+   background-size — half the tile's intrinsic width, which keeps the motif at
+   the same display scale as the original 435px swatch shown at 217px. */
+export const THEME_TILES: Record<string, { src: string; size: string }> = {
+    athletic:    { src: "/assets/campaigns/tiles/theme-athletic-tile.png",  size: "399px auto"   },
+    sports:      { src: "/assets/campaigns/tiles/theme-sports-tile.png",    size: "159px auto"   },
+    trophy_wall: { src: "/assets/campaigns/tiles/theme-trophy-tile.png",    size: "124px auto"   },
+    geometric:   { src: "/assets/campaigns/tiles/theme-geometric-tile.png", size: "117.5px auto" },
+    abstract:    { src: "/assets/campaigns/tiles/theme-abstract-tile.png",  size: "127.5px auto" },
     // "logo" has no pattern — the band shows the accent colour alone.
 };
 
@@ -31,13 +38,17 @@ export type MarketingTheme = {
     secondary:  string;
     tertiary:   string;
     themeImage: string | null;
+    /** background-size that shows the tile at its intended motif scale. */
+    themeSize:  string;
 };
 
 export function getMarketingTheme(c: MarketingThemeInput): MarketingTheme {
+    const tile = c.background_theme ? (THEME_TILES[c.background_theme] ?? null) : null;
     return {
         accent:     c.accent_color    ?? "#0268c0",
         secondary:  c.secondary_color ?? "#003060",
         tertiary:   c.tertiary_color  ?? "#ffffff",
-        themeImage: c.background_theme ? (THEME_IMAGES[c.background_theme] ?? null) : null,
+        themeImage: tile?.src ?? null,
+        themeSize:  tile?.size ?? "217px auto",
     };
 }

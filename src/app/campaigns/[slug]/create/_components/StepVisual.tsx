@@ -5,6 +5,7 @@ import Image from "next/image";
 import { createPortal } from "react-dom";
 import { QuestionCard, InfoTooltip } from "./ui";
 import UploadBox from "./UploadBox";
+import { THEME_TILES } from "../../_components/marketingTheme";
 
 /* Image that stays transparent until it is fully loaded, then fades in over its
    container's placeholder — so the user never watches it decode top-to-bottom
@@ -798,22 +799,21 @@ function CampaignPreview({
     heroUrl: string | null;
     galleryUrls: string[];
 }) {
-    const theme = THEMES.find((t) => t.value === bgTheme);
     const gallery = galleryUrls.filter(Boolean).slice(0, 4);
     return (
         <div className="relative rounded-2xl overflow-hidden border border-[#d4dee7] shadow-sm">
             {/* Header band */}
             <div className="relative px-4 py-4 sm:px-6 sm:py-5" style={{ background: accentColor }}>
-                {theme?.img && (
-                    /* Tile at the native motif size (matches the theme picker) rather
-                       than stretching one copy across the band. */
+                {THEME_TILES[bgTheme] && (
+                    /* Tile the seamless extracted pattern at its native motif size
+                       (the swatch images have a baked border and don't tile). */
                     <div
                         aria-hidden
                         className="absolute inset-0 opacity-15"
                         style={{
-                            backgroundImage: `url('${theme.img}')`,
+                            backgroundImage: `url('${THEME_TILES[bgTheme].src}')`,
                             backgroundRepeat: "repeat",
-                            backgroundSize: "217px auto",
+                            backgroundSize: THEME_TILES[bgTheme].size,
                         }}
                     />
                 )}
