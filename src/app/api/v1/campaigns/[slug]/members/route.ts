@@ -1,5 +1,5 @@
-// POST /api/v1/campaigns/:slug/members
-// Adds a participant to the campaign (organizer only).
+// GET  /api/v1/campaigns/:slug/members — paginated participant list (any member).
+// POST /api/v1/campaigns/:slug/members — adds a participant (organizer only).
 
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
@@ -7,7 +7,7 @@ import crypto from "crypto";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { getAuthUserFromRequest } from "@/lib/session";
-import { MemberRole } from "@/generated/prisma/enums";
+import { MemberRole, PaymentStatus } from "@/generated/prisma/enums";
 import { sendParticipantCredentialsEmail, sendParticipantInviteEmail } from "@/lib/mail";
 import { notifyParticipantAdded } from "@/lib/notifications";
 import { generateUsername } from "@/lib/username";
@@ -30,6 +30,68 @@ const schema = z.object({
     phone:             z.string().max(20).optional().nullable(),
     profile_photo_url: z.string().url().max(2048).nullable().optional(),
 }).refine((d) => d.email || d.phone, { message: "Email or phone is required" });
+
+// Paginated, ranked participant list. Ranking is by amount raised (desc), so the
+// full member set is aggregated server-side and only the requested page is returned.
+export async function GET(req: NextRequest, ctx: Ctx) {
+    try {
+        const user = await getAuthUserFromRequest(req);
+        if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+        const { slug } = await ctx.params;
+        const sp     = req.nextUrl.searchParams;
+        const skip   = Math.max(0, parseInt(sp.get("skip") ?? "0", 10) || 0);
+        const take   = Math.min(100, Math.max(1, parseInt(sp.get("take") ?? "10", 10) || 10));
+        const search = (sp.get("search") ?? "").trim().toLowerCase();
+        const sort   = sp.get("sort") === "raised_asc" ? "asc" : "desc";
+
+        const campaign = await prisma.campaign.findUnique({
+            where:  { slug },
+            select: { id: true, members: { where: { user_id: user.id }, select: { id: true } } },
+        });
+        if (!campaign) return NextResponse.json({ error: "Not found" }, { status: 404 });
+        if (campaign.members.length === 0) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+
+        const members = await prisma.campaignMember.findMany({
+            where: { campaign_id: campaign.id, roles: { some: { role: MemberRole.participant } } },
+            include: {
+                roles:     { select: { role: true } },
+                donations: { where: { payment_status: PaymentStatus.completed }, select: { amount: true } },
+                _count:    { select: { donors: true } },
+                user:      { select: { profile_photo_url: true, username: true } },
+            },
+        });
+
+        const all = members
+            .map((m) => ({
+                id:              m.id,
+                name:            `${m.first_name} ${m.last_name}`,
+                email:           m.email,
+                donorsAdded:     m._count.donors,
+                targetDonors:    m.target_donors,
+                raised:          m.donations.reduce((s, d) => s + parseFloat(d.amount.toString()), 0),
+                isOrganizer:     m.roles.some((r) => r.role === MemberRole.organizer),
+                profilePhotoUrl: m.user?.profile_photo_url ?? null,
+                username:        m.user?.username ?? null,
+            }))
+            .sort((a, b) => b.raised - a.raised);
+
+        const maxRaised = all.length > 0 ? Math.max(...all.map((p) => p.raised)) : 0;
+        const filtered  = search
+            ? all.filter((p) => p.name.toLowerCase().includes(search) || (p.email ?? "").toLowerCase().includes(search))
+            : all;
+        const ordered = sort === "desc" ? filtered : [...filtered].reverse();
+
+        return NextResponse.json({
+            participants: ordered.slice(skip, skip + take),
+            total:        filtered.length,
+            maxRaised,
+        });
+    } catch (err) {
+        console.error("[GET campaigns/slug/members]", err);
+        return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    }
+}
 
 export async function POST(req: NextRequest, ctx: Ctx) {
     try {

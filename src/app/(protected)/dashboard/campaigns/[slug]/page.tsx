@@ -658,7 +658,9 @@ export default async function CampaignDetailPage({
                         {/* Participant rankings — same card as the organizer view, read-only (no actions) */}
                         {campaign.campaign_type === "organization" && (
                             <ParticipantsTable
-                                participants={participants}
+                                participants={participants.slice(0, 10)}
+                                initialTotal={participants.length}
+                                initialMaxRaised={participants[0]?.raised ?? 0}
                                 isOrganizer={false}
                                 readOnly
                                 campaignSlug={slug}
@@ -815,7 +817,9 @@ export default async function CampaignDetailPage({
                     {isOrganizer && campaign.campaign_type === "organization" && (
                         <div id="participants" className="scroll-mt-6">
                             <ParticipantsTable
-                                participants={participants}
+                                participants={participants.slice(0, 10)}
+                                initialTotal={participants.length}
+                                initialMaxRaised={participants[0]?.raised ?? 0}
                                 isOrganizer={isOrganizer}
                                 campaignSlug={slug}
                                 goalAmount={effectiveGoalAmt}

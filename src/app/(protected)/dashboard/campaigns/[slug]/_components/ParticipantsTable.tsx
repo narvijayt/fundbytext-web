@@ -58,7 +58,10 @@ export type ParticipantRow = {
 };
 
 type Props = {
+    /** First page of participants (ranked by raised, desc) — later pages are fetched. */
     participants:          ParticipantRow[];
+    initialTotal?:         number;
+    initialMaxRaised?:     number;
     isOrganizer:           boolean;
     campaignSlug:          string;
     goalAmount?:           number | null;
@@ -72,11 +75,47 @@ type Props = {
 
 const PAGE_SIZES = [10, 25, 50];
 
-export default function ParticipantsTable({ participants, isOrganizer, campaignSlug, perParticipantGoal, myMemberId, donorsPerParticipant, isCompleted, readOnly }: Props) {
+// Animated placeholder shown while a page is being fetched (matches the donors table).
+const Bar = ({ w }: { w: string }) => <div className={`h-3.5 ${w} rounded-full bg-gray-200`} />;
+function SkeletonRow() {
+    return (
+        <tr className="border-b border-[#eef1f4] last:border-0">
+            <td className="py-4 pl-6 pr-2"><div className="mx-auto h-8 w-8 animate-pulse rounded-full bg-gray-200" /></td>
+            <td className="px-4 py-4">
+                <div className="flex animate-pulse items-center gap-2.5">
+                    <div className="h-9 w-9 shrink-0 rounded-full bg-gray-200" />
+                    <Bar w="w-32" />
+                </div>
+            </td>
+            <td className="px-4 py-4"><div className="animate-pulse space-y-1.5"><Bar w="w-14" /><div className="h-1.5 w-full max-w-[150px] rounded-full bg-gray-200" /></div></td>
+            <td className="px-4 py-4"><div className="animate-pulse space-y-1.5"><Bar w="w-20" /><div className="h-1.5 w-full max-w-[190px] rounded-full bg-gray-200" /></div></td>
+            <td className="py-4 pl-2 pr-5" />
+        </tr>
+    );
+}
+function SkeletonCard() {
+    return (
+        <div className="border-b border-[#eef1f4] px-4 py-3.5 last:border-0">
+            <div className="flex animate-pulse items-center gap-2.5">
+                <div className="h-8 w-8 shrink-0 rounded-full bg-gray-200" />
+                <div className="h-9 w-9 shrink-0 rounded-full bg-gray-200" />
+                <Bar w="w-32" />
+            </div>
+            <div className="mt-2.5 grid animate-pulse grid-cols-2 gap-3 pl-10"><Bar w="w-20" /><Bar w="w-24" /></div>
+        </div>
+    );
+}
+
+export default function ParticipantsTable({ participants: initialParticipants, initialTotal, initialMaxRaised, isOrganizer, campaignSlug, perParticipantGoal, myMemberId, donorsPerParticipant, isCompleted, readOnly }: Props) {
+    const [rows,         setRows]         = useState<ParticipantRow[]>(initialParticipants);
+    const [total,        setTotal]        = useState(initialTotal ?? initialParticipants.length);
+    const [maxRaised,    setMaxRaised]    = useState(initialMaxRaised ?? Math.max(0, ...initialParticipants.map((p) => p.raised)));
+    const [loading,      setLoading]      = useState(false);
     const [search,       setSearch]       = useState("");
     const [page,         setPage]         = useState(1);
     const [pageSize,     setPageSize]     = useState(10);
     const sectionRef                      = useRef<HTMLElement>(null);
+    const searchTimer                     = useRef<ReturnType<typeof setTimeout> | null>(null);
     const [sortDesc,     setSortDesc]     = useState(true);
     const [collapsed,    setCollapsed]    = useState(false);
     const [addOpen,      setAddOpen]      = useState(false);
@@ -87,6 +126,26 @@ export default function ParticipantsTable({ participants, isOrganizer, campaignS
     const [menuPos,      setMenuPos]      = useState<{ top: number; right: number }>({ top: 0, right: 0 });
     const [mounted,      setMounted]      = useState(false);
     useEffect(() => { setMounted(true); }, []);
+
+    // Server-side pagination — each page is fetched (like the donors table).
+    async function fetchPage(p: number, q: string = search, desc: boolean = sortDesc, size: number = pageSize) {
+        setLoading(true);
+        try {
+            const params = new URLSearchParams({
+                skip:   String((p - 1) * size),
+                take:   String(size),
+                search: q,
+                sort:   desc ? "raised_desc" : "raised_asc",
+            });
+            const res  = await fetch(`/api/v1/campaigns/${campaignSlug}/members?${params}`);
+            const data = await res.json() as { participants: ParticipantRow[]; total: number; maxRaised: number };
+            setRows(data.participants);
+            setTotal(data.total);
+            setMaxRaised(data.maxRaised);
+        } finally {
+            setLoading(false);
+        }
+    }
 
     function openMenu(e: React.MouseEvent<HTMLButtonElement>, id: string) {
         const r = e.currentTarget.getBoundingClientRect();
@@ -109,33 +168,50 @@ export default function ParticipantsTable({ participants, isOrganizer, campaignS
         };
     }, [menuFor]);
 
-    const filtered = participants.filter((p) => {
-        const q = search.toLowerCase();
-        return !q || p.name.toLowerCase().includes(q) || (p.email ?? "").toLowerCase().includes(q);
-    });
-    const ordered   = sortDesc ? filtered : [...filtered].reverse();
-    const totalPages = Math.max(1, Math.ceil(ordered.length / pageSize));
+    const totalPages  = Math.max(1, Math.ceil(total / pageSize));
     const pageClamped = Math.min(page, totalPages);
-    const paginated  = ordered.slice((pageClamped - 1) * pageSize, pageClamped * pageSize);
-    const isEmpty        = paginated.length === 0;
-    const noParticipants = participants.length === 0; // brand-new campaign vs. search returning nothing
+    const isEmpty        = rows.length === 0 && !loading;
+    const noParticipants = total === 0 && search.trim() === ""; // brand-new campaign vs. search returning nothing
 
-    const viewedParticipant = participants.find((p) => p.id === viewMemberId);
-    const maxRaised = Math.max(1, ...participants.map((p) => p.raised));
+    const viewedParticipant = rows.find((p) => p.id === viewMemberId);
 
-    // Original (desc) index → real rank number, independent of the display sort.
-    const rankOf = (p: ParticipantRow) => filtered.indexOf(p) + 1;
+    // Rank comes from the server ordering: desc → position from the top of the
+    // (filtered) list; asc → from the bottom.
+    const rankAt = (i: number) => sortDesc
+        ? (pageClamped - 1) * pageSize + i + 1
+        : total - (pageClamped - 1) * pageSize - i;
     const donorBarPct   = (p: ParticipantRow) => { const t = donorsPerParticipant ?? p.targetDonors; return t > 0 ? Math.min(100, Math.round((p.donorsAdded / t) * 100)) : 0; };
     const targetOf      = (p: ParticipantRow) => donorsPerParticipant ?? p.targetDonors;
     const raisedBarPct  = (p: ParticipantRow) => perParticipantGoal && perParticipantGoal > 0
         ? Math.min(100, Math.round((p.raised / perParticipantGoal) * 100))
-        : Math.min(100, Math.round((p.raised / maxRaised) * 100));
+        : Math.min(100, Math.round((p.raised / Math.max(1, maxRaised)) * 100));
 
     function goPage(n: number) {
-        setPage(Math.min(totalPages, Math.max(1, n)));
+        const target = Math.min(totalPages, Math.max(1, n));
+        setPage(target);
+        fetchPage(target);
         // Keep the user on the table — a shorter page can otherwise shift the scroll past this section.
         sectionRef.current?.scrollIntoView({ block: "start" });
     }
+
+    function handleSearchChange(q: string) {
+        setSearch(q);
+        if (searchTimer.current) clearTimeout(searchTimer.current);
+        searchTimer.current = setTimeout(() => {
+            setPage(1);
+            fetchPage(1, q);
+        }, 300);
+    }
+
+    function toggleSort() {
+        const desc = !sortDesc;
+        setSortDesc(desc);
+        setPage(1);
+        fetchPage(1, search, desc);
+    }
+
+    // Refetch the current page after add/edit/remove so the list stays fresh.
+    function refresh() { fetchPage(pageClamped); }
 
     function Avatar({ p, size }: { p: ParticipantRow; size: string }) {
         return (
@@ -198,7 +274,7 @@ export default function ParticipantsTable({ participants, isOrganizer, campaignS
                     type="text"
                     placeholder="Search by name, email, or Status"
                     value={search}
-                    onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+                    onChange={(e) => handleSearchChange(e.target.value)}
                     className="w-full rounded-xl border border-[#e7e9eb] bg-white py-2.5 pl-10 pr-3 text-sm text-[#003060] placeholder:text-[#9aa7b8] shadow-[0px_1px_2px_0px_rgba(0,48,96,0.04)] focus:border-[#0268c0] focus:outline-none focus:ring-2 focus:ring-[#0268c0]/20"
                 />
             </div>
@@ -219,7 +295,7 @@ export default function ParticipantsTable({ participants, isOrganizer, campaignS
                                 <thead>
                                     <tr className="bg-[#0268c0] text-white">
                                         <th className="py-3.5 pl-6 pr-2 text-left">
-                                            <button onClick={() => setSortDesc((s) => !s)} className="inline-flex items-center gap-1.5 text-[13px] font-semibold">
+                                            <button onClick={toggleSort} className="inline-flex items-center gap-1.5 text-[13px] font-semibold">
                                                 Rank <SortIcon />
                                             </button>
                                         </th>
@@ -233,10 +309,12 @@ export default function ParticipantsTable({ participants, isOrganizer, campaignS
                                         </th>
                                     </tr>
                                 </thead>
-                                {!isEmpty && !collapsed && (
+                                {!collapsed && (loading || rows.length > 0) && (
                                     <tbody>
-                                        {paginated.map((p) => {
-                                            const rank = rankOf(p);
+                                        {loading
+                                            ? Array.from({ length: Math.min(pageSize, 6) }).map((_, i) => <SkeletonRow key={`sk${i}`} />)
+                                            : rows.map((p, i) => {
+                                            const rank = rankAt(i);
                                             return (
                                                 <tr key={p.id} className="border-b border-[#eef1f4] last:border-0 transition-colors hover:bg-[#f7f9fb]">
                                                     <td className="py-4 pl-6 pr-2">
@@ -275,15 +353,16 @@ export default function ParticipantsTable({ participants, isOrganizer, campaignS
                         {/* ── Mobile cards ── */}
                         <div className="md:hidden">
                             <div className="flex items-center justify-between bg-[#0268c0] px-4 py-3 text-white">
-                                <button onClick={() => setSortDesc((s) => !s)} className="inline-flex items-center gap-1.5 text-[13px] font-semibold">
+                                <button onClick={toggleSort} className="inline-flex items-center gap-1.5 text-[13px] font-semibold">
                                     Rank <SortIcon />
                                 </button>
                                 <button onClick={() => setCollapsed((c) => !c)} aria-label={collapsed ? "Expand" : "Collapse"} className="inline-flex h-6 w-6 items-center justify-center rounded text-white/90 hover:bg-white/15">
                                     <svg className={`h-4 w-4 transition-transform ${collapsed ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 15l6-6 6 6" /></svg>
                                 </button>
                             </div>
-                            {!isEmpty && !collapsed && paginated.map((p) => {
-                                const rank = rankOf(p);
+                            {loading && !collapsed && Array.from({ length: Math.min(pageSize, 6) }).map((_, i) => <SkeletonCard key={`skm${i}`} />)}
+                            {!loading && !collapsed && rows.map((p, i) => {
+                                const rank = rankAt(i);
                                 return (
                                     <div key={p.id} className="border-b border-[#eef1f4] px-4 py-3.5 last:border-0">
                                         <div className="flex items-center gap-2.5">
@@ -320,20 +399,20 @@ export default function ParticipantsTable({ participants, isOrganizer, campaignS
                         <TableEmptyState
                             title="No matching participants"
                             subtitle="No participants match your search. Try a different name or keyword."
-                            action={{ label: "Clear search", onClick: () => { setSearch(""); setPage(1); }, variant: "secondary" }}
+                            action={{ label: "Clear search", onClick: () => { setSearch(""); setPage(1); fetchPage(1, ""); }, variant: "secondary" }}
                         />
                     )
                 )}
             </div>
 
             {/* Pagination */}
-            {paginated.length > 0 && (
+            {total > 0 && (
                 <div className="mt-4 flex flex-col items-center justify-between gap-3 sm:flex-row">
                     <label className="flex items-center gap-2 text-[13px] font-medium text-[#7e8a96]">
                         Show per page:
                         <select
                             value={pageSize}
-                            onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1); sectionRef.current?.scrollIntoView({ block: "start" }); }}
+                            onChange={(e) => { const n = Number(e.target.value); setPageSize(n); setPage(1); fetchPage(1, search, sortDesc, n); sectionRef.current?.scrollIntoView({ block: "start" }); }}
                             className="rounded-lg border border-[#e7e9eb] bg-white px-2.5 py-1.5 text-[13px] font-semibold text-[#003060] focus:border-[#0268c0] focus:outline-none"
                         >
                             {PAGE_SIZES.map((s) => <option key={s} value={s}>{s}</option>)}
@@ -366,11 +445,11 @@ export default function ParticipantsTable({ participants, isOrganizer, campaignS
             )}
 
             {isOrganizer && addOpen && (
-                <AddParticipantModal campaignSlug={campaignSlug} onClose={() => setAddOpen(false)} />
+                <AddParticipantModal campaignSlug={campaignSlug} onClose={() => { setAddOpen(false); refresh(); }} />
             )}
             {/* Row action menu — portalled so the table's overflow doesn't clip it */}
             {!readOnly && mounted && menuFor && (() => {
-                const p = participants.find((x) => x.id === menuFor);
+                const p = rows.find((x) => x.id === menuFor);
                 if (!p) return null;
                 const item = "flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-[13px] font-medium transition-colors";
                 return createPortal(
@@ -407,10 +486,10 @@ export default function ParticipantsTable({ participants, isOrganizer, campaignS
                 />
             )}
             {editMemberId && (
-                <EditParticipantModal memberId={editMemberId} campaignSlug={campaignSlug} onClose={() => setEditMemberId(null)} />
+                <EditParticipantModal memberId={editMemberId} campaignSlug={campaignSlug} onClose={() => { setEditMemberId(null); refresh(); }} />
             )}
             {removeId && (() => {
-                const p = participants.find((x) => x.id === removeId);
+                const p = rows.find((x) => x.id === removeId);
                 return (
                     <RemoveParticipantModal
                         memberId={removeId}
@@ -418,7 +497,7 @@ export default function ParticipantsTable({ participants, isOrganizer, campaignS
                         name={p?.name ?? "this participant"}
                         raised={p?.raised ?? 0}
                         isSelf={removeId === myMemberId}
-                        onClose={() => setRemoveId(null)}
+                        onClose={() => { setRemoveId(null); refresh(); }}
                     />
                 );
             })()}
