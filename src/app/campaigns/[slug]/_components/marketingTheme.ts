@@ -14,15 +14,17 @@ export const ORANGE = "#f47435";
    crops with a baked border/rounded corners and don't tile). Each tile is
    either an exact measured repeat period of the pattern (geometric: both axes;
    trophy/sports/abstract: horizontal; athletic: vertical) or mirror-completed
-   on the axis whose period doesn't fit inside the crop. `size` is the CSS
-   background-size — half the tile's intrinsic width, which keeps the motif at
-   the same display scale as the original 435px swatch shown at 217px. */
+   on the axis whose period doesn't fit inside the crop.
+   `size` is the CSS background-size at the Figma hero's motif scale: its
+   1920px band export repeats every 484px (sports tile intrinsic period 318px →
+   ×1.522), expressed in vw so the pattern scales with the viewport exactly
+   like the full-bleed reference export does (484/1920 = 25.2vw etc.). */
 export const THEME_TILES: Record<string, { src: string; size: string }> = {
-    athletic:    { src: "/assets/campaigns/tiles/theme-athletic-tile.png",  size: "399px auto"   },
-    sports:      { src: "/assets/campaigns/tiles/theme-sports-tile.png",    size: "159px auto"   },
-    trophy_wall: { src: "/assets/campaigns/tiles/theme-trophy-tile.png",    size: "124px auto"   },
-    geometric:   { src: "/assets/campaigns/tiles/theme-geometric-tile.png", size: "117.5px auto" },
-    abstract:    { src: "/assets/campaigns/tiles/theme-abstract-tile.png",  size: "127.5px auto" },
+    athletic:    { src: "/assets/campaigns/tiles/theme-athletic-tile.png",  size: "63.3vw auto"  },
+    sports:      { src: "/assets/campaigns/tiles/theme-sports-tile.png",    size: "25.2vw auto"  },
+    trophy_wall: { src: "/assets/campaigns/tiles/theme-trophy-tile.png",    size: "19.65vw auto" },
+    geometric:   { src: "/assets/campaigns/tiles/theme-geometric-tile.png", size: "18.65vw auto" },
+    abstract:    { src: "/assets/campaigns/tiles/theme-abstract-tile.png",  size: "20.2vw auto"  },
     // "logo" has no pattern — the band shows the accent colour alone.
 };
 
