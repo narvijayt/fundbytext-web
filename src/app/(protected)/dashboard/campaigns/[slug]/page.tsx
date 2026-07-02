@@ -677,13 +677,19 @@ export default async function CampaignDetailPage({
                                 </div>
                             </div>
                             {myTarget > 0 && (
-                                <div className="rounded-xl border border-[#eef1f4] bg-[#fbfcfd] px-4 py-3.5">
-                                    <div className="mb-2 flex items-center justify-between">
-                                        <span className="text-xs font-semibold text-[#7e8a96]">Donor target progress</span>
-                                        <span className="text-xs font-bold text-[#003060]">{myAdded} of {myTarget}</span>
+                                <div className="space-y-3">
+                                    <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+                                        <p className="text-[18px] font-black leading-none text-[#003060]">
+                                            {myAdded}{" "}
+                                            <span className="text-[13px] font-medium text-[#7e8a96]">donors added</span>
+                                        </p>
+                                        <p className="text-[13px] text-[#9aa7b8]">{myTarget} donor target</p>
                                     </div>
                                     <StripedBar pct={donorPct} color="orange" />
-                                    <p className="mt-2 text-[11px] font-medium text-[#9aa7b8]">{donorPct}% of your donor target reached</p>
+                                    <p className="text-xs text-[#9aa7b8]">
+                                        <span className="font-semibold text-[#003060]">{donorPct}%</span> of your donor target
+                                        <span className="float-right">{Math.max(0, myTarget - myAdded)} more to go</span>
+                                    </p>
                                 </div>
                             )}
                         </div>
