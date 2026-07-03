@@ -94,7 +94,17 @@ export default function ParticipantDetailModal({ memberId, myMemberId, campaignS
             >
                 {/* Header */}
                 <div className="flex shrink-0 items-center justify-between gap-3 bg-[#0268c0] px-5 py-4 text-white">
-                    <h2 id="participant-detail-title" className="text-[16px] font-bold">Participant Details</h2>
+                    <div className="flex min-w-0 items-center gap-3">
+                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/15">
+                            <svg className="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" /><circle cx="12" cy="7" r="4" />
+                            </svg>
+                        </span>
+                        <div className="min-w-0">
+                            <h2 id="participant-detail-title" className="text-[16px] font-bold leading-tight">View Participant</h2>
+                            <p className="text-[12px] text-white/75">Read-only participant overview</p>
+                        </div>
+                    </div>
                     <button onClick={close} aria-label="Close" className="-mr-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white/80 transition-colors hover:bg-white/15 hover:text-white">
                         <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} strokeLinecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
                     </button>
@@ -134,13 +144,13 @@ export default function ParticipantDetailModal({ memberId, myMemberId, campaignS
 
                             {/* Stats */}
                             <div className="grid grid-cols-2 gap-3">
-                                <div className="rounded-2xl border border-[#e7e9eb] bg-[#f7f9fb] p-3.5 text-center">
-                                    <p className="text-[20px] font-black text-[#003060]">{fmt(raised)}</p>
-                                    <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#9aa7b8]">Raised</p>
+                                <div className="rounded-2xl border border-[#d3f2e0] bg-[#eafaf1] p-3.5 text-center">
+                                    <p className="text-[20px] font-black text-[#28c45d]">{fmt(raised)}</p>
+                                    <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#7e8a96]">Raised</p>
                                 </div>
-                                <div className="rounded-2xl border border-[#e7e9eb] bg-[#f7f9fb] p-3.5 text-center">
-                                    <p className="text-[20px] font-black text-[#003060]">{member._count.donors}</p>
-                                    <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#9aa7b8]">Donors</p>
+                                <div className="rounded-2xl border border-[#d8e8f8] bg-[#eef5fc] p-3.5 text-center">
+                                    <p className="text-[20px] font-black text-[#0268c0]">{member._count.donors}</p>
+                                    <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#7e8a96]">Donors</p>
                                 </div>
                             </div>
 
