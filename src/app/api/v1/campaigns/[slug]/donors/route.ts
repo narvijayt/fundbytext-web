@@ -32,7 +32,7 @@ const postSchema = z.object({
     participant_view:   z.boolean().optional(),                  // true = added while in participant view
     // Optional suggested donation amount (cents) prefilled at donate time.
     prefill_amount_cents: z.number().int().min(0).max(100_000_000).nullable().optional(),
-});
+}).refine((d) => Boolean(d.email || d.phone), { message: "An email or phone number is required." });
 
 // Clamp a suggested prefill amount (cents) to what a donor could actually give.
 // Fixed-goal individual campaigns can't exceed the remaining (goal − raised);
