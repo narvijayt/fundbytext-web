@@ -4,7 +4,7 @@ import { useRef, useState } from "react";
 import Link from "next/link";
 import type { AdminDonorRow } from "../_lib/donors-query";
 
-const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
+const PAGE_SIZE_OPTIONS = [5, 10, 25, 50, 100];
 const STATUS_FILTERS = ["all", "donated", "contacted", "not_donated"] as const;
 const STATUS_LABEL: Record<string, string> = { all: "All", donated: "Donated", contacted: "Contacted", not_donated: "Not Donated" };
 

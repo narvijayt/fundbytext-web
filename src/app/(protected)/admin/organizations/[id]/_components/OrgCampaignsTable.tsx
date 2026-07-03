@@ -4,7 +4,7 @@ import { useRef, useState } from "react";
 import Link from "next/link";
 import type { OrgCampaignRow } from "../_lib/query";
 
-const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
+const PAGE_SIZE_OPTIONS = [5, 10, 25, 50, 100];
 const STATUS_FILTERS = ["all", "active", "upcoming", "draft", "completed"] as const;
 
 const STATUS_COLORS: Record<string, string> = {

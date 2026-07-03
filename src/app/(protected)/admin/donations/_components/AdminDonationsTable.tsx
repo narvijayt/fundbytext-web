@@ -5,7 +5,7 @@ import Link from "next/link";
 import FlagDonationButton from "./FlagDonationButton";
 import type { AdminDonationRow } from "../_lib/query";
 
-const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
+const PAGE_SIZE_OPTIONS = [5, 10, 25, 50, 100];
 const STATUS_FILTERS = ["all", "flagged", "anonymous"] as const;
 
 const TH_CLS     = "px-4 py-3.5 text-left text-[13px] font-semibold";

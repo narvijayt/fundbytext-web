@@ -73,7 +73,7 @@ type Props = {
     readOnly?:             boolean;
 };
 
-const PAGE_SIZES = [10, 25, 50];
+const PAGE_SIZES = [5, 10, 25, 50];
 
 // Animated placeholder shown while a page is being fetched (matches the donors table).
 const Bar = ({ w }: { w: string }) => <div className={`h-3.5 ${w} rounded-full bg-gray-200`} />;

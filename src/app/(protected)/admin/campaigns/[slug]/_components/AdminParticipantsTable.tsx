@@ -47,7 +47,7 @@ type Props = {
     donorsPerParticipant: number | null;
 };
 
-const PAGE_SIZES = [10, 25, 50];
+const PAGE_SIZES = [5, 10, 25, 50];
 const SELECT_CLS = "rounded-xl border border-[#e7e9eb] bg-white px-3 py-2.5 text-[13px] font-medium text-[#003060] shadow-[0px_1px_2px_0px_rgba(0,48,96,0.04)] transition-colors focus:border-[#0268c0] focus:outline-none focus:ring-2 focus:ring-[#0268c0]/20";
 
 function Avatar({ p, size = "h-9 w-9" }: { p: AdminParticipant; size?: string }) {

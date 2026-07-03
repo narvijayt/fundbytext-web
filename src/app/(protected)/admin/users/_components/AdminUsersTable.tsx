@@ -5,7 +5,7 @@ import Link from "next/link";
 import CreateUserButton from "./CreateUserButton";
 import type { AdminUserRow } from "../_lib/query";
 
-const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
+const PAGE_SIZE_OPTIONS = [5, 10, 25, 50, 100];
 const USER_FILTERS = ["all", "suspended", "admin", "deleted"] as const;
 
 const TH_CLS     = "px-4 py-3.5 text-left text-[13px] font-semibold";
