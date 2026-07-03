@@ -26,10 +26,11 @@ type Ctx = { params: Promise<{ slug: string }> };
 const schema = z.object({
     first_name:        z.string().min(1).max(100),
     last_name:         z.string().min(1).max(100),
-    email:             z.string().email().max(255).transform(s => s.toLowerCase().trim()).nullable().optional(),
+    // Email is required — it's used to create the participant's account. Phone optional.
+    email:             z.string().email().max(255).transform(s => s.toLowerCase().trim()),
     phone:             z.string().max(20).optional().nullable(),
     profile_photo_url: z.string().url().max(2048).nullable().optional(),
-}).refine((d) => d.email || d.phone, { message: "Email or phone is required" });
+});
 
 // Paginated, ranked participant list. Ranking is by amount raised (desc), so the
 // full member set is aggregated server-side and only the requested page is returned.

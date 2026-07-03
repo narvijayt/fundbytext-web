@@ -593,8 +593,8 @@ export default function SetupWizard({
     // ── Participant / Donor API calls ──────────────────────────────────────
 
     async function addParticipant() {
-        if (!addFirst || !addLast || (!addEmail && !addPhone)) {
-            setAlertMsg("First name, last name, and email or phone are required.");
+        if (!addFirst || !addLast || !addEmail) {
+            setAlertMsg("First name, last name, and email are required (email is used to create their account).");
             return;
         }
         setAddingMember(true);

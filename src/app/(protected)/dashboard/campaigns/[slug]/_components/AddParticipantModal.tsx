@@ -76,7 +76,9 @@ export default function AddParticipantModal({ campaignSlug, onClose }: Props) {
         const errs: Record<string, string> = {};
         if (!firstName.trim()) errs.firstName = "First name is required.";
         if (!lastName.trim())  errs.lastName  = "Last name is required.";
-        if (!email && !phone)  errs.contact   = "Provide an email address or phone number.";
+        // Email is required — it creates the participant's account. Phone is optional.
+        if (!email.trim())     errs.email = "Email is required.";
+        else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) errs.email = "Enter a valid email address.";
         return errs;
     }
 
@@ -96,7 +98,7 @@ export default function AddParticipantModal({ campaignSlug, onClose }: Props) {
             body: JSON.stringify({
                 first_name: firstName.trim(),
                 last_name:  lastName.trim(),
-                email:      email.trim() || null,
+                email:      email.trim(),
                 phone:      phone.trim() || null,
                 profile_photo_url: photoUrl,
             }),
@@ -204,25 +206,24 @@ export default function AddParticipantModal({ campaignSlug, onClose }: Props) {
                             <input
                                 type="email"
                                 value={email}
-                                onChange={(e) => { setEmail(e.target.value); setFieldErrors((f) => ({ ...f, contact: "" })); }}
-                                className={fieldErrors.contact ? INPUT_ERR : INPUT}
+                                onChange={(e) => { setEmail(e.target.value); setFieldErrors((f) => ({ ...f, email: "" })); }}
+                                className={fieldErrors.email ? INPUT_ERR : INPUT}
                                 placeholder="jane@example.com"
                             />
+                            {fieldErrors.email
+                                ? <p className="mt-1 text-xs text-red-500">{fieldErrors.email}</p>
+                                : <p className="mt-1 text-xs text-[#9aa7b8]">Used to create their account and send the invite.</p>}
                         </div>
                         <div>
-                            <label className={LABEL}>Phone</label>
+                            <label className={LABEL}>Phone <span className="font-normal text-[#9aa7b8]">(optional)</span></label>
                             <input
                                 type="tel"
                                 value={phone}
-                                onChange={(e) => { setPhone(e.target.value); setFieldErrors((f) => ({ ...f, contact: "" })); }}
-                                className={fieldErrors.contact ? INPUT_ERR : INPUT}
+                                onChange={(e) => setPhone(e.target.value)}
+                                className={INPUT}
                                 placeholder="(555) 000-0000"
                             />
                         </div>
-
-                        {fieldErrors.contact
-                            ? <p className="text-xs text-red-500 sm:col-span-2">{fieldErrors.contact}</p>
-                            : <p className="text-xs text-[#9aa7b8] sm:col-span-2">At least one of email or phone is required.</p>}
 
                         {error && (
                             <p role="alert" className="rounded-lg bg-red-50 px-3.5 py-2.5 text-[13px] font-medium text-red-600 sm:col-span-2">{error}</p>
