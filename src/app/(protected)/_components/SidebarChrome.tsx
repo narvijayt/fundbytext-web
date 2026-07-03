@@ -7,6 +7,7 @@ import { usePathname, useRouter } from "next/navigation";
 import SidebarUserMenu from "./SidebarUserMenu";
 import SidebarCampaignsDropdown from "./SidebarCampaignsDropdown";
 import EditProfileModal from "./EditProfileModal";
+import ChangePasswordModal from "./ChangePasswordModal";
 
 const GRADIENT = "linear-gradient(to bottom, #0268c0 0%, #ffffff 28%, #ffffff 100%)";
 
@@ -92,7 +93,7 @@ function NewCampaign({ compact, onNavigate }: { compact?: boolean; onNavigate?: 
 }
 
 // ── Full content (lg aside + mobile drawer) ──────────────────────────────────
-function FullContent({ data, onNavigate, desktop, onEditProfile }: { data: SidebarData; onNavigate?: () => void; desktop?: boolean; onEditProfile: () => void }) {
+function FullContent({ data, onNavigate, desktop, onEditProfile, onChangePassword }: { data: SidebarData; onNavigate?: () => void; desktop?: boolean; onEditProfile: () => void; onChangePassword: () => void }) {
     return (
         <>
             {/* Browser: centered + slightly smaller. Mobile drawer: left-aligned. */}
@@ -119,7 +120,7 @@ function FullContent({ data, onNavigate, desktop, onEditProfile }: { data: Sideb
                 )}
             </nav>
             <div className="px-5 pb-5 pt-4">
-                <SidebarUserMenu firstName={data.firstName} lastName={data.lastName} photoUrl={data.photoUrl} orgName={data.orgName} role={data.role} onEditProfile={onEditProfile} />
+                <SidebarUserMenu firstName={data.firstName} lastName={data.lastName} photoUrl={data.photoUrl} orgName={data.orgName} role={data.role} onEditProfile={onEditProfile} onChangePassword={onChangePassword} />
             </div>
         </>
     );
@@ -184,7 +185,9 @@ function useLiveUnreadContacts(serverValue: number) {
 export default function SidebarChrome({ data }: { data: SidebarData }) {
     const [open, setOpen] = useState(false);
     const [editProfileOpen, setEditProfileOpen] = useState(false);
+    const [changePasswordOpen, setChangePasswordOpen] = useState(false);
     const openEditProfile = () => { setOpen(false); setEditProfileOpen(true); };
+    const openChangePassword = () => { setOpen(false); setChangePasswordOpen(true); };
     const liveData: SidebarData = { ...data, unreadContacts: useLiveUnreadContacts(data.unreadContacts) };
     const pathname = usePathname();
     // eslint-disable-next-line react-hooks/set-state-in-effect -- close the mobile drawer on route change
@@ -198,7 +201,7 @@ export default function SidebarChrome({ data }: { data: SidebarData }) {
         <>
             {/* Browser (lg+): full sidebar */}
             <aside className="hidden lg:flex w-64 shrink-0 flex-col h-screen" style={{ background: GRADIENT }}>
-                <FullContent data={liveData} desktop onEditProfile={openEditProfile} />
+                <FullContent data={liveData} desktop onEditProfile={openEditProfile} onChangePassword={openChangePassword} />
             </aside>
 
             {/* Tablet (md–lg): icon rail; the → button expands to the full sidebar */}
@@ -222,12 +225,13 @@ export default function SidebarChrome({ data }: { data: SidebarData }) {
                         <button type="button" onClick={() => setOpen(false)} aria-label="Close menu" className="absolute right-3 top-4 z-10 flex h-9 w-9 items-center justify-center rounded-lg text-[#003060] hover:bg-[#0268c0]/8">
                             <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
                         </button>
-                        <FullContent data={liveData} onNavigate={() => setOpen(false)} onEditProfile={openEditProfile} />
+                        <FullContent data={liveData} onNavigate={() => setOpen(false)} onEditProfile={openEditProfile} onChangePassword={openChangePassword} />
                     </aside>
                 </div>
             )}
 
             {editProfileOpen && <EditProfileModal onClose={() => setEditProfileOpen(false)} />}
+            {changePasswordOpen && <ChangePasswordModal onClose={() => setChangePasswordOpen(false)} />}
         </>
     );
 }

@@ -3,7 +3,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import Link from "next/link";
 
 export default function SidebarUserMenu({
     firstName,
@@ -12,6 +11,7 @@ export default function SidebarUserMenu({
     orgName,
     role,
     onEditProfile,
+    onChangePassword,
 }: {
     firstName: string;
     lastName:  string;
@@ -19,6 +19,7 @@ export default function SidebarUserMenu({
     orgName:   string | null;
     role?:     string | null;
     onEditProfile: () => void;
+    onChangePassword: () => void;
 }) {
     const [open, setOpen] = useState(false);
     const [imgError, setImgError] = useState(false);
@@ -87,15 +88,14 @@ export default function SidebarUserMenu({
                             <img src="/assets/dashboard/menu-edit.svg" alt="" className="h-5 w-5" />
                             Edit Profile
                         </button>
-                        <Link
-                            href="/dashboard/change-password"
-                            onClick={() => setOpen(false)}
-                            className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-[#005bac] hover:bg-gray-50 transition-colors"
+                        <button
+                            onClick={() => { setOpen(false); onChangePassword(); }}
+                            className="w-full flex items-center gap-3 px-4 py-3 text-left text-sm font-medium text-[#005bac] hover:bg-gray-50 transition-colors"
                         >
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img src="/assets/dashboard/menu-lock.svg" alt="" className="h-5 w-5" />
                             Change Password
-                        </Link>
+                        </button>
                         <button
                             onClick={handleLogout}
                             className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-[#005bac] hover:bg-gray-50 transition-colors"

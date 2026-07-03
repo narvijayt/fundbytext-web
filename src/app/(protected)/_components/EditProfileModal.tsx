@@ -7,28 +7,18 @@ import Image from "next/image";
 import { z } from "zod";
 
 // ── Types ─────────────────────────────────────────────────────
-type EditingField = "name" | "email" | "phone" | null;
 type FormState = { first_name: string; last_name: string; email: string; confirm_email: string; phone: string };
 type User = { first_name: string; last_name: string; email: string; phone: string | null; profile_photo_url: string | null };
 
-// Exact Figma (vuesax/linear/edit) glyph — inherits the row's text colour.
-function EditIcon() {
-    return (
-        <svg className="h-[18px] w-[18px] shrink-0" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
-            <path d="M9.16667 1.66667H7.5C3.33333 1.66667 1.66667 3.33333 1.66667 7.5V12.5C1.66667 16.6667 3.33333 18.3333 7.5 18.3333H12.5C16.6667 18.3333 18.3333 16.6667 18.3333 12.5V10.8333" />
-            <path d="M13.3667 2.51667L6.8 9.08333C6.55 9.33333 6.3 9.825 6.25 10.1833L5.89167 12.6917C5.75833 13.6 6.4 14.2333 7.30833 14.1083L9.81667 13.75C10.1667 13.7 10.6583 13.45 10.9167 13.2L17.4833 6.63333C18.6167 5.5 19.15 4.18333 17.4833 2.51667C15.8167 0.85 14.5 1.38333 13.3667 2.51667Z" />
-            <path d="M12.425 3.45833C12.9833 5.45 14.5417 7.00833 16.5417 7.575" />
-        </svg>
-    );
-}
-
-const FIELD_BOX = "flex min-h-[52px] items-center rounded-[12px] border border-[#d4dee7] bg-white px-4";
-const INPUT = "w-full rounded-[12px] border border-[#d4dee7] bg-white px-4 py-3 text-[15px] text-[#003060] placeholder:text-[#9aa7b8] focus:border-[#0268c0] focus:outline-none focus:ring-2 focus:ring-[#0268c0]/20";
-const LABEL = "mb-3 block text-[12px] font-black uppercase leading-none tracking-[1px] text-[#003060]";
+// Shared field styles — same tokens as the Create/Edit User modals.
+const INPUT     = "w-full rounded-[12px] border border-[#d4dee7] bg-white px-4 py-2.5 text-[15px] text-[#003060] placeholder:text-[#9aa7b8] transition-colors focus:border-[#0268c0] focus:outline-none focus:ring-2 focus:ring-[#0268c0]/20";
+const INPUT_ERR = "w-full rounded-[12px] border border-red-300 bg-white px-4 py-2.5 text-[15px] text-[#003060] placeholder:text-[#9aa7b8] transition-colors focus:border-red-400 focus:outline-none focus:ring-2 focus:ring-red-400/25";
+const LABEL     = "mb-1.5 block text-[12px] font-bold uppercase tracking-[0.5px] text-[#003060]";
 
 // ── Modal shell — portal overlay over the (still-mounted) page ──
 export default function EditProfileModal({ onClose }: { onClose: () => void }) {
     const [mounted, setMounted] = useState(false);
+    const [shown, setShown] = useState(false);
     const [user, setUser] = useState<User | null>(null);
 
     useEffect(() => { setMounted(true); }, []);
@@ -36,36 +26,41 @@ export default function EditProfileModal({ onClose }: { onClose: () => void }) {
         fetch("/api/v1/user/me").then((r) => r.json()).then((d) => setUser(d.user)).catch(() => {});
     }, []);
     useEffect(() => {
+        const raf = requestAnimationFrame(() => setShown(true));
+        const prev = document.body.style.overflow;
         document.body.style.overflow = "hidden";
-        return () => { document.body.style.overflow = ""; };
-    }, []);
-    useEffect(() => {
-        const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+        const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") close(); };
         window.addEventListener("keydown", onKey);
-        return () => window.removeEventListener("keydown", onKey);
-    }, [onClose]);
+        return () => { cancelAnimationFrame(raf); document.body.style.overflow = prev; window.removeEventListener("keydown", onKey); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    function close() { setShown(false); window.setTimeout(onClose, 170); }
 
     if (!mounted) return null;
 
     return createPortal(
         <div
-            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-[#0f1d43]/45 backdrop-blur-sm"
-            onClick={onClose}
+            className={`fixed inset-0 z-[100] flex items-center justify-center bg-[#0f1d43]/45 p-4 backdrop-blur-sm transition-opacity duration-200 motion-reduce:transition-none ${shown ? "opacity-100" : "opacity-0"}`}
+            onClick={close}
         >
             <div
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="edit-profile-title"
                 onClick={(e) => e.stopPropagation()}
-                className="flex max-h-[92vh] w-full max-w-[560px] flex-col overflow-hidden rounded-2xl bg-white shadow-[0px_16px_32px_0px_rgba(15,29,67,0.24)]"
+                className={`flex max-h-[calc(100vh-2rem)] w-full max-w-xl flex-col overflow-hidden rounded-2xl bg-white shadow-[0px_16px_40px_-8px_rgba(15,29,67,0.3)] transition-transform duration-200 motion-reduce:transition-none ${shown ? "scale-100" : "scale-95"}`}
             >
                 {/* Header */}
-                <div className="flex shrink-0 items-center justify-between border-b border-[#e8eaee] bg-[#0278de] px-6 py-4">
-                    <h2 className="text-[18px] font-bold leading-[1.15] text-white">Edit Profile</h2>
-                    <button onClick={onClose} aria-label="Close" className="text-white/90 transition-colors hover:text-white">
-                        <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
+                <div className="flex shrink-0 items-center justify-between gap-3 bg-[#0268c0] px-5 py-4 text-white">
+                    <h2 id="edit-profile-title" className="text-[16px] font-bold">Edit Profile</h2>
+                    <button onClick={close} aria-label="Close" className="-mr-1 flex h-9 w-9 items-center justify-center rounded-lg text-white/80 transition-colors hover:bg-white/15 hover:text-white active:bg-white/25">
+                        <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} strokeLinecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
                     </button>
                 </div>
 
                 {user ? (
-                    <ModalBody user={user} onClose={onClose} />
+                    <ModalBody user={user} onClose={close} />
                 ) : (
                     <div className="flex h-64 items-center justify-center"><span className="text-sm text-[#7e8a96]">Loading…</span></div>
                 )}
@@ -75,18 +70,17 @@ export default function EditProfileModal({ onClose }: { onClose: () => void }) {
     );
 }
 
-// ── Body + footer (edit-in-place form) ─────────────────────────
+// ── Body + footer (direct-edit form) ───────────────────────────
 function ModalBody({ user, onClose }: { user: User; onClose: () => void }) {
     const router = useRouter();
     const fileInputRef = useRef<HTMLInputElement>(null);
-    const [editing, setEditing] = useState<EditingField>(null);
+    const firstRef = useRef<HTMLInputElement>(null);
     const [imgError, setImgError] = useState(false);
     const [preview, setPreview] = useState<string | null>(null);
     const [photoFile, setPhotoFile] = useState<File | null>(null);
     const [serverError, setServerError] = useState<string | null>(null);
-    const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+    const [errors, setErrors] = useState<Record<string, string>>({});
     const [saving, setSaving] = useState(false);
-    const [saved, setSaved] = useState<User>(user);
 
     const [form, setForm] = useState<FormState>({
         first_name: user.first_name,
@@ -96,9 +90,14 @@ function ModalBody({ user, onClose }: { user: User; onClose: () => void }) {
         phone: user.phone ?? "",
     });
 
+    useEffect(() => { firstRef.current?.focus(); }, []);
+
+    // Ask for a confirmation only when the login email is actually being changed.
+    const emailChanged = form.email.trim().toLowerCase() !== user.email.trim().toLowerCase();
+
     function set(key: keyof FormState, value: string) {
         setForm((f) => ({ ...f, [key]: value }));
-        setFieldErrors((e) => { const n = { ...e }; delete n[key]; return n; });
+        setErrors((e) => { const n = { ...e }; delete n[key]; return n; });
     }
 
     function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -114,16 +113,14 @@ function ModalBody({ user, onClose }: { user: User; onClose: () => void }) {
     }
 
     function validate(): boolean {
-        const errors: Record<string, string> = {};
-        if (!form.first_name.trim()) errors.first_name = "Required";
-        if (!form.last_name.trim()) errors.last_name = "Required";
-        if (editing === "email") {
-            if (!form.email) errors.email = "Required";
-            else if (!z.email().safeParse(form.email).success) errors.email = "Invalid email";
-            if (form.email !== form.confirm_email) errors.confirm_email = "Emails do not match";
-        }
-        setFieldErrors(errors);
-        return Object.keys(errors).length === 0;
+        const e: Record<string, string> = {};
+        if (!form.first_name.trim()) e.first_name = "First name is required.";
+        if (!form.last_name.trim()) e.last_name = "Last name is required.";
+        if (!form.email.trim()) e.email = "Email is required.";
+        else if (!z.email().safeParse(form.email.trim()).success) e.email = "Enter a valid email address.";
+        if (emailChanged && form.email.trim() !== form.confirm_email.trim()) e.confirm_email = "Emails do not match.";
+        setErrors(e);
+        return Object.keys(e).length === 0;
     }
 
     async function handleSave() {
@@ -131,158 +128,126 @@ function ModalBody({ user, onClose }: { user: User; onClose: () => void }) {
         setSaving(true);
         setServerError(null);
 
-        let profile_photo_url = saved.profile_photo_url;
+        let profile_photo_url = user.profile_photo_url;
         if (photoFile) {
             const fd = new globalThis.FormData();
             fd.append("photo", photoFile);
             const uploadRes = await fetch("/api/v1/upload/profile-photo", { method: "POST", body: fd });
             if (!uploadRes.ok) {
                 const j = await uploadRes.json().catch(() => ({}));
-                setServerError(j.error ?? "Photo upload failed");
+                setServerError(typeof j.error === "string" ? j.error : "Photo upload failed");
                 setSaving(false);
                 return;
             }
             profile_photo_url = (await uploadRes.json()).url;
         }
 
-        const payload: Record<string, unknown> = {
-            first_name: form.first_name.trim(),
-            last_name: form.last_name.trim(),
-            phone: form.phone.trim() || null,
-            profile_photo_url,
-        };
-        if (editing === "email") payload.email = form.email;
-
         const res = await fetch("/api/v1/user/profile", {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload),
+            body: JSON.stringify({
+                first_name: form.first_name.trim(),
+                last_name: form.last_name.trim(),
+                email: form.email.trim(),
+                phone: form.phone.trim() || null,
+                profile_photo_url,
+            }),
         });
-        setSaving(false);
 
-        if (!res.ok) {
-            const j = await res.json().catch(() => ({}));
-            setServerError(j.error ?? "Failed to save");
+        if (res.ok) {
+            router.refresh();
+            onClose();
             return;
         }
 
-        const { user: updated } = await res.json();
-        setSaved(updated);
-        setEditing(null);
-        setPhotoFile(null);
-        setPreview(null);
-        router.refresh();
-        onClose();
+        const j = await res.json().catch(() => ({}));
+        const msg = typeof j.error === "string" ? j.error : "Failed to save changes.";
+        if (res.status === 409) setErrors({ email: msg });
+        else setServerError(msg);
+        setSaving(false);
     }
 
-    const photoSrc = preview ?? saved.profile_photo_url;
+    const photoSrc = preview ?? user.profile_photo_url;
     const displayName = `${form.first_name} ${form.last_name}`.trim();
 
     return (
-        <>
-            <div className="flex-1 overflow-y-auto px-6 py-6 sm:px-8">
-                {/* Change profile picture */}
-                <div className="flex items-center gap-5">
-                    <div className="flex h-[72px] w-[72px] shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#e7e9eb]">
+        <form
+            onSubmit={(e) => { e.preventDefault(); handleSave(); }}
+            className="flex flex-1 flex-col overflow-hidden"
+        >
+            <div className="grid flex-1 grid-cols-1 content-start gap-4 overflow-y-auto p-5 sm:grid-cols-2">
+                {/* Profile photo */}
+                <div className="flex items-center gap-4 rounded-[14px] border border-[#eef1f4] bg-[#f9fbfd] p-4 sm:col-span-2">
+                    <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#e7e9eb] ring-2 ring-white">
                         {photoSrc && !imgError ? (
-                            <Image src={photoSrc} alt={displayName} width={72} height={72} className="h-full w-full object-cover" onError={() => setImgError(true)} />
+                            <Image src={photoSrc} alt={displayName} width={64} height={64} className="h-full w-full object-cover" onError={() => setImgError(true)} />
                         ) : (
-                            <span className="text-2xl font-bold text-[#7e8a96]">{form.first_name[0]?.toUpperCase() ?? "?"}</span>
+                            <span className="text-xl font-bold text-[#7e8a96]">{form.first_name[0]?.toUpperCase() ?? "?"}</span>
                         )}
                     </div>
-                    <div className="flex flex-col items-start gap-2">
-                        <p className="text-[16px] font-medium text-[#003060]">Change Profile Picture</p>
-                        <button
-                            type="button"
-                            onClick={() => fileInputRef.current?.click()}
-                            className="rounded-full bg-gradient-to-b from-[#ea6725] to-[#ff8c53] px-5 py-1.5 text-[12px] font-medium tracking-[0.25px] text-white shadow-[0px_8px_15px_-8px_#ea6725] transition-[filter] hover:brightness-105"
-                        >
-                            Upload
-                        </button>
+                    <div className="min-w-0 flex-1">
+                        <p className="text-[14px] font-semibold text-[#003060]">Profile photo</p>
+                        <p className="mt-0.5 text-[12px] text-[#9aa7b8]">JPG, PNG, WebP or GIF · Max 5MB</p>
                     </div>
+                    <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="shrink-0 rounded-full bg-gradient-to-b from-[#ea6725] to-[#ff8c53] px-5 py-2 text-[13px] font-semibold text-white shadow-[0px_8px_15px_-8px_#ea6725] transition-[filter] hover:brightness-105"
+                    >
+                        {photoSrc ? "Change" : "Upload"}
+                    </button>
                     <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif" className="hidden" onChange={handlePhotoChange} />
                 </div>
 
-                {/* Fields */}
-                <div className="mt-7 space-y-6">
-                    {/* Full name */}
-                    <div>
-                        <label className={LABEL}>Full Name</label>
-                        {editing === "name" ? (
-                            <div className="grid grid-cols-2 gap-3">
-                                <div>
-                                    <input value={form.first_name} onChange={(e) => set("first_name", e.target.value)} placeholder="First Name" className={INPUT} />
-                                    {fieldErrors.first_name && <p className="mt-1 text-xs text-red-500">{fieldErrors.first_name}</p>}
-                                </div>
-                                <div>
-                                    <input value={form.last_name} onChange={(e) => set("last_name", e.target.value)} placeholder="Last Name" className={INPUT} />
-                                    {fieldErrors.last_name && <p className="mt-1 text-xs text-red-500">{fieldErrors.last_name}</p>}
-                                </div>
-                            </div>
-                        ) : (
-                            <FieldDisplay value={displayName} onEdit={() => setEditing("name")} />
-                        )}
-                    </div>
-
-                    {/* Email */}
-                    <div>
-                        <label className={LABEL}>Email Address</label>
-                        {editing === "email" ? (
-                            <div className="space-y-5">
-                                <div>
-                                    <input type="email" value={form.email} onChange={(e) => set("email", e.target.value)} placeholder="Enter a valid email address" className={INPUT} />
-                                    {fieldErrors.email && <p className="mt-1 text-xs text-red-500">{fieldErrors.email}</p>}
-                                </div>
-                                <div>
-                                    <label className={LABEL}>Confirm Email Address</label>
-                                    <input type="email" value={form.confirm_email} onChange={(e) => set("confirm_email", e.target.value)} placeholder="Confirm valid email address" className={INPUT} />
-                                    {fieldErrors.confirm_email && <p className="mt-1 text-xs text-red-500">{fieldErrors.confirm_email}</p>}
-                                </div>
-                            </div>
-                        ) : (
-                            <FieldDisplay value={form.email} onEdit={() => { set("confirm_email", ""); setEditing("email"); }} />
-                        )}
-                    </div>
-
-                    {/* Phone */}
-                    <div>
-                        <label className={LABEL}>Phone</label>
-                        {editing === "phone" ? (
-                            <div className="flex min-h-[52px] items-center overflow-hidden rounded-[12px] border border-[#d4dee7] focus-within:border-[#0268c0] focus-within:ring-2 focus-within:ring-[#0268c0]/20">
-                                <span className="shrink-0 self-stretch border-r border-[#d4dee7] bg-[#f6f8fa] px-4 py-3 text-[15px] text-[#7e8a96]">+1</span>
-                                <input type="tel" value={form.phone} onChange={(e) => set("phone", e.target.value)} placeholder="(214) 987-6543" className="w-full px-4 py-3 text-[15px] text-[#003060] placeholder:text-[#9aa7b8] focus:outline-none" />
-                            </div>
-                        ) : (
-                            <FieldDisplay value={form.phone ? `+1 ${form.phone}` : "—"} onEdit={() => setEditing("phone")} />
-                        )}
-                    </div>
-
-                    {serverError && <p className="text-sm text-red-500">{serverError}</p>}
+                {/* Name */}
+                <div>
+                    <label className={LABEL}>First Name</label>
+                    <input ref={firstRef} value={form.first_name} onChange={(e) => set("first_name", e.target.value)} className={errors.first_name ? INPUT_ERR : INPUT} placeholder="Jane" />
+                    {errors.first_name && <p className="mt-1 text-xs text-red-500">{errors.first_name}</p>}
                 </div>
+                <div>
+                    <label className={LABEL}>Last Name</label>
+                    <input value={form.last_name} onChange={(e) => set("last_name", e.target.value)} className={errors.last_name ? INPUT_ERR : INPUT} placeholder="Smith" />
+                    {errors.last_name && <p className="mt-1 text-xs text-red-500">{errors.last_name}</p>}
+                </div>
+
+                {/* Email */}
+                <div className="sm:col-span-2">
+                    <label className={LABEL}>Email Address</label>
+                    <input type="email" value={form.email} onChange={(e) => set("email", e.target.value)} className={errors.email ? INPUT_ERR : INPUT} placeholder="jane@example.com" />
+                    {errors.email && <p className="mt-1 text-xs text-red-500">{errors.email}</p>}
+                </div>
+
+                {/* Confirm email — only when the address is being changed */}
+                {emailChanged && (
+                    <div className="sm:col-span-2">
+                        <label className={LABEL}>Confirm New Email</label>
+                        <input type="email" value={form.confirm_email} onChange={(e) => set("confirm_email", e.target.value)} className={errors.confirm_email ? INPUT_ERR : INPUT} placeholder="Re-enter your new email" />
+                        {errors.confirm_email && <p className="mt-1 text-xs text-red-500">{errors.confirm_email}</p>}
+                    </div>
+                )}
+
+                {/* Phone */}
+                <div className="sm:col-span-2">
+                    <label className={LABEL}>Phone <span className="font-medium normal-case tracking-normal text-[#9aa7b8]">(optional)</span></label>
+                    <div className="flex overflow-hidden rounded-[12px] border border-[#d4dee7] bg-white transition-colors focus-within:border-[#0268c0] focus-within:ring-2 focus-within:ring-[#0268c0]/20">
+                        <span className="shrink-0 self-stretch border-r border-[#d4dee7] bg-[#f6f8fa] px-4 py-2.5 text-[15px] text-[#7e8a96]">+1</span>
+                        <input type="tel" value={form.phone} onChange={(e) => set("phone", e.target.value)} placeholder="(214) 987-6543" className="w-full px-4 py-2.5 text-[15px] text-[#003060] placeholder:text-[#9aa7b8] focus:outline-none" />
+                    </div>
+                </div>
+
+                {serverError && <p role="alert" className="rounded-lg bg-red-50 px-3.5 py-2.5 text-[13px] font-medium text-red-600 sm:col-span-2">{serverError}</p>}
             </div>
 
             {/* Footer */}
-            <div className="flex shrink-0 items-center justify-end gap-2 border-t border-[#e8eaee] bg-white px-6 py-4">
-                <button onClick={onClose} className="rounded-[10px] border border-[#dde0e3] px-4 pt-2.5 pb-3 text-[14px] font-medium leading-none text-[#003060] transition-colors hover:bg-gray-50">
+            <div className="flex shrink-0 justify-end gap-3 border-t border-[#eef1f4] px-5 py-4">
+                <button type="button" onClick={onClose} disabled={saving} className="rounded-[10px] border border-[#d4dee7] px-5 py-2.5 text-[14px] font-semibold text-[#003060] transition-colors hover:bg-gray-50 disabled:opacity-60">
                     Cancel
                 </button>
-                <button onClick={handleSave} disabled={saving} className="rounded-[10px] bg-[#0268c0] px-5 pt-2.5 pb-3 text-[14px] font-medium leading-none text-white transition-[filter] hover:brightness-110 disabled:opacity-60">
+                <button type="submit" disabled={saving} className="rounded-[10px] bg-[#0268c0] px-5 py-2.5 text-[14px] font-semibold text-white transition-[filter] hover:brightness-110 disabled:opacity-60">
                     {saving ? "Saving…" : "Save Changes"}
                 </button>
             </div>
-        </>
-    );
-}
-
-// ── Display row (value + Edit link) ────────────────────────────
-function FieldDisplay({ value, onEdit }: { value: string; onEdit: () => void }) {
-    return (
-        <div className={`${FIELD_BOX} justify-between`}>
-            <span className="truncate text-[15px] font-medium text-[#7e8a96]">{value}</span>
-            <button onClick={onEdit} className="ml-3 flex shrink-0 items-center gap-2 text-[#4b5563] transition-colors hover:text-[#0268c0]">
-                <EditIcon />
-                <span className="text-[14px] font-medium">Edit</span>
-            </button>
-        </div>
+        </form>
     );
 }
