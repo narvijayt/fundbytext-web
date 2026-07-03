@@ -12,11 +12,11 @@ import type { ModalParticipant } from "./DonateModal";
 
 const A = "/assets/marketing";
 
-// Diagonal white stripes overlaid on the green "raised" fill (matches the design).
-const RAISED_STRIPES: React.CSSProperties = {
-    backgroundImage:
-        "repeating-linear-gradient(135deg, rgba(255,255,255,0.35) 0px, rgba(255,255,255,0.35) 3.5px, transparent 3.5px, transparent 21.6px)",
-};
+// Green-on-green diagonal stripes for the "raised" fill + a subtle striped gray
+// track — matches the dashboard CampaignProgressBar exactly (so the public page
+// and the dashboard campaign view read as the same bar).
+const GREEN_STRIPES = "repeating-linear-gradient(-45deg,#33cc6b,#33cc6b 7px,#23b257 7px,#23b257 14px)";
+const TRACK_STRIPES = "repeating-linear-gradient(-45deg,#eff1f4,#eff1f4 7px,#e4e7eb 7px,#e4e7eb 14px)";
 
 function fmtUSD(n: number) {
     return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(n);
@@ -169,16 +169,19 @@ export default function MarketingDetails({
                                 </p>
                             )}
                         </div>
-                        {/* Progress bar — green striped "raised" fill on a textured track (per design) */}
-                        <div className="h-[32px] relative rounded-full w-full bg-[#f2f2f2] overflow-hidden">
-                            <span className="absolute right-0 top-1/2 -translate-y-1/2 h-[32px] w-[125px] opacity-70">
-                                <Image src={`${A}/hero/progress-track-texture.svg`} alt="" width={125} height={32} className="absolute inset-0 block max-w-none size-full" />
-                            </span>
+                        {/* Progress bar — green-on-green striped "raised" fill on a striped gray
+                            track, matching the dashboard CampaignProgressBar. */}
+                        <div className="h-[32px] relative rounded-full w-full overflow-hidden" style={{ background: TRACK_STRIPES }}>
+                            <style>{`@keyframes mkt-pb-shimmer{0%{transform:translateX(-120%)}100%{transform:translateX(400%)}}`}</style>
                             <div
                                 className="absolute left-0 top-0 h-full overflow-hidden rounded-full transition-[width] duration-1000 ease-out"
-                                style={{ width: `${barW}%`, minWidth: raised > 0 ? 40 : 0, background: "linear-gradient(90deg, #28c45d 0%, #34d56a 100%)" }}
+                                style={{ width: `${barW}%`, minWidth: raised > 0 ? 44 : 0, background: GREEN_STRIPES }}
                             >
-                                <span aria-hidden className="absolute inset-0" style={RAISED_STRIPES} />
+                                <span
+                                    aria-hidden
+                                    className="absolute inset-y-0 left-0 w-[35%]"
+                                    style={{ background: "linear-gradient(90deg,transparent,rgba(255,255,255,0.5) 50%,transparent)", animation: "mkt-pb-shimmer 2.2s ease-in-out infinite" }}
+                                />
                             </div>
                             <span aria-hidden className="absolute inset-0 pointer-events-none rounded-[inherit]" style={{ boxShadow: "inset 0px 2px 8px 0px rgba(0,48,96,0.08)" }} />
                         </div>

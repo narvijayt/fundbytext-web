@@ -7,11 +7,10 @@ import type { MarketingTheme } from "./marketingTheme";
 
 const A = "/assets/marketing";
 
-const STRIPES: React.CSSProperties = {
-    backgroundImage:
-        "repeating-linear-gradient(135deg, rgba(255,255,255,0.35) 0px, rgba(255,255,255,0.35) 3.5px, transparent 3.5px, transparent 21.6px)",
-};
-const GREEN = "linear-gradient(90deg, #28c45d 0%, #34d56a 100%)";
+// Green-on-green diagonal stripes + a subtle striped gray track — matches the
+// dashboard CampaignProgressBar and the public-page progress bar exactly.
+const GREEN_STRIPES = "repeating-linear-gradient(-45deg,#33cc6b,#33cc6b 7px,#23b257 7px,#23b257 14px)";
+const TRACK_STRIPES = "repeating-linear-gradient(-45deg,#eff1f4,#eff1f4 7px,#e4e7eb 7px,#e4e7eb 14px)";
 const MEDALS = ["medal-gold", "medal-silver", "medal-bronze"];
 const TINTS = [
     "linear-gradient(225deg, #ffe5b2 16.667%, #ffffff 43.333%)",
@@ -42,8 +41,7 @@ function Avatar({ name, url, className, ring }: { name: string; url: string | nu
 /* Green "$X Raised" pill (Layout A in-progress + highlighted rows). */
 function RaisedPill({ amount }: { amount: number }) {
     return (
-        <span className="relative shrink-0 overflow-hidden rounded-full px-[12px] py-[5px]" style={{ background: GREEN }}>
-            <span aria-hidden className="absolute inset-0" style={STRIPES} />
+        <span className="relative shrink-0 overflow-hidden rounded-full px-[12px] py-[5px]" style={{ background: GREEN_STRIPES }}>
             <span className="relative text-[12px] text-white whitespace-nowrap">
                 <span className="font-black">{fmt(amount)}</span>
                 <span className="font-medium"> Raised</span>
@@ -55,13 +53,11 @@ function RaisedPill({ amount }: { amount: number }) {
 /* Green "raised" bar on a gray track (Layout B podium + table). */
 function Bar({ raised, pct, goal, glow, showAmount = true }: { raised: number; pct: number; goal?: number | null; glow?: boolean; showAmount?: boolean }) {
     return (
-        <div className="flex-1 h-[32px] min-w-0 relative rounded-full bg-[#f2f2f2] overflow-hidden">
+        <div className="flex-1 h-[32px] min-w-0 relative rounded-full overflow-hidden" style={{ background: TRACK_STRIPES }}>
             <div
                 className="absolute left-0 top-0 h-full overflow-hidden rounded-full"
-                style={{ width: `${Math.max(pct, raised > 0 ? 12 : 0)}%`, background: GREEN, boxShadow: glow ? "0px 0px 12px 0px rgba(40,196,93,0.5)" : undefined }}
-            >
-                <span aria-hidden className="absolute inset-0" style={STRIPES} />
-            </div>
+                style={{ width: `${Math.max(pct, raised > 0 ? 12 : 0)}%`, background: GREEN_STRIPES, boxShadow: glow ? "0px 0px 12px 0px rgba(40,196,93,0.5)" : undefined }}
+            />
             {showAmount && (
                 <p className="absolute left-[12px] top-1/2 -translate-y-1/2 text-[14px] text-white whitespace-nowrap drop-shadow">
                     <span className="font-black" style={{ lineHeight: 1.25 }}>{fmt(raised)}</span>
