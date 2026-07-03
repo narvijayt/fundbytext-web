@@ -59,6 +59,16 @@ const STATUS_TIP: Record<string, string> = {
     not_donated: "This person hasn't donated to the campaign yet.",
 };
 
+// Tooltips for the Name-column and Associated-Participant badges (shown in the
+// same blue popover as the status badges).
+const BADGE_TIP = {
+    walkin:       "Donated through the shared campaign link without being added as a contact first.",
+    invalidEmail: "This email address looks invalid, so this donor may not have received their invite.",
+    addedByMe:    "You added this donor to the campaign.",
+    preAssigned:  "The organizer added this donor and assigned them to you.",
+    generalFund:  "Not assigned to a participant — this donation counts toward the campaign's general fund.",
+};
+
 // Compact numbered pager: 1 … around-current … N
 function pageList(current: number, total: number): (number | "…")[] {
     if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
@@ -402,18 +412,34 @@ export default function DonorsTable({ donors: initialDonors, initialTotal, campa
                                                         <div className="min-w-0">
                                                             <div className="flex items-center gap-1.5">
                                                                 <p className="truncate font-semibold text-[#003060]">{d.first_name} {d.last_name}</p>
-                                                                {!d.invite_token && <span className="shrink-0 whitespace-nowrap rounded bg-purple-50 px-1.5 py-0.5 text-[10px] font-semibold text-purple-600">Walk-in</span>}
+                                                                {!d.invite_token && (
+                                                                    <InfoBadgeTip tip={BADGE_TIP.walkin} className="shrink-0">
+                                                                        <span className="whitespace-nowrap rounded bg-purple-50 px-1.5 py-0.5 text-[10px] font-semibold text-purple-600">Walk-in</span>
+                                                                    </InfoBadgeTip>
+                                                                )}
                                                             </div>
                                                             <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
-                                                                {!d.email_valid && <span className="text-[10px] text-red-500">Invalid email</span>}
+                                                                {!d.email_valid && (
+                                                                    <InfoBadgeTip tip={BADGE_TIP.invalidEmail}>
+                                                                        <span className="whitespace-nowrap rounded bg-red-50 px-1.5 py-0.5 text-[10px] font-semibold text-red-500">Invalid email</span>
+                                                                    </InfoBadgeTip>
+                                                                )}
                                                                 {d.added_by_member && d.source !== "link_self" && d.source !== "self_added" && (() => {
                                                                     const addedByMe  = d.added_by_member.id === myMemberId;
                                                                     const adderIsOrg = d.added_by_member.roles.some(r => r.role === "organizer");
                                                                     if (!adderIsOrg) return null;
                                                                     if (isOrganizer && addedByMe)
-                                                                        return <span className="whitespace-nowrap rounded bg-orange-50 px-1.5 py-0.5 text-[10px] font-semibold text-orange-600">Added by me</span>;
+                                                                        return (
+                                                                            <InfoBadgeTip tip={BADGE_TIP.addedByMe}>
+                                                                                <span className="whitespace-nowrap rounded bg-orange-50 px-1.5 py-0.5 text-[10px] font-semibold text-orange-600">Added by me</span>
+                                                                            </InfoBadgeTip>
+                                                                        );
                                                                     if (!isOrganizer)
-                                                                        return <span className="whitespace-nowrap rounded bg-blue-50 px-1.5 py-0.5 text-[10px] font-semibold text-blue-600">Pre-assigned by organizer</span>;
+                                                                        return (
+                                                                            <InfoBadgeTip tip={BADGE_TIP.preAssigned}>
+                                                                                <span className="whitespace-nowrap rounded bg-blue-50 px-1.5 py-0.5 text-[10px] font-semibold text-blue-600">Pre-assigned by organizer</span>
+                                                                            </InfoBadgeTip>
+                                                                        );
                                                                     return null;
                                                                 })()}
                                                             </div>
@@ -430,7 +456,9 @@ export default function DonorsTable({ donors: initialDonors, initialTotal, campa
                                                             {d.assigned_member ? (
                                                                 <span className="truncate text-[#003060]">{d.assigned_member.first_name} {d.assigned_member.last_name}</span>
                                                             ) : isGeneralFund ? (
-                                                                <span className="whitespace-nowrap rounded bg-blue-50 px-1.5 py-0.5 text-[10px] font-semibold text-blue-600">General Fund</span>
+                                                                <InfoBadgeTip tip={BADGE_TIP.generalFund}>
+                                                                    <span className="whitespace-nowrap rounded bg-blue-50 px-1.5 py-0.5 text-[10px] font-semibold text-blue-600">General Fund</span>
+                                                                </InfoBadgeTip>
                                                             ) : (
                                                                 <span className="text-gray-300">—</span>
                                                             )}

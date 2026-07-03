@@ -7,7 +7,7 @@ import { createPortal } from "react-dom";
    Toggles on click/tap only (no hover); the popup is portal'd into <body> so
    the table's overflow can't clip it. Positioned below the badge, flipped
    above when there's no room; closes on outside click / Escape. */
-export default function InfoBadgeTip({ tip, children }: { tip: string; children: React.ReactNode }) {
+export default function InfoBadgeTip({ tip, children, className = "" }: { tip: string; children: React.ReactNode; className?: string }) {
     const wrapRef  = useRef<HTMLSpanElement>(null);
     const popRef   = useRef<HTMLDivElement>(null);
     const caretRef = useRef<HTMLSpanElement>(null);
@@ -66,7 +66,7 @@ export default function InfoBadgeTip({ tip, children }: { tip: string; children:
         <span
             ref={wrapRef}
             onClick={(e) => { e.stopPropagation(); setOpen((o) => !o); }}
-            className="inline-flex cursor-pointer"
+            className={`inline-flex cursor-pointer ${className}`}
         >
             {children}
             {open && typeof document !== "undefined" && rect && createPortal(
