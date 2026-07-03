@@ -30,7 +30,6 @@ function EyeButton({ shown, onToggle }: { shown: boolean; onToggle: () => void }
 }
 
 export default function ChangePasswordModal({ onClose }: { onClose: () => void }) {
-    const [mounted, setMounted] = useState(false);
     const [shown, setShown]     = useState(false);
     const [saving, setSaving]   = useState(false);
     const [success, setSuccess] = useState(false);
@@ -40,7 +39,8 @@ export default function ChangePasswordModal({ onClose }: { onClose: () => void }
     const [form, setForm]       = useState<FormState>({ current_password: "", new_password: "", confirm_password: "" });
     const firstRef = useRef<HTMLInputElement>(null);
 
-    useEffect(() => { setMounted(true); }, []);
+    // Render at opacity-0/scale-95 first, then flip on the next frame so the
+    // enter transition plays (matches the Create/Edit User modals).
     useEffect(() => {
         const raf = requestAnimationFrame(() => { setShown(true); firstRef.current?.focus(); });
         const prev = document.body.style.overflow;
@@ -91,7 +91,7 @@ export default function ChangePasswordModal({ onClose }: { onClose: () => void }
         }
     }
 
-    if (!mounted) return null;
+    if (typeof document === "undefined") return null;
 
     return createPortal(
         <div

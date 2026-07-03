@@ -17,14 +17,15 @@ const LABEL     = "mb-1.5 block text-[12px] font-bold uppercase tracking-[0.5px]
 
 // ── Modal shell — portal overlay over the (still-mounted) page ──
 export default function EditProfileModal({ onClose }: { onClose: () => void }) {
-    const [mounted, setMounted] = useState(false);
     const [shown, setShown] = useState(false);
     const [user, setUser] = useState<User | null>(null);
 
-    useEffect(() => { setMounted(true); }, []);
     useEffect(() => {
         fetch("/api/v1/user/me").then((r) => r.json()).then((d) => setUser(d.user)).catch(() => {});
     }, []);
+    // Render at opacity-0/scale-95 on the first commit, then flip on the next
+    // frame so the enter transition actually plays (a separate `mounted` gate
+    // would coalesce both states into one paint and skip the animation).
     useEffect(() => {
         const raf = requestAnimationFrame(() => setShown(true));
         const prev = document.body.style.overflow;
@@ -37,7 +38,7 @@ export default function EditProfileModal({ onClose }: { onClose: () => void }) {
 
     function close() { setShown(false); window.setTimeout(onClose, 170); }
 
-    if (!mounted) return null;
+    if (typeof document === "undefined") return null;
 
     return createPortal(
         <div
