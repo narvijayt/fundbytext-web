@@ -160,12 +160,34 @@ function RailContent({ data, onExpand, onEditProfile }: { data: SidebarData; onE
     );
 }
 
+// Live unread-contacts count: starts from the server value, updates instantly when
+// the admin marks a submission read/unread (the contact table broadcasts the new
+// count via an `admin:contacts-unread` event) and re-syncs on fresh server data.
+function useLiveUnreadContacts(serverValue: number) {
+    const [override, setOverride] = useState<number | null>(null);
+    const [seenServer, setSeenServer] = useState(serverValue);
+    // Drop the local override whenever the server provides a fresh count — the
+    // recommended "adjust state during render" pattern (no effect, no cascade).
+    if (serverValue !== seenServer) {
+        setSeenServer(serverValue);
+        setOverride(null);
+    }
+    useEffect(() => {
+        function onEvt(e: Event) { setOverride((e as CustomEvent<number>).detail); }
+        window.addEventListener("admin:contacts-unread", onEvt);
+        return () => window.removeEventListener("admin:contacts-unread", onEvt);
+    }, []);
+    return override ?? serverValue;
+}
+
 // ── Responsive shell ─────────────────────────────────────────────────────────
 export default function SidebarChrome({ data }: { data: SidebarData }) {
     const [open, setOpen] = useState(false);
     const [editProfileOpen, setEditProfileOpen] = useState(false);
     const openEditProfile = () => { setOpen(false); setEditProfileOpen(true); };
+    const liveData: SidebarData = { ...data, unreadContacts: useLiveUnreadContacts(data.unreadContacts) };
     const pathname = usePathname();
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- close the mobile drawer on route change
     useEffect(() => { setOpen(false); }, [pathname]);
     useEffect(() => {
         document.body.style.overflow = open ? "hidden" : "";
@@ -176,17 +198,17 @@ export default function SidebarChrome({ data }: { data: SidebarData }) {
         <>
             {/* Browser (lg+): full sidebar */}
             <aside className="hidden lg:flex w-64 shrink-0 flex-col h-screen" style={{ background: GRADIENT }}>
-                <FullContent data={data} desktop onEditProfile={openEditProfile} />
+                <FullContent data={liveData} desktop onEditProfile={openEditProfile} />
             </aside>
 
             {/* Tablet (md–lg): icon rail; the → button expands to the full sidebar */}
             <aside className="hidden md:flex lg:hidden w-[72px] shrink-0 flex-col h-screen" style={{ background: GRADIENT }}>
-                <RailContent data={data} onExpand={() => setOpen(true)} onEditProfile={openEditProfile} />
+                <RailContent data={liveData} onExpand={() => setOpen(true)} onEditProfile={openEditProfile} />
             </aside>
 
             <header className="fixed inset-x-0 top-0 z-40 flex h-16 items-center justify-between border-b border-[#e7e9eb] bg-white px-4 md:hidden">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
                 {/* logo-main.svg has ~36px of baked-in left whitespace in its viewBox; pull it flush to the px-4 gutter (Figma: logo at x=16) */}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <Link href="/dashboard" className="overflow-hidden"><img src="/logo-main.svg" alt="FundbyText" className="-ml-9 h-8 w-auto max-w-none" /></Link>
                 <button type="button" onClick={() => setOpen(true)} aria-label="Open menu" className="flex h-10 w-10 items-center justify-center rounded-lg text-[#003060] hover:bg-[#0268c0]/8">
                     <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round"><path d="M4 7h16M4 12h16M4 17h16" /></svg>
@@ -200,7 +222,7 @@ export default function SidebarChrome({ data }: { data: SidebarData }) {
                         <button type="button" onClick={() => setOpen(false)} aria-label="Close menu" className="absolute right-3 top-4 z-10 flex h-9 w-9 items-center justify-center rounded-lg text-[#003060] hover:bg-[#0268c0]/8">
                             <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
                         </button>
-                        <FullContent data={data} onNavigate={() => setOpen(false)} onEditProfile={openEditProfile} />
+                        <FullContent data={liveData} onNavigate={() => setOpen(false)} onEditProfile={openEditProfile} />
                     </aside>
                 </div>
             )}

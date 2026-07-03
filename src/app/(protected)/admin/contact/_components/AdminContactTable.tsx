@@ -80,7 +80,11 @@ export default function AdminContactTable(props: Props) {
             if (res.ok && data && Array.isArray(data.submissions)) {
                 setRows(data.submissions);
                 setTotal(data.total ?? 0);
-                if (typeof data.unread === "number") setUnread(data.unread);
+                if (typeof data.unread === "number") {
+                    setUnread(data.unread);
+                    // Keep the sidebar's unread-contacts badge in sync (mark read/unread, etc.)
+                    window.dispatchEvent(new CustomEvent("admin:contacts-unread", { detail: data.unread }));
+                }
             }
         } catch {
             /* keep current rows on error */
