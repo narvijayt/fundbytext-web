@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
+import UploadBox from "@/app/campaigns/[slug]/create/_components/UploadBox";
+import { downscaleImage, DOWNSCALE_PRESETS } from "@/app/campaigns/[slug]/create/_components/downscaleImage";
 
 type Props = {
     campaignSlug: string;
@@ -15,20 +17,18 @@ const LABEL     = "mb-1.5 block text-[13px] font-semibold text-[#003060]";
 export default function AddParticipantModal({ campaignSlug, onClose }: Props) {
     const router = useRouter();
 
-    const [firstName,   setFirstName]   = useState("");
-    const [lastName,    setLastName]    = useState("");
-    const [email,       setEmail]       = useState("");
-    const [phone,       setPhone]       = useState("");
-    const [photoFile,   setPhotoFile]   = useState<File | null>(null);
-    const [preview,     setPreview]     = useState<string | null>(null);
-    const [uploading,   setUploading]   = useState(false);
-    const [saving,      setSaving]      = useState(false);
-    const [error,       setError]       = useState<string | null>(null);
-    const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-    const [shown,       setShown]       = useState(false);
+    const [firstName,      setFirstName]      = useState("");
+    const [lastName,       setLastName]       = useState("");
+    const [email,          setEmail]          = useState("");
+    const [phone,          setPhone]          = useState("");
+    const [photoUrl,       setPhotoUrl]       = useState<string | null>(null);
+    const [uploadingPhoto, setUploadingPhoto] = useState<string | null>(null);
+    const [saving,         setSaving]         = useState(false);
+    const [error,          setError]          = useState<string | null>(null);
+    const [fieldErrors,    setFieldErrors]    = useState<Record<string, string>>({});
+    const [shown,          setShown]          = useState(false);
 
     const firstRef = useRef<HTMLInputElement>(null);
-    const fileRef  = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         const raf = requestAnimationFrame(() => { setShown(true); firstRef.current?.focus(); });
@@ -49,26 +49,27 @@ export default function AddParticipantModal({ campaignSlug, onClose }: Props) {
         window.setTimeout(onClose, 170);
     }
 
-    // Revoke the object URL when the preview changes or the modal unmounts.
-    useEffect(() => {
-        return () => { if (preview) URL.revokeObjectURL(preview); };
-    }, [preview]);
-
-    function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
-        const file = e.target.files?.[0];
-        e.target.value = ""; // allow re-selecting the same file after a remove
-        if (!file) return;
-        const allowed = ["image/jpeg", "image/png", "image/webp", "image/gif"];
-        if (!allowed.includes(file.type)) { setError("Only JPEG, PNG, WebP, or GIF images are allowed."); return; }
-        if (file.size > 5 * 1024 * 1024)  { setError("Image must be under 5MB."); return; }
+    // Upload-on-select, matching the campaign wizard's visual uploader: downscale
+    // client-side, POST to the shared profile-photo route, surface the busy key so
+    // UploadBox shows its Loader spinner, and return the stored URL.
+    async function uploadPhoto(file: File, type: string, key?: string): Promise<string | null> {
+        if (file.size > 5 * 1024 * 1024) { setError("Image must be under 5MB."); return null; }
         setError(null);
-        setPhotoFile(file);
-        setPreview(URL.createObjectURL(file));
-    }
-
-    function removePhoto() {
-        setPhotoFile(null);
-        setPreview(null);
+        setUploadingPhoto(key ?? type);
+        try {
+            const optimized = await downscaleImage(file, DOWNSCALE_PRESETS.profile);
+            const fd = new globalThis.FormData();
+            fd.append("photo", optimized);
+            const res  = await fetch("/api/v1/upload/profile-photo", { method: "POST", body: fd });
+            const json = await res.json().catch(() => ({}));
+            if (!res.ok) { setError(json.error ?? "Photo upload failed."); return null; }
+            return json.url as string;
+        } catch {
+            setError("Photo upload failed. Please try again.");
+            return null;
+        } finally {
+            setUploadingPhoto(null);
+        }
     }
 
     function validate() {
@@ -87,25 +88,8 @@ export default function AddParticipantModal({ campaignSlug, onClose }: Props) {
         setSaving(true);
         setError(null);
 
-        // Upload the chosen photo first (deferred until submit so cancelling the
-        // modal never leaves an orphaned blob). Its URL is stored on the member
-        // and propagates to the participant's user account server-side.
-        let profilePhotoUrl: string | null = null;
-        if (photoFile) {
-            setUploading(true);
-            const fd = new globalThis.FormData();
-            fd.append("photo", photoFile);
-            const up = await fetch("/api/v1/upload/profile-photo", { method: "POST", body: fd });
-            setUploading(false);
-            if (!up.ok) {
-                const j = await up.json().catch(() => ({}));
-                setError(j.error ?? "Photo upload failed.");
-                setSaving(false);
-                return;
-            }
-            profilePhotoUrl = (await up.json()).url;
-        }
-
+        // The photo is already uploaded (on select); just persist its URL on the
+        // member — it propagates to the participant's user account server-side.
         const res = await fetch(`/api/v1/campaigns/${campaignSlug}/members`, {
             method:  "POST",
             headers: { "Content-Type": "application/json" },
@@ -114,7 +98,7 @@ export default function AddParticipantModal({ campaignSlug, onClose }: Props) {
                 last_name:  lastName.trim(),
                 email:      email.trim() || null,
                 phone:      phone.trim() || null,
-                profile_photo_url: profilePhotoUrl,
+                profile_photo_url: photoUrl,
             }),
         });
 
@@ -138,7 +122,7 @@ export default function AddParticipantModal({ campaignSlug, onClose }: Props) {
                 aria-modal="true"
                 aria-labelledby="add-participant-title"
                 onClick={(e) => e.stopPropagation()}
-                className={`flex max-h-[calc(100vh-2rem)] w-full max-w-md flex-col overflow-hidden rounded-2xl bg-white shadow-[0px_16px_40px_-8px_rgba(15,29,67,0.3)] transition-transform duration-200 motion-reduce:transition-none ${shown ? "scale-100" : "scale-95"}`}
+                className={`flex max-h-[calc(100vh-2rem)] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-white shadow-[0px_16px_40px_-8px_rgba(15,29,67,0.3)] transition-transform duration-200 motion-reduce:transition-none ${shown ? "scale-100" : "scale-95"}`}
             >
                 {/* Header */}
                 <div className="flex shrink-0 items-center justify-between gap-3 bg-[#0268c0] px-5 py-4 text-white">
@@ -158,58 +142,41 @@ export default function AddParticipantModal({ campaignSlug, onClose }: Props) {
                     </button>
                 </div>
 
-                {/* Form */}
-                <form onSubmit={handleSubmit} className="flex-1 space-y-4 overflow-y-auto p-5">
-                    {/* Invite info */}
-                    <div className="flex gap-2.5 rounded-xl border border-[#cfe0f3] bg-[#eef5fc] px-3.5 py-3 text-[12px] leading-snug text-[#0268c0]">
-                        <svg className="mt-0.5 h-4 w-4 shrink-0 text-[#0268c0]" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                        </svg>
-                        <span>This participant will be invited via email, SMS, or both. If they are new to the platform, they will also receive login credentials.</span>
-                    </div>
-
-                    {/* Profile photo (optional) */}
-                    <div>
-                        <label className={LABEL}>Profile Photo <span className="font-normal text-[#9aa7b8]">(optional)</span></label>
-                        <div className="flex items-center gap-4">
-                            <div className="relative shrink-0">
-                                <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-full border border-[#d4dee7] bg-[#f4f8fc]">
-                                    {preview ? (
-                                        // eslint-disable-next-line @next/next/no-img-element
-                                        <img src={preview} alt="Selected profile" className="h-full w-full object-cover" />
-                                    ) : (
-                                        <svg className="h-6 w-6 text-[#9aa7b8]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
-                                            <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" /><circle cx="12" cy="13" r="4" />
-                                        </svg>
-                                    )}
-                                </div>
-                                {preview && (
-                                    <button
-                                        type="button"
-                                        onClick={removePhoto}
-                                        aria-label="Remove photo"
-                                        className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white shadow-sm transition-[filter] hover:brightness-105"
-                                    >
-                                        <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
-                                    </button>
-                                )}
-                            </div>
-                            <div className="min-w-0">
-                                <button
-                                    type="button"
-                                    onClick={() => fileRef.current?.click()}
-                                    className="inline-flex items-center gap-1.5 rounded-[10px] border border-[#0268c0] px-3.5 py-2 text-[13px] font-semibold text-[#0268c0] transition-colors hover:bg-[#eef5fc]"
-                                >
-                                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12" /></svg>
-                                    {preview ? "Change Photo" : "Upload Photo"}
-                                </button>
-                                <p className="mt-1.5 text-xs text-[#9aa7b8]">JPG, PNG, WebP or GIF · up to 5MB</p>
-                            </div>
-                            <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif" className="hidden" onChange={handlePhotoChange} />
+                {/* Form — 2-column on desktop so it fits without scrolling; stacks and
+                    scrolls on smaller screens. */}
+                <form onSubmit={handleSubmit} className="flex flex-1 flex-col overflow-hidden">
+                    <div className="grid flex-1 grid-cols-1 content-start gap-4 overflow-y-auto p-5 sm:grid-cols-2">
+                        {/* Invite info */}
+                        <div className="flex gap-2.5 rounded-xl border border-[#cfe0f3] bg-[#eef5fc] px-3.5 py-3 text-[12px] leading-snug text-[#0268c0] sm:col-span-2">
+                            <svg className="mt-0.5 h-4 w-4 shrink-0 text-[#0268c0]" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                            </svg>
+                            <span>This participant will be invited via email, SMS, or both. If they are new to the platform, they will also receive login credentials.</span>
                         </div>
-                    </div>
 
-                    <div className="grid grid-cols-2 gap-3">
+                        {/* Profile photo (optional) — same uploader, loader and behaviour as the
+                            campaign creation wizard's visual uploads. */}
+                        <div className="sm:col-span-2">
+                            <label className={LABEL}>Profile Photo <span className="font-normal text-[#9aa7b8]">(optional)</span></label>
+                            <div className="flex items-center gap-4">
+                                <UploadBox
+                                    url={photoUrl}
+                                    type="profile"
+                                    onUploaded={setPhotoUrl}
+                                    onRemoved={() => setPhotoUrl(null)}
+                                    uploadingPhoto={uploadingPhoto}
+                                    uploadPhoto={uploadPhoto}
+                                    defaultImage={null}
+                                    className="h-[104px] w-[104px] shrink-0"
+                                />
+                                <p className="text-[13px] leading-relaxed text-[#7e8a96]">
+                                    Add a photo so supporters recognise this participant.
+                                    <br />
+                                    <span className="text-[#9aa7b8]">JPG, PNG or WebP · up to 5MB</span>
+                                </p>
+                            </div>
+                        </div>
+
                         <div>
                             <label className={LABEL}>First Name</label>
                             <input
@@ -231,43 +198,44 @@ export default function AddParticipantModal({ campaignSlug, onClose }: Props) {
                             />
                             {fieldErrors.lastName && <p className="mt-1 text-xs text-red-500">{fieldErrors.lastName}</p>}
                         </div>
-                    </div>
 
-                    <div>
-                        <label className={LABEL}>Email</label>
-                        <input
-                            type="email"
-                            value={email}
-                            onChange={(e) => { setEmail(e.target.value); setFieldErrors((f) => ({ ...f, contact: "" })); }}
-                            className={fieldErrors.contact ? INPUT_ERR : INPUT}
-                            placeholder="jane@example.com"
-                        />
-                    </div>
+                        <div>
+                            <label className={LABEL}>Email</label>
+                            <input
+                                type="email"
+                                value={email}
+                                onChange={(e) => { setEmail(e.target.value); setFieldErrors((f) => ({ ...f, contact: "" })); }}
+                                className={fieldErrors.contact ? INPUT_ERR : INPUT}
+                                placeholder="jane@example.com"
+                            />
+                        </div>
+                        <div>
+                            <label className={LABEL}>Phone</label>
+                            <input
+                                type="tel"
+                                value={phone}
+                                onChange={(e) => { setPhone(e.target.value); setFieldErrors((f) => ({ ...f, contact: "" })); }}
+                                className={fieldErrors.contact ? INPUT_ERR : INPUT}
+                                placeholder="(555) 000-0000"
+                            />
+                        </div>
 
-                    <div>
-                        <label className={LABEL}>Phone</label>
-                        <input
-                            type="tel"
-                            value={phone}
-                            onChange={(e) => { setPhone(e.target.value); setFieldErrors((f) => ({ ...f, contact: "" })); }}
-                            className={fieldErrors.contact ? INPUT_ERR : INPUT}
-                            placeholder="(555) 000-0000"
-                        />
                         {fieldErrors.contact
-                            ? <p className="mt-1 text-xs text-red-500">{fieldErrors.contact}</p>
-                            : <p className="mt-1 text-xs text-[#9aa7b8]">At least one of email or phone is required.</p>}
+                            ? <p className="text-xs text-red-500 sm:col-span-2">{fieldErrors.contact}</p>
+                            : <p className="text-xs text-[#9aa7b8] sm:col-span-2">At least one of email or phone is required.</p>}
+
+                        {error && (
+                            <p role="alert" className="rounded-lg bg-red-50 px-3.5 py-2.5 text-[13px] font-medium text-red-600 sm:col-span-2">{error}</p>
+                        )}
                     </div>
 
-                    {error && (
-                        <p role="alert" className="rounded-lg bg-red-50 px-3.5 py-2.5 text-[13px] font-medium text-red-600">{error}</p>
-                    )}
-
-                    <div className="flex gap-3 pt-1">
-                        <button type="button" onClick={close} className="flex-1 rounded-[10px] border border-[#d4dee7] py-2.5 text-[14px] font-semibold text-[#003060] transition-colors hover:bg-gray-50">
+                    {/* Footer — pinned so it stays visible without scrolling */}
+                    <div className="flex shrink-0 justify-end gap-3 border-t border-[#eef1f4] px-5 py-4">
+                        <button type="button" onClick={close} disabled={saving} className="rounded-[10px] border border-[#d4dee7] px-5 py-2.5 text-[14px] font-semibold text-[#003060] transition-colors hover:bg-gray-50 disabled:opacity-60">
                             Cancel
                         </button>
-                        <button type="submit" disabled={saving} className="flex-1 rounded-[10px] bg-[#28c45d] py-2.5 text-[14px] font-semibold text-white transition-[filter] hover:brightness-105 disabled:opacity-60">
-                            {uploading ? "Uploading photo…" : saving ? "Adding…" : "Add Participant"}
+                        <button type="submit" disabled={saving || !!uploadingPhoto} className="rounded-[10px] bg-[#28c45d] px-5 py-2.5 text-[14px] font-semibold text-white transition-[filter] hover:brightness-105 disabled:opacity-60">
+                            {saving ? "Adding…" : "Add Participant"}
                         </button>
                     </div>
                 </form>
