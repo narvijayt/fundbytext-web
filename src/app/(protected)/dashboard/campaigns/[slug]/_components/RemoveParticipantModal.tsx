@@ -79,9 +79,15 @@ export default function RemoveParticipantModal({ memberId, campaignSlug, name, r
 
                     {blocked ? (
                         <>
-                            <h2 className="text-center text-[16px] font-bold text-[#003060]">Can&apos;t remove {isSelf ? "yourself" : name}</h2>
+                            <h2 className="text-center text-[16px] font-bold text-[#003060]">
+                                {isSelf ? "Can’t leave your participant role" : `Can’t remove ${name}`}
+                            </h2>
                             <p className="mt-2 text-center text-[13px] leading-relaxed text-[#7e8a96]">
-                                This participant has raised <span className="font-semibold text-[#003060]">{fmt(raised)}</span> in donations, so they can&apos;t be removed from the campaign.
+                                {isSelf ? (
+                                    <>You&apos;ve raised <span className="font-semibold text-[#003060]">{fmt(raised)}</span> in donations, so you can&apos;t leave your participant role.</>
+                                ) : (
+                                    <>This participant has raised <span className="font-semibold text-[#003060]">{fmt(raised)}</span> in donations, so they can&apos;t be removed from the campaign.</>
+                                )}
                             </p>
                             <button onClick={close} className="mt-5 w-full rounded-[10px] bg-[#0268c0] py-2.5 text-[14px] font-semibold text-white transition-[filter] hover:brightness-110">
                                 Got it
