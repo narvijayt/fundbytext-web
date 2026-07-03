@@ -121,53 +121,56 @@ export default function ParticipantDetailModal({ memberId, myMemberId, campaignS
                     {member && !loading && (
                         <div className="space-y-5">
                             {/* Identity */}
-                            <div className="flex items-center gap-3.5">
-                                <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#aed9fe] text-[18px] font-bold text-[#0268c0]">
+                            <div className="flex items-center gap-4">
+                                <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#aed9fe] text-[20px] font-bold text-[#0268c0] ring-4 ring-[#eef5fc]">
                                     {photo
                                         // eslint-disable-next-line @next/next/no-img-element
                                         ? <img src={photo} alt="" className="h-full w-full object-cover" />
                                         : `${member.first_name[0] ?? ""}${member.last_name[0] ?? ""}`}
                                 </div>
                                 <div className="min-w-0">
-                                    <div className="flex flex-wrap items-center gap-1.5">
-                                        <p className="text-[17px] font-bold text-[#003060]">{member.first_name} {member.last_name}</p>
+                                    <div className="flex flex-wrap items-center gap-2">
+                                        <p className="text-[18px] font-bold leading-tight text-[#003060]">{member.first_name} {member.last_name}</p>
                                         {isSelf && <span className="rounded bg-blue-50 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#0268c0]">You</span>}
                                     </div>
-                                    {member.user?.username && <p className="text-[13px] font-medium text-[#0268c0]">@{member.user.username}</p>}
-                                    <div className="mt-1 flex flex-wrap gap-1">
+                                    {member.user?.username && <p className="mt-0.5 text-[13px] font-medium text-[#0268c0]">@{member.user.username}</p>}
+                                    <div className="mt-1.5 flex flex-wrap gap-1.5">
                                         {member.roles.map((r) => (
-                                            <span key={r.role} className="rounded-full bg-[#eef2f7] px-2 py-0.5 text-[10px] font-semibold capitalize text-[#5b6b7c]">{r.role}</span>
+                                            <span key={r.role} className="rounded-md bg-[#eef2f7] px-2 py-0.5 text-[11px] font-semibold capitalize text-[#5b6b7c]">{r.role}</span>
                                         ))}
                                     </div>
                                 </div>
                             </div>
 
-                            {/* Stats */}
-                            <div className="grid grid-cols-2 gap-3">
-                                <div className="rounded-2xl border border-[#d3f2e0] bg-[#eafaf1] p-3.5 text-center">
-                                    <p className="text-[20px] font-black text-[#28c45d]">{fmt(raised)}</p>
-                                    <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#7e8a96]">Raised</p>
+                            {/* Stats — one card split into two */}
+                            <div className="grid grid-cols-2 divide-x divide-[#eef1f4] overflow-hidden rounded-2xl border border-[#e7e9eb] bg-white">
+                                <div className="px-4 py-4 text-center">
+                                    <p className="text-[22px] font-black leading-none text-[#28c45d]">{fmt(raised)}</p>
+                                    <p className="mt-1.5 text-[10px] font-semibold uppercase tracking-[0.5px] text-[#9aa7b8]">Raised</p>
                                 </div>
-                                <div className="rounded-2xl border border-[#d8e8f8] bg-[#eef5fc] p-3.5 text-center">
-                                    <p className="text-[20px] font-black text-[#0268c0]">{member._count.donors}</p>
-                                    <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#7e8a96]">Donors</p>
+                                <div className="px-4 py-4 text-center">
+                                    <p className="text-[22px] font-black leading-none text-[#0268c0]">{member._count.donors}</p>
+                                    <p className="mt-1.5 text-[10px] font-semibold uppercase tracking-[0.5px] text-[#9aa7b8]">Donors</p>
                                 </div>
                             </div>
 
-                            {/* Contact / meta */}
-                            <div className="text-[13px]">
-                                <div className="flex items-center justify-between gap-4 border-b border-[#eef1f4] py-2.5">
-                                    <span className="text-[#9aa7b8]">Email</span>
-                                    <span className="truncate font-medium text-[#003060]">{member.email ?? "—"}</span>
-                                </div>
-                                <div className="flex items-center justify-between gap-4 border-b border-[#eef1f4] py-2.5">
-                                    <span className="text-[#9aa7b8]">Phone</span>
-                                    <span className="font-medium text-[#003060]">{member.phone ?? "—"}</span>
-                                </div>
-                                <div className="flex items-center justify-between gap-4 py-2.5">
-                                    <span className="text-[#9aa7b8]">Joined</span>
-                                    <span className="font-medium text-[#003060]">{dt(member.joined_at)}</span>
-                                </div>
+                            {/* Contact / meta — icon-led rows */}
+                            <div className="overflow-hidden rounded-2xl border border-[#e7e9eb]">
+                                {[
+                                    { label: "Email",  value: member.email ?? "—", icon: <><path d="M4 6h16a1 1 0 011 1v10a1 1 0 01-1 1H4a1 1 0 01-1-1V7a1 1 0 011-1z" /><path d="M3.5 7.5l8.5 6 8.5-6" /></> },
+                                    { label: "Phone",  value: member.phone ?? "—", icon: <path d="M6.5 3.5h3l1.5 4-2 1.5a12 12 0 005.5 5.5l1.5-2 4 1.5v3a1.5 1.5 0 01-1.6 1.5A16.5 16.5 0 015 6.1 1.5 1.5 0 016.5 3.5z" /> },
+                                    { label: "Joined", value: dt(member.joined_at), icon: <><rect x="3.5" y="4.5" width="17" height="16" rx="2" /><path d="M16 3v3M8 3v3M3.5 9.5h17" /></> },
+                                ].map((row, i, arr) => (
+                                    <div key={row.label} className={`flex items-center gap-3 px-3.5 py-3 ${i < arr.length - 1 ? "border-b border-[#eef1f4]" : ""}`}>
+                                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#f2f6fa] text-[#0268c0]">
+                                            <svg className="h-[18px] w-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">{row.icon}</svg>
+                                        </span>
+                                        <div className="min-w-0 flex-1">
+                                            <p className="text-[10px] font-semibold uppercase tracking-[0.5px] text-[#9aa7b8]">{row.label}</p>
+                                            <p className="truncate text-[13px] font-semibold text-[#003060]">{row.value}</p>
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
 
                             {/* Donations received */}
@@ -175,28 +178,30 @@ export default function ParticipantDetailModal({ memberId, myMemberId, campaignS
                                 const visible = showAllDonations ? member.donations : member.donations.slice(0, 3);
                                 return (
                                     <div>
-                                        <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.5px] text-[#003060]">Donations Received</p>
+                                        <p className="mb-2.5 text-[10px] font-bold uppercase tracking-[0.5px] text-[#9aa7b8]">Donations Received</p>
                                         <div className="space-y-2">
                                             {visible.map((d) => {
                                                 const name = d.is_anonymous
                                                     ? `${d.donor_first_name} ${d.donor_last_name}`
                                                     : (d.donor_display_name ?? `${d.donor_first_name} ${d.donor_last_name}`);
+                                                const initials = `${(d.donor_first_name[0] ?? "").toUpperCase()}${(d.donor_last_name[0] ?? "").toUpperCase()}`;
                                                 return (
-                                                    <div key={d.id} className="flex items-center justify-between gap-3 rounded-xl border border-[#eef1f4] bg-[#f7f9fb] px-3 py-2">
-                                                        <div className="min-w-0">
+                                                    <div key={d.id} className="flex items-center gap-3 rounded-xl border border-[#eef1f4] px-3 py-2.5">
+                                                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#eafaf1] text-[11px] font-bold text-[#28c45d]">{initials || "?"}</span>
+                                                        <div className="min-w-0 flex-1">
                                                             <div className="flex items-center gap-1.5">
                                                                 <p className="truncate text-[13px] font-semibold text-[#003060]">{name}</p>
-                                                                {d.is_anonymous && <span className="shrink-0 rounded-full bg-gray-200 px-1.5 py-0.5 text-[10px] font-semibold text-gray-500">Anonymous</span>}
+                                                                {d.is_anonymous && <span className="shrink-0 rounded-full bg-gray-100 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-gray-500">Anon</span>}
                                                             </div>
                                                             <p className="text-[11px] text-[#9aa7b8]">{dt(d.created_at)}</p>
                                                         </div>
-                                                        <span className="shrink-0 text-[13px] font-bold text-[#28c45d]">{fmt(parseFloat(d.amount))}</span>
+                                                        <span className="shrink-0 text-[14px] font-bold text-[#28c45d]">{fmt(parseFloat(d.amount))}</span>
                                                     </div>
                                                 );
                                             })}
                                         </div>
                                         {member.donations.length > 3 && (
-                                            <button onClick={() => setShowAllDonations((v) => !v)} className="mt-2 text-[12px] font-semibold text-[#0268c0] transition-colors hover:text-[#0268c0]/80">
+                                            <button onClick={() => setShowAllDonations((v) => !v)} className="mt-2.5 text-[12px] font-semibold text-[#0268c0] transition-colors hover:text-[#0268c0]/80">
                                                 {showAllDonations ? "Show less" : `See all ${member.donations.length} donations`}
                                             </button>
                                         )}
