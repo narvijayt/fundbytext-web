@@ -8,8 +8,8 @@ const INPUT     = "w-full rounded-[12px] border border-[#d4dee7] bg-white px-4 p
 const INPUT_ERR = "w-full rounded-[12px] border border-red-300 bg-white px-4 py-2.5 pr-11 text-[15px] text-[#003060] placeholder:text-[#9aa7b8] transition-colors focus:border-red-400 focus:outline-none focus:ring-2 focus:ring-red-400/25";
 const LABEL     = "mb-1.5 block text-[12px] font-bold uppercase tracking-[0.5px] text-[#003060]";
 
-type FormState = { current_password: string; new_password: string; confirm_password: string };
-type ShowState = { current: boolean; next: boolean; confirm: boolean };
+type FormState = { new_password: string; confirm_password: string };
+type ShowState = { next: boolean; confirm: boolean };
 
 function EyeButton({ shown, onToggle }: { shown: boolean; onToggle: () => void }) {
     return (
@@ -35,8 +35,8 @@ export default function ChangePasswordModal({ onClose }: { onClose: () => void }
     const [success, setSuccess] = useState(false);
     const [apiError, setApiError] = useState<string | null>(null);
     const [errors, setErrors]   = useState<Record<string, string>>({});
-    const [reveal, setReveal]   = useState<ShowState>({ current: false, next: false, confirm: false });
-    const [form, setForm]       = useState<FormState>({ current_password: "", new_password: "", confirm_password: "" });
+    const [reveal, setReveal]   = useState<ShowState>({ next: false, confirm: false });
+    const [form, setForm]       = useState<FormState>({ new_password: "", confirm_password: "" });
     const firstRef = useRef<HTMLInputElement>(null);
 
     // Render at opacity-0/scale-95 first, then flip on the next frame so the
@@ -62,7 +62,6 @@ export default function ChangePasswordModal({ onClose }: { onClose: () => void }
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
         const errs: Record<string, string> = {};
-        if (!form.current_password) errs.current_password = "Current password is required.";
         if (form.new_password.length < 8) errs.new_password = "New password must be at least 8 characters.";
         if (form.new_password !== form.confirm_password) errs.confirm_password = "Passwords do not match.";
         if (Object.keys(errs).length) { setErrors(errs); return; }
@@ -76,10 +75,7 @@ export default function ChangePasswordModal({ onClose }: { onClose: () => void }
             });
             const json = await res.json().catch(() => ({}));
             if (!res.ok) {
-                const msg = typeof json.error === "string" ? json.error : "Failed to update password.";
-                // Surface a wrong current password under its field.
-                if (res.status === 400 && /current password/i.test(msg)) setErrors({ current_password: msg });
-                else setApiError(msg);
+                setApiError(typeof json.error === "string" ? json.error : "Failed to update password.");
                 return;
             }
             setSuccess(true);
@@ -127,18 +123,9 @@ export default function ChangePasswordModal({ onClose }: { onClose: () => void }
                             {apiError && <p role="alert" className="rounded-lg bg-red-50 px-3.5 py-2.5 text-[13px] font-medium text-red-600">{apiError}</p>}
 
                             <div>
-                                <label className={LABEL}>Current Password</label>
-                                <div className="relative">
-                                    <input ref={firstRef} type={reveal.current ? "text" : "password"} value={form.current_password} onChange={(e) => set("current_password", e.target.value)} autoComplete="current-password" className={errors.current_password ? INPUT_ERR : INPUT} placeholder="Enter current password" />
-                                    <EyeButton shown={reveal.current} onToggle={() => setReveal((r) => ({ ...r, current: !r.current }))} />
-                                </div>
-                                {errors.current_password && <p className="mt-1 text-xs text-red-500">{errors.current_password}</p>}
-                            </div>
-
-                            <div>
                                 <label className={LABEL}>New Password</label>
                                 <div className="relative">
-                                    <input type={reveal.next ? "text" : "password"} value={form.new_password} onChange={(e) => set("new_password", e.target.value)} autoComplete="new-password" className={errors.new_password ? INPUT_ERR : INPUT} placeholder="Min. 8 characters" />
+                                    <input ref={firstRef} type={reveal.next ? "text" : "password"} value={form.new_password} onChange={(e) => set("new_password", e.target.value)} autoComplete="new-password" className={errors.new_password ? INPUT_ERR : INPUT} placeholder="Min. 8 characters" />
                                     <EyeButton shown={reveal.next} onToggle={() => setReveal((r) => ({ ...r, next: !r.next }))} />
                                 </div>
                                 {errors.new_password && <p className="mt-1 text-xs text-red-500">{errors.new_password}</p>}

@@ -7,7 +7,6 @@ import { prisma } from "@/lib/prisma";
 import { getAuthUserFromRequest } from "@/lib/session";
 
 const schema = z.object({
-    current_password: z.string().min(1),
     new_password:     z.string().min(8, "Password must be at least 8 characters"),
     confirm_password: z.string().min(1),
 }).refine((d) => d.new_password === d.confirm_password, {
@@ -27,20 +26,9 @@ export async function PATCH(req: NextRequest) {
         return NextResponse.json({ error: z.treeifyError(parsed.error) }, { status: 422 });
     }
 
-    const { current_password, new_password } = parsed.data;
-
-    const dbUser = await prisma.user.findUnique({
-        where: { id: user.id },
-        select: { password_hash: true },
-    });
-    if (!dbUser) return NextResponse.json({ error: "User not found" }, { status: 404 });
-
-    const valid = await bcrypt.compare(current_password, dbUser.password_hash);
-    if (!valid) {
-        return NextResponse.json({ error: "Current password is incorrect" }, { status: 400 });
-    }
-
-    const password_hash = await bcrypt.hash(new_password, 12);
+    // The user is already authenticated via their session, so the current
+    // password is no longer required to set a new one.
+    const password_hash = await bcrypt.hash(parsed.data.new_password, 12);
     await prisma.user.update({
         where: { id: user.id },
         data: { password_hash },
