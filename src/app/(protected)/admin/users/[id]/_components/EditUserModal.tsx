@@ -111,7 +111,7 @@ export default function EditUserModal({ userId, isSelf, initial, onClose, onSave
             <div
                 role="dialog" aria-modal="true" aria-labelledby="edit-user-title"
                 onClick={(e) => e.stopPropagation()}
-                className={`flex max-h-[calc(100vh-2rem)] w-full max-w-md flex-col overflow-hidden rounded-2xl bg-white shadow-[0px_16px_40px_-8px_rgba(15,29,67,0.3)] transition-transform duration-200 motion-reduce:transition-none ${shown ? "scale-100" : "scale-95"}`}
+                className={`flex max-h-[calc(100vh-2rem)] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-white shadow-[0px_16px_40px_-8px_rgba(15,29,67,0.3)] transition-transform duration-200 motion-reduce:transition-none ${shown ? "scale-100" : "scale-95"}`}
             >
                 <div className="flex shrink-0 items-center justify-between gap-3 bg-[#0268c0] px-5 py-4 text-white">
                     <h2 id="edit-user-title" className="text-[16px] font-bold">Edit User</h2>
@@ -121,29 +121,27 @@ export default function EditUserModal({ userId, isSelf, initial, onClose, onSave
                 </div>
 
                 <form onSubmit={handleSubmit} className="flex flex-1 flex-col overflow-hidden">
-                    <div className="flex-1 space-y-4 overflow-y-auto p-5">
+                    <div className="grid flex-1 grid-cols-1 content-start gap-4 overflow-y-auto p-5 sm:grid-cols-2">
                         {isAdminAccount && (
-                            <div className="flex items-start gap-2.5 rounded-xl border border-amber-100 bg-amber-50 px-3 py-2.5">
+                            <div className="flex items-start gap-2.5 rounded-xl border border-amber-100 bg-amber-50 px-3 py-2.5 sm:col-span-2">
                                 <svg className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" /></svg>
                                 <p className="text-xs leading-snug text-amber-700">{isSelf ? "You are editing your own admin account. Role cannot be changed." : "Only the name can be edited for admin accounts. Email, phone, password, and role are locked."}</p>
                             </div>
                         )}
 
-                        <div className="grid grid-cols-2 gap-3">
-                            <div>
-                                <label className={LABEL}>First Name</label>
-                                <input ref={firstRef} value={firstName} onChange={(e) => { setFirstName(e.target.value); setErrors((p) => ({ ...p, firstName: undefined })); }} className={errors.firstName ? INPUT_ERR : INPUT} placeholder="Jane" />
-                                {errors.firstName && <p className="mt-1 text-xs text-red-500">{errors.firstName}</p>}
-                            </div>
-                            <div>
-                                <label className={LABEL}>Last Name</label>
-                                <input value={lastName} onChange={(e) => { setLastName(e.target.value); setErrors((p) => ({ ...p, lastName: undefined })); }} className={errors.lastName ? INPUT_ERR : INPUT} placeholder="Smith" />
-                                {errors.lastName && <p className="mt-1 text-xs text-red-500">{errors.lastName}</p>}
-                            </div>
+                        <div>
+                            <label className={LABEL}>First Name</label>
+                            <input ref={firstRef} value={firstName} onChange={(e) => { setFirstName(e.target.value); setErrors((p) => ({ ...p, firstName: undefined })); }} className={errors.firstName ? INPUT_ERR : INPUT} placeholder="Jane" />
+                            {errors.firstName && <p className="mt-1 text-xs text-red-500">{errors.firstName}</p>}
+                        </div>
+                        <div>
+                            <label className={LABEL}>Last Name</label>
+                            <input value={lastName} onChange={(e) => { setLastName(e.target.value); setErrors((p) => ({ ...p, lastName: undefined })); }} className={errors.lastName ? INPUT_ERR : INPUT} placeholder="Smith" />
+                            {errors.lastName && <p className="mt-1 text-xs text-red-500">{errors.lastName}</p>}
                         </div>
 
                         {!isAdminAccount && (
-                            <div>
+                            <div className="sm:col-span-2">
                                 <label className={LABEL}>Username</label>
                                 <div className="relative">
                                     <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 select-none text-[15px] font-medium text-[#9aa7b8]">@</span>
@@ -153,7 +151,7 @@ export default function EditUserModal({ userId, isSelf, initial, onClose, onSave
                             </div>
                         )}
 
-                        <div>
+                        <div className="sm:col-span-2">
                             <label className={LABEL}>Email</label>
                             {isAdminAccount && !isSelf ? (
                                 <div className={LOCKED}><span className="truncate">{email}</span><span className={LOCKED_TAG}>Locked</span></div>
@@ -186,7 +184,7 @@ export default function EditUserModal({ userId, isSelf, initial, onClose, onSave
                             )}
                         </div>
 
-                        <div>
+                        <div className="sm:col-span-2">
                             {isAdminAccount && !isSelf ? (
                                 <>
                                     <label className={LABEL}>New Password</label>
@@ -213,7 +211,7 @@ export default function EditUserModal({ userId, isSelf, initial, onClose, onSave
                             )}
                         </div>
 
-                        {errors.general && <p role="alert" className="rounded-lg bg-red-50 px-3.5 py-2.5 text-[13px] font-medium text-red-600">{errors.general}</p>}
+                        {errors.general && <p role="alert" className="rounded-lg bg-red-50 px-3.5 py-2.5 text-[13px] font-medium text-red-600 sm:col-span-2">{errors.general}</p>}
                     </div>
 
                     <div className="flex shrink-0 justify-end gap-3 border-t border-[#eef1f4] px-5 py-4">

@@ -116,7 +116,7 @@ export default function CreateUserModal({ onClose, onSaved }: { onClose: () => v
                 aria-modal="true"
                 aria-labelledby="create-user-title"
                 onClick={(e) => e.stopPropagation()}
-                className={`flex max-h-[calc(100vh-2rem)] w-full max-w-md flex-col overflow-hidden rounded-2xl bg-white shadow-[0px_16px_40px_-8px_rgba(15,29,67,0.3)] transition-transform duration-200 motion-reduce:transition-none ${shown ? "scale-100" : "scale-95"}`}
+                className={`flex max-h-[calc(100vh-2rem)] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-white shadow-[0px_16px_40px_-8px_rgba(15,29,67,0.3)] transition-transform duration-200 motion-reduce:transition-none ${shown ? "scale-100" : "scale-95"}`}
             >
                 {/* Header */}
                 <div className="flex shrink-0 items-center justify-between gap-3 bg-[#0268c0] px-5 py-4 text-white">
@@ -127,32 +127,30 @@ export default function CreateUserModal({ onClose, onSaved }: { onClose: () => v
                 </div>
 
                 <form onSubmit={handleSubmit} className="flex flex-1 flex-col overflow-hidden">
-                    <div className="flex-1 space-y-4 overflow-y-auto p-5">
-                        <div className="grid grid-cols-2 gap-3">
-                            <div>
-                                <label className={LABEL}>First Name</label>
-                                <input
-                                    ref={firstRef}
-                                    value={firstName}
-                                    onChange={(e) => { setFirstName(e.target.value); setErrors((p) => ({ ...p, firstName: undefined })); }}
-                                    className={errors.firstName ? INPUT_ERR : INPUT}
-                                    placeholder="Jane"
-                                />
-                                {errors.firstName && <p className="mt-1 text-xs text-red-500">{errors.firstName}</p>}
-                            </div>
-                            <div>
-                                <label className={LABEL}>Last Name</label>
-                                <input
-                                    value={lastName}
-                                    onChange={(e) => { setLastName(e.target.value); setErrors((p) => ({ ...p, lastName: undefined })); }}
-                                    className={errors.lastName ? INPUT_ERR : INPUT}
-                                    placeholder="Smith"
-                                />
-                                {errors.lastName && <p className="mt-1 text-xs text-red-500">{errors.lastName}</p>}
-                            </div>
+                    <div className="grid flex-1 grid-cols-1 content-start gap-4 overflow-y-auto p-5 sm:grid-cols-2">
+                        <div>
+                            <label className={LABEL}>First Name</label>
+                            <input
+                                ref={firstRef}
+                                value={firstName}
+                                onChange={(e) => { setFirstName(e.target.value); setErrors((p) => ({ ...p, firstName: undefined })); }}
+                                className={errors.firstName ? INPUT_ERR : INPUT}
+                                placeholder="Jane"
+                            />
+                            {errors.firstName && <p className="mt-1 text-xs text-red-500">{errors.firstName}</p>}
+                        </div>
+                        <div>
+                            <label className={LABEL}>Last Name</label>
+                            <input
+                                value={lastName}
+                                onChange={(e) => { setLastName(e.target.value); setErrors((p) => ({ ...p, lastName: undefined })); }}
+                                className={errors.lastName ? INPUT_ERR : INPUT}
+                                placeholder="Smith"
+                            />
+                            {errors.lastName && <p className="mt-1 text-xs text-red-500">{errors.lastName}</p>}
                         </div>
 
-                        <div>
+                        <div className="sm:col-span-2">
                             <label className={LABEL}>Email</label>
                             <input
                                 type="email"
@@ -176,6 +174,14 @@ export default function CreateUserModal({ onClose, onSaved }: { onClose: () => v
                         </div>
 
                         <div>
+                            <label className={LABEL}>Role</label>
+                            <select value={role} onChange={(e) => setRole(e.target.value as "user" | "admin")} className={INPUT}>
+                                <option value="user">User</option>
+                                <option value="admin">Admin</option>
+                            </select>
+                        </div>
+
+                        <div className="sm:col-span-2">
                             <div className="mb-1.5 flex items-center justify-between gap-2">
                                 <label className={`${LABEL} mb-0`}>
                                     Password <span className="font-medium normal-case tracking-normal text-[#9aa7b8]">(auto-generated if blank)</span>
@@ -214,15 +220,7 @@ export default function CreateUserModal({ onClose, onSaved }: { onClose: () => v
                             {errors.password && <p className="mt-1 text-xs text-red-500">{errors.password}</p>}
                         </div>
 
-                        <div>
-                            <label className={LABEL}>Role</label>
-                            <select value={role} onChange={(e) => setRole(e.target.value as "user" | "admin")} className={INPUT}>
-                                <option value="user">User</option>
-                                <option value="admin">Admin</option>
-                            </select>
-                        </div>
-
-                        {errors.general && <p role="alert" className="rounded-lg bg-red-50 px-3.5 py-2.5 text-[13px] font-medium text-red-600">{errors.general}</p>}
+                        {errors.general && <p role="alert" className="rounded-lg bg-red-50 px-3.5 py-2.5 text-[13px] font-medium text-red-600 sm:col-span-2">{errors.general}</p>}
                     </div>
 
                     <div className="flex shrink-0 justify-end gap-3 border-t border-[#eef1f4] px-5 py-4">
