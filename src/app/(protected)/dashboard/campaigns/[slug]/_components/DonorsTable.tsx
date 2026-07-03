@@ -681,10 +681,11 @@ export default function DonorsTable({ donors: initialDonors, initialTotal, campa
                         campaignSlug={campaignSlug}
                         initialFirst={d.first_name}
                         initialLast={d.last_name}
-                        email={d.email}
+                        initialEmail={d.email}
                         initialPhone={d.phone}
                         initialPrefillCents={d.prefill_amount_cents}
                         maxPrefillCents={maxPrefillCents}
+                        hasPaid={d.status === "donated" || d.donations.length > 0}
                         onClose={() => setEditId(null)}
                         onRefresh={() => fetchPage(currentFilters())}
                     />

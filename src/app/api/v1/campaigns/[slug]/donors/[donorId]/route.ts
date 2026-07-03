@@ -107,28 +107,39 @@ export async function PUT(req: NextRequest, ctx: Ctx) {
 
     const { first_name, last_name, email, phone, assigned_member_id, prefill_amount_cents } = parsed.data;
 
+    // Load the current donor (scoped) to enforce the edit rules server-side:
+    // a contact field provided at add time is immutable (only a missing one can be
+    // filled in), and the suggested amount can't change once the donor has paid.
+    const current = await prisma.campaignDonor.findFirst({
+        where: {
+            id:          donorId,
+            campaign_id: campaign.id,
+            ...(!isOrganizer ? { assigned_member_id: member.id } : {}),
+        },
+        select: {
+            email:     true,
+            phone:     true,
+            donations: { where: { payment_status: "completed" }, select: { id: true }, take: 1 },
+        },
+    });
+    if (!current) return NextResponse.json({ error: "Not found" }, { status: 404 });
+    const hasPaid = current.donations.length > 0;
+
     const updateData: Record<string, unknown> = {};
     if (first_name  !== undefined) updateData.first_name  = first_name;
     if (last_name   !== undefined) updateData.last_name   = last_name;
-    if (email       !== undefined) updateData.email       = email;
-    if (phone       !== undefined) updateData.phone       = phone;
-    if (prefill_amount_cents !== undefined) {
+    // Only settable when the field was empty at add time (fill a missing one).
+    if (email !== undefined && !current.email) updateData.email = email;
+    if (phone !== undefined && !current.phone) updateData.phone = phone;
+    // The suggested amount is locked once the donor has donated.
+    if (prefill_amount_cents !== undefined && !hasPaid) {
         updateData.prefill_amount_cents = clampPrefillCents(prefill_amount_cents, campaign);
     }
     if (isOrganizer && assigned_member_id !== undefined) {
         updateData.assigned_member_id = assigned_member_id;
     }
 
-    const updated = await prisma.campaignDonor.updateMany({
-        where: {
-            id:          donorId,
-            campaign_id: campaign.id,
-            ...(!isOrganizer ? { assigned_member_id: member.id } : {}),
-        },
-        data: updateData,
-    });
-
-    if (updated.count === 0) return NextResponse.json({ error: "Not found" }, { status: 404 });
+    await prisma.campaignDonor.update({ where: { id: donorId }, data: updateData });
     return NextResponse.json({ ok: true });
 }
 

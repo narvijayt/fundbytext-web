@@ -7,10 +7,11 @@ type Props = {
     campaignSlug: string;
     initialFirst: string;
     initialLast:  string;
-    email:        string | null;   // read-only (re-sent unchanged so it isn't wiped)
-    initialPhone: string | null;
+    initialEmail: string | null;   // locked if set at add time; editable (to add) if empty
+    initialPhone: string | null;   // locked if set at add time; editable (to add) if empty
     initialPrefillCents?: number | null;   // current suggested amount (cents), if any
     maxPrefillCents?:     number | null;    // fixed-goal remaining cap; null = any, 0 = goal met
+    hasPaid?:     boolean;          // donor has a completed donation → suggested amount is locked
     onClose:      () => void;
     onRefresh?:   () => void;
 };
@@ -21,9 +22,10 @@ const INPUT     = "w-full rounded-[12px] border border-[#d4dee7] bg-white px-4 p
 const INPUT_ERR = "w-full rounded-[12px] border border-red-300 bg-white px-4 py-2.5 text-[15px] text-[#003060] placeholder:text-[#9aa7b8] transition-colors focus:border-red-400 focus:outline-none focus:ring-2 focus:ring-red-400/25";
 const LABEL     = "mb-1.5 block text-[13px] font-semibold text-[#003060]";
 
-export default function EditDonorModal({ donorId, campaignSlug, initialFirst, initialLast, email, initialPhone, initialPrefillCents, maxPrefillCents, onClose, onRefresh }: Props) {
+export default function EditDonorModal({ donorId, campaignSlug, initialFirst, initialLast, initialEmail, initialPhone, initialPrefillCents, maxPrefillCents, hasPaid, onClose, onRefresh }: Props) {
     const [firstName,   setFirstName]   = useState(initialFirst);
     const [lastName,    setLastName]    = useState(initialLast);
+    const [email,       setEmail]       = useState(initialEmail ?? "");
     const [phone,       setPhone]       = useState(initialPhone ?? "");
     const [prefillEnabled, setPrefillEnabled] = useState(initialPrefillCents != null);
     const [prefillRaw,  setPrefillRaw]  = useState(initialPrefillCents != null ? String(initialPrefillCents / 100) : "");
@@ -33,10 +35,18 @@ export default function EditDonorModal({ donorId, campaignSlug, initialFirst, in
     const [shown,       setShown]       = useState(false);
     const firstRef = useRef<HTMLInputElement>(null);
 
-    const isFixedCap  = maxPrefillCents != null;
-    const goalMet     = maxPrefillCents === 0;
-    const prefillCents = Math.round((parseFloat(prefillRaw) || 0) * 100);
-    const prefillExceeds = isFixedCap && maxPrefillCents! > 0 && prefillCents > maxPrefillCents!;
+    // A contact field is locked if it was provided when the donor was added; a
+    // field left empty can be filled in later. The suggested amount locks once
+    // the donor has paid.
+    const emailLocked   = !!(initialEmail && initialEmail.trim());
+    const phoneLocked   = !!(initialPhone && initialPhone.trim());
+    const prefillLocked = !!hasPaid;
+
+    const isFixedCap      = maxPrefillCents != null;
+    const goalMet         = maxPrefillCents === 0;
+    const prefillDisabled = goalMet || prefillLocked;
+    const prefillCents    = Math.round((parseFloat(prefillRaw) || 0) * 100);
+    const prefillExceeds  = isFixedCap && maxPrefillCents! > 0 && prefillCents > maxPrefillCents!;
 
     useEffect(() => {
         const raf = requestAnimationFrame(() => { setShown(true); firstRef.current?.focus(); });
@@ -54,7 +64,9 @@ export default function EditDonorModal({ donorId, campaignSlug, initialFirst, in
         const errs: Record<string, string> = {};
         if (!firstName.trim()) errs.firstName = "First name is required.";
         if (!lastName.trim())  errs.lastName  = "Last name is required.";
-        const wantsPrefill = prefillEnabled && !goalMet;
+        if (!emailLocked && email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()))
+            errs.email = "Enter a valid email address.";
+        const wantsPrefill = prefillEnabled && !prefillDisabled;
         if (wantsPrefill) {
             if (prefillCents < 100)  errs.prefill = "Enter at least $1.";
             else if (prefillExceeds) errs.prefill = `Max is ${usd(maxPrefillCents! / 100)}.`;
@@ -63,10 +75,18 @@ export default function EditDonorModal({ donorId, campaignSlug, initialFirst, in
         setFieldErrors({});
         setSaving(true);
         setError(null);
+
+        // Only send fields that can actually change: name always; a contact field
+        // only if it was empty at add time; the suggested amount only if unpaid.
+        const payload: Record<string, unknown> = { first_name: firstName.trim(), last_name: lastName.trim() };
+        if (!emailLocked)   payload.email = email.trim() || null;
+        if (!phoneLocked)   payload.phone = phone.trim() || null;
+        if (!prefillLocked) payload.prefill_amount_cents = wantsPrefill ? prefillCents : null;
+
         const res = await fetch(`/api/v1/campaigns/${campaignSlug}/donors/${donorId}`, {
             method:  "PUT",
             headers: { "Content-Type": "application/json" },
-            body:    JSON.stringify({ first_name: firstName.trim(), last_name: lastName.trim(), email: email ?? null, phone: phone.trim() || null, prefill_amount_cents: wantsPrefill ? prefillCents : null }),
+            body:    JSON.stringify(payload),
         });
         if (res.ok) {
             onRefresh?.();
@@ -104,22 +124,43 @@ export default function EditDonorModal({ donorId, campaignSlug, initialFirst, in
 
                     <div>
                         <label className={LABEL}>Email</label>
-                        <input type="email" value={email ?? ""} disabled placeholder="—" className="w-full cursor-not-allowed rounded-[12px] border border-[#e7e9eb] bg-[#f4f6f9] px-4 py-2.5 text-[15px] text-[#7e8a96]" />
-                        <p className="mt-1 text-xs text-[#9aa7b8]">Email can&apos;t be changed.</p>
+                        {emailLocked ? (
+                            <>
+                                <input type="email" value={email} disabled placeholder="—" className="w-full cursor-not-allowed rounded-[12px] border border-[#e7e9eb] bg-[#f4f6f9] px-4 py-2.5 text-[15px] text-[#7e8a96]" />
+                                <p className="mt-1 text-xs text-[#9aa7b8]">Email can&apos;t be changed.</p>
+                            </>
+                        ) : (
+                            <>
+                                <input type="email" value={email} onChange={(e) => { setEmail(e.target.value); setFieldErrors((f) => ({ ...f, email: "" })); }} className={fieldErrors.email ? INPUT_ERR : INPUT} placeholder="Add an email address" />
+                                {fieldErrors.email
+                                    ? <p className="mt-1 text-xs text-red-500">{fieldErrors.email}</p>
+                                    : <p className="mt-1 text-xs text-[#9aa7b8]">No email on file — add one to reach them by email.</p>}
+                            </>
+                        )}
                     </div>
 
                     <div>
                         <label className={LABEL}>Phone</label>
-                        <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} className={INPUT} placeholder="(555) 000-0000" />
+                        {phoneLocked ? (
+                            <>
+                                <input type="tel" value={phone} disabled placeholder="—" className="w-full cursor-not-allowed rounded-[12px] border border-[#e7e9eb] bg-[#f4f6f9] px-4 py-2.5 text-[15px] text-[#7e8a96]" />
+                                <p className="mt-1 text-xs text-[#9aa7b8]">Phone can&apos;t be changed.</p>
+                            </>
+                        ) : (
+                            <>
+                                <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} className={INPUT} placeholder="Add a phone number" />
+                                <p className="mt-1 text-xs text-[#9aa7b8]">No phone on file — add one to reach them by SMS.</p>
+                            </>
+                        )}
                     </div>
 
                     {/* Suggested (prefilled) donation amount — opt-in */}
                     <div className="rounded-xl border border-[#e7e9eb] p-3.5 sm:col-span-2">
-                        <label className={`flex items-start gap-3 ${goalMet ? "cursor-not-allowed opacity-70" : "cursor-pointer"}`}>
+                        <label className={`flex items-start gap-3 ${prefillDisabled ? "cursor-not-allowed opacity-70" : "cursor-pointer"}`}>
                             <input
                                 type="checkbox"
-                                checked={prefillEnabled && !goalMet}
-                                disabled={goalMet}
+                                checked={prefillEnabled && !prefillDisabled}
+                                disabled={prefillDisabled}
                                 onChange={(e) => { setPrefillEnabled(e.target.checked); setFieldErrors((f) => ({ ...f, prefill: "" })); }}
                                 className="mt-0.5 h-4 w-4 shrink-0 rounded border-[#d4dee7] text-[#0268c0] focus:ring-2 focus:ring-[#0268c0]/30 disabled:opacity-50"
                             />
@@ -129,11 +170,13 @@ export default function EditDonorModal({ donorId, campaignSlug, initialFirst, in
                             </span>
                         </label>
 
-                        {goalMet && (
+                        {prefillLocked ? (
+                            <p className="mt-2.5 text-xs text-[#9aa7b8]">This donor has already donated, so the suggested amount can no longer be changed.</p>
+                        ) : goalMet ? (
                             <p className="mt-2.5 text-xs text-[#9aa7b8]">This campaign has reached its fixed goal, so no amount can be suggested.</p>
-                        )}
+                        ) : null}
 
-                        {prefillEnabled && !goalMet && (
+                        {prefillEnabled && !prefillDisabled && (
                             <div className="mt-3 max-w-xs">
                                 <div className="mb-1.5 flex items-baseline justify-between">
                                     <label className="text-[12px] font-semibold text-[#003060]">Suggested amount</label>
