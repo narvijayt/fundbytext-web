@@ -17,16 +17,19 @@ const LABEL     = "mb-1.5 block text-[12px] font-bold uppercase tracking-[0.5px]
 
 // ── Modal shell — portal overlay over the (still-mounted) page ──
 export default function EditProfileModal({ onClose }: { onClose: () => void }) {
+    const [mounted, setMounted] = useState(false);
     const [shown, setShown] = useState(false);
     const [user, setUser] = useState<User | null>(null);
 
+    useEffect(() => { setMounted(true); }, []);
     useEffect(() => {
         fetch("/api/v1/user/me").then((r) => r.json()).then((d) => setUser(d.user)).catch(() => {});
     }, []);
-    // Render at opacity-0/scale-95 on the first commit, then flip on the next
-    // frame so the enter transition actually plays (a separate `mounted` gate
-    // would coalesce both states into one paint and skip the animation).
+    // Once mounted (portal painted at opacity-0/scale-95), flip on the next frame
+    // so the enter transition plays. Gating render on `mounted` keeps the server
+    // and first client render identical (null) — no hydration mismatch.
     useEffect(() => {
+        if (!mounted) return;
         const raf = requestAnimationFrame(() => setShown(true));
         const prev = document.body.style.overflow;
         document.body.style.overflow = "hidden";
@@ -34,11 +37,11 @@ export default function EditProfileModal({ onClose }: { onClose: () => void }) {
         window.addEventListener("keydown", onKey);
         return () => { cancelAnimationFrame(raf); document.body.style.overflow = prev; window.removeEventListener("keydown", onKey); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    }, [mounted]);
 
     function close() { setShown(false); window.setTimeout(onClose, 170); }
 
-    if (typeof document === "undefined") return null;
+    if (!mounted) return null;
 
     return createPortal(
         <div

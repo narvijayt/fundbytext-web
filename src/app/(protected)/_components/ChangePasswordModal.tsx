@@ -30,6 +30,7 @@ function EyeButton({ shown, onToggle }: { shown: boolean; onToggle: () => void }
 }
 
 export default function ChangePasswordModal({ onClose }: { onClose: () => void }) {
+    const [mounted, setMounted] = useState(false);
     const [shown, setShown]     = useState(false);
     const [saving, setSaving]   = useState(false);
     const [success, setSuccess] = useState(false);
@@ -39,9 +40,12 @@ export default function ChangePasswordModal({ onClose }: { onClose: () => void }
     const [form, setForm]       = useState<FormState>({ new_password: "", confirm_password: "" });
     const firstRef = useRef<HTMLInputElement>(null);
 
-    // Render at opacity-0/scale-95 first, then flip on the next frame so the
-    // enter transition plays (matches the Create/Edit User modals).
+    useEffect(() => { setMounted(true); }, []);
+    // Once mounted (portal painted at opacity-0/scale-95), flip on the next frame
+    // so the enter transition plays. Gating render on `mounted` keeps the server
+    // and first client render identical (null) — no hydration mismatch.
     useEffect(() => {
+        if (!mounted) return;
         const raf = requestAnimationFrame(() => { setShown(true); firstRef.current?.focus(); });
         const prev = document.body.style.overflow;
         document.body.style.overflow = "hidden";
@@ -49,7 +53,7 @@ export default function ChangePasswordModal({ onClose }: { onClose: () => void }
         window.addEventListener("keydown", onKey);
         return () => { cancelAnimationFrame(raf); document.body.style.overflow = prev; window.removeEventListener("keydown", onKey); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    }, [mounted]);
 
     function close() { if (saving) return; setShown(false); window.setTimeout(onClose, 170); }
 
@@ -87,7 +91,7 @@ export default function ChangePasswordModal({ onClose }: { onClose: () => void }
         }
     }
 
-    if (typeof document === "undefined") return null;
+    if (!mounted) return null;
 
     return createPortal(
         <div
