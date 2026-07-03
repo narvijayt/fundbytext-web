@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import type { AdminContactRow } from "../_lib/query";
+import ContactDetailModal from "./ContactDetailModal";
 
 const PAGE_SIZE_OPTIONS = [5, 10, 25, 50, 100];
 const CONTACT_FILTERS = ["all", "unread"] as const;
@@ -59,6 +60,7 @@ export default function AdminContactTable(props: Props) {
     const [pageSize, setPageSize] = useState(props.initialPageSize);
     const [loading,  setLoading]  = useState(false);
     const [busyId,   setBusyId]   = useState<string | null>(null);
+    const [view,     setView]     = useState<AdminContactRow | null>(null);
 
     const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
     const sectionRef  = useRef<HTMLDivElement>(null);
@@ -114,6 +116,14 @@ export default function AdminContactTable(props: Props) {
         } finally {
             setBusyId(null);
         }
+    }
+
+    // Toggle from the detail modal — also update the open snapshot so it reflects immediately.
+    function toggleReadFromModal() {
+        if (!view) return;
+        const next = !view.is_read;
+        setView({ ...view, is_read: next });
+        toggleRead(view.id, next);
     }
 
     const totalPages = Math.max(1, Math.ceil(total / pageSize));
@@ -181,13 +191,17 @@ export default function AdminContactTable(props: Props) {
                                 </tr>
                             ) : (
                                 rows.map((s) => (
-                                    <tr key={s.id} className={`border-b border-[#eef1f4] align-top transition-colors last:border-0 ${s.is_read ? "hover:bg-[#f7f9fb]" : "bg-blue-50/40 hover:bg-blue-50/70"}`}>
+                                    <tr
+                                        key={s.id}
+                                        onClick={() => setView(s)}
+                                        className={`cursor-pointer border-b border-[#eef1f4] align-top transition-colors last:border-0 ${s.is_read ? "hover:bg-[#f7f9fb]" : "bg-blue-50/40 hover:bg-blue-50/70"}`}
+                                    >
                                         <td className="py-4 pl-5 pr-4">
                                             <div className="flex items-start gap-2">
                                                 {!s.is_read && <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-[#0268c0]" title="Unread" />}
                                                 <div className="min-w-0">
                                                     <p className="truncate text-[13px] font-semibold text-[#003060]">{s.first_name} {s.last_name}</p>
-                                                    <a href={`mailto:${s.email}`} className="break-all text-xs text-[#0268c0] hover:underline">{s.email}</a>
+                                                    <a href={`mailto:${s.email}`} onClick={(e) => e.stopPropagation()} className="break-all text-xs text-[#0268c0] hover:underline">{s.email}</a>
                                                 </div>
                                             </div>
                                         </td>
@@ -195,12 +209,12 @@ export default function AdminContactTable(props: Props) {
                                             <span className="inline-flex items-center rounded-full bg-[#feece4] px-2.5 py-1 text-[11px] font-semibold text-[#f47435]">{s.inquiry_type}</span>
                                         </td>
                                         <td className="max-w-md px-4 py-4 text-[13px] text-[#7e8a96]">
-                                            <p className="whitespace-pre-wrap leading-relaxed">{s.message}</p>
+                                            <p className="line-clamp-2 leading-relaxed">{s.message}</p>
                                         </td>
                                         <td className="whitespace-nowrap px-4 py-4 text-[13px] text-[#7e8a96]">{fmtDate(s.created_at)}</td>
                                         <td className="py-4 pl-4 pr-5 text-right">
                                             <button
-                                                onClick={() => toggleRead(s.id, !s.is_read)}
+                                                onClick={(e) => { e.stopPropagation(); toggleRead(s.id, !s.is_read); }}
                                                 disabled={busyId === s.id}
                                                 className="whitespace-nowrap rounded-lg px-2.5 py-1.5 text-xs font-semibold text-[#0268c0] transition-colors hover:bg-[#0268c0]/10 disabled:opacity-50"
                                             >
@@ -245,6 +259,15 @@ export default function AdminContactTable(props: Props) {
                     </div>
                 )}
             </div>
+
+            {view && (
+                <ContactDetailModal
+                    submission={view}
+                    busy={busyId === view.id}
+                    onToggleRead={toggleReadFromModal}
+                    onClose={() => setView(null)}
+                />
+            )}
         </div>
     );
 }
