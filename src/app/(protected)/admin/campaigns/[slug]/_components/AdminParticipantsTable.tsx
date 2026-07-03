@@ -66,7 +66,7 @@ export default function AdminParticipantsTable({ participants, perParticipantGoa
     const [role,     setRole]     = useState<"all" | "organizers" | "participants">("all");
     const [sortDesc, setSortDesc] = useState(true);
     const [page,     setPage]     = useState(1);
-    const [pageSize, setPageSize] = useState(10);
+    const [pageSize, setPageSize] = useState(5);
     const sectionRef = useRef<HTMLElement>(null);
 
     // True overall rank (by raised, desc) + top raiser — independent of filters/sort.

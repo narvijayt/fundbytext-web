@@ -223,6 +223,7 @@ export default async function CampaignDetailPage({
     const goalAmt         = campaign.goal_amount         ? parseFloat(campaign.goal_amount.toString())         : null;
     const initialGoalAmt  = campaign.initial_goal_amount ? parseFloat(campaign.initial_goal_amount.toString()) : null;
     const daysLeft  = campaign.end_date
+        // eslint-disable-next-line react-hooks/purity -- current time for countdown math
         ? Math.max(0, Math.ceil((campaign.end_date.getTime() - Date.now()) / 86_400_000))
         : null;
 
@@ -291,6 +292,7 @@ export default async function CampaignDetailPage({
     // ── Shared stats helpers ─────────────────────────────────────────────────
 
     const daysElapsed = campaign.start_date
+        // eslint-disable-next-line react-hooks/purity -- current time for per-day math
         ? Math.max(1, Math.ceil((Date.now() - campaign.start_date.getTime()) / 86_400_000))
         : 1;
     // Anonymous raised — campaign-wide (from the fetched donations sample)
@@ -615,7 +617,7 @@ export default async function CampaignDetailPage({
                         {/* Participant rankings — same card as the organizer view, read-only (no actions) */}
                         {campaign.campaign_type === "organization" && (
                             <ParticipantsTable
-                                participants={participants.slice(0, 10)}
+                                participants={participants.slice(0, 5)}
                                 initialTotal={participants.length}
                                 initialMaxRaised={participants[0]?.raised ?? 0}
                                 isOrganizer={false}
@@ -752,7 +754,7 @@ export default async function CampaignDetailPage({
                     {isOrganizer && campaign.campaign_type === "organization" && (
                         <div id="participants" className="scroll-mt-6">
                             <ParticipantsTable
-                                participants={participants.slice(0, 10)}
+                                participants={participants.slice(0, 5)}
                                 initialTotal={participants.length}
                                 initialMaxRaised={participants[0]?.raised ?? 0}
                                 isOrganizer={isOrganizer}

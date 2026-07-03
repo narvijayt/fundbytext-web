@@ -113,7 +113,7 @@ export default function ParticipantsTable({ participants: initialParticipants, i
     const [loading,      setLoading]      = useState(false);
     const [search,       setSearch]       = useState("");
     const [page,         setPage]         = useState(1);
-    const [pageSize,     setPageSize]     = useState(10);
+    const [pageSize,     setPageSize]     = useState(5);
     const sectionRef                      = useRef<HTMLElement>(null);
     const searchTimer                     = useRef<ReturnType<typeof setTimeout> | null>(null);
     const [sortDesc,     setSortDesc]     = useState(true);

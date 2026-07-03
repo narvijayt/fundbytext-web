@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { CampaignStatus } from "@/generated/prisma/enums";
 
 export const PAGE_SIZE_OPTIONS = [5, 10, 25, 50, 100] as const;
-export const DEFAULT_PAGE_SIZE = 10;
+export const DEFAULT_PAGE_SIZE = 5;
 
 export const STATUS_FILTERS = ["all", "active", "upcoming", "draft", "completed"] as const;
 export type StatusFilter = (typeof STATUS_FILTERS)[number];

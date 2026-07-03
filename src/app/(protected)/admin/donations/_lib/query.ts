@@ -6,7 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { PaymentStatus } from "@/generated/prisma/enums";
 
 export const PAGE_SIZE_OPTIONS = [5, 10, 25, 50, 100] as const;
-export const DEFAULT_PAGE_SIZE = 10;
+export const DEFAULT_PAGE_SIZE = 5;
 
 export const STATUS_FILTERS = ["all", "flagged", "anonymous"] as const;
 export type DonationFilter = (typeof STATUS_FILTERS)[number];

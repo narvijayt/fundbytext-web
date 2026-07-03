@@ -4,7 +4,7 @@
 import { prisma } from "@/lib/prisma";
 
 export const PAGE_SIZE_OPTIONS = [5, 10, 25, 50, 100] as const;
-export const DEFAULT_PAGE_SIZE = 25;
+export const DEFAULT_PAGE_SIZE = 5;
 
 export const CONTACT_FILTERS = ["all", "unread"] as const;
 export type ContactFilter = (typeof CONTACT_FILTERS)[number];
