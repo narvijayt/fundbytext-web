@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
@@ -37,6 +38,28 @@ const STATUS_BADGE: Record<string, { label: string; cls: string }> = {
 };
 
 const META_ICON = "h-4 w-4 shrink-0 text-[#9aa7b8]";
+
+// ── Detail-card building blocks ──────────────────────────────────────────────
+function SectionHeader({ icon, title, subtitle }: { icon: ReactNode; title: string; subtitle?: string }) {
+    return (
+        <div className="flex items-center gap-3 border-b border-[#eef1f4] px-6 py-4">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-[#0268c0]">{icon}</span>
+            <div className="min-w-0">
+                <h2 className="text-[16px] font-bold text-[#003060]">{title}</h2>
+                {subtitle && <p className="mt-0.5 text-xs text-[#9aa7b8]">{subtitle}</p>}
+            </div>
+        </div>
+    );
+}
+
+function InfoTile({ label, children, accent = false, className = "" }: { label: string; children: ReactNode; accent?: boolean; className?: string }) {
+    return (
+        <div className={`rounded-xl border px-4 py-3 ${accent ? "border-[#d9e8f8] bg-linear-to-br from-[#f2f8ff] to-white" : "border-[#eef1f4] bg-[#f7f9fb]"} ${className}`}>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.4px] text-[#9aa7b8]">{label}</p>
+            <div className="mt-1 text-sm font-semibold text-[#003060]">{children}</div>
+        </div>
+    );
+}
 
 export default async function AdminCampaignDetailPage({ params }: Ctx) {
     const { slug } = await params;
@@ -305,81 +328,93 @@ export default async function AdminCampaignDetailPage({ params }: Ctx) {
                 const GOAL_TYPE_LABELS: Record<string, string> = {
                     open_ended: "Open Ended (auto-scales +20%)", fixed: "Fixed", org_goal: "Organization Goal", participant_goal: "Per-Participant Goal",
                 };
+                const hasMedia      = profileMedia.length > 0 || heroMedia.length > 0 || galleryMedia.length > 0;
+                const showOrgDisplay = campaign.org_display_name && campaign.organization?.name && campaign.organization.name !== campaign.org_display_name;
                 return (
                     <div className="overflow-hidden rounded-2xl border border-[#e7e9eb] bg-white shadow-[0px_4px_30px_0px_rgba(0,91,172,0.08)]">
-                        <div className="border-b border-[#eef1f4] px-6 py-4"><h2 className="text-[16px] font-bold text-[#003060]">Campaign Details</h2></div>
+                        <SectionHeader
+                            icon={<svg className="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.7}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>}
+                            title="Campaign Details"
+                        />
                         <div className="space-y-6 p-6">
-                            {(profileMedia.length > 0 || heroMedia.length > 0 || galleryMedia.length > 0) && (
-                                <div className="space-y-3">
-                                    <p className="text-xs font-semibold uppercase tracking-wide text-[#9aa7b8]">Media</p>
-                                    <div className="flex flex-wrap gap-3">
+                            {/* Media */}
+                            {hasMedia && (
+                                <div>
+                                    <p className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-[#9aa7b8]">Media</p>
+                                    <div className="flex flex-wrap items-end gap-3">
                                         {profileMedia.map((m) => (
-                                            // eslint-disable-next-line @next/next/no-img-element
-                                            <div key={m.id} className="flex flex-col items-center gap-1"><img src={m.url} alt="Profile" className="h-16 w-16 rounded-full border border-[#e7e9eb] object-cover shadow-sm" /><span className="text-[10px] text-[#9aa7b8]">Profile</span></div>
+                                            <figure key={m.id} className="flex flex-col items-center gap-1.5">
+                                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                <img src={m.url} alt="Profile" className="h-16 w-16 rounded-full border border-[#e7e9eb] object-cover shadow-sm" />
+                                                <figcaption className="text-[10px] font-medium uppercase tracking-wide text-[#9aa7b8]">Profile</figcaption>
+                                            </figure>
                                         ))}
                                         {heroMedia.map((m) => (
-                                            // eslint-disable-next-line @next/next/no-img-element
-                                            <div key={m.id} className="flex flex-col items-center gap-1"><img src={m.url} alt="Hero" className="h-24 w-40 rounded-lg border border-[#e7e9eb] object-cover shadow-sm" /><span className="text-[10px] text-[#9aa7b8]">Hero Photo</span></div>
+                                            <figure key={m.id} className="overflow-hidden rounded-xl border border-[#e7e9eb] bg-white shadow-sm">
+                                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                <img src={m.url} alt="Hero" className="h-24 w-40 object-cover" />
+                                                <figcaption className="border-t border-[#eef1f4] px-2 py-1 text-center text-[10px] font-medium uppercase tracking-wide text-[#9aa7b8]">Hero Photo</figcaption>
+                                            </figure>
                                         ))}
                                         {galleryMedia.map((m, i) => (
-                                            // eslint-disable-next-line @next/next/no-img-element
-                                            <div key={m.id} className="flex flex-col items-center gap-1"><img src={m.url} alt={`Gallery ${i + 1}`} className="h-24 w-28 rounded-lg border border-[#e7e9eb] object-cover shadow-sm" /><span className="text-[10px] text-[#9aa7b8]">Gallery {i + 1}</span></div>
+                                            <figure key={m.id} className="overflow-hidden rounded-xl border border-[#e7e9eb] bg-white shadow-sm">
+                                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                <img src={m.url} alt={`Gallery ${i + 1}`} className="h-24 w-28 object-cover" />
+                                                <figcaption className="border-t border-[#eef1f4] px-2 py-1 text-center text-[10px] font-medium uppercase tracking-wide text-[#9aa7b8]">Gallery {i + 1}</figcaption>
+                                            </figure>
                                         ))}
                                     </div>
                                 </div>
                             )}
 
-                            <div className="grid grid-cols-1 gap-x-10 gap-y-4 text-sm sm:grid-cols-2">
-                                {campaign.goal_type && (
-                                    <div><p className="mb-0.5 text-xs text-[#9aa7b8]">Goal Type</p><p className="font-semibold text-[#003060]">{GOAL_TYPE_LABELS[campaign.goal_type] ?? campaign.goal_type}</p></div>
-                                )}
-                                {campaign.campaign_type === "organization" && campaign.donors_per_participant != null && (
-                                    <div><p className="mb-0.5 text-xs text-[#9aa7b8]">Donors Per Participant</p><p className="font-semibold text-[#003060]">{campaign.donors_per_participant}</p></div>
-                                )}
-                                {campaign.org_display_name && campaign.organization?.name && campaign.organization.name !== campaign.org_display_name && (
-                                    <div><p className="mb-0.5 text-xs text-[#9aa7b8]">Org Display Name</p><p className="font-semibold text-[#003060]">{campaign.org_display_name}</p></div>
-                                )}
+                            {/* Info tiles */}
+                            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                                {campaign.goal_type && <InfoTile label="Goal Type">{GOAL_TYPE_LABELS[campaign.goal_type] ?? campaign.goal_type}</InfoTile>}
+                                {campaign.campaign_type === "organization" && campaign.donors_per_participant != null && <InfoTile label="Donors Per Participant">{campaign.donors_per_participant}</InfoTile>}
+                                {showOrgDisplay && <InfoTile label="Org Display Name">{campaign.org_display_name}</InfoTile>}
                                 {campaign.goal_type && goalAmt != null && (
-                                    <div className="sm:col-span-2">
-                                        <p className="mb-1 text-xs text-[#9aa7b8]">Fundraising Goal</p>
+                                    <InfoTile label="Fundraising Goal" accent className="sm:col-span-2">
                                         {campaign.goal_type === "open_ended" ? (
                                             <div className="flex flex-wrap items-center gap-2">
-                                                <span className="font-semibold text-[#003060]">{fmtUSD0(initialGoalAmt ?? goalAmt)}</span>
-                                                <span className="text-[#9aa7b8]">initial</span>
+                                                <span className="text-[15px] font-bold text-[#003060]">{fmtUSD0(initialGoalAmt ?? goalAmt)}</span>
+                                                <span className="text-xs font-medium text-[#9aa7b8]">initial</span>
                                                 {goalAmt !== (initialGoalAmt ?? goalAmt) && (
                                                     <>
                                                         <svg className="h-3.5 w-3.5 text-[#9aa7b8]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
-                                                        <span className="font-bold text-[#f47435]">{fmtUSD0(goalAmt)}</span>
-                                                        <span className="text-xs font-medium text-[#f47435]">scaled</span>
+                                                        <span className="text-[15px] font-bold text-[#f47435]">{fmtUSD0(goalAmt)}</span>
+                                                        <span className="rounded-full bg-orange-100 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#f47435]">scaled</span>
                                                     </>
                                                 )}
                                             </div>
                                         ) : campaign.goal_type === "participant_goal" ? (
-                                            <div className="flex flex-wrap items-center gap-2 text-[#5b6b7c]">
-                                                <span>{fmtUSD0(goalAmt)} <span className="text-[#9aa7b8]">per participant</span></span>
-                                                <span className="text-[#9aa7b8]">×</span>
-                                                <span>{participants.length} participants</span>
-                                                <span className="text-[#9aa7b8]">=</span>
-                                                <span className="font-bold text-[#003060]">{fmtUSD0(effectiveGoalAmt ?? goalAmt)}</span>
+                                            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] font-medium text-[#5b6b7c]">
+                                                <span className="font-semibold text-[#003060]">{fmtUSD0(goalAmt)}</span><span className="text-[#9aa7b8]">per participant</span>
+                                                <span className="text-[#9aa7b8]">×</span><span>{participants.length} participants</span>
+                                                <span className="text-[#9aa7b8]">=</span><span className="text-[15px] font-bold text-[#003060]">{fmtUSD0(effectiveGoalAmt ?? goalAmt)}</span>
                                             </div>
                                         ) : (
-                                            <span className="font-semibold text-[#003060]">{fmtUSD0(goalAmt)}</span>
+                                            <span className="text-[15px] font-bold text-[#003060]">{fmtUSD0(goalAmt)}</span>
                                         )}
-                                    </div>
+                                    </InfoTile>
                                 )}
                             </div>
 
+                            {/* Story */}
                             {campaign.story && (
-                                <div className="text-sm">
-                                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-[#9aa7b8]">Campaign Story</p>
-                                    <div className="leading-relaxed text-[#5b6b7c] [&_a]:text-[#0268c0] [&_a]:underline [&_blockquote]:border-l-4 [&_blockquote]:border-gray-200 [&_blockquote]:pl-3 [&_blockquote]:italic [&_blockquote]:text-[#9aa7b8] [&_em]:italic [&_h1]:mb-2 [&_h1]:text-lg [&_h1]:font-bold [&_h2]:mb-1.5 [&_h2]:text-base [&_h2]:font-bold [&_h3]:mb-1 [&_h3]:font-semibold [&_li]:mb-0.5 [&_ol]:mb-2 [&_ol]:list-decimal [&_ol]:pl-5 [&_p]:mb-2 [&_p:last-child]:mb-0 [&_strong]:font-semibold [&_ul]:mb-2 [&_ul]:list-disc [&_ul]:pl-5" dangerouslySetInnerHTML={{ __html: campaign.story }} />
+                                <div>
+                                    <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-[#9aa7b8]">Campaign Story</p>
+                                    <div className="rounded-xl border border-[#eef1f4] bg-[#fbfcfe] px-4 py-3.5 text-sm leading-relaxed text-[#5b6b7c] [&_a]:text-[#0268c0] [&_a]:underline [&_blockquote]:border-l-4 [&_blockquote]:border-gray-200 [&_blockquote]:pl-3 [&_blockquote]:italic [&_blockquote]:text-[#9aa7b8] [&_em]:italic [&_h1]:mb-2 [&_h1]:text-lg [&_h1]:font-bold [&_h1]:text-[#003060] [&_h2]:mb-1.5 [&_h2]:text-base [&_h2]:font-bold [&_h2]:text-[#003060] [&_h3]:mb-1 [&_h3]:font-semibold [&_h3]:text-[#003060] [&_li]:mb-0.5 [&_ol]:mb-2 [&_ol]:list-decimal [&_ol]:pl-5 [&_p]:mb-2 [&_p:last-child]:mb-0 [&_strong]:font-semibold [&_strong]:text-[#003060] [&_ul]:mb-2 [&_ul]:list-disc [&_ul]:pl-5" dangerouslySetInnerHTML={{ __html: campaign.story }} />
                                 </div>
                             )}
 
+                            {/* Thank-you note */}
                             {campaign.thank_you_message && (
-                                <div className="text-sm">
-                                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-[#9aa7b8]">Thank You Note for Donors (shown in email)</p>
-                                    <p className="whitespace-pre-wrap rounded-xl border border-[#eef1f4] bg-[#f7f9fb] px-4 py-3 leading-relaxed text-[#5b6b7c]">{campaign.thank_you_message}</p>
+                                <div>
+                                    <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-[#9aa7b8]">Thank You Note for Donors <span className="font-medium normal-case tracking-normal text-[#9aa7b8]">(shown in email)</span></p>
+                                    <div className="flex gap-3 rounded-xl border border-[#eef1f4] bg-[#f7f9fb] px-4 py-3.5">
+                                        <svg className="mt-0.5 h-4 w-4 shrink-0 text-[#c9d6e2]" fill="currentColor" viewBox="0 0 24 24"><path d="M7.17 6A5.001 5.001 0 002 11v5a2 2 0 002 2h4a2 2 0 002-2v-4a2 2 0 00-2-2H6.5A2.5 2.5 0 019 6.5V6a1 1 0 00-1-1H7.17zM17.17 6A5.001 5.001 0 0012 11v5a2 2 0 002 2h4a2 2 0 002-2v-4a2 2 0 00-2-2h-1.5A2.5 2.5 0 0119 6.5V6a1 1 0 00-1-1h-.83z" /></svg>
+                                        <p className="whitespace-pre-wrap text-sm leading-relaxed text-[#5b6b7c]">{campaign.thank_you_message}</p>
+                                    </div>
                                 </div>
                             )}
                         </div>
@@ -389,23 +424,46 @@ export default async function AdminCampaignDetailPage({ params }: Ctx) {
 
             {/* Payout details */}
             <div className="overflow-hidden rounded-2xl border border-[#e7e9eb] bg-white shadow-[0px_4px_30px_0px_rgba(0,91,172,0.08)]">
-                <div className="border-b border-[#eef1f4] px-6 py-4">
-                    <h2 className="text-[16px] font-bold text-[#003060]">Payout Details</h2>
-                    <p className="mt-0.5 text-xs text-[#9aa7b8]">Check mailing address on file</p>
-                </div>
+                <SectionHeader
+                    icon={<svg className="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.7}><path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
+                    title="Payout Details"
+                    subtitle="Check mailing address on file"
+                />
                 {!campaign.payout ? (
-                    <p className="px-6 py-8 text-center text-sm text-[#9aa7b8]">No payout details added yet.</p>
+                    <div className="flex flex-col items-center gap-2 px-6 py-10 text-center">
+                        <svg className="h-8 w-8 text-[#d4dee7]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
+                        <p className="text-sm text-[#9aa7b8]">No payout details added yet.</p>
+                    </div>
                 ) : (
-                    <div className="grid grid-cols-1 gap-x-10 gap-y-4 px-6 py-5 text-sm sm:grid-cols-2">
-                        <div><p className="mb-0.5 text-xs text-[#9aa7b8]">Recipient</p><p className="font-semibold text-[#003060]">{campaign.payout.recipient_first_name} {campaign.payout.recipient_last_name}</p></div>
-                        {campaign.payout.org_name && (<div><p className="mb-0.5 text-xs text-[#9aa7b8]">Organization</p><p className="font-semibold text-[#003060]">{campaign.payout.org_name}</p></div>)}
-                        <div className={campaign.payout.org_name ? "sm:col-span-2" : ""}>
-                            <p className="mb-0.5 text-xs text-[#9aa7b8]">Mailing Address</p>
-                            <p className="font-semibold text-[#003060]">{campaign.payout.street_address}{campaign.payout.apt_suite && `, ${campaign.payout.apt_suite}`}</p>
-                            <p className="text-[#5b6b7c]">{campaign.payout.city}, {campaign.payout.state} {campaign.payout.zip}</p>
+                    <div className="space-y-4 p-6">
+                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                            <InfoTile label="Recipient">{campaign.payout.recipient_first_name} {campaign.payout.recipient_last_name}</InfoTile>
+                            {campaign.payout.org_name && <InfoTile label="Organization">{campaign.payout.org_name}</InfoTile>}
                         </div>
-                        <div><p className="mb-0.5 text-xs text-[#9aa7b8]">Added</p><p className="text-[#5b6b7c]">{fmtDateTime(campaign.payout.created_at)}</p></div>
-                        <div><p className="mb-0.5 text-xs text-[#9aa7b8]">Last Updated</p><p className="text-[#5b6b7c]">{fmtDateTime(campaign.payout.updated_at)}</p></div>
+
+                        {/* Mailing address — highlighted */}
+                        <div className="flex items-start gap-3 rounded-xl border border-[#e7e9eb] bg-[#f7f9fb] px-4 py-3.5">
+                            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white text-[#0268c0] shadow-sm">
+                                <svg className="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.7}><path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a2 2 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                            </span>
+                            <div className="min-w-0">
+                                <p className="text-[10px] font-semibold uppercase tracking-[0.4px] text-[#9aa7b8]">Mailing Address</p>
+                                <p className="mt-1 text-sm font-semibold text-[#003060]">{campaign.payout.street_address}{campaign.payout.apt_suite && `, ${campaign.payout.apt_suite}`}</p>
+                                <p className="text-sm text-[#5b6b7c]">{campaign.payout.city}, {campaign.payout.state} {campaign.payout.zip}</p>
+                            </div>
+                        </div>
+
+                        {/* Meta */}
+                        <div className="flex flex-wrap gap-x-6 gap-y-2 border-t border-[#eef1f4] pt-4 text-xs text-[#9aa7b8]">
+                            <span className="inline-flex items-center gap-1.5">
+                                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                                Added {fmtDateTime(campaign.payout.created_at)}
+                            </span>
+                            <span className="inline-flex items-center gap-1.5">
+                                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                                Last updated {fmtDateTime(campaign.payout.updated_at)}
+                            </span>
+                        </div>
                     </div>
                 )}
             </div>
