@@ -8,26 +8,39 @@ type Props = {
     isOrganizer: boolean;
     participantView?: boolean;
     myMemberId?: string; // pre-assign to self when in participant view
+    /* Fixed-goal remaining cap for the suggested amount (cents). null = any
+       campaign/goal type (uncapped); 0 = fixed goal already met (feature off). */
+    maxPrefillCents?: number | null;
     onClose: () => void;
     onSuccess?: () => void;
 };
+
+const usd = (n: number) => new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(n);
 
 const INPUT     = "w-full rounded-[12px] border border-[#d4dee7] bg-white px-4 py-2.5 text-[15px] text-[#003060] placeholder:text-[#9aa7b8] transition-colors focus:border-[#0268c0] focus:outline-none focus:ring-2 focus:ring-[#0268c0]/20";
 const INPUT_ERR = "w-full rounded-[12px] border border-red-300 bg-white px-4 py-2.5 text-[15px] text-[#003060] placeholder:text-[#9aa7b8] transition-colors focus:border-red-400 focus:outline-none focus:ring-2 focus:ring-red-400/25";
 const LABEL     = "mb-1.5 block text-[13px] font-semibold text-[#003060]";
 
-export default function AddDonorModal({ campaignSlug, participants, isOrganizer, participantView, myMemberId, onClose, onSuccess }: Props) {
+export default function AddDonorModal({ campaignSlug, participants, isOrganizer, participantView, myMemberId, maxPrefillCents, onClose, onSuccess }: Props) {
     const [firstName,   setFirstName]   = useState("");
     const [lastName,    setLastName]    = useState("");
     const [email,       setEmail]       = useState("");
     const [phone,       setPhone]       = useState("");
     const [assignedMemberId, setAssignedMemberId] = useState<string>(myMemberId ?? "");
+    const [prefillEnabled, setPrefillEnabled] = useState(false);
+    const [prefillRaw,  setPrefillRaw]  = useState("");
     const [saving,      setSaving]      = useState(false);
     const [error,       setError]       = useState<string | null>(null);
     const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
     const [shown,       setShown]       = useState(false);
 
     const firstRef = useRef<HTMLInputElement>(null);
+
+    // Suggested-amount cap: fixed-goal campaigns limit it to the remaining goal.
+    const isFixedCap  = maxPrefillCents != null;         // fixed-goal individual campaign
+    const goalMet     = maxPrefillCents === 0;           // fixed goal already reached
+    const prefillCents = Math.round((parseFloat(prefillRaw) || 0) * 100);
+    const prefillExceeds = isFixedCap && maxPrefillCents! > 0 && prefillCents > maxPrefillCents!;
 
     useEffect(() => {
         const raf = requestAnimationFrame(() => { setShown(true); firstRef.current?.focus(); });
@@ -54,6 +67,11 @@ export default function AddDonorModal({ campaignSlug, participants, isOrganizer,
         if (!firstName.trim())  errs.firstName = "First name is required.";
         if (!lastName.trim())   errs.lastName  = "Last name is required.";
         if (!email && !phone)   errs.contact   = "Please provide an email address or phone number.";
+        const wantsPrefill = prefillEnabled && !goalMet;
+        if (wantsPrefill) {
+            if (prefillCents < 100)     errs.prefill = "Enter at least $1.";
+            else if (prefillExceeds)    errs.prefill = `Max is ${usd(maxPrefillCents! / 100)}.`;
+        }
         if (Object.keys(errs).length > 0) { setFieldErrors(errs); return; }
         setFieldErrors({});
         setSaving(true);
@@ -69,6 +87,7 @@ export default function AddDonorModal({ campaignSlug, participants, isOrganizer,
                 phone: phone || undefined,
                 assigned_member_id: assignedMemberId || undefined,
                 participant_view: participantView ?? false,
+                prefill_amount_cents: wantsPrefill ? prefillCents : null,
             }),
         });
 
@@ -158,6 +177,56 @@ export default function AddDonorModal({ campaignSlug, participants, isOrganizer,
                             </select>
                         </div>
                     )}
+
+                    {/* Suggested (prefilled) donation amount — opt-in */}
+                    <div className="rounded-xl border border-[#e7e9eb] p-3.5">
+                        <label className={`flex items-start gap-3 ${goalMet ? "cursor-not-allowed opacity-70" : "cursor-pointer"}`}>
+                            <input
+                                type="checkbox"
+                                checked={prefillEnabled && !goalMet}
+                                disabled={goalMet}
+                                onChange={(e) => { setPrefillEnabled(e.target.checked); setFieldErrors((f) => ({ ...f, prefill: "" })); }}
+                                className="mt-0.5 h-4 w-4 shrink-0 rounded border-[#d4dee7] text-[#0268c0] focus:ring-2 focus:ring-[#0268c0]/30 disabled:opacity-50"
+                            />
+                            <span className="min-w-0">
+                                <span className="block text-[13px] font-semibold text-[#003060]">Set a suggested donation amount</span>
+                                <span className="mt-0.5 block text-[12px] leading-snug text-[#7e8a96]">Pre-fills this amount when the donor opens their invite link. They can still change it.</span>
+                            </span>
+                        </label>
+
+                        {goalMet && (
+                            <p className="mt-2.5 text-xs text-[#9aa7b8]">This campaign has reached its fixed goal, so no amount can be suggested.</p>
+                        )}
+
+                        {prefillEnabled && !goalMet && (
+                            <div className="mt-3">
+                                <div className="mb-1.5 flex items-baseline justify-between">
+                                    <label className="text-[12px] font-semibold text-[#003060]">Suggested amount</label>
+                                    {isFixedCap && maxPrefillCents! > 0 && (
+                                        <button type="button" onClick={() => { setPrefillRaw(String(maxPrefillCents! / 100)); setFieldErrors((f) => ({ ...f, prefill: "" })); }} className="text-[11px] font-semibold text-[#0268c0] hover:underline">
+                                            Max: {usd(maxPrefillCents! / 100)}
+                                        </button>
+                                    )}
+                                </div>
+                                <div className="relative">
+                                    <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[15px] font-bold text-[#9aa7b8]">$</span>
+                                    <input
+                                        type="text"
+                                        inputMode="decimal"
+                                        value={prefillRaw}
+                                        onChange={(e) => { const v = e.target.value; if (v === "" || /^\d*\.?\d{0,2}$/.test(v)) { setPrefillRaw(v); setFieldErrors((f) => ({ ...f, prefill: "" })); } }}
+                                        placeholder="0.00"
+                                        className={`w-full rounded-[12px] border bg-white py-2.5 pl-8 pr-4 text-[15px] text-[#003060] placeholder:text-[#9aa7b8] transition-colors focus:outline-none focus:ring-2 ${fieldErrors.prefill || prefillExceeds ? "border-red-300 focus:border-red-400 focus:ring-red-400/25" : "border-[#d4dee7] focus:border-[#0268c0] focus:ring-[#0268c0]/20"}`}
+                                    />
+                                </div>
+                                {fieldErrors.prefill || prefillExceeds ? (
+                                    <p className="mt-1 text-xs text-red-500">{fieldErrors.prefill || `Exceeds the remaining goal (max ${usd(maxPrefillCents! / 100)}).`}</p>
+                                ) : isFixedCap && maxPrefillCents! > 0 ? (
+                                    <p className="mt-1 text-xs text-[#9aa7b8]">Limited to the remaining goal: {usd(maxPrefillCents! / 100)}.</p>
+                                ) : null}
+                            </div>
+                        )}
+                    </div>
 
                     {error && (
                         <p role="alert" className="rounded-lg bg-red-50 px-3.5 py-2.5 text-[13px] font-medium text-red-600">{error}</p>

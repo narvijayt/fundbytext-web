@@ -13,7 +13,20 @@ export type DonorPrefill = {
     firstName: string;
     lastName:  string;
     email:     string;
+    // Organizer-set suggested donation amount (cents), prefilled into the amount
+    // input (clamped to the live remaining for fixed goals). Null = not set.
+    prefillAmountCents: number | null;
 };
+
+/** Initial amount-input value (dollar string) from a donor's suggested amount,
+ *  clamped to the live remaining (`maxCents`) so a fixed-goal prefill never
+ *  exceeds what's left as donations come in. Returns "" when there's no prefill. */
+export function prefilledAmountRaw(prefill: DonorPrefill | null | undefined, maxCents: number | null): string {
+    const pc = prefill?.prefillAmountCents;
+    if (pc == null || pc <= 0) return "";
+    const c = maxCents != null ? Math.min(pc, maxCents) : pc;
+    return c > 0 ? String(c / 100) : "";
+}
 
 type Props = {
     totalRaised:        number;

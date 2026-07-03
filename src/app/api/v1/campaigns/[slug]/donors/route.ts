@@ -30,7 +30,29 @@ const postSchema = z.object({
     phone:              z.string().max(20).optional().or(z.literal("")).optional(),
     assigned_member_id: z.string().uuid().optional().nullable(), // organizer can assign
     participant_view:   z.boolean().optional(),                  // true = added while in participant view
+    // Optional suggested donation amount (cents) prefilled at donate time.
+    prefill_amount_cents: z.number().int().min(0).max(100_000_000).nullable().optional(),
 });
+
+// Clamp a suggested prefill amount (cents) to what a donor could actually give.
+// Fixed-goal individual campaigns can't exceed the remaining (goal − raised);
+// every other campaign/goal type accepts any positive amount. `total_raised`
+// moves over time, so the definitive clamp also happens at donate time.
+function clampPrefillCents(
+    prefill: number | null | undefined,
+    campaign: { goal_type: string | null; campaign_type: string | null; goal_amount: unknown; total_raised: unknown },
+): number | null {
+    let cents = prefill ?? null;
+    if (cents == null || cents <= 0) return null;
+    const isFixedGoal = campaign.goal_type === "fixed" && campaign.campaign_type === "individual";
+    if (isFixedGoal && campaign.goal_amount != null) {
+        const goalCents      = Math.round(Number(campaign.goal_amount)  * 100);
+        const raisedCents    = Math.round(Number(campaign.total_raised) * 100);
+        const remainingCents = Math.max(0, goalCents - raisedCents);
+        cents = remainingCents > 0 ? Math.min(cents, remainingCents) : 0;
+    }
+    return cents > 0 ? cents : null;
+}
 
 // ── GET ───────────────────────────────────────────────────────────────────────
 
@@ -115,6 +137,7 @@ export async function GET(req: NextRequest, ctx: Ctx) {
                     status:       true,
                     source:       true,
                     email_valid:  true,
+                    prefill_amount_cents: true,
                     invite_token: true,
                     short_code:   true,
                     created_at:   true,
@@ -134,7 +157,7 @@ export async function GET(req: NextRequest, ctx: Ctx) {
             prisma.campaignDonor.count({ where }),
         ]);
 
-        let mapped = donors.map((d) => ({
+        const mapped = donors.map((d) => ({
             ...d,
             created_at: d.created_at.getTime(),
             donations:  d.donations.map((don) => ({
@@ -182,13 +205,16 @@ export async function POST(req: NextRequest, ctx: Ctx) {
         const campaign = await prisma.campaign.findUnique({
             where: { slug },
             select: {
-                id:       true,
-                name:     true,
-                status:   true,
-                story:    true,
-                goal_amount: true,
-                end_date: true,
-                timezone: true,
+                id:            true,
+                name:          true,
+                status:        true,
+                story:         true,
+                goal_type:     true,
+                campaign_type: true,
+                goal_amount:   true,
+                total_raised:  true,
+                end_date:      true,
+                timezone:      true,
                 members: {
                     where:  { user_id: user.id },
                     select: {
@@ -228,6 +254,7 @@ export async function POST(req: NextRequest, ctx: Ctx) {
         }
 
         const { first_name, last_name, email, phone, assigned_member_id, participant_view } = parsed.data;
+        const prefillCents = clampPrefillCents(parsed.data.prefill_amount_cents, campaign);
 
         // Validate that assigned_member_id (if provided) belongs to this campaign
         if (isOrganizer && assigned_member_id) {
@@ -259,6 +286,7 @@ export async function POST(req: NextRequest, ctx: Ctx) {
                 last_name,
                 email:        email || null,
                 phone:        phone || null,
+                prefill_amount_cents: prefillCents,
                 invite_token: donorInviteToken,
                 short_code:   shortCode,
                 source:       participant_view ? "self_added" : "invited",
@@ -289,6 +317,7 @@ export async function POST(req: NextRequest, ctx: Ctx) {
                 senderName,
                 story:        campaign.story,
                 goalAmount:   campaign.goal_amount ? Number(campaign.goal_amount) : null,
+                suggestedAmount: prefillCents != null ? prefillCents / 100 : null,
                 endDate:      campaign.end_date?.toISOString() ?? null,
                 timezone:     campaign.timezone,
                 campaignUrl:  `${APP_URL}/campaigns/${slug}${refPart}`,

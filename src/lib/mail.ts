@@ -338,6 +338,7 @@ export async function sendDonorInviteEmail({
     senderName,
     story,
     goalAmount,
+    suggestedAmount,
     endDate,
     timezone,
     campaignUrl,
@@ -348,12 +349,16 @@ export async function sendDonorInviteEmail({
     senderName: string;
     story?: string | null;
     goalAmount?: number | null;
+    suggestedAmount?: number | null;
     endDate?: string | null;
     timezone?: string | null;
     campaignUrl: string;
 }) {
     const formattedGoal = goalAmount
         ? new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(goalAmount)
+        : null;
+    const formattedSuggested = suggestedAmount != null && suggestedAmount > 0
+        ? new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(suggestedAmount)
         : null;
     const formattedEnd = endDate
         ? new Intl.DateTimeFormat("en-US", {
@@ -401,6 +406,18 @@ export async function sendDonorInviteEmail({
             <p style="margin:0 0 26px;font-size:15px;color:${BODY};line-height:1.75;border-left:3px solid ${LINE};padding-left:16px">
                 ${story.length > 300 ? story.slice(0, 297) + "…" : story}
             </p>
+            ` : ""}
+
+            ${formattedSuggested ? `
+            <table cellpadding="0" cellspacing="0" width="100%" style="margin-bottom:22px">
+              <tr>
+                <td style="background:#eef5fc;border:1px solid #cfe0f3;border-radius:12px;padding:16px 20px;text-align:center">
+                    <p style="margin:0 0 3px;font-size:11px;font-weight:700;color:${BLUE};text-transform:uppercase;letter-spacing:0.6px">Suggested amount</p>
+                    <p style="margin:0;font-size:24px;font-weight:800;color:${INK}">${formattedSuggested}</p>
+                    <p style="margin:6px 0 0;font-size:12px;color:${FAINT}">Pre-filled when you donate — you can change it.</p>
+                </td>
+              </tr>
+            </table>
             ` : ""}
 
             ${button(campaignUrl, "Support This Campaign", ORANGE)}

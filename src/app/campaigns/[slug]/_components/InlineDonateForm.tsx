@@ -10,6 +10,7 @@ import {
 } from "@stripe/react-stripe-js";
 import Link from "next/link";
 import type { DonorPrefill } from "./CampaignDonateShell";
+import { prefilledAmountRaw } from "./CampaignDonateShell";
 import type { ModalParticipant } from "./DonateModal";
 import DonationSuccess from "./DonationSuccess";
 
@@ -36,7 +37,7 @@ function InlinePaymentForm({ campaignSlug, accent, targetMember, donorPrefill, m
     const stripe   = useStripe();
     const elements = useElements();
 
-    const [raw,        setRaw]        = useState("");
+    const [raw,        setRaw]        = useState(() => prefilledAmountRaw(donorPrefill, maxDonationCents));
     const [firstName,  setFirstName]  = useState(donorPrefill?.firstName ?? "");
     const [lastName,   setLastName]   = useState(donorPrefill?.lastName  ?? "");
     const [email,      setEmail]      = useState(donorPrefill?.email     ?? "");

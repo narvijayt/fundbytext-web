@@ -135,6 +135,7 @@ export default async function CampaignDetailPage({
                 status:          true,
                 source:          true,
                 email_valid:     true,
+                prefill_amount_cents: true,
                 invite_token:    true,
                 short_code:      true,
                 created_at:      true,
@@ -222,6 +223,11 @@ export default async function CampaignDetailPage({
     const raisedAmt       = parseFloat(campaign.total_raised.toString());
     const goalAmt         = campaign.goal_amount         ? parseFloat(campaign.goal_amount.toString())         : null;
     const initialGoalAmt  = campaign.initial_goal_amount ? parseFloat(campaign.initial_goal_amount.toString()) : null;
+    // Cap for a donor's suggested-donation amount: fixed-goal individual campaigns
+    // limit it to the remaining (goal − raised); every other type is uncapped (null).
+    const prefillMaxCents = campaign.goal_type === "fixed" && campaign.campaign_type === "individual" && goalAmt != null
+        ? Math.max(0, Math.round((goalAmt - raisedAmt) * 100))
+        : null;
     const daysLeft  = campaign.end_date
         // eslint-disable-next-line react-hooks/purity -- current time for countdown math
         ? Math.max(0, Math.ceil((campaign.end_date.getTime() - Date.now()) / 86_400_000))
@@ -690,6 +696,7 @@ export default async function CampaignDetailPage({
                             myMemberId={myMembership.id}
                             topDonorId={topDonorId}
                             isCompleted={campaign.status === CampaignStatus.completed}
+                            maxPrefillCents={prefillMaxCents}
                         />
                         </div>
 
@@ -785,6 +792,7 @@ export default async function CampaignDetailPage({
                             return { id: p.id, first_name, last_name: rest.join(" ") };
                         })}
                         isCompleted={campaign.status === CampaignStatus.completed}
+                        maxPrefillCents={prefillMaxCents}
                     />
                     </div>
 

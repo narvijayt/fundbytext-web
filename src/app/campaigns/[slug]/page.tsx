@@ -197,7 +197,7 @@ export default async function CampaignPublicPage({
     const donorPrefillRecord = donorToken
         ? await prisma.campaignDonor.findUnique({
             where:  { invite_token: donorToken },
-            select: { id: true, first_name: true, last_name: true, email: true },
+            select: { id: true, first_name: true, last_name: true, email: true, prefill_amount_cents: true },
           })
         : null;
     const donorPrefill = donorPrefillRecord ? {
@@ -205,6 +205,7 @@ export default async function CampaignPublicPage({
         firstName: donorPrefillRecord.first_name,
         lastName:  donorPrefillRecord.last_name,
         email:     donorPrefillRecord.email ?? "",
+        prefillAmountCents: donorPrefillRecord.prefill_amount_cents ?? null,
     } : null;
 
     const isParticipantRefLink = !!defaultTargetMemberId && !donorPrefill;

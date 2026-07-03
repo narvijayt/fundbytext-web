@@ -13,6 +13,7 @@ import {
     useStripe,
 } from "@stripe/react-stripe-js";
 import type { DonorPrefill } from "./CampaignDonateShell";
+import { prefilledAmountRaw } from "./CampaignDonateShell";
 import DonationSuccess, { type DonationSuccessData } from "./DonationSuccess";
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
@@ -97,7 +98,7 @@ function DonateForm({
     const stripe   = useStripe();
     const elements = useElements();
 
-    const [raw,        setRaw]        = useState("");
+    const [raw,        setRaw]        = useState(() => prefilledAmountRaw(donorPrefill, maxDonationCents));
     const [holderName, setHolderName] = useState(donorPrefill ? `${donorPrefill.firstName} ${donorPrefill.lastName}`.trim() : "");
     const [country,    setCountry]    = useState("US");
     const [zip,        setZip]        = useState("");

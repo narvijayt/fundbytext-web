@@ -17,8 +17,12 @@ async function getCtx(req: NextRequest, ctx: Ctx) {
     const campaign = await prisma.campaign.findUnique({
         where:  { slug },
         select: {
-            id:      true,
-            status:  true,
+            id:            true,
+            status:        true,
+            goal_type:     true,
+            campaign_type: true,
+            goal_amount:   true,
+            total_raised:  true,
             members: {
                 where:  { user_id: user.id },
                 select: { id: true, roles: { select: { role: true } } },
@@ -68,7 +72,25 @@ const putSchema = z.object({
     email:              z.string().email().max(255).transform(s => s.toLowerCase().trim()).nullable().optional(),
     phone:              z.string().max(20).optional().nullable(),
     assigned_member_id: z.string().uuid().optional().nullable(),
+    // Suggested prefill amount (cents); null clears it. Clamped to goal − raised
+    // for fixed-goal individual campaigns.
+    prefill_amount_cents: z.number().int().min(0).max(100_000_000).nullable().optional(),
 });
+
+function clampPrefillCents(
+    prefill: number | null,
+    campaign: { goal_type: string | null; campaign_type: string | null; goal_amount: unknown; total_raised: unknown },
+): number | null {
+    if (prefill == null || prefill <= 0) return null;
+    let cents = prefill;
+    if (campaign.goal_type === "fixed" && campaign.campaign_type === "individual" && campaign.goal_amount != null) {
+        const goalCents      = Math.round(Number(campaign.goal_amount)  * 100);
+        const raisedCents    = Math.round(Number(campaign.total_raised) * 100);
+        const remainingCents = Math.max(0, goalCents - raisedCents);
+        cents = remainingCents > 0 ? Math.min(cents, remainingCents) : 0;
+    }
+    return cents > 0 ? cents : null;
+}
 
 export async function PUT(req: NextRequest, ctx: Ctx) {
     const c = await getCtx(req, ctx);
@@ -83,13 +105,16 @@ export async function PUT(req: NextRequest, ctx: Ctx) {
     const parsed = putSchema.safeParse(body);
     if (!parsed.success) return NextResponse.json({ error: "Invalid data" }, { status: 422 });
 
-    const { first_name, last_name, email, phone, assigned_member_id } = parsed.data;
+    const { first_name, last_name, email, phone, assigned_member_id, prefill_amount_cents } = parsed.data;
 
     const updateData: Record<string, unknown> = {};
     if (first_name  !== undefined) updateData.first_name  = first_name;
     if (last_name   !== undefined) updateData.last_name   = last_name;
     if (email       !== undefined) updateData.email       = email;
     if (phone       !== undefined) updateData.phone       = phone;
+    if (prefill_amount_cents !== undefined) {
+        updateData.prefill_amount_cents = clampPrefillCents(prefill_amount_cents, campaign);
+    }
     if (isOrganizer && assigned_member_id !== undefined) {
         updateData.assigned_member_id = assigned_member_id;
     }

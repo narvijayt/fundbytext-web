@@ -342,6 +342,9 @@ model CampaignDonor {
     last_name          String      @db.VarChar(100)
     email              String?     @db.VarChar(255)
     phone              String?     @db.VarChar(20)
+    // Organizer/participant-set suggested donation amount (in cents). Prefilled in
+    // the donate form when this donor opens their invite link. Null = not set.
+    prefill_amount_cents Int?
     email_valid        Boolean     @default(true)
     status             DonorStatus @default(not_donated)
     source             DonorSource @default(invited)

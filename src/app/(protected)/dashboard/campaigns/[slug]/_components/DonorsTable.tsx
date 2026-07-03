@@ -20,6 +20,7 @@ export type DonorRow = {
     status:           string;
     source:           string;
     email_valid:      boolean;
+    prefill_amount_cents: number | null;   // organizer-set suggested donation amount (cents)
     invite_token:     string | null;   // null = walk-in (paid via ref link, never pre-added)
     short_code:       string | null;
     created_at:       number;          // timestamp — when donor was added ("Last Contacted")
@@ -39,6 +40,9 @@ type Props = {
     myMemberId?:   string;
     topDonorId?:   string | null;
     isCompleted?:  boolean;
+    /** Fixed-goal remaining cap for a donor's suggested amount (cents); null = any
+        campaign/goal type, 0 = fixed goal already met. */
+    maxPrefillCents?: number | null;
     /** Extra content under the section title (participant view shows its outreach stats here). */
     headerExtra?:  React.ReactNode;
 };
@@ -102,7 +106,7 @@ const PAGE_SIZE = 5;
 
 type FetchParams = { page: number; search: string; status: string; member: string; source: string; emailValid: string; sort: string };
 
-export default function DonorsTable({ donors: initialDonors, initialTotal, campaignSlug, isOrganizer, participants, myMemberId, topDonorId: initialTopDonorId, isCompleted, headerExtra }: Props) {
+export default function DonorsTable({ donors: initialDonors, initialTotal, campaignSlug, isOrganizer, participants, myMemberId, topDonorId: initialTopDonorId, isCompleted, maxPrefillCents, headerExtra }: Props) {
     const router = useRouter();
     const showAssignment = isOrganizer && participants.length > 0;
     const [donors,       setDonors]       = useState<DonorRow[]>(initialDonors);
@@ -566,6 +570,7 @@ export default function DonorsTable({ donors: initialDonors, initialTotal, campa
                     isOrganizer={isOrganizer}
                     participantView={!isOrganizer}
                     myMemberId={myMemberId}
+                    maxPrefillCents={maxPrefillCents}
                     onClose={() => setAddOpen(false)}
                     onSuccess={() => {
                         setAddOpen(false);
@@ -650,6 +655,8 @@ export default function DonorsTable({ donors: initialDonors, initialTotal, campa
                         initialLast={d.last_name}
                         email={d.email}
                         initialPhone={d.phone}
+                        initialPrefillCents={d.prefill_amount_cents}
+                        maxPrefillCents={maxPrefillCents}
                         onClose={() => setEditId(null)}
                         onRefresh={() => fetchPage(currentFilters())}
                     />
