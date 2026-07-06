@@ -42,8 +42,8 @@ export default function SearchFilterBar() {
     return (
         <div className="flex items-center gap-3">
             <div className="relative w-full max-w-[280px]">
-                <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 h-[18px] w-[18px] text-[#9aa7b8]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-                    <circle cx="11" cy="11" r="7" /><path strokeLinecap="round" d="M21 21l-4-4" />
+                <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#9aa7b8]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7}>
+                    <circle cx="11" cy="11" r="7" /><path strokeLinecap="round" d="M20 20l-3.6-3.6" />
                 </svg>
                 <input
                     value={value}
@@ -59,8 +59,9 @@ export default function SearchFilterBar() {
                     onClick={() => setMenuOpen((o) => !o)}
                     className="flex items-center gap-2 rounded-[10px] border border-[#dde0e3] bg-white px-4 py-2.5 text-[14px] font-medium text-[#003060] transition-colors hover:border-[#0268c0]"
                 >
-                    <svg className="h-[18px] w-[18px] text-[#003060]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round">
-                        <path d="M4 7h16M7 12h10M10 17h4" />
+                    <svg className="h-[18px] w-[18px] text-[#003060]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M3 8h9.4" /><path d="M17.6 8H21" /><circle cx="15" cy="8" r="2.6" />
+                        <path d="M3 16h5.4" /><path d="M13.6 16H21" /><circle cx="11" cy="16" r="2.6" />
                     </svg>
                     Filter
                 </button>

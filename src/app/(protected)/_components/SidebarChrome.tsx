@@ -11,6 +11,23 @@ import ChangePasswordModal from "./ChangePasswordModal";
 
 const GRADIENT = "linear-gradient(to bottom, #0268c0 0%, #ffffff 28%, #ffffff 100%)";
 
+// Procedural film-grain (coded feTurbulence, not a raster) — matches the subtle
+// grain the Figma sidebar carries over its blue→white wash. Sits just above the
+// gradient and below the nav content (isolate + -z-10) so text stays crisp.
+const NOISE_URI = `url("data:image/svg+xml,${encodeURIComponent(
+    "<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>",
+)}")`;
+
+function SidebarNoise() {
+    return (
+        <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0 -z-10 opacity-[0.85] mix-blend-soft-light"
+            style={{ backgroundImage: NOISE_URI, backgroundRepeat: "repeat" }}
+        />
+    );
+}
+
 type Campaign = { slug: string; name: string | null; campaign_type: string; coverImageUrl: string | null; isOrganizer: boolean; isParticipant: boolean };
 
 export type SidebarData = {
@@ -108,11 +125,11 @@ function FullContent({ data, onNavigate, desktop, onEditProfile, onChangePasswor
                 <NavLink href="/dashboard" icon={HomeIcon} label="Dashboard" onNavigate={onNavigate} />
                 {/* Divider before the campaigns list only when there are campaigns —
                     otherwise it would stack against the admin divider below. */}
-                {data.campaigns.length > 0 && <div className="border-t border-gray-100" />}
+                {data.campaigns.length > 0 && <div className="border-t border-[#003060]/10" />}
                 <SidebarCampaignsDropdown campaigns={data.campaigns} />
                 {data.isAdmin && (
                     <>
-                        <div className="border-t border-gray-100" />
+                        <div className="border-t border-[#003060]/10" />
                         <div className="space-y-1">
                             {ADMIN.map((a) => (
                                 <NavLink key={a.href} href={a.href} icon={<AdminIcon d={a.d} />} label={a.label} onNavigate={onNavigate} badge={a.href === "/admin/contact" ? data.unreadContacts : undefined} />
@@ -146,7 +163,7 @@ function RailContent({ data, onExpand, onEditProfile }: { data: SidebarData; onE
                 </button>
                 {data.isAdmin && (
                     <>
-                        <div className="my-2 h-px w-8 bg-gray-200" />
+                        <div className="my-2 h-px w-8 bg-[#003060]/10" />
                         {ADMIN.map((a) => <NavLink key={a.href} href={a.href} icon={<AdminIcon d={a.d} />} label={a.label} compact />)}
                     </>
                 )}
@@ -202,12 +219,14 @@ export default function SidebarChrome({ data }: { data: SidebarData }) {
     return (
         <>
             {/* Browser (lg+): full sidebar */}
-            <aside className="hidden lg:flex w-64 shrink-0 flex-col h-screen" style={{ background: GRADIENT }}>
+            <aside className="relative isolate hidden lg:flex w-64 shrink-0 flex-col h-screen" style={{ background: GRADIENT }}>
+                <SidebarNoise />
                 <FullContent data={liveData} desktop onEditProfile={openEditProfile} onChangePassword={openChangePassword} />
             </aside>
 
             {/* Tablet (md–lg): icon rail; the → button expands to the full sidebar */}
-            <aside className="hidden md:flex lg:hidden w-[72px] shrink-0 flex-col h-screen" style={{ background: GRADIENT }}>
+            <aside className="relative isolate hidden md:flex lg:hidden w-[72px] shrink-0 flex-col h-screen" style={{ background: GRADIENT }}>
+                <SidebarNoise />
                 <RailContent data={liveData} onExpand={() => setOpen(true)} onEditProfile={openEditProfile} />
             </aside>
 
@@ -223,7 +242,8 @@ export default function SidebarChrome({ data }: { data: SidebarData }) {
             {open && (
                 <div className="fixed inset-0 z-50 lg:hidden">
                     <div className="absolute inset-0 bg-black/40" onClick={() => setOpen(false)} />
-                    <aside className="absolute left-0 top-0 flex h-full w-[280px] flex-col shadow-2xl" style={{ background: GRADIENT }}>
+                    <aside className="absolute left-0 top-0 isolate flex h-full w-[280px] flex-col shadow-2xl" style={{ background: GRADIENT }}>
+                        <SidebarNoise />
                         <button type="button" onClick={() => setOpen(false)} aria-label="Close menu" className="absolute right-3 top-4 z-10 flex h-9 w-9 items-center justify-center rounded-lg text-[#003060] hover:bg-[#0268c0]/8">
                             <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
                         </button>

@@ -118,7 +118,8 @@ export default async function DashboardPage({
                         {query ? "Try a different search." : activeTab === "all" ? "Create your first campaign to get started." : `You have no ${activeTab} campaigns.`}
                     </p>
                     {activeTab === "all" && !query && (
-                        <Link href="/campaigns/create" className="rounded-lg bg-[#f47435] px-5 py-2.5 text-sm font-bold text-white transition-colors hover:brightness-105">
+                        <Link href="/campaigns/create" className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-[#ff8c53] to-[#f47435] px-6 py-3 text-sm font-bold text-white shadow-[0px_10px_24px_-8px_rgba(244,116,53,0.6)] transition-all hover:brightness-[1.03] hover:shadow-[0px_14px_28px_-8px_rgba(244,116,53,0.7)] active:scale-[0.98]">
+                            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round"><path d="M12 5v14M5 12h14" /></svg>
                             Create a Campaign
                         </Link>
                     )}

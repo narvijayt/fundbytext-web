@@ -76,7 +76,7 @@ function StatusBadge({ status }: { status: CampaignStatus }) {
     };
     const s = map[status] ?? map.draft;
     return (
-        <span className={`inline-flex items-center rounded-lg px-2.5 py-1.5 text-[13px] font-black leading-none ${s.cls}`}>
+        <span className={`inline-flex items-center rounded-md px-2 py-1.5 text-[14px] font-black leading-none ${s.cls}`}>
             {s.label}
         </span>
     );
@@ -121,7 +121,7 @@ export default function CampaignCard({ campaign }: { campaign: CampaignCardData 
     const donorsCount = isOrganizer ? campaign._count.donors : campaign.myDonorCount;
 
     return (
-        <div className="flex flex-col overflow-hidden rounded-2xl border border-[#e7e9eb] bg-white shadow-[0px_12px_12px_-8px_rgba(0,48,96,0.04),0px_32px_40px_-16px_rgba(2,104,192,0.12)]">
+        <div className="flex flex-col overflow-hidden rounded-2xl border border-[#e7e9eb] bg-white shadow-[0px_12px_12px_-8px_rgba(0,48,96,0.04),0px_32px_40px_-16px_rgba(2,104,192,0.16)]">
             {/* Hero image */}
             <Link href={viewHref} className="relative block h-[200px] shrink-0 bg-gray-100">
                 {heroUrl ? (
@@ -154,14 +154,14 @@ export default function CampaignCard({ campaign }: { campaign: CampaignCardData 
 
                 {/* Title + date */}
                 <div className="flex flex-col gap-2">
-                    <h3 className="text-[15px] font-bold leading-[1.3] text-[#003060] line-clamp-2">
+                    <h3 className="text-[16px] font-bold leading-[1.25] text-[#003060] line-clamp-2">
                         {campaign.name ?? <span className="italic text-gray-400">Untitled campaign</span>}
                     </h3>
                     {(status === CampaignStatus.active || status === CampaignStatus.upcoming) ? (
                         <div className="flex items-center gap-1.5">
                             <Flag className="h-10 w-auto" />
                             <div className="flex flex-col gap-1">
-                                <span className="text-[14px] font-medium leading-[1.4] text-[#7e8a96]">
+                                <span className="text-[16px] font-medium leading-[1.4] text-[#7e8a96]">
                                     {fmtDate((status === CampaignStatus.active ? campaign.start_date : campaign.start_date)?.toString() ?? null, campaign.timezone ?? "America/New_York") ?? "—"}
                                 </span>
                                 <CountdownBadge

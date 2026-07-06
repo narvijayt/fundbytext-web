@@ -15,16 +15,16 @@ function pageList(current: number, total: number): (number | "…")[] {
 export default function Pagination({ page, totalPages, params }: { page: number; totalPages: number; params: string }) {
     if (totalPages <= 1) return null;
     const href = (p: number) => `/dashboard?${[params, `page=${p}`].filter(Boolean).join("&")}`;
-    const boxCls = "flex h-10 w-10 items-center justify-center rounded-xl border border-[#e7e9eb] text-[#003060]";
+    const arrowCls = "flex h-10 w-10 items-center justify-center text-[#003060]";
 
     function Arrow({ dir }: { dir: "prev" | "next" }) {
         const target = dir === "prev" ? page - 1 : page + 1;
         const disabled = dir === "prev" ? page <= 1 : page >= totalPages;
-        const d = dir === "prev" ? "M15 19l-7-7 7-7" : "M9 5l7 7-7 7";
-        const icon = <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round"><path d={d} /></svg>;
+        const d = dir === "prev" ? "M15 18l-6-6 6-6" : "M9 6l6 6-6 6";
+        const icon = <svg className="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d={d} /></svg>;
         return disabled
-            ? <span className={`${boxCls} opacity-40`}>{icon}</span>
-            : <Link href={href(target)} className={`${boxCls} transition-colors hover:border-[#0268c0]`}>{icon}</Link>;
+            ? <span className={`${arrowCls} opacity-30`}>{icon}</span>
+            : <Link href={href(target)} className={`${arrowCls} transition-colors hover:text-[#0268c0]`}>{icon}</Link>;
     }
 
     return (
@@ -32,7 +32,7 @@ export default function Pagination({ page, totalPages, params }: { page: number;
             <Arrow dir="prev" />
             {pageList(page, totalPages).map((p, i) =>
                 p === "…" ? (
-                    <span key={`e${i}`} className="px-1 text-[14px] font-bold text-[#9aa7b8]">…</span>
+                    <span key={`e${i}`} className="flex h-10 w-10 items-center justify-center text-[14px] font-bold text-[#7e8a96]">…</span>
                 ) : (
                     <Link
                         key={p}
