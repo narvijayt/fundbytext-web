@@ -1,9 +1,10 @@
 "use client";
 
+import { useRef } from "react";
 import Image from "next/image";
 import { type Payout } from "./types";
 import { QuestionCard, Stepper, inputCls, inputErrCls } from "./ui";
-import { StateSelect } from "./DateTimePicker";
+import { StateSelect, type StateSelectHandle } from "./DateTimePicker";
 
 type Props = {
     isOrg: boolean;
@@ -113,6 +114,7 @@ export default function StepFundingGoal({
 }: Props) {
     const goalTypes = isOrg ? ORG_GOALS : INDIVIDUAL_GOALS;
     const selected = goalTypes.find((g) => g.value === goalType);
+    const stateSelectRef = useRef<StateSelectHandle>(null);
     const amountLocked = goalType === "open_ended" && isLaunched;
     const isParticipantGoal = isOrg && goalType === "participant_goal";
     const totalLabel = isOrg
@@ -336,6 +338,10 @@ export default function StepFundingGoal({
                                 <input
                                     value={payout.city}
                                     onChange={(e) => { setPayout({ ...payout, city: e.target.value }); clearFE("pay_city"); }}
+                                    onKeyDown={(e) => {
+                                        // Tab from City opens the State picker (its search input auto-focuses).
+                                        if (e.key === "Tab" && !e.shiftKey) { e.preventDefault(); stateSelectRef.current?.open(); }
+                                    }}
                                     placeholder="City"
                                     aria-label="City"
                                     className={fieldErrors.pay_city ? inputErrCls : inputCls}
@@ -344,6 +350,7 @@ export default function StepFundingGoal({
                             </div>
                             <div>
                                 <StateSelect
+                                    ref={stateSelectRef}
                                     value={payout.state}
                                     onChange={(code) => { setPayout({ ...payout, state: code }); clearFE("pay_state"); }}
                                     error={!!fieldErrors.pay_state}

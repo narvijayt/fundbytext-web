@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useImperativeHandle, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { inputCls, inputErrCls } from "./ui";
 
@@ -686,18 +686,25 @@ const US_STATES: [string, string][] = [
     ["VT", "Vermont"], ["VA", "Virginia"], ["WA", "Washington"], ["WV", "West Virginia"], ["WI", "Wisconsin"], ["WY", "Wyoming"],
 ];
 
+export type StateSelectHandle = { open: () => void };
+
 export function StateSelect({
     value,
     onChange,
     error,
+    ref,
 }: {
     value: string;
     onChange: (code: string) => void;
     error?: boolean;
+    ref?: React.Ref<StateSelectHandle>;
 }) {
     const [open, setOpen] = useState(false);
     const btnRef = useRef<HTMLButtonElement>(null);
     const selected = US_STATES.find(([c]) => c === value);
+
+    // Let a parent open the picker imperatively (e.g. on Tab from the City field).
+    useImperativeHandle(ref, () => ({ open: () => setOpen(true) }), []);
 
     return (
         <>
@@ -738,7 +745,15 @@ function StatePopover({
     onClose: () => void;
 }) {
     const ref = useRef<HTMLDivElement>(null);
+    const inputRef = useRef<HTMLInputElement>(null);
     const [query, setQuery] = useState("");
+
+    // Focus the search box once the popover has mounted + positioned. Reliable even
+    // when opened programmatically (Tab from City), where `autoFocus` can be skipped.
+    useEffect(() => {
+        const id = requestAnimationFrame(() => inputRef.current?.focus());
+        return () => cancelAnimationFrame(id);
+    }, []);
 
     useEffect(() => {
         function onClickOutside(e: MouseEvent) {
@@ -761,10 +776,16 @@ function StatePopover({
                         <circle cx="11" cy="11" r="7" /><path d="M21 21l-4.3-4.3" />
                     </svg>
                     <input
+                        ref={inputRef}
                         autoFocus
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
                         placeholder="Search state…"
+                        /* Suppress the browser's saved-search / autofill dropdown. */
+                        autoComplete="off"
+                        autoCorrect="off"
+                        autoCapitalize="off"
+                        spellCheck={false}
                         className="w-full h-10 pl-9 pr-3 rounded-xl border border-[#d4dee7] bg-[#f8fafc] text-[14px] font-medium text-[#003060] outline-none transition-colors focus:border-[#0268c0] focus:bg-white placeholder:text-gray-400 placeholder:font-normal"
                     />
                 </div>
