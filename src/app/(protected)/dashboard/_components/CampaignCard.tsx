@@ -230,7 +230,7 @@ export default function CampaignCard({ campaign }: { campaign: CampaignCardData 
                 <div className="flex items-center justify-between gap-3 border-t border-[#e7e9eb] bg-[#f9f9fc] px-4 py-4">
                     <span className="flex shrink-0 items-center gap-3 whitespace-nowrap text-[14px] font-black uppercase text-[#4b5563]">
                         <ProgressFlag className="h-6 w-6 shrink-0" />
-                        Step <span className="text-[#28c45d]">{draftStep.num}</span> / 5
+                        <span>Step <span className="text-[#28c45d]">{draftStep.num}</span> / 5</span>
                     </span>
                     <span className="truncate text-right text-[12px] font-black uppercase tracking-[1px] text-[#4b5563]">{draftStep.label}</span>
                 </div>
