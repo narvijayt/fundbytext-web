@@ -9,21 +9,22 @@ import SidebarCampaignsDropdown from "./SidebarCampaignsDropdown";
 import EditProfileModal from "./EditProfileModal";
 import ChangePasswordModal from "./ChangePasswordModal";
 
-const GRADIENT = "linear-gradient(to bottom, #0268c0 0%, #ffffff 28%, #ffffff 100%)";
+// Sidebar background — matched to Figma (node 5455:26993): a bright blue (#0081f1)
+// that fades through Blue-30 (#aed9fe) to white by ~45% of the height. (Figma's own
+// gradient export has malformed decreasing stops, so these are sampled from its
+// render: 0%→#0081f1, 20%→#aed9fe, 32%→#e7f3fe, 45%→white.)
+const GRADIENT =
+    "linear-gradient(180deg, #0081f1 0%, #aed9fe 20%, #e7f3fe 32%, #ffffff 45%)";
 
-// Procedural film-grain (coded feTurbulence, not a raster) — matches the subtle
-// grain the Figma sidebar carries over its blue→white wash. Sits just above the
+// Film-grain noise — the real Figma asset (black pixels + an alpha grain), applied
+// exactly as the design does: tiled, mix-blend-soft-light at 50%. Sits above the
 // gradient and below the nav content (isolate + -z-10) so text stays crisp.
-const NOISE_URI = `url("data:image/svg+xml,${encodeURIComponent(
-    "<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>",
-)}")`;
-
 function SidebarNoise() {
     return (
         <div
             aria-hidden
-            className="pointer-events-none absolute inset-0 -z-10 opacity-[0.85] mix-blend-soft-light"
-            style={{ backgroundImage: NOISE_URI, backgroundRepeat: "repeat" }}
+            className="pointer-events-none absolute inset-0 -z-10 opacity-50 mix-blend-soft-light"
+            style={{ backgroundImage: "url(/assets/dashboard/sidebar-noise.png)", backgroundRepeat: "repeat" }}
         />
     );
 }
