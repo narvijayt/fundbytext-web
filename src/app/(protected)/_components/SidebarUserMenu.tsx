@@ -68,18 +68,22 @@ export default function SidebarUserMenu({
                                 <span className="text-sm font-bold text-blue-600">{initial}</span>
                             )}
                         </div>
-                        <div className="min-w-0">
-                            <div className="flex items-center gap-1.5">
-                                <p className="truncate text-sm font-semibold text-gray-900">{fullName}</p>
-                                {isAdmin && (
-                                    <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[#eef4ff] px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#0268c0]">
-                                        <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M12 3l7 3v5c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6l7-3z" /><path d="M9 12l2 2 4-4" /></svg>
-                                        Admin
-                                    </span>
-                                )}
-                            </div>
-                            {orgName && (
-                                <p className="truncate text-xs text-gray-400">{orgName}</p>
+                        <div className="min-w-0 flex-1">
+                            {/* Name gets the full width; the badge sits on its own line
+                                below so it can never squeeze/truncate the name. */}
+                            <p className="truncate text-sm font-semibold text-gray-900">{fullName}</p>
+                            {(isAdmin || orgName) && (
+                                <div className="mt-0.5 flex items-center gap-1.5">
+                                    {isAdmin && (
+                                        <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[#eef4ff] px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#0268c0]">
+                                            <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M12 3l7 3v5c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6l7-3z" /><path d="M9 12l2 2 4-4" /></svg>
+                                            Admin
+                                        </span>
+                                    )}
+                                    {orgName && (
+                                        <p className="truncate text-xs text-gray-400">{orgName}</p>
+                                    )}
+                                </div>
                             )}
                         </div>
                         <svg className="ml-auto w-4 h-4 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
