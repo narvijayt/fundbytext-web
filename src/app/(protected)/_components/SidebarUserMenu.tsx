@@ -86,9 +86,16 @@ export default function SidebarUserMenu({
                                 </div>
                             )}
                         </div>
-                        <svg className="ml-auto w-4 h-4 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                        </svg>
+                        <button
+                            type="button"
+                            onClick={() => setOpen(false)}
+                            aria-label="Collapse menu"
+                            className="-mr-1 ml-auto flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
+                        >
+                            <svg className="h-4 w-4 rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </button>
                     </div>
 
                     {/* Menu items — Edit Profile + Log Out use the Figma vuesax icons;
@@ -146,7 +153,7 @@ export default function SidebarUserMenu({
                         {firstName} {lastName}.
                     </p>
                 </div>
-                <svg className="w-4 h-4 text-[#0268c0]/50 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className={`w-4 h-4 text-[#0268c0]/50 shrink-0 transition-transform ${open ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
             </button>
