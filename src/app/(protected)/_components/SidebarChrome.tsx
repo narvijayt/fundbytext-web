@@ -144,7 +144,7 @@ function FullContent({ data, onNavigate, desktop, onEditProfile, onChangePasswor
                 )}
             </nav>
             <div className="px-5 pb-5 pt-4">
-                <SidebarUserMenu firstName={data.firstName} lastName={data.lastName} photoUrl={data.photoUrl} orgName={data.orgName} role={data.role} onEditProfile={onEditProfile} onChangePassword={onChangePassword} />
+                <SidebarUserMenu firstName={data.firstName} lastName={data.lastName} photoUrl={data.photoUrl} orgName={data.orgName} role={data.role} isAdmin={data.isAdmin} onEditProfile={onEditProfile} onChangePassword={onChangePassword} />
             </div>
         </>
     );
