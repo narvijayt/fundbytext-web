@@ -330,13 +330,11 @@ function ModalBody({ user, onClose }: { user: User; onClose: () => void }) {
                                 <input ref={emailRef} type="email" value={form.email} onChange={(e) => set("email", e.target.value)} className={errors.email ? INPUT_ERR : INPUT} placeholder="Enter a valid email address" />
                                 {errors.email && <p className="mt-1 text-xs text-red-500">{errors.email}</p>}
                             </div>
-                            {emailChanged && (
-                                <div className="flex flex-col gap-1.5">
-                                    <span className={LABEL}>Confirm Email Address</span>
-                                    <input type="email" value={form.confirm_email} onChange={(e) => set("confirm_email", e.target.value)} className={errors.confirm_email ? INPUT_ERR : INPUT} placeholder="Confirm a valid email address" />
-                                    {errors.confirm_email && <p className="mt-1 text-xs text-red-500">{errors.confirm_email}</p>}
-                                </div>
-                            )}
+                            <div className="flex flex-col gap-1.5">
+                                <span className={LABEL}>Confirm Email Address</span>
+                                <input type="email" value={form.confirm_email} onChange={(e) => set("confirm_email", e.target.value)} className={errors.confirm_email ? INPUT_ERR : INPUT} placeholder="Confirm a valid email address" />
+                                {errors.confirm_email && <p className="mt-1 text-xs text-red-500">{errors.confirm_email}</p>}
+                            </div>
                         </>
                     ) : (
                         <ReadOnlyRow label="Email Address" value={form.email} onEdit={() => startEdit("email")} accessory={<EmailVerifyStatus verified={user.is_email_verified} />} />
