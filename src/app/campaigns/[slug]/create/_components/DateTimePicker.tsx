@@ -746,7 +746,10 @@ function StatePopover({
 }) {
     const ref = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
+    const highlightedRef = useRef<HTMLButtonElement>(null);
     const [query, setQuery] = useState("");
+    // Keyboard-highlighted option — starts on the currently selected state.
+    const [highlight, setHighlight] = useState(() => Math.max(0, US_STATES.findIndex(([c]) => c === value)));
 
     // Focus the search box once the popover has mounted + positioned. Reliable even
     // when opened programmatically (Tab from City), where `autoFocus` can be skipped.
@@ -754,6 +757,9 @@ function StatePopover({
         const id = requestAnimationFrame(() => inputRef.current?.focus());
         return () => cancelAnimationFrame(id);
     }, []);
+
+    // Keep the highlighted row scrolled into view as you arrow through the list.
+    useEffect(() => { highlightedRef.current?.scrollIntoView({ block: "nearest" }); }, [highlight]);
 
     useEffect(() => {
         function onClickOutside(e: MouseEvent) {
@@ -779,7 +785,14 @@ function StatePopover({
                         ref={inputRef}
                         autoFocus
                         value={query}
-                        onChange={(e) => setQuery(e.target.value)}
+                        onChange={(e) => { setQuery(e.target.value); setHighlight(0); }}
+                        onKeyDown={(e) => {
+                            if (e.key === "ArrowDown") { e.preventDefault(); setHighlight((h) => Math.min(h + 1, filtered.length - 1)); }
+                            else if (e.key === "ArrowUp") { e.preventDefault(); setHighlight((h) => Math.max(h - 1, 0)); }
+                            else if (e.key === "Enter") { e.preventDefault(); const opt = filtered[highlight]; if (opt) onSelect(opt[0]); }
+                            else if (e.key === "Escape") { e.preventDefault(); onClose(); }
+                            else if (e.key === "Tab") { onClose(); }
+                        }}
                         placeholder="Search state…"
                         /* Suppress the browser's saved-search / autofill dropdown. */
                         autoComplete="off"
@@ -794,14 +807,20 @@ function StatePopover({
                     {filtered.length === 0 && (
                         <p className="px-2 py-5 text-center text-xs text-gray-400">No states found</p>
                     )}
-                    {filtered.map(([code, name]) => {
+                    {filtered.map(([code, name], i) => {
                         const active = code === value;
+                        const isHighlighted = i === highlight;
+                        const rowBg = isHighlighted
+                            ? (active ? "bg-blue-100 text-[#0268c0]" : "bg-gray-100 text-[#003060]")
+                            : (active ? "bg-blue-50 text-[#0268c0]" : "text-[#003060]");
                         return (
                             <button
                                 key={code}
+                                ref={isHighlighted ? highlightedRef : null}
                                 type="button"
                                 onClick={() => onSelect(code)}
-                                className={`w-full flex items-center gap-2 px-3 py-2 rounded-xl text-left text-[14px] font-medium transition-colors ${active ? "bg-blue-50 text-[#0268c0]" : "text-[#003060] hover:bg-gray-50"}`}
+                                onMouseMove={() => setHighlight(i)}
+                                className={`w-full flex items-center gap-2 px-3 py-2 rounded-xl text-left text-[14px] font-medium transition-colors ${rowBg}`}
                             >
                                 <span className="flex-1 truncate">{name}</span>
                                 <span className={`text-[11px] font-bold shrink-0 ${active ? "text-[#0268c0]" : "text-gray-400"}`}>{code}</span>
