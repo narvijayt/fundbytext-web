@@ -27,8 +27,10 @@ export async function PATCH(req: NextRequest) {
         return NextResponse.json({ error: z.treeifyError(parsed.error) }, { status: 422 });
     }
 
-    // If email is being changed, ensure it's not taken by another user
-    if (parsed.data.email && parsed.data.email !== user.email) {
+    // If email is being changed: ensure it's not taken, and reset verification —
+    // the new address is unverified until re-confirmed, and any pending token is void.
+    const emailChanged = !!parsed.data.email && parsed.data.email !== user.email;
+    if (emailChanged) {
         const existing = await prisma.user.findUnique({ where: { email: parsed.data.email } });
         if (existing) {
             return NextResponse.json({ error: "Email already in use" }, { status: 409 });
@@ -37,7 +39,10 @@ export async function PATCH(req: NextRequest) {
 
     const updated = await prisma.user.update({
         where: { id: user.id },
-        data: parsed.data,
+        data: {
+            ...parsed.data,
+            ...(emailChanged ? { is_email_verified: false, email_verification_token: null, email_verification_expires: null } : {}),
+        },
         select: {
             id: true,
             first_name: true,

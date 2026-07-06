@@ -7,6 +7,7 @@ const PUBLIC_API_ROUTES = [
     "/api/v1/auth/logout",
     "/api/v1/auth/forgot-password",
     "/api/v1/auth/reset-password",
+    "/api/v1/auth/verify-email",     // consumed via the emailed link (token-authed)
     "/api/v1/upload/profile-photo", // used before session exists
     "/api/v1/campaigns/init",       // public campaign creation (Step 1)
     "/api/v1/payments/intent",      // public donors can create & update payment intents

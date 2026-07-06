@@ -123,6 +123,25 @@ export async function sendPasswordResetEmail(to: string, resetUrl: string) {
     });
 }
 
+export async function sendEmailVerificationEmail(to: string, firstName: string, verifyUrl: string) {
+    await transporter.sendMail({
+        from,
+        to,
+        subject: "Verify your FundbyText email address",
+        html: emailLayout(`
+            <h1 style="margin:0 0 8px;font-size:23px;font-weight:800;color:${NAVY};letter-spacing:-0.3px">Verify your email, ${firstName}</h1>
+            <p style="margin:0 0 24px;font-size:15px;color:${BODY};line-height:1.7">
+                Confirm that <strong style="color:${INK}">${to}</strong> is your email address so we can keep your
+                account secure and reach you about your campaigns. This link expires in <strong style="color:${INK}">24 hours</strong>.
+            </p>
+            ${button(verifyUrl, "Verify My Email", GREEN)}
+            <p style="margin:0;font-size:13px;color:${FAINT};line-height:1.7">
+                Didn't request this? You can safely ignore this email — nothing will change.
+            </p>
+        `, `Verify your FundbyText email address (link expires in 24 hours).`),
+    });
+}
+
 // ── Participant credentials (sent on campaign launch — email 1 of 2) ─────────
 
 export async function sendParticipantCredentialsEmail({

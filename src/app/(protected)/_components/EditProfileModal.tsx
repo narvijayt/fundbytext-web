@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
@@ -8,7 +8,7 @@ import { z } from "zod";
 
 // ── Types ─────────────────────────────────────────────────────
 type FormState = { first_name: string; last_name: string; email: string; confirm_email: string; phone: string };
-type User = { first_name: string; last_name: string; email: string; phone: string | null; profile_photo_url: string | null };
+type User = { first_name: string; last_name: string; email: string; phone: string | null; profile_photo_url: string | null; is_email_verified: boolean };
 type EditKey = "name" | "email" | "phone";
 
 // Compact field tokens — scaled to the app's other modals (View Participant etc.).
@@ -29,10 +29,14 @@ function EditIcon() {
 }
 
 // A read-only field row that reveals its editor when the "Edit" button is pressed.
-function ReadOnlyRow({ label, value, empty, onEdit }: { label: string; value: string; empty?: boolean; onEdit: () => void }) {
+// `accessory` renders on the right of the label (e.g. the email verify status).
+function ReadOnlyRow({ label, value, empty, onEdit, accessory }: { label: string; value: string; empty?: boolean; onEdit: () => void; accessory?: ReactNode }) {
     return (
         <div className="flex flex-col gap-1.5">
-            <span className={LABEL}>{label}</span>
+            <div className="flex min-h-[18px] items-center justify-between gap-2">
+                <span className={LABEL}>{label}</span>
+                {accessory}
+            </div>
             <button
                 type="button"
                 onClick={onEdit}
@@ -45,6 +49,55 @@ function ReadOnlyRow({ label, value, empty, onEdit }: { label: string; value: st
                 </span>
             </button>
         </div>
+    );
+}
+
+// Email verification status shown beside the Email label. Verified → a green pill;
+// unverified → a "Verify email" button that sends the verification link.
+function EmailVerifyStatus({ verified }: { verified: boolean }) {
+    const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
+    const [msg, setMsg] = useState("");
+
+    if (verified) {
+        return (
+            <span className="inline-flex items-center gap-1 rounded-full bg-[#eafaf1] px-2 py-0.5 text-[11px] font-bold text-[#1a9f4b]">
+                <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5" /></svg>
+                Verified
+            </span>
+        );
+    }
+
+    async function send() {
+        setStatus("sending");
+        setMsg("");
+        try {
+            const r = await fetch("/api/v1/user/verify-email", { method: "POST" });
+            const d = await r.json().catch(() => ({}));
+            if (r.ok) setStatus("sent");
+            else { setStatus("error"); setMsg(typeof d.error === "string" ? d.error : "Couldn't send"); }
+        } catch { setStatus("error"); setMsg("Couldn't send"); }
+    }
+
+    if (status === "sent") {
+        return (
+            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#28c45d]">
+                <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5" /></svg>
+                Sent — check your inbox
+            </span>
+        );
+    }
+
+    return (
+        <button
+            type="button"
+            onClick={send}
+            disabled={status === "sending"}
+            title={status === "error" ? msg : "Send a verification link to your email"}
+            className="inline-flex items-center gap-1 text-[12px] font-semibold text-[#0268c0] transition-colors hover:text-[#0268c0]/75 disabled:opacity-60"
+        >
+            <span className={`h-1.5 w-1.5 rounded-full ${status === "error" ? "bg-red-500" : "bg-[#f47435]"}`} />
+            {status === "sending" ? "Sending…" : status === "error" ? "Retry verify" : "Verify email"}
+        </button>
     );
 }
 
@@ -287,7 +340,7 @@ function ModalBody({ user, onClose }: { user: User; onClose: () => void }) {
                             </div>
                         </>
                     ) : (
-                        <ReadOnlyRow label="Email Address" value={form.email} onEdit={() => startEdit("email")} />
+                        <ReadOnlyRow label="Email Address" value={form.email} onEdit={() => startEdit("email")} accessory={<EmailVerifyStatus verified={user.is_email_verified} />} />
                     )}
 
                     {/* Phone */}
