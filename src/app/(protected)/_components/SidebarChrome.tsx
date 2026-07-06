@@ -106,7 +106,9 @@ function FullContent({ data, onNavigate, desktop, onEditProfile, onChangePasswor
             <div className="mb-6 px-5"><NewCampaign onNavigate={onNavigate} /></div>
             <nav className="min-h-0 flex-1 space-y-3 overflow-y-auto px-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 <NavLink href="/dashboard" icon={HomeIcon} label="Dashboard" onNavigate={onNavigate} />
-                <div className="border-t border-gray-100" />
+                {/* Divider before the campaigns list only when there are campaigns —
+                    otherwise it would stack against the admin divider below. */}
+                {data.campaigns.length > 0 && <div className="border-t border-gray-100" />}
                 <SidebarCampaignsDropdown campaigns={data.campaigns} />
                 {data.isAdmin && (
                     <>
