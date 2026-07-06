@@ -42,8 +42,9 @@ export default function SearchFilterBar() {
     return (
         <div className="flex items-center gap-3">
             <div className="relative w-full max-w-[280px]">
-                <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#9aa7b8]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7}>
-                    <circle cx="11" cy="11" r="7" /><path strokeLinecap="round" d="M20 20l-3.6-3.6" />
+                {/* Vuesax "search-normal" — exact Figma icon (node 5455:27068) */}
+                <svg className="absolute left-3 top-1/2 -translate-y-1/2 h-[18px] w-[18px] text-[#aeb5bd]" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="8.625" cy="8.625" r="7.125" /><path d="M16.5 16.5L15 15" />
                 </svg>
                 <input
                     value={value}
