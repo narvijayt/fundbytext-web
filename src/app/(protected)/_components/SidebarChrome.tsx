@@ -70,7 +70,11 @@ function NavLink({ href, icon, label, compact, badge, onNavigate }: {
     href: string; icon: ReactNode; label: string; compact?: boolean; badge?: number; onNavigate?: () => void;
 }) {
     const pathname = usePathname();
-    const active = href === "/dashboard" ? pathname === "/dashboard" : pathname === href || pathname.startsWith(`${href}/`);
+    // "/dashboard" and "/admin" are index routes whose children are their own nav
+    // items, so they must match exactly — otherwise e.g. /admin/users would also
+    // light up "Overview" (/admin) via the startsWith check.
+    const exactOnly = href === "/dashboard" || href === "/admin";
+    const active = exactOnly ? pathname === href : pathname === href || pathname.startsWith(`${href}/`);
     const color = active ? "text-[#005bac]" : "text-[#003060]";
     return (
         <Link
