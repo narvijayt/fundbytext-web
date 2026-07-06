@@ -484,7 +484,7 @@ export function QuestionCard({
                         <div className="flex items-center justify-center gap-1.5 mb-[16px]">
                             <Image src={icon} width={24} height={24} alt="" />
                             <h3
-                                className="font-black text-[15px] sm:text-[18px]"
+                                className="font-black text-[17px] sm:text-[22px]"
                                 style={{ lineHeight: "125%", letterSpacing: 0, color: "rgba(2,104,192,1)" }}
                             >
                                 {title}
