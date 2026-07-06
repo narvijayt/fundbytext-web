@@ -126,11 +126,11 @@ function FullContent({ data, onNavigate, desktop, onEditProfile, onChangePasswor
                 <NavLink href="/dashboard" icon={HomeIcon} label="Dashboard" onNavigate={onNavigate} />
                 {/* Divider before the campaigns list only when there are campaigns —
                     otherwise it would stack against the admin divider below. */}
-                {data.campaigns.length > 0 && <div className="border-t border-[#003060]/10" />}
+                {data.campaigns.length > 0 && <div className="border-t border-[#005bac]" />}
                 <SidebarCampaignsDropdown campaigns={data.campaigns} />
                 {data.isAdmin && (
                     <>
-                        <div className="border-t border-[#003060]/10" />
+                        <div className="border-t border-[#005bac]" />
                         <div className="space-y-1">
                             {ADMIN.map((a) => (
                                 <NavLink key={a.href} href={a.href} icon={<AdminIcon d={a.d} />} label={a.label} onNavigate={onNavigate} badge={a.href === "/admin/contact" ? data.unreadContacts : undefined} />
@@ -164,7 +164,7 @@ function RailContent({ data, onExpand, onEditProfile }: { data: SidebarData; onE
                 </button>
                 {data.isAdmin && (
                     <>
-                        <div className="my-2 h-px w-8 bg-[#003060]/10" />
+                        <div className="my-2 h-px w-8 bg-[#005bac]" />
                         {ADMIN.map((a) => <NavLink key={a.href} href={a.href} icon={<AdminIcon d={a.d} />} label={a.label} compact />)}
                     </>
                 )}
