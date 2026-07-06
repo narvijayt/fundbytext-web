@@ -183,28 +183,22 @@ function ModalBody({ user, onClose }: { user: User; onClose: () => void }) {
         phone: user.phone ?? "",
     });
 
-    // Revealed fields start empty (Figma), so an untouched field falls back to the
-    // current value on save — only what the user actually typed replaces it.
-    const finalEmail = form.email.trim() || user.email;
     // Ask for a confirmation only when the login email is actually being changed.
-    const emailChanged = finalEmail.toLowerCase() !== user.email.trim().toLowerCase();
+    const emailChanged = form.email.trim().toLowerCase() !== user.email.trim().toLowerCase();
 
     function set(key: keyof FormState, value: string) {
         setForm((f) => ({ ...f, [key]: value }));
         setErrors((e) => { const n = { ...e }; delete n[key]; return n; });
     }
 
-    // Reveal a field's editor. Per the Figma, revealed inputs start empty with
-    // placeholders (not pre-filled), then focus the first input on the next frame.
+    // Reveal a field's editor with the current value pre-filled, then focus its
+    // first input on the next frame (select-all so the value is easy to replace).
     function startEdit(key: EditKey) {
         setEditing((s) => ({ ...s, [key]: true }));
-        setForm((f) =>
-            key === "name"  ? { ...f, first_name: "", last_name: "" }
-          : key === "email" ? { ...f, email: "", confirm_email: "" }
-          :                   { ...f, phone: "" },
-        );
         requestAnimationFrame(() => {
-            ({ name: firstRef, email: emailRef, phone: phoneRef })[key].current?.focus();
+            const el = ({ name: firstRef, email: emailRef, phone: phoneRef })[key].current;
+            el?.focus();
+            el?.select();
         });
     }
 
@@ -222,11 +216,14 @@ function ModalBody({ user, onClose }: { user: User; onClose: () => void }) {
 
     function validate(): boolean {
         const e: Record<string, string> = {};
-        // Empty revealed fields fall back to the current value on save, so only the
-        // values the user actually typed need validating.
-        if (form.email.trim() && !z.email().safeParse(form.email.trim()).success) e.email = "Enter a valid email address.";
+        if (!form.first_name.trim()) e.first_name = "First name is required.";
+        if (!form.last_name.trim()) e.last_name = "Last name is required.";
+        if (!form.email.trim()) e.email = "Email is required.";
+        else if (!z.email().safeParse(form.email.trim()).success) e.email = "Enter a valid email address.";
         if (emailChanged && form.email.trim() !== form.confirm_email.trim()) e.confirm_email = "Emails do not match.";
         setErrors(e);
+        // Auto-open any field that has an error so the user can see/fix it.
+        if (e.first_name || e.last_name) setEditing((s) => ({ ...s, name: true }));
         if (e.email || e.confirm_email) setEditing((s) => ({ ...s, email: true }));
         return Object.keys(e).length === 0;
     }
@@ -254,10 +251,10 @@ function ModalBody({ user, onClose }: { user: User; onClose: () => void }) {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-                first_name: form.first_name.trim() || user.first_name,
-                last_name: form.last_name.trim() || user.last_name,
-                email: finalEmail,
-                phone: form.phone.trim() || user.phone || null,
+                first_name: form.first_name.trim(),
+                last_name: form.last_name.trim(),
+                email: form.email.trim(),
+                phone: form.phone.trim() || null,
                 profile_photo_url,
             }),
         });
@@ -333,11 +330,13 @@ function ModalBody({ user, onClose }: { user: User; onClose: () => void }) {
                                 <input ref={emailRef} type="email" value={form.email} onChange={(e) => set("email", e.target.value)} className={errors.email ? INPUT_ERR : INPUT} placeholder="Enter a valid email address" />
                                 {errors.email && <p className="mt-1 text-xs text-red-500">{errors.email}</p>}
                             </div>
-                            <div className="flex flex-col gap-1.5">
-                                <span className={LABEL}>Confirm Email Address</span>
-                                <input type="email" value={form.confirm_email} onChange={(e) => set("confirm_email", e.target.value)} className={errors.confirm_email ? INPUT_ERR : INPUT} placeholder="Confirm a valid email address" />
-                                {errors.confirm_email && <p className="mt-1 text-xs text-red-500">{errors.confirm_email}</p>}
-                            </div>
+                            {emailChanged && (
+                                <div className="flex flex-col gap-1.5">
+                                    <span className={LABEL}>Confirm Email Address</span>
+                                    <input type="email" value={form.confirm_email} onChange={(e) => set("confirm_email", e.target.value)} className={errors.confirm_email ? INPUT_ERR : INPUT} placeholder="Confirm a valid email address" />
+                                    {errors.confirm_email && <p className="mt-1 text-xs text-red-500">{errors.confirm_email}</p>}
+                                </div>
+                            )}
                         </>
                     ) : (
                         <ReadOnlyRow label="Email Address" value={form.email} onEdit={() => startEdit("email")} accessory={<EmailVerifyStatus verified={user.is_email_verified} />} />
