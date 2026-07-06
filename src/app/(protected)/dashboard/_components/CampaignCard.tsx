@@ -67,6 +67,18 @@ function Flag({ className = "h-9 w-auto" }: { className?: string }) {
     return <img src="/assets/campaigns/flag-active.svg" alt="" className={`-rotate-6 ${className}`} />;
 }
 
+// Draft-card step flag — the exact Figma "Progress Icon" (Vuesax two-pennant flag,
+// node 5555:20335), an orange outline, not the filled flag-active.svg.
+function ProgressFlag({ className = "h-6 w-6" }: { className?: string }) {
+    return (
+        <svg className={`text-[#f47435] ${className}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+            <path d="M11.8502 13.3329L4.24023 16.0029V4.99291L10.9502 2.63291C11.8302 2.32291 12.7502 2.97291 12.7502 3.90291V12.0629C12.7502 12.6329 12.3902 13.1429 11.8502 13.3329Z" />
+            <path d="M12.7498 4.46291L17.9698 2.63291C18.8498 2.32291 19.7698 2.97291 19.7698 3.90291V13.1929C19.7698 13.7629 19.4098 14.2729 18.8698 14.4629L11.2598 17.1229" />
+            <path d="M4.24023 2.00391V22.0039" />
+        </svg>
+    );
+}
+
 function StatusBadge({ status }: { status: CampaignStatus }) {
     const map: Record<string, { label: string; cls: string }> = {
         active:    { label: "Active Campaign", cls: "bg-[#f47435] text-white" },
@@ -216,11 +228,11 @@ export default function CampaignCard({ campaign }: { campaign: CampaignCardData 
 
             {status === CampaignStatus.draft && draftStep && (
                 <div className="flex items-center justify-between gap-3 border-t border-[#e7e9eb] bg-[#f9f9fc] px-4 py-4">
-                    <span className="flex shrink-0 items-center gap-1.5 whitespace-nowrap text-[13px] font-bold uppercase tracking-wide text-[#003060]">
-                        <Flag className="h-5 w-auto rotate-0" />
+                    <span className="flex shrink-0 items-center gap-3 whitespace-nowrap text-[14px] font-black uppercase text-[#4b5563]">
+                        <ProgressFlag className="h-6 w-6 shrink-0" />
                         Step <span className="text-[#28c45d]">{draftStep.num}</span> / 5
                     </span>
-                    <span className="truncate text-right text-[11px] font-black uppercase tracking-[1px] text-[#7e8a96]">{draftStep.label}</span>
+                    <span className="truncate text-right text-[12px] font-black uppercase tracking-[1px] text-[#4b5563]">{draftStep.label}</span>
                 </div>
             )}
 

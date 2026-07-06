@@ -8,7 +8,7 @@ import { createPortal } from "react-dom";
    creation wizard), portal'd into <body> so the card's overflow can't clip it.
    Positioned below the mascot, flipped above when there's no room, closed on
    outside-click / Escape. */
-export default function StatBuddyTip({ label, tip }: { label: string; tip: string }) {
+export default function StatBuddyTip({ label, tip, src = "/assets/dashboard/fundbuddy.svg" }: { label: string; tip: string; src?: string }) {
     const btnRef   = useRef<HTMLButtonElement>(null);
     const popRef   = useRef<HTMLDivElement>(null);
     const caretRef = useRef<HTMLSpanElement>(null);
@@ -87,7 +87,7 @@ export default function StatBuddyTip({ label, tip }: { label: string; tip: strin
                 className="inline-flex shrink-0 cursor-pointer items-center justify-center rounded-full transition-transform hover:scale-110 active:scale-95"
             >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/assets/dashboard/fundbuddy.svg" alt="" aria-hidden="true" className="h-7 w-auto" />
+                <img src={src} alt="" aria-hidden="true" className="h-7 w-auto" />
             </button>
 
             {open && typeof document !== "undefined" && rect && createPortal(

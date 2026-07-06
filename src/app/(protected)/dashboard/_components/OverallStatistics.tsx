@@ -1,4 +1,6 @@
-export type Stat = { label: string; value: string };
+import StatBuddyTip from "../campaigns/[slug]/_components/StatBuddyTip";
+
+export type Stat = { label: string; value: string; tip: string };
 
 // Single bar split into 4 columns (desktop) / 2 columns (tablet+mobile), divided
 // by hairlines — achieved with a 1px gap over the divider colour + white cells.
@@ -11,8 +13,7 @@ export default function OverallStatistics({ stats }: { stats: Stat[] }) {
                     <div key={i} className="flex flex-col gap-2.5 bg-white p-5">
                         <div className="flex items-start justify-between gap-2">
                             <p className="text-[11px] font-bold uppercase leading-snug tracking-[0.5px] text-[#9aa7b8]">{s.label}</p>
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img src="/assets/dashboard/stat-mascot.svg" alt="" className="h-7 w-auto shrink-0" />
+                            <StatBuddyTip label={s.label} tip={s.tip} src="/assets/dashboard/stat-mascot.svg" />
                         </div>
                         <p className="text-[20px] font-bold leading-none text-[#003060] sm:text-[22px]">{s.value}</p>
                     </div>

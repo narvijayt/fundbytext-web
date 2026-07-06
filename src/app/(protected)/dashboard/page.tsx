@@ -68,10 +68,10 @@ export default async function DashboardPage({
     const participantsRecruited = allCampaigns.reduce((s, c) => s + c._count.members, 0);
     const avgPerDonor = totalDonors > 0 ? totalRaised / totalDonors : 0;
     const stats: Stat[] = [
-        { label: "Completed Campaign", value: usd(completedRaised) },
-        { label: "Top Fundraiser Raised", value: usd(topRaised) },
-        { label: "Participants Recruited", value: participantsRecruited.toLocaleString() },
-        { label: "Avg Donation Per Donor", value: usd(avgPerDonor) },
+        { label: "Completed Campaign", value: usd(completedRaised), tip: "The total amount you've raised across all of your completed campaigns." },
+        { label: "Top Fundraiser Raised", value: usd(topRaised), tip: "The highest amount raised by any single campaign you're part of." },
+        { label: "Participants Recruited", value: participantsRecruited.toLocaleString(), tip: "Everyone who has joined your campaigns as a participant." },
+        { label: "Avg Donation Per Donor", value: usd(avgPerDonor), tip: "Your total raised divided by your number of donors — the average gift size." },
     ];
 
     // ── Filter → search → sort → paginate ────────────────────────────────────
