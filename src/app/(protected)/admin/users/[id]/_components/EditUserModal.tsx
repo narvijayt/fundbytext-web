@@ -20,9 +20,27 @@ const LOCKED_TAG = "ml-2 shrink-0 text-[10px] font-semibold uppercase tracking-w
 interface Props {
     userId:  string;
     isSelf:  boolean;
-    initial: { first_name: string; last_name: string; email: string; username: string | null; phone: string | null; role: "user" | "admin" };
+    initial: { first_name: string; last_name: string; email: string; username: string | null; phone: string | null; role: "user" | "admin"; profile_photo_url: string | null; is_email_verified: boolean; is_phone_verified: boolean };
     onClose: () => void;
     onSaved: () => void;
+}
+
+// A labelled on/off switch, styled to the modal's field tokens.
+function Toggle({ label, checked, onChange }: { label: string; checked: boolean; onChange: (v: boolean) => void }) {
+    return (
+        <button
+            type="button"
+            role="switch"
+            aria-checked={checked}
+            onClick={() => onChange(!checked)}
+            className="flex items-center justify-between gap-3 rounded-[12px] border border-[#d4dee7] bg-white px-4 py-2.5 text-left transition-colors hover:border-[#0268c0]"
+        >
+            <span className="text-[14px] font-medium text-[#003060]">{label}</span>
+            <span className={`relative h-5 w-9 shrink-0 rounded-full transition-colors ${checked ? "bg-[#28c45d]" : "bg-[#cbd5e1]"}`}>
+                <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-all ${checked ? "left-[18px]" : "left-0.5"}`} />
+            </span>
+        </button>
+    );
 }
 
 export default function EditUserModal({ userId, isSelf, initial, onClose, onSaved }: Props) {
@@ -40,6 +58,14 @@ export default function EditUserModal({ userId, isSelf, initial, onClose, onSave
     const [saving,    setSaving]    = useState(false);
     const [shown,     setShown]     = useState(false);
     const firstRef = useRef<HTMLInputElement>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const [photoUrl,  setPhotoUrl]  = useState<string | null>(initial.profile_photo_url);
+    const [photoFile, setPhotoFile] = useState<File | null>(null);
+    const [preview,   setPreview]   = useState<string | null>(null);
+    const [imgError,  setImgError]  = useState(false);
+    const [emailVerified, setEmailVerified] = useState(initial.is_email_verified);
+    const [phoneVerified, setPhoneVerified] = useState(initial.is_phone_verified);
 
     const [errors, setErrors] = useState<{ firstName?: string; lastName?: string; email?: string; username?: string; password?: string; general?: string }>({});
 
@@ -66,6 +92,26 @@ export default function EditUserModal({ userId, isSelf, initial, onClose, onSave
         return e;
     }
 
+    function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        const allowed = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+        if (!allowed.includes(file.type)) { setErrors((p) => ({ ...p, general: "Only JPEG, PNG, WebP, or GIF allowed." })); return; }
+        if (file.size > 5 * 1024 * 1024) { setErrors((p) => ({ ...p, general: "Image must be under 5MB." })); return; }
+        setPhotoFile(file);
+        setPreview(URL.createObjectURL(file));
+        setImgError(false);
+        setErrors((p) => ({ ...p, general: undefined }));
+    }
+
+    function removePhoto() {
+        setPhotoFile(null);
+        setPreview(null);
+        setPhotoUrl(null);
+        setImgError(false);
+        if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
         const fieldErrors = validate();
@@ -73,12 +119,28 @@ export default function EditUserModal({ userId, isSelf, initial, onClose, onSave
         setErrors({});
         setSaving(true);
 
+        // Upload a newly-picked photo first, then send its URL with the rest of the edit.
+        let finalPhotoUrl = photoUrl;
+        if (photoFile) {
+            const fd = new FormData();
+            fd.append("photo", photoFile);
+            const up = await fetch("/api/v1/upload/profile-photo", { method: "POST", body: fd });
+            if (!up.ok) {
+                const j = await up.json().catch(() => ({}));
+                setErrors({ general: typeof j.error === "string" ? j.error : "Photo upload failed." });
+                setSaving(false);
+                return;
+            }
+            finalPhotoUrl = (await up.json()).url;
+        }
+
         const res = await fetch(`/api/v1/admin/users/${userId}`, {
             method:  "PATCH",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
                 action: "edit", first_name: firstName.trim(), last_name: lastName.trim(), email: email.trim(),
                 username: username.trim() || null, phone: phone.trim() || null, role, password: password || null,
+                profile_photo_url: finalPhotoUrl, is_email_verified: emailVerified, is_phone_verified: phoneVerified,
             }),
         });
 
@@ -128,6 +190,30 @@ export default function EditUserModal({ userId, isSelf, initial, onClose, onSave
                                 <p className="text-xs leading-snug text-amber-700">{isSelf ? "You are editing your own admin account. Role cannot be changed." : "Only the name can be edited for admin accounts. Email, phone, password, and role are locked."}</p>
                             </div>
                         )}
+
+                        {/* Profile photo */}
+                        <div className="flex items-center gap-4 sm:col-span-2">
+                            <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#e7e9eb] ring-2 ring-white">
+                                {(preview ?? photoUrl) && !imgError ? (
+                                    // eslint-disable-next-line @next/next/no-img-element
+                                    <img src={preview ?? photoUrl!} alt="" className="h-full w-full object-cover" onError={() => setImgError(true)} />
+                                ) : (
+                                    <span className="text-lg font-bold text-[#7e8a96]">{(initial.first_name[0] ?? "").toUpperCase()}{(initial.last_name[0] ?? "").toUpperCase()}</span>
+                                )}
+                            </div>
+                            <div className="flex flex-col gap-2">
+                                <p className="text-[13px] font-semibold text-[#003060]">Profile Photo</p>
+                                <div className="flex items-center gap-2">
+                                    <button type="button" onClick={() => fileInputRef.current?.click()} className="rounded-lg border border-[#d4dee7] px-3 py-1.5 text-[12px] font-semibold text-[#003060] transition-colors hover:bg-gray-50">
+                                        {(preview ?? photoUrl) ? "Change" : "Upload"}
+                                    </button>
+                                    {(preview ?? photoUrl) && (
+                                        <button type="button" onClick={removePhoto} className="rounded-lg px-2.5 py-1.5 text-[12px] font-semibold text-red-500 transition-colors hover:bg-red-50">Remove</button>
+                                    )}
+                                </div>
+                            </div>
+                            <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif" className="hidden" onChange={handlePhotoChange} />
+                        </div>
 
                         <div>
                             <label className={LABEL}>First Name</label>
@@ -209,6 +295,15 @@ export default function EditUserModal({ userId, isSelf, initial, onClose, onSave
                                     {errors.password && <p className="mt-1 text-xs text-red-500">{errors.password}</p>}
                                 </>
                             )}
+                        </div>
+
+                        {/* Verification status — admin override */}
+                        <div className="sm:col-span-2">
+                            <label className={LABEL}>Verification</label>
+                            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                                <Toggle label="Email verified" checked={emailVerified} onChange={setEmailVerified} />
+                                <Toggle label="Phone verified" checked={phoneVerified} onChange={setPhoneVerified} />
+                            </div>
                         </div>
 
                         {errors.general && <p role="alert" className="rounded-lg bg-red-50 px-3.5 py-2.5 text-[13px] font-medium text-red-600 sm:col-span-2">{errors.general}</p>}

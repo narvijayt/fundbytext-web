@@ -28,7 +28,7 @@ export default async function AdminUserDetailPage({ params }: Ctx) {
             select: {
                 id: true, first_name: true, last_name: true, email: true, username: true, phone: true,
                 role: true, is_suspended: true, suspension_message: true, deleted_at: true, deleted_email: true,
-                is_email_verified: true, created_at: true, profile_photo_url: true,
+                is_email_verified: true, is_phone_verified: true, created_at: true, profile_photo_url: true,
             },
         }),
         prisma.campaign.aggregate({ where: { members: { some: { user_id: id } } }, _sum: { total_raised: true } }),
@@ -149,6 +149,8 @@ export default async function AdminUserDetailPage({ params }: Ctx) {
                                     initial={{
                                         first_name: user.first_name, last_name: user.last_name, email: displayEmail,
                                         username: user.username ?? null, phone: user.phone ?? null, role: user.role as "user" | "admin",
+                                        profile_photo_url: user.profile_photo_url ?? null,
+                                        is_email_verified: user.is_email_verified, is_phone_verified: user.is_phone_verified,
                                     }}
                                 />
                             )}

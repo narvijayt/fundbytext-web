@@ -13,6 +13,9 @@ interface Props {
         username:   string | null;
         phone:      string | null;
         role:       "user" | "admin";
+        profile_photo_url: string | null;
+        is_email_verified: boolean;
+        is_phone_verified: boolean;
     };
 }
 

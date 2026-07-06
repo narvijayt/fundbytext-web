@@ -18,6 +18,9 @@ const editSchema = z.object({
     phone:      z.string().max(20).optional().nullable(),
     role:       z.enum(["user", "admin"]),
     password:   z.string().min(8).max(100).optional().nullable(),
+    profile_photo_url: z.string().max(2048).nullable().optional(),
+    is_email_verified: z.boolean().optional(),
+    is_phone_verified: z.boolean().optional(),
 });
 
 type Ctx = { params: Promise<{ id: string }> };
@@ -39,7 +42,7 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
                 return NextResponse.json({ error: parsed.error.flatten() }, { status: 422 });
             }
 
-            const { first_name, last_name, email, username, phone, role, password } = parsed.data;
+            const { first_name, last_name, email, username, phone, role, password, profile_photo_url, is_email_verified, is_phone_verified } = parsed.data;
 
             const target = await prisma.user.findUnique({
                 where:  { id },
@@ -106,6 +109,12 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
                     updateData.password_hash = await bcrypt.hash(password, 12);
                 }
             }
+
+            // Admin-controllable extras (photo + verification flags) — applied for
+            // both regular users and an admin's self-edit. Only what's sent is changed.
+            if (profile_photo_url !== undefined) updateData.profile_photo_url = profile_photo_url;
+            if (is_email_verified !== undefined) updateData.is_email_verified = is_email_verified;
+            if (is_phone_verified !== undefined) updateData.is_phone_verified = is_phone_verified;
 
             const updated = await prisma.user.update({
                 where:  { id },
