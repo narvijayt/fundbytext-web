@@ -40,8 +40,10 @@ export default function MarketingHero({
     const [menuOpen, setMenuOpen] = useState(false);
     const [menuShown, setMenuShown] = useState(false);
     const [noticeOpen, setNoticeOpen] = useState(false);
+    const [noticeShown, setNoticeShown] = useState(false);
 
     function closeMenu() { setMenuShown(false); window.setTimeout(() => setMenuOpen(false), 200); }
+    function closeNotice() { setNoticeShown(false); window.setTimeout(() => setNoticeOpen(false), 200); }
 
     // Animate the slide-in menu, lock body scroll, and close on Escape while open.
     useEffect(() => {
@@ -53,6 +55,15 @@ export default function MarketingHero({
         document.addEventListener("keydown", onKey);
         return () => { cancelAnimationFrame(raf); document.body.style.overflow = prev; document.removeEventListener("keydown", onKey); };
     }, [menuOpen]);
+
+    // Same enter/exit animation for the donations-not-live notice.
+    useEffect(() => {
+        if (!noticeOpen) return;
+        const raf = requestAnimationFrame(() => setNoticeShown(true));
+        function onKey(e: KeyboardEvent) { if (e.key === "Escape") closeNotice(); }
+        document.addEventListener("keydown", onKey);
+        return () => { cancelAnimationFrame(raf); document.removeEventListener("keydown", onKey); };
+    }, [noticeOpen]);
 
     // Donate intent — open the real form when donations are live, else surface the
     // explanatory notice (draft / upcoming / completed / paused).
@@ -216,14 +227,14 @@ export default function MarketingHero({
 
             {/* Donations-not-live notice (draft / upcoming / completed / paused) */}
             {noticeOpen && donateNotice && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#0f1d43]/45 p-4 backdrop-blur-sm" onClick={() => setNoticeOpen(false)}>
-                    <div role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()} className="w-full max-w-sm overflow-hidden rounded-2xl bg-white p-6 text-center shadow-[0px_16px_40px_-8px_rgba(15,29,67,0.3)]">
+                <div className={`fixed inset-0 z-[100] flex items-center justify-center bg-[#0f1d43]/45 p-4 backdrop-blur-sm transition-opacity duration-200 ease-out motion-reduce:transition-none ${noticeShown ? "opacity-100" : "opacity-0"}`} onClick={closeNotice}>
+                    <div role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()} className={`w-full max-w-sm overflow-hidden rounded-2xl bg-white p-6 text-center shadow-[0px_16px_40px_-8px_rgba(15,29,67,0.3)] transition-all duration-200 ease-out motion-reduce:transition-none ${noticeShown ? "translate-y-0 scale-100 opacity-100" : "translate-y-2 scale-95 opacity-0"}`}>
                         <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full" style={{ background: `color-mix(in srgb, ${theme.accent} 14%, white)` }}>
                             <svg className="h-7 w-7" viewBox="0 0 24 24" fill="none" stroke={theme.accent} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9" /><path d="M12 11v5" /><path d="M12 7.5h.01" /></svg>
                         </div>
                         <h2 className="text-[18px] font-bold text-[#003060]">{donateNotice.title}</h2>
                         <p className="mt-2 text-[14px] leading-relaxed text-[#7e8a96]">{donateNotice.message}</p>
-                        <button type="button" onClick={() => setNoticeOpen(false)} className="mt-6 w-full rounded-[10px] py-2.5 text-[14px] font-semibold text-white transition-[filter] hover:brightness-110" style={{ background: theme.accent }}>
+                        <button type="button" onClick={closeNotice} className="mt-6 w-full rounded-[10px] py-2.5 text-[14px] font-semibold text-white transition-[filter] hover:brightness-110" style={{ background: theme.accent }}>
                             Got it
                         </button>
                     </div>
