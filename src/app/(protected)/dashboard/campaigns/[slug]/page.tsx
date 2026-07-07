@@ -92,6 +92,12 @@ export default async function CampaignDetailPage({
     const isParticipant     = myMembership.roles.some((r) => r.role === MemberRole.participant);
     const isBothRoles       = isOrganizer && isParticipant;
 
+    // Drafts aren't live yet — the management dashboard doesn't apply. Send the
+    // organizer back to the setup wizard to finish it; anyone else to their dashboard.
+    if (campaign.status === CampaignStatus.draft) {
+        redirect(isOrganizer ? `/campaigns/${slug}/create` : "/dashboard");
+    }
+
     // If an organizer-only user manually adds ?view=participant, strip it.
     if (view === "participant" && isOrganizer && !isParticipant) {
         redirect(`/dashboard/campaigns/${slug}`);
@@ -341,7 +347,7 @@ export default async function CampaignDetailPage({
                             </span>
                         )}
                         {/* Visibility + donations badges — colour reflects the label */}
-                        {campaign.status !== CampaignStatus.draft && (() => {
+                        {(() => {
                             const vis = {
                                 private:  { label: "Private",  cls: "bg-gray-100 text-gray-600"  },
                                 unlisted: { label: "Unlisted", cls: "bg-blue-100 text-blue-700"   },
@@ -423,8 +429,7 @@ export default async function CampaignDetailPage({
                             status={campaign.status}
                             endDate={campaign.end_date}
                         />
-                        {(campaign.status === CampaignStatus.draft ||
-                          (campaign.status === CampaignStatus.upcoming && donationTotal === 0)) && (
+                        {campaign.status === CampaignStatus.upcoming && donationTotal === 0 && (
                             <DeleteCampaignButton
                                 slug={slug}
                                 campaignName={campaign.name ?? null}
