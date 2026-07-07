@@ -4,14 +4,15 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 type Props = {
-    campaignSlug: string;
-    videoUrl:     string | null;
+    campaignSlug:    string;
+    videoUrl:        string | null;
+    defaultVideoUrl: string | null;
 };
 
 const MAX_MB = 64;
 const ACCEPT = "video/mp4,video/webm,video/ogg,video/quicktime";
 
-export default function AdminCampaignVideoCard({ campaignSlug, videoUrl }: Props) {
+export default function AdminCampaignVideoCard({ campaignSlug, videoUrl, defaultVideoUrl }: Props) {
     const router = useRouter();
     const fileRef = useRef<HTMLInputElement>(null);
 
@@ -85,11 +86,17 @@ export default function AdminCampaignVideoCard({ campaignSlug, videoUrl }: Props
                 </div>
             </div>
 
-            {/* Current video preview */}
+            {/* Current video preview (own video, else the global default falls through) */}
             <div className="mt-4 overflow-hidden rounded-xl border border-[#eef1f4] bg-[#f7f9fb]">
                 {videoUrl ? (
                     // eslint-disable-next-line jsx-a11y/media-has-caption
                     <video src={videoUrl} controls preload="metadata" className="aspect-video w-full bg-black object-cover" />
+                ) : defaultVideoUrl ? (
+                    <div className="relative">
+                        {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+                        <video src={defaultVideoUrl} controls preload="metadata" className="aspect-video w-full bg-black object-cover" />
+                        <span className="absolute left-2 top-2 rounded-md bg-black/60 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">Global default</span>
+                    </div>
                 ) : (
                     <div className="flex aspect-video w-full flex-col items-center justify-center gap-1 text-center">
                         <svg className="h-7 w-7 text-[#c3ccd6]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.6}><path strokeLinecap="round" strokeLinejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>

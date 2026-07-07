@@ -3,6 +3,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { prisma } from "@/lib/prisma";
 import { getAuthUser } from "@/lib/session";
+import { getDefaultCampaignVideo } from "@/lib/settings";
 import { MemberRole } from "@/generated/prisma/enums";
 import CampaignUpdater from "./_components/CampaignUpdater";
 import MarketingHero from "./_components/MarketingHero";
@@ -69,10 +70,11 @@ export default async function CampaignPublicPage({
     searchParams: Promise<{ ref?: string; donor?: string }>;
 }) {
     const [{ slug }, { ref, donor: donorToken }] = await Promise.all([params, searchParams]);
-    const [campaign, authUser, donorCount] = await Promise.all([
+    const [campaign, authUser, donorCount, defaultVideo] = await Promise.all([
         getCampaign(slug),
         getAuthUser(),
         prisma.donation.count({ where: { campaign: { slug }, payment_status: "completed" } }),
+        getDefaultCampaignVideo(),
     ]);
 
     if (!campaign) notFound();
@@ -287,7 +289,7 @@ export default async function CampaignPublicPage({
                 } : null}
             />
 
-            <MarketingShareables slug={slug} galleryUrls={galleryUrls} heroUrl={heroMedia?.url ?? null} videoUrl={campaign.video_url ?? null} theme={theme} />
+            <MarketingShareables slug={slug} galleryUrls={galleryUrls} heroUrl={heroMedia?.url ?? null} videoUrl={campaign.video_url ?? defaultVideo} theme={theme} />
 
             <MarketingLeaderboard
                 participants={participants}

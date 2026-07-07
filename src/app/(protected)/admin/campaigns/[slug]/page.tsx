@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import { getDefaultCampaignVideo } from "@/lib/settings";
 import { MemberRole, NotificationType, PaymentStatus } from "@/generated/prisma/enums";
 import CampaignProgressBar from "@/app/(protected)/dashboard/campaigns/[slug]/_components/CampaignProgressBar";
 import DonationChart       from "@/app/(protected)/dashboard/campaigns/[slug]/_components/DonationChart";
@@ -93,7 +94,7 @@ export default async function AdminCampaignDetailPage({ params }: Ctx) {
 
     if (!campaign) notFound();
 
-    const [donorsFirst, donatedCount, feedDonationsRaw, donationTotal, campaignNotifRows, campaignNotifTotal] = await Promise.all([
+    const [donorsFirst, donatedCount, feedDonationsRaw, donationTotal, campaignNotifRows, campaignNotifTotal, defaultVideo] = await Promise.all([
         queryCampaignDonors({ campaignId: campaign.id, page: 1, pageSize: DEFAULT_PAGE_SIZE }),
         prisma.campaignDonor.count({ where: { campaign_id: campaign.id, donations: { some: { payment_status: PaymentStatus.completed } } } }),
         prisma.donation.findMany({
@@ -110,6 +111,7 @@ export default async function AdminCampaignDetailPage({ params }: Ctx) {
             select:  { id: true, notification_type: true, trigger_event: true, message: true, helper_text: true, scheduled_at: true, sent_at: true, status: true, recipient_member_id: true },
         }),
         prisma.campaignNotification.count({ where: { campaign_id: campaign.id, notification_type: NotificationType.campaign } }),
+        getDefaultCampaignVideo(),
     ]);
 
     // ── Derived ──
@@ -282,7 +284,7 @@ export default async function AdminCampaignDetailPage({ params }: Ctx) {
                     />
                 </div>
                 <div className="w-full shrink-0 space-y-4 lg:w-80">
-                    <AdminCampaignVideoCard campaignSlug={slug} videoUrl={campaign.video_url ?? null} />
+                    <AdminCampaignVideoCard campaignSlug={slug} videoUrl={campaign.video_url ?? null} defaultVideoUrl={defaultVideo} />
                     <LiveDonationFeed donations={feedDonations} totalCount={donationTotal} campaignSlug={slug} isCompleted={campaign.status === "completed"} />
                 </div>
             </div>

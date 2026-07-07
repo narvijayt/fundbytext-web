@@ -443,3 +443,13 @@ model ContactSubmission {
     @@index([created_at])
     @@map("contact_submissions")
 }
+
+// Site-wide key/value settings (e.g. the default campaign video applied to every
+// campaign that hasn't set its own).
+model AppSetting {
+    key        String   @id @db.VarChar(100)
+    value      String?  @db.Text
+    updated_at DateTime @updatedAt @db.Timestamptz(3)
+
+    @@map("app_settings")
+}
