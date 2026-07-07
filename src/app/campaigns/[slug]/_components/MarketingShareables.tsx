@@ -7,23 +7,17 @@ import type { MarketingTheme } from "./marketingTheme";
 
 const A = "/assets/marketing";
 
-/* Download / share button pinned to the top-right of a shareable. Downloads the
-   underlying image where there is one (gallery photo / QR). */
-function ShareableButton({ href }: { href?: string }) {
+/* Context caption revealed on hover — the FundBuddy hint tells users to hover a
+   shareable to learn what it's for. */
+function ContextOverlay({ text }: { text: string }) {
     return (
-        <a
-            href={href ?? "#"}
-            download={href ? "" : undefined}
-            target={href ? "_blank" : undefined}
-            rel="noreferrer"
-            aria-label="Download shareable"
-            className="absolute right-[16px] top-[16px] backdrop-blur-[10px] bg-[rgba(255,255,255,0.5)] overflow-hidden rounded-full size-[56px] transition-transform hover:scale-105"
-            style={{ boxShadow: "0px 0px 20px 0px rgba(0,0,0,0.4)" }}
+        <span
+            aria-hidden
+            className="pointer-events-none absolute inset-x-0 bottom-0 flex items-end p-[16px] md:p-[20px] opacity-0 transition-opacity duration-200 group-hover:opacity-100"
+            style={{ background: "linear-gradient(0deg, rgba(0,48,96,0.82) 0%, rgba(0,48,96,0) 100%)" }}
         >
-            <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 size-[24px]">
-                <Image src={`${A}/icons/upload.svg`} alt="" width={24} height={24} className="block max-w-none size-full" />
-            </span>
-        </a>
+            <span className="font-medium text-[14px] md:text-[15px] text-white" style={{ lineHeight: 1.35 }}>{text}</span>
+        </span>
     );
 }
 
@@ -67,25 +61,25 @@ export default function MarketingShareables({
 
                 {/* Shareable graphics + QR */}
                 <div className="flex flex-col md:flex-row md:flex-wrap xl:flex-nowrap gap-[24px] items-center w-full">
-                    <div className="bg-[#e8eaee] h-[400px] overflow-hidden relative rounded-[24px] w-full md:w-[320px] md:shrink-0">
+                    <div className="group bg-[#e8eaee] h-[400px] overflow-hidden relative rounded-[24px] w-full md:w-[320px] md:shrink-0">
                         {graphicA && (
                             // eslint-disable-next-line @next/next/no-img-element
                             <img src={graphicA} alt="Shareable graphic" className="absolute inset-0 w-full h-full object-cover" />
                         )}
-                        <ShareableButton href={graphicA ?? undefined} />
+                        <ContextOverlay text="A campaign photo — share it on social to spread the word." />
                     </div>
-                    <div className="bg-[#e8eaee] h-[400px] overflow-hidden relative rounded-[24px] w-full md:flex-1 md:min-w-0">
+                    <div className="group bg-[#e8eaee] h-[400px] overflow-hidden relative rounded-[24px] w-full md:flex-1 md:min-w-0">
                         {graphicB && (
                             // eslint-disable-next-line @next/next/no-img-element
                             <img src={graphicB} alt="Shareable graphic" className="absolute inset-0 w-full h-full object-cover" />
                         )}
-                        <ShareableButton href={graphicB ?? undefined} />
+                        <ContextOverlay text="Another campaign photo, ready to post anywhere." />
                     </div>
-                    <div className="bg-white h-[400px] overflow-hidden relative rounded-[24px] w-full xl:w-[320px] xl:flex-none xl:shrink-0 border border-[#eff4f9] flex items-center justify-center">
+                    <div className="group bg-white h-[400px] overflow-hidden relative rounded-[24px] w-full xl:w-[320px] xl:flex-none xl:shrink-0 border border-[#eff4f9] flex items-center justify-center">
                         <span className="w-[264px] h-[264px] flex items-center justify-center">
                             <Image src={`${A}/shareables/qr-code.svg`} alt="Campaign QR code" width={264} height={264} className="block max-w-none size-full" />
                         </span>
-                        <ShareableButton href={`${A}/shareables/qr-code.svg`} />
+                        <ContextOverlay text="Scan this QR code to open the campaign's donation page." />
                     </div>
                 </div>
             </div>
@@ -108,7 +102,7 @@ export default function MarketingShareables({
                             }}
                         >
                             <p className="font-normal text-[18px] md:text-[22px] text-white w-full" style={{ lineHeight: 1.25 }}>
-                                Download any of the shareables above and post them to spread the word about your campaign!
+                                Hover on any of the shareables above to get context about what they&rsquo;re for!
                             </p>
                             <button
                                 type="button"

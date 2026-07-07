@@ -191,11 +191,14 @@ export default function MarketingDetails({
                                 <Image src={`${A}/icons/flag.svg`} alt="" width={19} height={36} className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[19px] h-[36px] -rotate-10" />
                             </span>
                             <span className="flex flex-1 flex-col gap-[4px] items-start justify-center min-w-0">
-                                {dateLabel && <span className="font-medium text-[16px] text-[#7e8a96] w-full" style={{ lineHeight: 1.4 }}>{dateLabel}</span>}
+                                {/* Top line: date on the left, donation count on the right. */}
+                                <span className="flex w-full items-baseline justify-between gap-[8px]">
+                                    {dateLabel && <span className="font-medium text-[16px] text-[#7e8a96] min-w-0 truncate" style={{ lineHeight: 1.4 }}>{dateLabel}</span>}
+                                    <span className="font-medium text-[16px] text-[#aeb5bd] text-right whitespace-nowrap shrink-0" style={{ lineHeight: 1.4 }}>
+                                        {donors} donation{donors !== 1 ? "s" : ""}
+                                    </span>
+                                </span>
                                 {subLabel && <span className="font-black text-[12px] text-[#f47435] tracking-[1px] uppercase w-full leading-none">{subLabel}</span>}
-                            </span>
-                            <span className="font-medium text-[16px] text-[#aeb5bd] text-right whitespace-nowrap" style={{ lineHeight: 1.4 }}>
-                                {donors} donation{donors !== 1 ? "s" : ""}
                             </span>
                         </div>
                     </div>
@@ -216,7 +219,7 @@ export default function MarketingDetails({
                     <p className="font-black text-[12px] text-[#aeb5bd] tracking-[1px] uppercase leading-none">description</p>
                     {story?.trim() ? (
                         <>
-                            <div className={`story-content relative overflow-hidden font-normal text-[18px] text-[#2f3a45] w-full ${!expanded && isLong ? "max-h-[140px]" : ""}`} style={{ lineHeight: 1.4 }} dangerouslySetInnerHTML={{ __html: story }} />
+                            <div className={`story-content relative font-normal text-[18px] text-[#2f3a45] w-full ${!expanded && isLong ? "line-clamp-6 overflow-hidden" : ""}`} style={{ lineHeight: 1.4 }} dangerouslySetInnerHTML={{ __html: story }} />
                             {isLong && (
                                 <button type="button" onClick={() => setExpanded((v) => !v)} className="border-b border-[#0268c0] flex gap-[8px] items-center justify-center py-[2px]" style={{ borderColor: accent }}>
                                     <span className="font-bold text-[16px] tracking-[0.15px] leading-none whitespace-nowrap" style={{ color: accent }}>{expanded ? "Show less" : "Read more"}</span>

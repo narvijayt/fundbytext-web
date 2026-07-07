@@ -48,7 +48,9 @@ export default function MarketingHero({
                         }}
                     />
                 )}
-                <span aria-hidden className="absolute inset-0" style={{ background: "radial-gradient(120% 80% at 80% 0%, rgba(255,255,255,0.18) 0%, transparent 60%)" }} />
+                {/* Right-side glow — a lighter tint of the accent (not a white halo),
+                    matching the Figma hero which brightens toward the right edge. */}
+                <span aria-hidden className="absolute inset-0" style={{ background: `radial-gradient(75% 95% at 100% 38%, color-mix(in oklch, ${theme.accent} 58%, white) 0%, transparent 62%)` }} />
             </div>
 
             <div className="relative max-w-[1152px] mx-auto px-[16px] md:px-[24px] xl:px-0">
