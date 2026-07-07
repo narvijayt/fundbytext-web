@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 type Props = {
@@ -20,8 +20,23 @@ export default function DeleteCampaignButton({
 }: Props) {
     const router = useRouter();
     const [open, setOpen] = useState(false);
+    const [shown, setShown] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+
+    function close() { setShown(false); window.setTimeout(() => { setOpen(false); setError(null); }, 200); }
+
+    // Enter/exit animation + scroll-lock + Escape.
+    useEffect(() => {
+        if (!open) return;
+        const raf = requestAnimationFrame(() => setShown(true));
+        const prev = document.body.style.overflow;
+        document.body.style.overflow = "hidden";
+        const onKey = (e: KeyboardEvent) => { if (e.key === "Escape" && !loading) close(); };
+        document.addEventListener("keydown", onKey);
+        return () => { cancelAnimationFrame(raf); document.body.style.overflow = prev; document.removeEventListener("keydown", onKey); };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [open]);
 
     async function handleDelete() {
         setLoading(true);
@@ -68,9 +83,9 @@ export default function DeleteCampaignButton({
             {open && (
                 <div className="fixed inset-0 z-[300] flex items-center justify-center p-4">
                     {/* Backdrop */}
-                    <div className="absolute inset-0 bg-black/30 backdrop-blur-[2px]" onClick={() => { if (!loading) { setOpen(false); setError(null); } }} />
+                    <div className={`absolute inset-0 bg-black/30 backdrop-blur-[2px] transition-opacity duration-200 ease-out motion-reduce:transition-none ${shown ? "opacity-100" : "opacity-0"}`} onClick={() => { if (!loading) close(); }} />
                     {/* Modal */}
-                    <div className="relative z-10 w-full max-w-sm rounded-2xl bg-white p-6 shadow-[0px_24px_48px_-12px_rgba(0,48,96,0.35)] max-h-[calc(100vh-2rem)] overflow-y-auto">
+                    <div className={`relative z-10 w-full max-w-sm rounded-2xl bg-white p-6 shadow-[0px_24px_48px_-12px_rgba(0,48,96,0.35)] max-h-[calc(100vh-2rem)] overflow-y-auto transition-all duration-200 ease-out motion-reduce:transition-none ${shown ? "translate-y-0 scale-100 opacity-100" : "translate-y-2 scale-95 opacity-0"}`}>
                         <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-50">
                             <svg className="h-6 w-6 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
@@ -85,7 +100,7 @@ export default function DeleteCampaignButton({
                         )}
                         <div className="flex gap-3">
                             <button
-                                onClick={() => { setOpen(false); setError(null); }}
+                                onClick={close}
                                 disabled={loading}
                                 className="flex-1 rounded-xl border border-[#d4dee7] py-3 text-sm font-semibold text-[rgba(0,48,96,1)] transition-colors hover:bg-gray-50 disabled:opacity-50"
                             >

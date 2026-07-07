@@ -6,7 +6,7 @@ import { STEPS } from "./types";
 import { Loader } from "./ui";
 
 /* ── Launch rocket icon (Figma stick-rocket, white strokes) ──────────── */
-function RocketIcon({ className = "" }: { className?: string }) {
+export function RocketIcon({ className = "" }: { className?: string }) {
     return (
         <svg className={className} viewBox="0 0 21 27.5254" fill="none" stroke="white" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
             <path d="M5.51002 18.0407L1.06486 15.589C2.8355 12.1963 6.31486 11.3791 9.00177 12.1221" />

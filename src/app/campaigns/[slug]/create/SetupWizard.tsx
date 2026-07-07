@@ -5,7 +5,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import DeleteCampaignButton from "@/app/(protected)/dashboard/_components/DeleteCampaignButton";
 import { type Campaign, type Payout, type Member, type Donor, type CsvRow, type ImportResult, STEPS } from "./_components/types";
-import { ProgressBar, BottomNav } from "./_components/WizardNav";
+import { ProgressBar, BottomNav, RocketIcon } from "./_components/WizardNav";
 import { PAGE_GRADIENT, VectorWallpaper, StepBanner, Loader, AlertDialog } from "./_components/ui";
 import StepDetails      from "./_components/StepDetails";
 import StepFundingGoal  from "./_components/StepFundingGoal";
@@ -940,17 +940,16 @@ export default function SetupWizard({
                             const at = new Date(localToUTCISO(startDate, timezone));
                             if (!Number.isNaN(at.getTime())) {
                                 startsInFuture = at.getTime() > Date.now();
-                                startLabel = new Intl.DateTimeFormat("en-US", { timeZone: timezone, month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" }).format(at);
+                                startLabel = new Intl.DateTimeFormat("en-US", { timeZone: timezone, month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit", timeZoneName: "short" }).format(at);
                             }
                         }
                     } catch { /* keep defaults */ }
-                    const rocket = "M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09zM12 15l-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2zM9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5";
                     return (
                         <div className={`fixed inset-0 z-[190] flex items-center justify-center p-4 bg-[#0f1d43]/45 backdrop-blur-sm transition-opacity duration-200 motion-reduce:transition-none ${confirmShown ? "opacity-100" : "opacity-0"}`} onClick={closeConfirm}>
                             <div role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()} className={`w-full max-w-md overflow-hidden rounded-[20px] bg-white shadow-[0px_40px_80px_-20px_rgba(0,48,96,0.45)] transition-all duration-200 motion-reduce:transition-none ${confirmShown ? "translate-y-0 scale-100 opacity-100" : "translate-y-2 scale-95 opacity-0"}`}>
                                 <div className="flex flex-col items-center px-6 pt-8 text-center sm:px-8">
                                     <span className="mb-4 flex h-16 w-16 items-center justify-center rounded-full shadow-[0px_16px_28px_-12px_rgba(38,186,88,0.6)]" style={{ background: "linear-gradient(76.24deg, #26BA58 1.19%, #34D56A 98.81%)" }}>
-                                        <svg className="h-7 w-7 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round"><path d={rocket} /></svg>
+                                        <RocketIcon className="h-7 w-[21px]" />
                                     </span>
                                     <h2 className="text-[20px] font-black text-[#003060] sm:text-[22px]">Ready to launch?</h2>
                                     <p className="mt-2 text-[14px] leading-relaxed text-[#5b6b7c]">
@@ -973,7 +972,7 @@ export default function SetupWizard({
                                     <button type="button" onClick={closeConfirm} className="flex-1 rounded-[12px] border border-[#d9e2ec] bg-white py-3 text-[14px] font-bold text-[#003060] transition-colors hover:bg-[#f1f5f9]">Not yet</button>
                                     <button type="button" onClick={confirmLaunch} className="flex flex-[1.4] items-center justify-center gap-2 rounded-[12px] py-3 text-[14px] font-bold text-white transition hover:brightness-105 active:scale-[0.98]" style={{ background: "linear-gradient(76.24deg, #26BA58 1.19%, #34D56A 98.81%)" }}>
                                         Launch campaign
-                                        <svg className="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round"><path d={rocket} /></svg>
+                                        <RocketIcon className="h-[22px] w-[17px]" />
                                     </button>
                                 </div>
                             </div>
