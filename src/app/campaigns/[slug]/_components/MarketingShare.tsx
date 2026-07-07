@@ -10,7 +10,7 @@ const A = "/assets/marketing";
    every button is wired: copy link, Facebook, Messenger, WhatsApp, and a
    native-share "More". `variant` keeps the two looks from the design:
    "dark" (translucent black, on the hero band) and "orange" (solid). */
-export default function MarketingShare({ slug, variant }: { slug: string; variant: "dark" | "orange" }) {
+export default function MarketingShare({ slug, variant, onOpenModal }: { slug: string; variant: "dark" | "orange"; onOpenModal?: () => void }) {
     const [url, setUrl] = useState(`/campaigns/${slug}`);
     const [copied, setCopied] = useState(false);
     useEffect(() => { setUrl(`${window.location.origin}/campaigns/${slug}`); }, [slug]);
@@ -32,7 +32,9 @@ export default function MarketingShare({ slug, variant }: { slug: string; varian
         } catch { /* ignore */ }
     };
     // "More" opens the full Help-Spread-the-Word modal (all networks + copy + download).
-    const more = () => window.dispatchEvent(new CustomEvent(SHARE_EVENT));
+    // Fire onOpenModal first so any host (e.g. the hero side menu) can close itself
+    // before the modal appears, instead of the modal opening behind it.
+    const more = () => { onOpenModal?.(); window.dispatchEvent(new CustomEvent(SHARE_EVENT)); };
     const messenger = () => {
         // Messenger deep link (mobile app) — falls back to the FB share dialog on desktop.
         const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);

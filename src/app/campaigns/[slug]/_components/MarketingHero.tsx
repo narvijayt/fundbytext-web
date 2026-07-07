@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState, type ReactNode } from "react";
+import { useState, useEffect, type ReactNode } from "react";
 import { DONATE_EVENT } from "./DonateNavButton";
 import MarketingShare from "./MarketingShare";
 import type { MarketingTheme } from "./marketingTheme";
@@ -38,12 +38,26 @@ export default function MarketingHero({
 }) {
     const photos: Photo[] = [galleryUrls[0] ?? null, galleryUrls[1] ?? null, galleryUrls[2] ?? null, galleryUrls[3] ?? null];
     const [menuOpen, setMenuOpen] = useState(false);
+    const [menuShown, setMenuShown] = useState(false);
     const [noticeOpen, setNoticeOpen] = useState(false);
+
+    function closeMenu() { setMenuShown(false); window.setTimeout(() => setMenuOpen(false), 200); }
+
+    // Animate the slide-in menu, lock body scroll, and close on Escape while open.
+    useEffect(() => {
+        if (!menuOpen) return;
+        const raf = requestAnimationFrame(() => setMenuShown(true));
+        const prev = document.body.style.overflow;
+        document.body.style.overflow = "hidden";
+        function onKey(e: KeyboardEvent) { if (e.key === "Escape") closeMenu(); }
+        document.addEventListener("keydown", onKey);
+        return () => { cancelAnimationFrame(raf); document.body.style.overflow = prev; document.removeEventListener("keydown", onKey); };
+    }, [menuOpen]);
 
     // Donate intent — open the real form when donations are live, else surface the
     // explanatory notice (draft / upcoming / completed / paused).
     function donate() {
-        setMenuOpen(false);
+        closeMenu();
         if (canDonate) window.dispatchEvent(new CustomEvent(DONATE_EVENT, { detail: { memberId: null } }));
         else setNoticeOpen(true);
     }
@@ -170,12 +184,12 @@ export default function MarketingHero({
 
             {/* Slide-in menu (hamburger) */}
             {menuOpen && (
-                <div className="fixed inset-0 z-[95]">
-                    <div className="absolute inset-0 bg-[#0f1d43]/45 backdrop-blur-sm" onClick={() => setMenuOpen(false)} />
-                    <aside className="absolute right-0 top-0 flex h-full w-[300px] max-w-[85vw] flex-col bg-white shadow-2xl">
+                <div className={`fixed inset-0 z-[95] transition-opacity duration-200 motion-reduce:transition-none ${menuShown ? "opacity-100" : "opacity-0"}`}>
+                    <div className="absolute inset-0 bg-[#0f1d43]/45 backdrop-blur-sm" onClick={closeMenu} />
+                    <aside className={`absolute right-0 top-0 flex h-full w-[300px] max-w-[85vw] flex-col bg-white shadow-2xl transition-transform duration-200 ease-out motion-reduce:transition-none ${menuShown ? "translate-x-0" : "translate-x-full"}`}>
                         <div className="flex items-center justify-between border-b border-[#eef1f4] px-5 py-4">
                             <Image src={`${A}/nav/logo.svg`} alt="FundbyText" width={150} height={30} className="h-[26px] w-auto" />
-                            <button type="button" onClick={() => setMenuOpen(false)} aria-label="Close menu" className="flex h-9 w-9 items-center justify-center rounded-lg text-[#003060] transition-colors hover:bg-gray-100">
+                            <button type="button" onClick={closeMenu} aria-label="Close menu" className="flex h-9 w-9 items-center justify-center rounded-lg text-[#003060] transition-colors hover:bg-gray-100">
                                 <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
                             </button>
                         </div>
@@ -183,15 +197,16 @@ export default function MarketingHero({
                             <button type="button" onClick={donate} className="mb-2 flex items-center justify-center gap-2 rounded-[12px] px-5 py-3 text-[13px] font-black uppercase tracking-[1px] text-white transition-transform hover:scale-[1.02] active:scale-95" style={{ background: "#f47435" }}>
                                 Donate to this campaign
                             </button>
-                            <MenuLink href={`/campaigns/${slug}`} onClick={() => setMenuOpen(false)}>Campaign home</MenuLink>
-                            <MenuLink href="/campaigns/create" onClick={() => setMenuOpen(false)}>Start your own campaign</MenuLink>
-                            <MenuLink href="/how-it-works" onClick={() => setMenuOpen(false)}>How it works</MenuLink>
-                            <MenuLink href="/about" onClick={() => setMenuOpen(false)}>About</MenuLink>
-                            <MenuLink href="/" onClick={() => setMenuOpen(false)}>Home</MenuLink>
+                            <MenuLink href={`/campaigns/${slug}`} onClick={closeMenu}>Campaign home</MenuLink>
+                            <MenuLink href="/campaigns/create" onClick={closeMenu}>Start your own campaign</MenuLink>
+                            <MenuLink href="/how-it-works" onClick={closeMenu}>How it works</MenuLink>
+                            <MenuLink href="/about" onClick={closeMenu}>About</MenuLink>
+                            <MenuLink href="/" onClick={closeMenu}>Home</MenuLink>
                         </div>
                         <div className="border-t border-[#eef1f4] px-5 py-4">
                             <p className="mb-2 text-[11px] font-black uppercase tracking-[1px] text-[#9aa7b8]">Share this campaign</p>
-                            <MarketingShare slug={slug} variant="orange" />
+                            {/* Opening the full share modal closes the menu first so the modal isn't hidden behind it. */}
+                            <MarketingShare slug={slug} variant="orange" onOpenModal={closeMenu} />
                         </div>
                     </aside>
                 </div>

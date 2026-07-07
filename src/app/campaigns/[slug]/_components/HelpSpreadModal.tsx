@@ -57,7 +57,7 @@ export default function HelpSpreadModal({ isOpen, onClose, slug, campaignName, h
     const pill = "flex h-12 items-center justify-center gap-2 rounded-[12px] border border-[#dde0e3] bg-white text-[16px] font-medium tracking-[0.15px] text-[#003060] transition-colors hover:bg-[#f6f8fa]";
 
     return (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-3 sm:p-6" style={{ background: "rgba(0,30,60,0.55)", backdropFilter: "blur(3px)" }} onClick={onClose}>
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-3 sm:p-6" style={{ background: "rgba(0,30,60,0.55)", backdropFilter: "blur(3px)" }} onClick={onClose}>
             <div className="relative flex max-h-[92vh] w-full max-w-[612px] flex-col overflow-y-auto overflow-x-hidden rounded-[20px] bg-white shadow-[0px_40px_80px_-20px_rgba(0,48,96,0.45)]" onClick={(ev) => ev.stopPropagation()}>
                 {/* Blue band — fixed-height background; the video overlaps its lower portion */}
                 <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-[300px] overflow-hidden sm:h-[347px]" style={{ background: `linear-gradient(150deg, ${accent} 0%, ${accent} 60%, color-mix(in srgb, ${accent} 78%, #000) 140%)` }}>
