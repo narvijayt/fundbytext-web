@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { SAMPLE_VIDEO } from "./MarketingShareables";
 
 const M = "/assets/marketing";
 
@@ -23,11 +24,16 @@ type Props = {
     campaignName: string;
     heroUrl:      string | null;
     accent:       string;
+    videoUrl?:    string | null;
+    videoPoster?: string | null;
 };
 
-export default function HelpSpreadModal({ isOpen, onClose, slug, campaignName, heroUrl, accent }: Props) {
+export default function HelpSpreadModal({ isOpen, onClose, slug, campaignName, heroUrl, accent, videoUrl = null, videoPoster = null }: Props) {
     const [url, setUrl] = useState(`/campaigns/${slug}`);
     const [copied, setCopied] = useState(false);
+    const [playing, setPlaying] = useState(false);
+    const videoSrc = videoUrl?.trim() || SAMPLE_VIDEO;
+    const poster   = videoPoster ?? heroUrl;
     useEffect(() => { setUrl(`${window.location.origin}/campaigns/${slug}`); }, [slug]);
     useEffect(() => { document.body.style.overflow = isOpen ? "hidden" : ""; return () => { document.body.style.overflow = ""; }; }, [isOpen]);
     useEffect(() => {
@@ -44,6 +50,7 @@ export default function HelpSpreadModal({ isOpen, onClose, slug, campaignName, h
     useEffect(() => {
         if (isOpen) { setRender(true); return; }
         setShown(false);
+        setPlaying(false);
         const t = setTimeout(() => setRender(false), 200);
         return () => clearTimeout(t);
     }, [isOpen]);
@@ -98,9 +105,9 @@ export default function HelpSpreadModal({ isOpen, onClose, slug, campaignName, h
         <div className={`fixed inset-0 z-[110] flex items-center justify-center p-3 transition-opacity duration-200 ease-out motion-reduce:transition-none sm:p-6 ${shown ? "opacity-100" : "opacity-0"}`} style={{ background: "rgba(0,30,60,0.55)", backdropFilter: "blur(3px)" }} onClick={onClose}>
             <div className={`relative flex max-h-[92vh] w-full max-w-[612px] flex-col overflow-hidden rounded-[20px] bg-white shadow-[0px_40px_80px_-20px_rgba(0,48,96,0.45)] transition-all duration-200 ease-out motion-reduce:transition-none ${shown ? "translate-y-0 scale-100 opacity-100" : "translate-y-2 scale-95 opacity-0"}`} onClick={(ev) => ev.stopPropagation()}>
               {/* Inner scroll area — keeps the scrollbar inside the rounded corners.
-                  No custom scrollbar styling → inherits the app-wide one (globals.css),
-                  matching the Default-video modal. */}
-              <div className="relative flex min-h-0 flex-1 flex-col overflow-y-auto overflow-x-hidden">
+                  Thin, and inherits the app-wide scrollbar colour from globals.css
+                  (scrollbar-width isn't inherited, so it's set explicitly here). */}
+              <div className="relative flex min-h-0 flex-1 flex-col overflow-y-auto overflow-x-hidden [scrollbar-width:thin]">
                 {/* Blue band — fixed-height background; the video overlaps its lower portion */}
                 <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-[300px] overflow-hidden sm:h-[347px]" style={{ background: `linear-gradient(150deg, ${accent} 0%, ${accent} 60%, color-mix(in srgb, ${accent} 78%, #000) 140%)` }}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -129,16 +136,24 @@ export default function HelpSpreadModal({ isOpen, onClose, slug, campaignName, h
                         </div>
                     </div>
 
-                    {/* 16:9 video preview — overlaps the band's lower portion (no scrim) */}
+                    {/* 16:9 campaign video — poster + play button, swapped for a real
+                        player on click (mirrors the Spread-the-Word video tile). */}
                     <div className="px-6 sm:px-10">
                         <div className="relative mt-5 aspect-[532/292] w-full overflow-hidden rounded-[12px] bg-[#e8eaee] shadow-[0px_20px_20px_-14px_rgba(0,0,0,0.2),0px_20px_40px_-16px_rgba(0,0,0,0.2)] sm:mt-8">
-                            {heroUrl && (
-                                // eslint-disable-next-line @next/next/no-img-element
-                                <img src={heroUrl} alt={campaignName} className="size-full object-cover" />
+                            {playing ? (
+                                // eslint-disable-next-line jsx-a11y/media-has-caption
+                                <video src={videoSrc} poster={poster ?? undefined} controls autoPlay playsInline className="absolute inset-0 size-full bg-black object-cover" />
+                            ) : (
+                                <button type="button" onClick={() => setPlaying(true)} aria-label="Play campaign video" className="absolute inset-0 size-full cursor-pointer">
+                                    {poster && (
+                                        // eslint-disable-next-line @next/next/no-img-element
+                                        <img src={poster} alt={campaignName} className="absolute inset-0 size-full object-cover" />
+                                    )}
+                                    <span className="absolute left-1/2 top-1/2 flex size-16 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-white/80 shadow-[0_8px_44px_rgba(0,48,96,0.45)] backdrop-blur-[8px] transition-transform hover:scale-105 sm:size-[72px]">
+                                        <svg className="ml-1 size-6 text-[#0278de] sm:size-7" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
+                                    </span>
+                                </button>
                             )}
-                            <span className="absolute left-1/2 top-1/2 flex size-16 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-white/80 shadow-[0_8px_44px_rgba(0,48,96,0.45)] backdrop-blur-[8px] sm:size-[72px]">
-                                <svg className="ml-1 size-6 text-[#0278de] sm:size-7" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
-                            </span>
                         </div>
                     </div>
 

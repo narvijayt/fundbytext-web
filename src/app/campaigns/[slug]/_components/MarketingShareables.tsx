@@ -12,7 +12,7 @@ const A = "/assets/marketing";
 // standard freely-licensed open sample video. Shown when a campaign hasn't set
 // its own video (admins add one from the campaign's Controls panel); the clip
 // loads only when the viewer presses play.
-const SAMPLE_VIDEO = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4";
+export const SAMPLE_VIDEO = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4";
 
 /* The Spread-the-Word video tile: poster + play button, swapped for a real
    <video> player on click. */
