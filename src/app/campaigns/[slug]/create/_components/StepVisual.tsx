@@ -5,7 +5,7 @@ import Image from "next/image";
 import { createPortal } from "react-dom";
 import { QuestionCard, InfoTooltip } from "./ui";
 import UploadBox from "./UploadBox";
-import { THEME_TILES } from "../../_components/marketingTheme";
+import { THEME_TILES, CUSTOM_THEME_SIZE } from "../../_components/marketingTheme";
 
 /* Image that stays transparent until it is fully loaded, then fades in over its
    container's placeholder — so the user never watches it decode top-to-bottom
@@ -36,6 +36,8 @@ type Props = {
     setGalleryUrls: (fn: (prev: string[]) => string[]) => void;
     bgTheme: string;
     setBgTheme: (v: string) => void;
+    customBgUrl: string | null;
+    setCustomBgUrl: (u: string | null) => void;
     // Applied colours (derived from the active mode) — read-only, for the preview.
     accentColor: string;
     secondaryColor: string;
@@ -70,7 +72,7 @@ function toGallerySlots(prev: string[]): string[] {
 
 /* ── Background themes — pattern art exported from Figma ───────────────── */
 const THEMES: { value: string; label: string; img?: string }[] = [
-    { value: "logo",        label: "Your Logo Here" },
+    { value: "logo",        label: "Custom" },
     { value: "athletic",    label: "Athletic",     img: "/assets/campaigns/theme-athletic.png" },
     { value: "sports",      label: "Sports",       img: "/assets/campaigns/theme-sports.png" },
     { value: "trophy_wall", label: "Trophy Wall",  img: "/assets/campaigns/theme-trophy.png" },
@@ -498,6 +500,7 @@ export default function StepVisual({
     heroUrl, setHeroUrl,
     galleryUrls, setGalleryUrls,
     bgTheme, setBgTheme,
+    customBgUrl, setCustomBgUrl,
     accentColor, secondaryColor,
     customColors, setCustomColor,
     colorMode, setColorMode,
@@ -510,6 +513,17 @@ export default function StepVisual({
     const mode: "logo" | "custom" = isOrg ? colorMode : "custom";
     const [picking, setPicking] = useState<null | 0 | 1 | 2>(null);
     const customRefs = [useRef<HTMLDivElement>(null), useRef<HTMLDivElement>(null), useRef<HTMLDivElement>(null)];
+
+    // Custom background upload (the "Upload your own" theme tile).
+    const bgFileRef = useRef<HTMLInputElement>(null);
+    const bgUploading = uploadingPhoto === "background";
+    async function onPickBackground(e: React.ChangeEvent<HTMLInputElement>) {
+        const file = e.target.files?.[0];
+        e.target.value = "";
+        if (!file) return;
+        const url = await uploadPhoto(file, "background", "background");
+        if (url) { setCustomBgUrl(url); setBgTheme("logo"); clearFE("bgTheme"); }
+    }
 
     // Pull the logo's colours into the (independent) logo box.
     function applyLogoColors(url: string) {
@@ -716,50 +730,74 @@ export default function StepVisual({
                     "You can change the background anytime before launch.",
                 ]}
             >
+                <input ref={bgFileRef} type="file" accept="image/jpeg,image/png,image/webp" onChange={onPickBackground} className="hidden" />
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
                     {THEMES.map((t) => {
                         const selected = bgTheme === t.value;
+                        const isUpload = t.value === "logo";
+                        // The upload tile selects an existing custom bg, or opens the
+                        // picker when none has been uploaded yet.
+                        const onClick = isUpload
+                            ? () => { if (customBgUrl) { setBgTheme("logo"); clearFE("bgTheme"); } else bgFileRef.current?.click(); }
+                            : () => setBgTheme(t.value);
                         return (
-                            <button
+                            <div
                                 key={t.value}
-                                type="button"
-                                onClick={() => setBgTheme(t.value)}
-                                className="rounded-2xl overflow-hidden transition-all"
+                                className="relative rounded-2xl overflow-hidden transition-all"
                                 style={{
                                     border: selected ? "2px solid #0268c0" : "2px solid #d4dee7",
                                     boxShadow: selected ? "0px 12px 28px -12px rgba(2,104,192,0.45)" : undefined,
                                 }}
                             >
-                                {/* Pattern / branded preview — fixed height + a neutral
-                                placeholder so the card never collapses or flashes empty
-                                while the theme image loads. */}
-                                <div className="relative h-[110px] sm:h-[130px] min-h-[110px] sm:min-h-[130px] bg-[#eaeef3]">
-                                    {t.img ? (
-                                        <FadeInImg src={t.img} />
-                                    ) : (
-                                        <div className="w-full h-full flex items-center justify-center" style={{ background: "#003060" }}>
-                                            <span className="px-2 text-center font-black text-white text-[12px] sm:text-[13px] leading-tight uppercase tracking-wide">
-                                                {campaignName ?? "Your Name Here"}
-                                            </span>
-                                        </div>
-                                    )}
-                                </div>
-                                {/* Label bar */}
-                                <div className="flex items-center justify-between gap-1.5 px-3 h-[42px] sm:h-[50px] bg-white">
-                                    <span className={`text-[12px] sm:text-[14px] font-medium truncate ${selected ? "text-[#0268c0]" : "text-[#57728d]"}`}>
-                                        {t.label}
-                                    </span>
-                                    {selected ? (
-                                        <span className="flex items-center justify-center w-4 h-4 rounded-full bg-[#0268c0] shrink-0">
-                                            <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                                            </svg>
+                                <button type="button" onClick={onClick} className="block w-full text-left">
+                                    {/* Pattern / upload preview — fixed height + a neutral
+                                    placeholder so the card never collapses or flashes empty
+                                    while the theme image loads. */}
+                                    <div className="relative h-[110px] sm:h-[130px] min-h-[110px] sm:min-h-[130px] bg-[#eaeef3]">
+                                        {isUpload ? (
+                                            customBgUrl ? (
+                                                <FadeInImg src={customBgUrl} />
+                                            ) : (
+                                                <div className="w-full h-full flex flex-col items-center justify-center gap-1.5 border-2 border-dashed border-[#c3d2e0] text-[#57728d]">
+                                                    {bgUploading ? (
+                                                        <span className="h-6 w-6 animate-spin rounded-full border-2 border-[#c3d2e0] border-t-[#0268c0]" />
+                                                    ) : (
+                                                        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+                                                    )}
+                                                    <span className="text-[11px] font-semibold">{bgUploading ? "Uploading…" : "Upload your own"}</span>
+                                                </div>
+                                            )
+                                        ) : t.img ? (
+                                            <FadeInImg src={t.img} />
+                                        ) : null}
+                                    </div>
+                                    {/* Label bar */}
+                                    <div className="flex items-center justify-between gap-1.5 px-3 h-[42px] sm:h-[50px] bg-white">
+                                        <span className={`text-[12px] sm:text-[14px] font-medium truncate ${selected ? "text-[#0268c0]" : "text-[#57728d]"}`}>
+                                            {t.label}
                                         </span>
-                                    ) : (
-                                        <span className="w-4 h-4 rounded-full border-2 border-[#d4dee7] shrink-0" />
-                                    )}
-                                </div>
-                            </button>
+                                        {selected ? (
+                                            <span className="flex items-center justify-center w-4 h-4 rounded-full bg-[#0268c0] shrink-0">
+                                                <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                                </svg>
+                                            </span>
+                                        ) : (
+                                            <span className="w-4 h-4 rounded-full border-2 border-[#d4dee7] shrink-0" />
+                                        )}
+                                    </div>
+                                </button>
+                                {/* Replace affordance (upload tile with an image) */}
+                                {isUpload && customBgUrl && (
+                                    <button
+                                        type="button"
+                                        onClick={() => bgFileRef.current?.click()}
+                                        className="absolute right-2 top-2 z-10 rounded-full bg-black/55 px-2.5 py-1 text-[11px] font-semibold text-white backdrop-blur-sm transition-colors hover:bg-black/70"
+                                    >
+                                        {bgUploading ? "Uploading…" : "Replace"}
+                                    </button>
+                                )}
+                            </div>
                         );
                     })}
                 </div>
@@ -777,6 +815,7 @@ export default function StepVisual({
                     accentColor={accentColor}
                     secondaryColor={secondaryColor}
                     bgTheme={bgTheme}
+                    customBgUrl={customBgUrl}
                     profileUrl={profileUrl}
                     heroUrl={heroUrl}
                     galleryUrls={galleryUrls}
@@ -788,32 +827,37 @@ export default function StepVisual({
 
 /* ── Campaign preview mock + overlay link ─────────────────────────────── */
 function CampaignPreview({
-    slug, campaignName, accentColor, secondaryColor, bgTheme, profileUrl, heroUrl, galleryUrls,
+    slug, campaignName, accentColor, secondaryColor, bgTheme, customBgUrl, profileUrl, heroUrl, galleryUrls,
 }: {
     slug: string;
     campaignName: string | null;
     accentColor: string;
     secondaryColor: string;
     bgTheme: string;
+    customBgUrl: string | null;
     profileUrl: string | null;
     heroUrl: string | null;
     galleryUrls: string[];
 }) {
     const gallery = galleryUrls.filter(Boolean).slice(0, 4);
+    // A custom upload wins over the preset (mirrors getMarketingTheme).
+    const bandTile = customBgUrl
+        ? { src: customBgUrl, size: CUSTOM_THEME_SIZE }
+        : (THEME_TILES[bgTheme] ?? null);
     return (
         <div className="relative rounded-2xl overflow-hidden border border-[#d4dee7] shadow-sm">
             {/* Header band */}
             <div className="relative px-4 py-4 sm:px-6 sm:py-5" style={{ background: accentColor }}>
-                {THEME_TILES[bgTheme] && (
+                {bandTile && (
                     /* Tile the seamless extracted pattern at its native motif size
                        (the swatch images have a baked border and don't tile). */
                     <div
                         aria-hidden
                         className="absolute inset-0 opacity-15"
                         style={{
-                            backgroundImage: `url('${THEME_TILES[bgTheme].src}')`,
+                            backgroundImage: `url('${bandTile.src}')`,
                             backgroundRepeat: "repeat",
-                            backgroundSize: THEME_TILES[bgTheme].size,
+                            backgroundSize: bandTile.size,
                         }}
                     />
                 )}

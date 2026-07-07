@@ -133,6 +133,7 @@ export default function SetupWizard({
     const [heroUrl, setHeroUrl]         = useState<string | null>(getMediaUrl(campaign.media, "hero"));
     const [galleryUrls, setGalleryUrls] = useState<string[]>(getGalleryUrls(campaign.media));
     const [bgTheme, setBgTheme]         = useState(campaign.background_theme ?? "sports");
+    const [customBgUrl, setCustomBgUrl] = useState<string | null>(campaign.custom_background_url ?? null);
     // Colours: the custom box and the logo box are independent. `customColors`
     // is what the user picks; `extractedColors` is pulled from the logo. The
     // APPLIED colours (saved + shown in the preview) derive from the active mode,
@@ -296,10 +297,11 @@ export default function SetupWizard({
             if (heroUrl)    media.push({ media_type: "hero",    url: heroUrl,    sort_order: 0 });
             galleryUrls.forEach((u, i) => { if (u) media.push({ media_type: "gallery", url: u, sort_order: i }); });
             const data: Record<string, unknown> = {
-                background_theme: bgTheme,
-                accent_color:     accentColor,
-                secondary_color:  secondaryColor,
-                tertiary_color:   tertiaryColor,
+                background_theme:      bgTheme,
+                custom_background_url: customBgUrl,
+                accent_color:          accentColor,
+                secondary_color:       secondaryColor,
+                tertiary_color:        tertiaryColor,
             };
             // Always send media — including an empty array — so removing the last
             // photo (e.g. the logo) clears it server-side and deletes its blob,
@@ -316,7 +318,7 @@ export default function SetupWizard({
         }, 800);
         return cancelAutosave;
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [profileUrl, heroUrl, galleryUrls, bgTheme, customColors, extractedColors, colorMode]);
+    }, [profileUrl, heroUrl, galleryUrls, bgTheme, customBgUrl, customColors, extractedColors, colorMode]);
 
     function advance() {
         setStep((s) => {
@@ -413,7 +415,8 @@ export default function SetupWizard({
         media.push({ media_type: "hero", url: heroUrl!, sort_order: 0 });
         galleryUrls.forEach((u, i) => { if (u) media.push({ media_type: "gallery", url: u, sort_order: i }); });
         const ok = await patch({
-            background_theme: bgTheme,
+            background_theme:      bgTheme,
+            custom_background_url: customBgUrl,
             accent_color:     accentColor,
             secondary_color:  secondaryColor,
             tertiary_color:   tertiaryColor,
@@ -480,7 +483,8 @@ export default function SetupWizard({
             end_date:          safeEndDate  ? localToUTCISO(safeEndDate, timezone)  : null,
             goal_type:         safeGoalType  || null,
             goal_amount:       safeGoalAmount ? Number(safeGoalAmount) : null,
-            background_theme:  bgTheme,
+            background_theme:      bgTheme,
+            custom_background_url: customBgUrl,
             accent_color:      accentColor,
             secondary_color:   secondaryColor,
             tertiary_color:    tertiaryColor,
@@ -955,6 +959,7 @@ export default function SetupWizard({
                             heroUrl={heroUrl} setHeroUrl={setHeroUrl}
                             galleryUrls={galleryUrls} setGalleryUrls={setGalleryUrls}
                             bgTheme={bgTheme} setBgTheme={setBgTheme}
+                            customBgUrl={customBgUrl} setCustomBgUrl={setCustomBgUrl}
                             accentColor={accentColor} secondaryColor={secondaryColor}
                             customColors={customColors} setCustomColor={setCustomColor}
                             colorMode={colorMode} setColorMode={setColorMode}

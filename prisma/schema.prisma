@@ -217,6 +217,7 @@ model Campaign {
     total_raised               Decimal            @default(0) @db.Decimal(10, 2)
     donors_per_participant     Int? // Organization campaigns: donors per participant
     background_theme           BackgroundTheme    @default(sports)
+    custom_background_url      String?            @db.VarChar(2048) // uploaded pattern used in place of a preset theme
     accent_color               String?            @db.VarChar(7) // hex e.g. #1565C0 (primary)
     secondary_color            String?            @db.VarChar(7) // hex e.g. #374151 (secondary)
     tertiary_color             String?            @db.VarChar(7) // hex (tertiary) — reserved for campaign-page use

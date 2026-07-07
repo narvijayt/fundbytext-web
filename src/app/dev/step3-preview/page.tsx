@@ -19,6 +19,7 @@ export default function Step3Preview() {
     const [heroUrl, setHeroUrl] = useState<string | null>(null);
     const [galleryUrls, setGalleryUrls] = useState<string[]>([]);
     const [bgTheme, setBgTheme] = useState("sports");
+    const [customBgUrl, setCustomBgUrl] = useState<string | null>(null);
     const [customColors, setCustomColors] = useState<[string, string, string]>(["#0268C0", "#003060", "#FFFFFF"]);
     const [colorMode, setColorMode] = useState<"logo" | "custom">("custom");
     const [extractedColors, setExtractedColors] = useState<[string, string, string] | null>(null);
@@ -62,6 +63,7 @@ export default function Step3Preview() {
                     heroUrl={heroUrl} setHeroUrl={setHeroUrl}
                     galleryUrls={galleryUrls} setGalleryUrls={setGalleryUrls}
                     bgTheme={bgTheme} setBgTheme={setBgTheme}
+                    customBgUrl={customBgUrl} setCustomBgUrl={setCustomBgUrl}
                     accentColor={appliedColors[0]} secondaryColor={appliedColors[1]}
                     customColors={customColors} setCustomColor={setCustomColor}
                     colorMode={colorMode} setColorMode={setColorMode}

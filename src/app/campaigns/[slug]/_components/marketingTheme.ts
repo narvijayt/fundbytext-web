@@ -31,11 +31,16 @@ export const THEME_TILES: Record<string, { src: string; size: string }> = {
 };
 
 export type MarketingThemeInput = {
-    accent_color:     string | null;
-    secondary_color:  string | null;
-    tertiary_color:   string | null;
-    background_theme: string | null;
+    accent_color:          string | null;
+    secondary_color:       string | null;
+    tertiary_color:        string | null;
+    background_theme:      string | null;
+    custom_background_url?: string | null;
 };
+
+// A custom uploaded pattern has no known repeat period, so tile it at a fixed,
+// moderate size that reads like the preset motifs on the accent band.
+export const CUSTOM_THEME_SIZE = "260px auto";
 
 export type MarketingTheme = {
     accent:     string;
@@ -47,12 +52,15 @@ export type MarketingTheme = {
 };
 
 export function getMarketingTheme(c: MarketingThemeInput): MarketingTheme {
+    // A custom uploaded background wins over the preset theme (it's what the
+    // organizer picked in place of "Your Logo Here").
+    const custom = c.custom_background_url?.trim() || null;
     const tile = c.background_theme ? (THEME_TILES[c.background_theme] ?? null) : null;
     return {
         accent:     c.accent_color    ?? "#0268c0",
         secondary:  c.secondary_color ?? "#003060",
         tertiary:   c.tertiary_color  ?? "#ffffff",
-        themeImage: tile?.src ?? null,
-        themeSize:  tile?.size ?? "217px auto",
+        themeImage: custom ?? tile?.src ?? null,
+        themeSize:  custom ? CUSTOM_THEME_SIZE : (tile?.size ?? "217px auto"),
     };
 }

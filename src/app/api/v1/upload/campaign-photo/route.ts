@@ -9,7 +9,7 @@ import { getAuthUserFromRequest } from "@/lib/session";
 
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
 const MAX_SIZE_BYTES = 10 * 1024 * 1024; // 10 MB
-const ALLOWED_MEDIA_TYPES = ["profile", "hero", "gallery", "video_thumbnail"];
+const ALLOWED_MEDIA_TYPES = ["profile", "hero", "gallery", "video_thumbnail", "background"];
 
 export async function POST(req: NextRequest) {
     try {

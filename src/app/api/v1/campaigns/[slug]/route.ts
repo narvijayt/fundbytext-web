@@ -124,7 +124,8 @@ const patchSchema = z.object({
     payout:                payoutSchema.optional(),
 
     // Step 4 — Visual
-    background_theme: z.nativeEnum(BackgroundTheme).optional(),
+    background_theme:      z.nativeEnum(BackgroundTheme).optional(),
+    custom_background_url: z.union([z.string().trim().url().max(2048), z.null()]).optional(),
     accent_color:     z.string().regex(/^#[0-9a-fA-F]{6}$/).optional().nullable(),
     secondary_color:  z.string().regex(/^#[0-9a-fA-F]{6}$/).optional().nullable(),
     tertiary_color:   z.string().regex(/^#[0-9a-fA-F]{6}$/).optional().nullable(),

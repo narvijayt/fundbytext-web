@@ -59,6 +59,7 @@ export type Campaign = {
     goal_amount: string | null;
     donors_per_participant: number | null;
     background_theme: string;
+    custom_background_url: string | null;
     accent_color: string | null;
     secondary_color: string | null;
     tertiary_color: string | null;
