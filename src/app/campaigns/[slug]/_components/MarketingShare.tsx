@@ -1,10 +1,24 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { SHARE_EVENT } from "./HelpSpreadModal";
 
 const A = "/assets/marketing";
+
+/* Hover tooltip so each share button explains what it does — matching the
+   FundBuddy hint to "hover on any of the shareables to get context". */
+function ShareTip({ label, children }: { label: string; children: ReactNode }) {
+    return (
+        <span className="group relative flex">
+            {children}
+            <span className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-2 -translate-x-1/2 whitespace-nowrap rounded-md bg-[#003060] px-2.5 py-1 text-[11px] font-semibold text-white opacity-0 shadow-[0px_8px_20px_-6px_rgba(0,48,96,0.5)] transition-opacity duration-150 group-hover:opacity-100">
+                {label}
+                <span className="absolute left-1/2 top-full h-0 w-0 -translate-x-1/2 border-4 border-transparent border-t-[#003060]" />
+            </span>
+        </span>
+    );
+}
 
 /* ── Round share-button row — matches the static design's ShareButtons, but
    every button is wired: copy link, Facebook, Messenger, WhatsApp, and a
@@ -46,44 +60,54 @@ export default function MarketingShare({ slug, variant, onOpenModal }: { slug: s
     return (
         <div className={`flex ${gap} items-start`}>
             {/* Copy Link */}
-            <button type="button" onClick={copy} aria-label={copied ? "Link copied" : "Copy link"} className={btnCls}>
-                <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 size-[16px]">
-                    {copied ? (
-                        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" className="size-full"><path d="M5 13l4 4L19 7" /></svg>
-                    ) : (
-                        <Image src={`${A}/icons/link.svg`} alt="" width={18} height={18} className="block max-w-none size-full" />
-                    )}
-                </span>
-            </button>
+            <ShareTip label={copied ? "Link copied!" : "Copy link"}>
+                <button type="button" onClick={copy} aria-label={copied ? "Link copied" : "Copy link"} className={btnCls}>
+                    <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 size-[16px]">
+                        {copied ? (
+                            <svg viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" className="size-full"><path d="M5 13l4 4L19 7" /></svg>
+                        ) : (
+                            <Image src={`${A}/icons/link.svg`} alt="" width={18} height={18} className="block max-w-none size-full" />
+                        )}
+                    </span>
+                </button>
+            </ShareTip>
             {/* Facebook */}
-            <button type="button" onClick={() => open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`)} aria-label="Share on Facebook" className={btnCls}>
-                <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 size-[28px]">
-                    <span className="absolute left-[36.47%] right-[36.46%] top-1/4 bottom-1/4">
-                        <Image src={`${A}/icons/facebook.svg`} alt="" width={8} height={14} className="absolute inset-0 block max-w-none size-full" />
+            <ShareTip label="Share on Facebook">
+                <button type="button" onClick={() => open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`)} aria-label="Share on Facebook" className={btnCls}>
+                    <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 size-[28px]">
+                        <span className="absolute left-[36.47%] right-[36.46%] top-1/4 bottom-1/4">
+                            <Image src={`${A}/icons/facebook.svg`} alt="" width={8} height={14} className="absolute inset-0 block max-w-none size-full" />
+                        </span>
                     </span>
-                </span>
-            </button>
+                </button>
+            </ShareTip>
             {/* Messenger (icon ships with its own circle) */}
-            <button type="button" onClick={messenger} aria-label="Share on Messenger" className="relative size-[40px] shrink-0 transition-opacity hover:opacity-90">
-                <Image src={messengerSrc} alt="" width={40} height={40} className="absolute inset-0 block max-w-none size-full" />
-            </button>
+            <ShareTip label="Share on Messenger">
+                <button type="button" onClick={messenger} aria-label="Share on Messenger" className="relative size-[40px] shrink-0 transition-opacity hover:opacity-90">
+                    <Image src={messengerSrc} alt="" width={40} height={40} className="absolute inset-0 block max-w-none size-full" />
+                </button>
+            </ShareTip>
             {/* WhatsApp */}
-            <button type="button" onClick={() => open(`https://wa.me/?text=${encodeURIComponent(url)}`)} aria-label="Share on WhatsApp" className={btnCls}>
-                <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 size-[32px]">
-                    <span className="absolute left-1/4 right-[25.04%] top-[23%] bottom-[27%]">
-                        <Image src={`${A}/icons/whatsapp-outline.svg`} alt="" width={16} height={16} className="absolute inset-0 block max-w-none size-full" />
+            <ShareTip label="Share on WhatsApp">
+                <button type="button" onClick={() => open(`https://wa.me/?text=${encodeURIComponent(url)}`)} aria-label="Share on WhatsApp" className={btnCls}>
+                    <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 size-[32px]">
+                        <span className="absolute left-1/4 right-[25.04%] top-[23%] bottom-[27%]">
+                            <Image src={`${A}/icons/whatsapp-outline.svg`} alt="" width={16} height={16} className="absolute inset-0 block max-w-none size-full" />
+                        </span>
+                        <span className="absolute inset-[36.53%_37.82%_41.31%_38.23%]">
+                            <Image src={`${A}/icons/whatsapp-glyph.svg`} alt="" width={8} height={8} className="absolute inset-0 block max-w-none size-full" />
+                        </span>
                     </span>
-                    <span className="absolute inset-[36.53%_37.82%_41.31%_38.23%]">
-                        <Image src={`${A}/icons/whatsapp-glyph.svg`} alt="" width={8} height={8} className="absolute inset-0 block max-w-none size-full" />
-                    </span>
-                </span>
-            </button>
+                </button>
+            </ShareTip>
             {/* More (native share) */}
-            <button type="button" onClick={more} aria-label="More share options" className={btnCls}>
-                <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[13px] h-[3px]">
-                    <Image src={`${A}/icons/menu-dots.svg`} alt="" width={13} height={3} className="absolute inset-0 block max-w-none size-full" />
-                </span>
-            </button>
+            <ShareTip label="More options">
+                <button type="button" onClick={more} aria-label="More share options" className={btnCls}>
+                    <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[13px] h-[3px]">
+                        <Image src={`${A}/icons/menu-dots.svg`} alt="" width={13} height={3} className="absolute inset-0 block max-w-none size-full" />
+                    </span>
+                </button>
+            </ShareTip>
         </div>
     );
 }

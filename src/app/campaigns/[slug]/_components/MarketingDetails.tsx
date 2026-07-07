@@ -307,5 +307,5 @@ export default function MarketingDetails({
 
 function DisabledBtn({ children, tone = "gray" }: { children: React.ReactNode; tone?: "gray" | "green" | "blue" }) {
     const cls = tone === "green" ? "bg-green-50 text-green-600" : tone === "blue" ? "bg-blue-50 text-blue-400" : "bg-[#f2f2f2] text-[#aeb5bd]";
-    return <div className={`flex h-[56px] items-center justify-center rounded-[16px] w-full font-black text-[14px] tracking-[1px] uppercase ${cls}`}>{children}</div>;
+    return <div className={`flex min-h-[56px] items-center justify-center rounded-[16px] w-full px-5 py-3 text-center font-black text-[14px] tracking-[1px] uppercase leading-[1.35] ${cls}`}>{children}</div>;
 }
