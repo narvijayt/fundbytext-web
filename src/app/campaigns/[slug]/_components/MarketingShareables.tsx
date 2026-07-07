@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useState } from "react";
+import { QRCodeSVG } from "qrcode.react";
 import MarketingShare from "./MarketingShare";
 import type { MarketingTheme } from "./marketingTheme";
 
@@ -75,7 +76,7 @@ export default function MarketingShareables({
     // QR encodes this campaign's public URL — resolved on the client from the origin.
     const [campaignUrl, setCampaignUrl] = useState(`/campaigns/${slug}`);
     useEffect(() => { setCampaignUrl(`${window.location.origin}/campaigns/${slug}`); }, [slug]);
-    const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=264x264&margin=0&data=${encodeURIComponent(campaignUrl)}`;
+    const qrBg = photos[2] ?? heroUrl ?? photos[0] ?? null;
 
     return (
         <div className="flex flex-col gap-[40px] items-center justify-center pb-[40px] md:pb-[75px] pt-[40px] md:pt-[80px] xl:pt-[112px] px-[16px] md:px-[24px] xl:px-0">
@@ -108,11 +109,14 @@ export default function MarketingShareables({
                         )}
                         <ContextOverlay text="Another campaign photo, ready to post anywhere." />
                     </div>
-                    <div className="group bg-white h-[400px] overflow-hidden relative rounded-[24px] w-full xl:w-[320px] xl:flex-none xl:shrink-0 border border-[#eff4f9] flex items-center justify-center">
-                        <span className="w-[264px] h-[264px] flex items-center justify-center">
-                            {/* Real QR for this campaign's public URL (generated client-side). */}
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img src={qrSrc} alt="Scan to open the campaign page" width={264} height={264} className="block h-[264px] w-[264px] max-w-none" />
+                    <div className="group bg-[#e8eaee] h-[400px] overflow-hidden relative rounded-[24px] w-full xl:w-[320px] xl:flex-none xl:shrink-0">
+                        {qrBg && (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={qrBg} alt="" className="absolute inset-0 w-full h-full object-cover" />
+                        )}
+                        {/* White card holding a blue QR for this campaign's URL (matches Figma). */}
+                        <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center rounded-[24px] bg-white p-[26px] shadow-[0px_16px_40px_-8px_rgba(0,48,96,0.25)]">
+                            <QRCodeSVG value={campaignUrl} size={188} level="M" fgColor={theme.accent} bgColor="#ffffff" title="Scan to open the campaign page" />
                         </span>
                         <ContextOverlay text="Scan this QR code to open the campaign's donation page." />
                     </div>
