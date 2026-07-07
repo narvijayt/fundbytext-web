@@ -75,7 +75,7 @@ export default function HelpSpreadModal({ isOpen, onClose, slug, campaignName, h
     ];
 
     // Social / Download pill — transparent, 1px #dde0e3, 12px radius, 48px tall, 16px #003060 label.
-    const pill = "flex h-12 items-center justify-center gap-2 rounded-[12px] border border-[#dde0e3] bg-white text-[16px] font-medium tracking-[0.15px] text-[#003060] transition-colors hover:bg-[#f6f8fa]";
+    const pill = "flex h-11 items-center justify-center gap-2 rounded-[12px] border border-[#dde0e3] bg-white text-[15px] font-medium tracking-[0.15px] text-[#003060] transition-colors hover:bg-[#f6f8fa]";
 
     return (
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-3 sm:p-6" style={{ background: "rgba(0,30,60,0.55)", backdropFilter: "blur(3px)" }} onClick={onClose}>
@@ -95,13 +95,13 @@ export default function HelpSpreadModal({ isOpen, onClose, slug, campaignName, h
                 <div className="relative">
                     {/* Header text + copy-link (inside the band) */}
                     <div className="px-6 pt-8 sm:px-10 sm:pt-10">
-                        <h2 className="text-[24px] font-black leading-[1.15] text-white sm:text-[32px]">Help Spread the Word</h2>
-                        <p className="mt-3 text-[14px] font-medium leading-[1.4] text-white/90 sm:mt-4 sm:text-[18px]">Download this resource and share with your friends directly and on social media!</p>
+                        <h2 className="text-[22px] font-black leading-[1.15] text-white sm:text-[28px]">Help Spread the Word</h2>
+                        <p className="mt-2.5 text-[14px] font-medium leading-[1.4] text-white/90 sm:mt-3.5 sm:text-[16px]">Download this resource and share with your friends directly and on social media!</p>
 
                         {/* Copy-link pill: white field + solid orange button, joined, 12px outer radius */}
                         <div className="mt-4 flex h-[46px] overflow-hidden rounded-[12px] border border-[#dde0e3] bg-white sm:mt-5 sm:h-[50px]">
-                            <span className="min-w-0 flex-1 self-center truncate px-4 text-[15px] text-[#aeb5bd] sm:px-5 sm:text-[18px]">{url}</span>
-                            <button type="button" onClick={copy} className="flex shrink-0 items-center gap-2 bg-[#f47435] px-4 text-[15px] font-medium tracking-[0.15px] text-white transition hover:brightness-105 sm:px-5 sm:text-[16px]">
+                            <span className="min-w-0 flex-1 self-center truncate px-4 text-[14px] text-[#aeb5bd] sm:px-5 sm:text-[16px]">{url}</span>
+                            <button type="button" onClick={copy} className="flex shrink-0 items-center gap-2 bg-[#f47435] px-4 text-[14px] font-medium tracking-[0.15px] text-white transition hover:brightness-105 sm:px-5 sm:text-[15px]">
                                 <svg className="size-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="11" height="11" rx="2.5" /><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" /></svg>
                                 <span className="whitespace-nowrap">{copied ? "Copied!" : "Copy Link"}</span>
                             </button>

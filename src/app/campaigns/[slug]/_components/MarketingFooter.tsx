@@ -58,8 +58,8 @@ export default function MarketingFooter({ accent }: { accent: string }) {
                 <div className="flex flex-col gap-[32px] items-center justify-center overflow-hidden p-[24px] md:p-[40px] relative rounded-[24px] w-full xl:w-auto xl:shrink-0" style={{ background: accent }}>
                     <div aria-hidden className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0) 100%)" }} />
                     <div className="relative flex flex-col gap-[16px] items-start w-full xl:w-[248px] xl:flex-1 xl:min-h-0">
-                        <p className="font-black text-[46px] text-white tracking-[-1.5px] w-full" style={{ lineHeight: 1.1 }}>Ready to Fundraise?</p>
-                        <p className="font-normal text-[18px] text-white w-full" style={{ lineHeight: 1.4 }}>Start Your FundbyText Campaign Today.</p>
+                        <p className="font-black text-[32px] xl:text-[38px] 2xl:text-[46px] text-white tracking-[-1.5px] w-full" style={{ lineHeight: 1.1 }}>Ready to Fundraise?</p>
+                        <p className="font-normal text-[16px] xl:text-[18px] text-white w-full" style={{ lineHeight: 1.4 }}>Start Your FundbyText Campaign Today.</p>
                     </div>
                     <div className="relative flex flex-col gap-[12px] items-start justify-center w-full xl:w-[248px]">
                         <Link href="/campaigns/create" className="bg-[#f47435] flex gap-[8px] items-center justify-center px-[24px] py-[20px] rounded-[12px] w-full transition-opacity hover:opacity-90" style={{ boxShadow: "0px 20px 20px 0px rgba(234,103,37,0.2), 0px 20px 40px 0px rgba(244,116,53,0.2)" }}>
