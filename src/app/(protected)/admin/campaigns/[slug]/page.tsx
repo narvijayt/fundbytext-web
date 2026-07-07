@@ -12,6 +12,7 @@ import AblyDashboardUpdater   from "@/app/(protected)/dashboard/campaigns/[slug]
 import AdminDonorsTable       from "./_components/AdminDonorsTable";
 import AdminParticipantsTable from "./_components/AdminParticipantsTable";
 import AdminCampaignControls  from "./_components/AdminCampaignControls";
+import AdminCampaignVideoCard from "./_components/AdminCampaignVideoCard";
 import DeleteCampaignButton   from "./_components/DeleteCampaignButton";
 import CountdownBadge         from "@/components/CountdownBadge";
 import { queryCampaignDonors, DEFAULT_PAGE_SIZE } from "./_lib/donors-query";
@@ -240,7 +241,6 @@ export default async function AdminCampaignDetailPage({ params }: Ctx) {
                         visibility={campaign.visibility as "private" | "unlisted" | "public"}
                         donationsEnabled={campaign.donations_enabled}
                         donationsDisabledMessage={campaign.donations_disabled_message ?? null}
-                        videoUrl={campaign.video_url ?? null}
                         status={campaign.status}
                     />
                 </div>
@@ -282,6 +282,7 @@ export default async function AdminCampaignDetailPage({ params }: Ctx) {
                     />
                 </div>
                 <div className="w-full shrink-0 space-y-4 lg:w-80">
+                    <AdminCampaignVideoCard campaignSlug={slug} videoUrl={campaign.video_url ?? null} />
                     <LiveDonationFeed donations={feedDonations} totalCount={donationTotal} campaignSlug={slug} isCompleted={campaign.status === "completed"} />
                 </div>
             </div>
