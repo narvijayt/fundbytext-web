@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -18,6 +19,32 @@ import { getMarketingTheme } from "./_components/marketingTheme";
 import type { ModalParticipant } from "./_components/DonateModal";
 
 export const revalidate = 60;
+
+// Open Graph / Twitter metadata so shared links preview with the campaign's
+// name, story excerpt and hero image. Private/draft campaigns stay generic.
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+    const { slug } = await params;
+    const c = await prisma.campaign.findUnique({
+        where:  { slug },
+        select: {
+            name: true, story: true, status: true, visibility: true,
+            media: { where: { media_type: "hero" }, select: { url: true }, take: 1 },
+        },
+    });
+    if (!c || c.visibility === "private" || c.status === "draft") {
+        return { title: "FundByText", description: "Fundraising made simple — start a campaign in minutes." };
+    }
+    const title       = c.name ?? "Campaign";
+    const description = ((c.story ?? "").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim().slice(0, 200))
+        || `Support ${title} on FundByText.`;
+    const heroUrl = c.media[0]?.url ?? null;
+    return {
+        title:       `${title} · FundByText`,
+        description,
+        openGraph: { title, description, type: "website", images: heroUrl ? [{ url: heroUrl }] : undefined },
+        twitter:   { card: "summary_large_image", title, description, images: heroUrl ? [heroUrl] : undefined },
+    };
+}
 
 export type ParticipantRow = {
     id:                string;

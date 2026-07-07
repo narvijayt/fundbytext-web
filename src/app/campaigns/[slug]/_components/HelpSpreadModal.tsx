@@ -42,15 +42,36 @@ export default function HelpSpreadModal({ isOpen, onClose, slug, campaignName, h
     const copy = async () => {
         try { await navigator.clipboard.writeText(url); setCopied(true); setTimeout(() => setCopied(false), 2000); } catch { /* ignore */ }
     };
-    const e = encodeURIComponent(url);
+    const e    = encodeURIComponent(url);
+    const text = encodeURIComponent(`Support ${campaignName}`);
+    const isMobile = typeof navigator !== "undefined" && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+    // Download the campaign's shareable image (e.g. to post on Instagram). The
+    // blob URL is cross-origin, so `download` on a plain <a> is ignored — fetch
+    // the bytes and trigger a real download instead.
+    const download = async () => {
+        if (!heroUrl) return;
+        try {
+            const res  = await fetch(heroUrl);
+            const blob = await res.blob();
+            const obj  = URL.createObjectURL(blob);
+            const a    = document.createElement("a");
+            a.href = obj;
+            a.download = `${slug}.${(blob.type.split("/")[1] || "jpg").replace("jpeg", "jpg")}`;
+            document.body.appendChild(a); a.click(); a.remove();
+            URL.revokeObjectURL(obj);
+        } catch { open(heroUrl); }
+    };
 
     const NETWORKS: { key: string; label: string; onClick: () => void }[] = [
         { key: "facebook",  label: "Facebook",  onClick: () => open(`https://www.facebook.com/sharer/sharer.php?u=${e}`) },
-        { key: "twitter",   label: "Twitter",   onClick: () => open(`https://twitter.com/intent/tweet?url=${e}`) },
-        { key: "instagram", label: "Instagram", onClick: copy }, // Instagram has no web share URL → copy link to paste
+        { key: "twitter",   label: "Twitter",   onClick: () => open(`https://twitter.com/intent/tweet?url=${e}&text=${text}`) },
+        // Instagram has no web share intent → copy the link and open Instagram to paste it.
+        { key: "instagram", label: "Instagram", onClick: () => { copy(); open(isMobile ? "instagram://app" : "https://www.instagram.com"); } },
         { key: "linkedin",  label: "LinkedIn",  onClick: () => open(`https://www.linkedin.com/sharing/share-offsite/?url=${e}`) },
-        { key: "messenger", label: "Messenger", onClick: () => open(`https://www.facebook.com/dialog/send?app_id=140586622674265&link=${e}&redirect_uri=${e}`) },
-        { key: "whatsapp",  label: "Whatsapp",  onClick: () => open(`https://wa.me/?text=${e}`) },
+        // Messenger deep link on mobile; the Facebook share dialog on desktop.
+        { key: "messenger", label: "Messenger", onClick: () => open(isMobile ? `fb-messenger://share?link=${e}` : `https://www.facebook.com/sharer/sharer.php?u=${e}`) },
+        { key: "whatsapp",  label: "Whatsapp",  onClick: () => open(`https://wa.me/?text=${text}%20${e}`) },
     ];
 
     // Social / Download pill — transparent, 1px #dde0e3, 12px radius, 48px tall, 16px #003060 label.
@@ -58,7 +79,7 @@ export default function HelpSpreadModal({ isOpen, onClose, slug, campaignName, h
 
     return (
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-3 sm:p-6" style={{ background: "rgba(0,30,60,0.55)", backdropFilter: "blur(3px)" }} onClick={onClose}>
-            <div className="relative flex max-h-[92vh] w-full max-w-[612px] flex-col overflow-y-auto overflow-x-hidden rounded-[20px] bg-white shadow-[0px_40px_80px_-20px_rgba(0,48,96,0.45)]" onClick={(ev) => ev.stopPropagation()}>
+            <div className="relative flex max-h-[92vh] w-full max-w-[612px] flex-col overflow-y-auto overflow-x-hidden rounded-[20px] bg-white shadow-[0px_40px_80px_-20px_rgba(0,48,96,0.45)] [scrollbar-color:#c9d2dc_transparent] [scrollbar-width:thin] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[#c9d2dc] [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar]:w-1.5" onClick={(ev) => ev.stopPropagation()}>
                 {/* Blue band — fixed-height background; the video overlaps its lower portion */}
                 <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-[300px] overflow-hidden sm:h-[347px]" style={{ background: `linear-gradient(150deg, ${accent} 0%, ${accent} 60%, color-mix(in srgb, ${accent} 78%, #000) 140%)` }}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -75,7 +96,7 @@ export default function HelpSpreadModal({ isOpen, onClose, slug, campaignName, h
                     {/* Header text + copy-link (inside the band) */}
                     <div className="px-6 pt-8 sm:px-10 sm:pt-10">
                         <h2 className="text-[24px] font-black leading-[1.15] text-white sm:text-[32px]">Help Spread the Word</h2>
-                        <p className="mt-3 text-[14px] font-medium leading-[1.4] text-white/90 sm:mt-4 sm:text-[18px]">Download this resource and share it with your friends directly and on social media!</p>
+                        <p className="mt-3 text-[14px] font-medium leading-[1.4] text-white/90 sm:mt-4 sm:text-[18px]">Download this resource and share with your friends directly and on social media!</p>
 
                         {/* Copy-link pill: white field + solid orange button, joined, 12px outer radius */}
                         <div className="mt-4 flex h-[46px] overflow-hidden rounded-[12px] border border-[#dde0e3] bg-white sm:mt-5 sm:h-[50px]">
@@ -107,10 +128,10 @@ export default function HelpSpreadModal({ isOpen, onClose, slug, campaignName, h
                                 {ICONS[n.key]}{n.label}
                             </button>
                         ))}
-                        <a href={heroUrl ?? "#"} download target="_blank" rel="noreferrer" className={`${pill} col-span-2 gap-3 sm:col-span-3`}>
+                        <button type="button" onClick={download} disabled={!heroUrl} className={`${pill} col-span-2 gap-3 disabled:cursor-not-allowed disabled:opacity-50 sm:col-span-3`}>
                             <svg className="size-[18px] shrink-0 text-[#003060]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2" /></svg>
                             Download
-                        </a>
+                        </button>
                     </div>
                 </div>
             </div>
