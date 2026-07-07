@@ -232,7 +232,7 @@ function FieldGroup({ label, children }: { label: string; children: React.ReactN
 
 function PhoneField({ value, onChange, disabled }: { value: string; onChange: (v: string) => void; disabled?: boolean }) {
     return (
-        <div className="flex h-14 w-full items-center gap-4 rounded-xl border border-[#d4dee7] bg-white px-5 focus-within:border-[#0278de]">
+        <div className={`flex h-14 w-full items-center gap-4 rounded-xl border border-[#d4dee7] px-5 ${disabled ? "bg-[#f4f8f9]" : "bg-white focus-within:border-[#0278de]"}`}>
             <span className="text-[14px] sm:text-[15px] font-medium text-[#8f98a3]">+1</span>
             <span className="h-8 w-px shrink-0 bg-[#d4dee7]" />
             <input
@@ -241,7 +241,7 @@ function PhoneField({ value, onChange, disabled }: { value: string; onChange: (v
                 disabled={disabled}
                 onChange={(e) => onChange(e.target.value)}
                 placeholder="(214) 987-6543"
-                className="min-w-0 flex-1 bg-transparent text-[15px] sm:text-[14px] font-medium text-[#003060] placeholder:text-[#aeb5bd] focus:outline-none"
+                className={`min-w-0 flex-1 bg-transparent text-[15px] sm:text-[14px] font-medium placeholder:text-[#aeb5bd] focus:outline-none ${disabled ? "text-[#8f98a3]" : "text-[#003060]"}`}
             />
         </div>
     );

@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import { getAuthUser } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { CampaignStatus, MemberRole } from "@/generated/prisma/enums";
-import LaunchSuccessToast from "./_components/LaunchSuccessToast";
+import LaunchSuccessModal from "./_components/LaunchSuccessModal";
 import StatusTabs, { type TabKey } from "./_components/StatusTabs";
 import SearchFilterBar from "./_components/SearchFilterBar";
 import CampaignCard, { type CampaignCardData } from "./_components/CampaignCard";
@@ -95,7 +95,7 @@ export default async function DashboardPage({
 
     return (
         <div className="mx-auto max-w-[1600px]">
-            <Suspense fallback={null}><LaunchSuccessToast /></Suspense>
+            <Suspense fallback={null}><LaunchSuccessModal /></Suspense>
 
             <h1 className="mb-6 text-[24px] font-black leading-[1.15] tracking-[-0.4px] text-[#003060]">Campaign Dashboard</h1>
 
