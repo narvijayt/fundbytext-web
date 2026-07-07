@@ -180,6 +180,8 @@ export default function SetupWizard({
     const [maxStep, setMaxStep] = useState(isLaunched ? STEPS.length + 1 : initialStep);
     const [saving, setSaving]       = useState(false);
     const [launching, setLaunching] = useState(false);
+    const [confirmOpen,  setConfirmOpen]  = useState(false);
+    const [confirmShown, setConfirmShown] = useState(false);
     const [exiting, setExiting]     = useState(false);
     const [alertMsg, setAlertMsg]   = useState<string | null>(null);
     const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -576,7 +578,15 @@ export default function SetupWizard({
             scrollToFirstError();
             return;
         }
+        // Everything checks out — confirm before going live.
         setFieldErrors({});
+        setConfirmOpen(true);
+    }
+
+    function closeConfirm() { setConfirmShown(false); window.setTimeout(() => setConfirmOpen(false), 200); }
+
+    async function confirmLaunch() {
+        closeConfirm();
         const saved = await patch({ thank_you_message: thankYou.trim() });
         if (!saved) return;
 
@@ -593,6 +603,18 @@ export default function SetupWizard({
             setLaunching(false);
         }
     }
+
+    // Entrance animation + scroll-lock + Escape for the launch confirm dialog.
+    useEffect(() => {
+        if (!confirmOpen) return;
+        const raf = requestAnimationFrame(() => setConfirmShown(true));
+        const prev = document.body.style.overflow;
+        document.body.style.overflow = "hidden";
+        const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") closeConfirm(); };
+        document.addEventListener("keydown", onKey);
+        return () => { cancelAnimationFrame(raf); document.body.style.overflow = prev; document.removeEventListener("keydown", onKey); };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [confirmOpen]);
 
     // ── Participant / Donor API calls ──────────────────────────────────────
 
@@ -908,6 +930,56 @@ export default function SetupWizard({
                         <p className="text-sm text-gray-500 mt-1">Please wait a moment</p>
                     </div>
                 )}
+
+                {/* Launch confirmation */}
+                {confirmOpen && (() => {
+                    let startsInFuture = false;
+                    let startLabel: string | null = null;
+                    try {
+                        if (startDate) {
+                            const at = new Date(localToUTCISO(startDate, timezone));
+                            if (!Number.isNaN(at.getTime())) {
+                                startsInFuture = at.getTime() > Date.now();
+                                startLabel = new Intl.DateTimeFormat("en-US", { timeZone: timezone, month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" }).format(at);
+                            }
+                        }
+                    } catch { /* keep defaults */ }
+                    const rocket = "M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09zM12 15l-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2zM9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5";
+                    return (
+                        <div className={`fixed inset-0 z-[190] flex items-center justify-center p-4 bg-[#0f1d43]/45 backdrop-blur-sm transition-opacity duration-200 motion-reduce:transition-none ${confirmShown ? "opacity-100" : "opacity-0"}`} onClick={closeConfirm}>
+                            <div role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()} className={`w-full max-w-md overflow-hidden rounded-[20px] bg-white shadow-[0px_40px_80px_-20px_rgba(0,48,96,0.45)] transition-all duration-200 motion-reduce:transition-none ${confirmShown ? "translate-y-0 scale-100 opacity-100" : "translate-y-2 scale-95 opacity-0"}`}>
+                                <div className="flex flex-col items-center px-6 pt-8 text-center sm:px-8">
+                                    <span className="mb-4 flex h-16 w-16 items-center justify-center rounded-full shadow-[0px_16px_28px_-12px_rgba(38,186,88,0.6)]" style={{ background: "linear-gradient(76.24deg, #26BA58 1.19%, #34D56A 98.81%)" }}>
+                                        <svg className="h-7 w-7 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round"><path d={rocket} /></svg>
+                                    </span>
+                                    <h2 className="text-[20px] font-black text-[#003060] sm:text-[22px]">Ready to launch?</h2>
+                                    <p className="mt-2 text-[14px] leading-relaxed text-[#5b6b7c]">
+                                        {startsInFuture && startLabel
+                                            ? <>Your campaign is all set — it’ll go live on <span className="font-semibold text-[#003060]">{startLabel}</span>.</>
+                                            : <>Your campaign is all set and will <span className="font-semibold text-[#003060]">go live right away</span>, ready to receive donations.</>}
+                                    </p>
+                                </div>
+                                <div className="px-6 pt-5 sm:px-8">
+                                    <ul className="space-y-2.5 rounded-[14px] bg-[#f5f8fb] px-4 py-3.5 text-left">
+                                        {["Your campaign page becomes shareable", "Everyone you’ve added gets notified", "You can manage it anytime from your dashboard"].map((t) => (
+                                            <li key={t} className="flex items-start gap-2.5 text-[13px] leading-snug text-[#42566b]">
+                                                <svg className="mt-0.5 h-4 w-4 shrink-0 text-[#26BA58]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5" /></svg>
+                                                {t}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                                <div className="flex gap-3 px-6 pb-6 pt-5 sm:px-8">
+                                    <button type="button" onClick={closeConfirm} className="flex-1 rounded-[12px] border border-[#d9e2ec] bg-white py-3 text-[14px] font-bold text-[#003060] transition-colors hover:bg-[#f1f5f9]">Not yet</button>
+                                    <button type="button" onClick={confirmLaunch} className="flex flex-[1.4] items-center justify-center gap-2 rounded-[12px] py-3 text-[14px] font-bold text-white transition hover:brightness-105 active:scale-[0.98]" style={{ background: "linear-gradient(76.24deg, #26BA58 1.19%, #34D56A 98.81%)" }}>
+                                        Launch campaign
+                                        <svg className="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round"><path d={rocket} /></svg>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    );
+                })()}
 
                 {/* Step 1 — individual cards (no outer wrapper) */}
                 {step === 1 && (
