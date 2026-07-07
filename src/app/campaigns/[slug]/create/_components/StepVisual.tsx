@@ -840,8 +840,9 @@ function CampaignPreview({
     galleryUrls: string[];
 }) {
     const gallery = galleryUrls.filter(Boolean).slice(0, 4);
-    // A custom upload wins over the preset (mirrors getMarketingTheme).
-    const bandTile = customBgUrl
+    // The custom upload applies only while its tile ("logo" slot) is selected —
+    // switching to a preset shows that preset (mirrors getMarketingTheme).
+    const bandTile = bgTheme === "logo" && customBgUrl
         ? { src: customBgUrl, size: CUSTOM_THEME_SIZE }
         : (THEME_TILES[bgTheme] ?? null);
     return (

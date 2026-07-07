@@ -52,9 +52,10 @@ export type MarketingTheme = {
 };
 
 export function getMarketingTheme(c: MarketingThemeInput): MarketingTheme {
-    // A custom uploaded background wins over the preset theme (it's what the
-    // organizer picked in place of "Your Logo Here").
-    const custom = c.custom_background_url?.trim() || null;
+    // The custom upload applies only while the custom tile ("logo" slot) is the
+    // selected theme — switching to a preset uses that preset even though the
+    // uploaded URL stays stored (so toggling back doesn't require re-uploading).
+    const custom = c.background_theme === "logo" ? (c.custom_background_url?.trim() || null) : null;
     const tile = c.background_theme ? (THEME_TILES[c.background_theme] ?? null) : null;
     return {
         accent:     c.accent_color    ?? "#0268c0",
