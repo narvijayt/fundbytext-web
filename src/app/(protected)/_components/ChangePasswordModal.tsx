@@ -39,6 +39,9 @@ export default function ChangePasswordModal({ onClose }: { onClose: () => void }
     const [reveal, setReveal]   = useState<ShowState>({ next: false, confirm: false });
     const [form, setForm]       = useState<FormState>({ new_password: "", confirm_password: "" });
     const firstRef = useRef<HTMLInputElement>(null);
+    // Only close on a backdrop click that *started* on the backdrop — so dragging
+    // a text selection out of an input doesn't dismiss the modal.
+    const downOnBackdrop = useRef(false);
 
     useEffect(() => { setMounted(true); }, []);
     // Once mounted (portal painted at opacity-0/scale-95), flip on the next frame
@@ -96,7 +99,8 @@ export default function ChangePasswordModal({ onClose }: { onClose: () => void }
     return createPortal(
         <div
             className={`fixed inset-0 z-[100] flex items-center justify-center bg-[#0f1d43]/45 p-4 backdrop-blur-sm transition-opacity duration-200 motion-reduce:transition-none ${shown ? "opacity-100" : "opacity-0"}`}
-            onClick={close}
+            onMouseDown={(e) => { downOnBackdrop.current = e.target === e.currentTarget; }}
+            onClick={(e) => { if (downOnBackdrop.current && e.target === e.currentTarget) close(); }}
         >
             <div
                 role="dialog"

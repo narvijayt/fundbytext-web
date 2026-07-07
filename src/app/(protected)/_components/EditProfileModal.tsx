@@ -106,6 +106,9 @@ export default function EditProfileModal({ onClose }: { onClose: () => void }) {
     const [mounted, setMounted] = useState(false);
     const [shown, setShown] = useState(false);
     const [user, setUser] = useState<User | null>(null);
+    // Only treat it as an outside-click when the press *started* on the backdrop,
+    // so selecting text inside an input and releasing on the backdrop won't close.
+    const downOnBackdrop = useRef(false);
 
     useEffect(() => { setMounted(true); }, []);
     useEffect(() => {
@@ -132,7 +135,8 @@ export default function EditProfileModal({ onClose }: { onClose: () => void }) {
     return createPortal(
         <div
             className={`fixed inset-0 z-[100] flex items-center justify-center bg-[#0f1d43]/45 p-4 backdrop-blur-sm transition-opacity duration-200 motion-reduce:transition-none ${shown ? "opacity-100" : "opacity-0"}`}
-            onClick={close}
+            onMouseDown={(e) => { downOnBackdrop.current = e.target === e.currentTarget; }}
+            onClick={(e) => { if (downOnBackdrop.current && e.target === e.currentTarget) close(); }}
         >
             <div
                 role="dialog"
