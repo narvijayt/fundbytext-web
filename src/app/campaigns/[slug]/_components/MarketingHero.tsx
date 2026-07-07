@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useState, type ReactNode } from "react";
 import { DONATE_EVENT } from "./DonateNavButton";
 import MarketingShare from "./MarketingShare";
 import type { MarketingTheme } from "./marketingTheme";
@@ -9,12 +10,21 @@ import type { MarketingTheme } from "./marketingTheme";
 const A = "/assets/marketing";
 
 type Photo = string | null;
+type DonateNotice = { title: string; message: string } | null;
+
+function MenuLink({ href, onClick, children }: { href: string; onClick: () => void; children: ReactNode }) {
+    return (
+        <Link href={href} onClick={onClick} className="flex items-center gap-3 rounded-[10px] px-4 py-3 text-[15px] font-semibold text-[#003060] transition-colors hover:bg-[#f4f8f9]">
+            {children}
+        </Link>
+    );
+}
 
 /* ── Hero — campaign logo, title, share buttons & photo grid over the brand band.
    Themed: the band uses the campaign's accent→secondary gradient with the chosen
    background-theme pattern overlaid (matching the Step-3 preview). */
 export default function MarketingHero({
-    slug, title, logoUrl, heroUrl, galleryUrls, isOrganizer, theme, canDonate,
+    slug, title, logoUrl, heroUrl, galleryUrls, isOrganizer, theme, canDonate, donateNotice = null,
 }: {
     slug: string;
     title: string;
@@ -24,8 +34,19 @@ export default function MarketingHero({
     isOrganizer: boolean;
     theme: MarketingTheme;
     canDonate: boolean;
+    donateNotice?: DonateNotice;
 }) {
     const photos: Photo[] = [galleryUrls[0] ?? null, galleryUrls[1] ?? null, galleryUrls[2] ?? null, galleryUrls[3] ?? null];
+    const [menuOpen, setMenuOpen] = useState(false);
+    const [noticeOpen, setNoticeOpen] = useState(false);
+
+    // Donate intent — open the real form when donations are live, else surface the
+    // explanatory notice (draft / upcoming / completed / paused).
+    function donate() {
+        setMenuOpen(false);
+        if (canDonate) window.dispatchEvent(new CustomEvent(DONATE_EVENT, { detail: { memberId: null } }));
+        else setNoticeOpen(true);
+    }
 
     return (
         <div className="relative">
@@ -65,21 +86,20 @@ export default function MarketingHero({
                     <div className="flex flex-1 gap-[12px] items-center justify-end min-w-0">
                         <button
                             type="button"
-                            onClick={() => { if (canDonate) window.dispatchEvent(new CustomEvent(DONATE_EVENT, { detail: { memberId: null } })); }}
-                            className="hidden xl:flex gap-[8px] items-center justify-center pb-[18px] pt-[16px] px-[20px] rounded-[12px] shrink-0 transition-opacity hover:opacity-90 disabled:opacity-40"
+                            onClick={donate}
+                            className="hidden xl:flex gap-[8px] items-center justify-center pb-[18px] pt-[16px] px-[20px] rounded-[12px] shrink-0 transition-transform hover:scale-[1.02] active:scale-95"
                             style={{ background: "#f47435" }}
-                            disabled={!canDonate}
                         >
                             <span className="font-black text-[12px] text-white tracking-[1px] uppercase leading-none whitespace-nowrap">donate to this campaign</span>
                         </button>
-                        <Link href="/campaigns/create" aria-label="Get started" className="relative overflow-hidden rounded-[4px] size-[30px] md:size-[48px] shrink-0">
+                        <button type="button" onClick={() => setMenuOpen(true)} aria-label="Open menu" aria-expanded={menuOpen} className="relative overflow-hidden rounded-[4px] size-[30px] md:size-[48px] shrink-0 transition-transform hover:scale-105 active:scale-95">
                             <span className="md:hidden absolute bg-[#003060] h-[2px] rounded-[4px] w-[8px] top-[8px] left-[calc(50%+5px)] -translate-x-1/2" />
                             <span className="md:hidden absolute bg-[#003060] h-[2px] rounded-[4px] w-[18px] top-[14px] left-1/2 -translate-x-1/2" />
                             <span className="md:hidden absolute bg-[#003060] h-[2px] rounded-[4px] w-[8px] top-[20px] left-[calc(50%-5px)] -translate-x-1/2" />
                             <span className="hidden md:block absolute bg-[#003060] h-[3.2px] rounded-[4px] w-[12px] top-[12.4px] left-[calc(50%+8px)] -translate-x-1/2" />
                             <span className="hidden md:block absolute bg-[#003060] h-[3.2px] rounded-[4px] w-[28px] top-[22.4px] left-1/2 -translate-x-1/2" />
                             <span className="hidden md:block absolute bg-[#003060] h-[3.2px] rounded-[4px] w-[12px] top-[32.4px] left-[calc(50%-8px)] -translate-x-1/2" />
-                        </Link>
+                        </button>
                     </div>
                 </div>
 
@@ -147,6 +167,51 @@ export default function MarketingHero({
                     </div>
                 </div>
             </div>
+
+            {/* Slide-in menu (hamburger) */}
+            {menuOpen && (
+                <div className="fixed inset-0 z-[95]">
+                    <div className="absolute inset-0 bg-[#0f1d43]/45 backdrop-blur-sm" onClick={() => setMenuOpen(false)} />
+                    <aside className="absolute right-0 top-0 flex h-full w-[300px] max-w-[85vw] flex-col bg-white shadow-2xl">
+                        <div className="flex items-center justify-between border-b border-[#eef1f4] px-5 py-4">
+                            <Image src={`${A}/nav/logo.svg`} alt="FundbyText" width={150} height={30} className="h-[26px] w-auto" />
+                            <button type="button" onClick={() => setMenuOpen(false)} aria-label="Close menu" className="flex h-9 w-9 items-center justify-center rounded-lg text-[#003060] transition-colors hover:bg-gray-100">
+                                <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
+                            </button>
+                        </div>
+                        <div className="flex flex-1 flex-col gap-1 overflow-y-auto p-4">
+                            <button type="button" onClick={donate} className="mb-2 flex items-center justify-center gap-2 rounded-[12px] px-5 py-3 text-[13px] font-black uppercase tracking-[1px] text-white transition-transform hover:scale-[1.02] active:scale-95" style={{ background: "#f47435" }}>
+                                Donate to this campaign
+                            </button>
+                            <MenuLink href={`/campaigns/${slug}`} onClick={() => setMenuOpen(false)}>Campaign home</MenuLink>
+                            <MenuLink href="/campaigns/create" onClick={() => setMenuOpen(false)}>Start your own campaign</MenuLink>
+                            <MenuLink href="/how-it-works" onClick={() => setMenuOpen(false)}>How it works</MenuLink>
+                            <MenuLink href="/about" onClick={() => setMenuOpen(false)}>About</MenuLink>
+                            <MenuLink href="/" onClick={() => setMenuOpen(false)}>Home</MenuLink>
+                        </div>
+                        <div className="border-t border-[#eef1f4] px-5 py-4">
+                            <p className="mb-2 text-[11px] font-black uppercase tracking-[1px] text-[#9aa7b8]">Share this campaign</p>
+                            <MarketingShare slug={slug} variant="orange" />
+                        </div>
+                    </aside>
+                </div>
+            )}
+
+            {/* Donations-not-live notice (draft / upcoming / completed / paused) */}
+            {noticeOpen && donateNotice && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#0f1d43]/45 p-4 backdrop-blur-sm" onClick={() => setNoticeOpen(false)}>
+                    <div role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()} className="w-full max-w-sm overflow-hidden rounded-2xl bg-white p-6 text-center shadow-[0px_16px_40px_-8px_rgba(15,29,67,0.3)]">
+                        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full" style={{ background: `color-mix(in srgb, ${theme.accent} 14%, white)` }}>
+                            <svg className="h-7 w-7" viewBox="0 0 24 24" fill="none" stroke={theme.accent} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9" /><path d="M12 11v5" /><path d="M12 7.5h.01" /></svg>
+                        </div>
+                        <h2 className="text-[18px] font-bold text-[#003060]">{donateNotice.title}</h2>
+                        <p className="mt-2 text-[14px] leading-relaxed text-[#7e8a96]">{donateNotice.message}</p>
+                        <button type="button" onClick={() => setNoticeOpen(false)} className="mt-6 w-full rounded-[10px] py-2.5 text-[14px] font-semibold text-white transition-[filter] hover:brightness-110" style={{ background: theme.accent }}>
+                            Got it
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

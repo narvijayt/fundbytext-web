@@ -217,6 +217,14 @@ export default async function CampaignPublicPage({
         : null;
     const showInlineRef = isParticipantRefLink && !isDraft && campaign.status !== "completed";
 
+    // When donations aren't live, the donate buttons stay clickable but open an
+    // explanatory notice (draft / upcoming / completed / paused) instead of the form.
+    const donateNotice = canDonate ? null
+        : campaign.status === "draft"     ? { title: "Almost there!",    message: "Donations go live the moment this campaign is published." }
+        : campaign.status === "upcoming"  ? { title: "Not open yet",     message: `Donations open when the campaign starts${startDateLabel ? ` on ${startDateLabel}` : ""}.` }
+        : campaign.status === "completed" ? { title: "Campaign ended",   message: "This campaign has wrapped up and is no longer accepting donations. Thank you for the support!" }
+        :                                   { title: "Donations paused", message: campaign.donations_disabled_message?.trim() || "This campaign has temporarily paused donations — please check back soon." };
+
     return (
         <div className="min-h-screen bg-[#f9f9fc] font-sans text-[#003060] overflow-x-hidden">
             <CampaignUpdater campaignSlug={slug} status={campaign.status} />
@@ -249,6 +257,7 @@ export default async function CampaignPublicPage({
                 isOrganizer={!!isOrganizer}
                 theme={theme}
                 canDonate={canDonate}
+                donateNotice={donateNotice}
             />
 
             <MarketingDetails
