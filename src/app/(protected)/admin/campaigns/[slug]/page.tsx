@@ -240,6 +240,7 @@ export default async function AdminCampaignDetailPage({ params }: Ctx) {
                         visibility={campaign.visibility as "private" | "unlisted" | "public"}
                         donationsEnabled={campaign.donations_enabled}
                         donationsDisabledMessage={campaign.donations_disabled_message ?? null}
+                        videoUrl={campaign.video_url ?? null}
                         status={campaign.status}
                     />
                 </div>

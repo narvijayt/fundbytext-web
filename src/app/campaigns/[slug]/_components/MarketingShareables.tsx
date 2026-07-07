@@ -8,20 +8,21 @@ import type { MarketingTheme } from "./marketingTheme";
 
 const A = "/assets/marketing";
 
-// Placeholder demo clip — "Big Buck Bunny" (© Blender Foundation, CC-BY 3.0), the
-// standard freely-licensed open sample video. Shown until campaigns can upload
-// their own video; loads only when the viewer presses play.
+// Fallback demo clip — "Big Buck Bunny" (© Blender Foundation, CC-BY 3.0), the
+// standard freely-licensed open sample video. Shown when a campaign hasn't set
+// its own video (admins add one from the campaign's Controls panel); the clip
+// loads only when the viewer presses play.
 const SAMPLE_VIDEO = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4";
 
 /* The Spread-the-Word video tile: poster + play button, swapped for a real
    <video> player on click. */
-function VideoTile({ poster }: { poster: string | null }) {
+function VideoTile({ src, poster }: { src: string; poster: string | null }) {
     const [playing, setPlaying] = useState(false);
     return (
         <div className="group bg-[#e8eaee] h-[320px] md:h-[550px] overflow-hidden relative rounded-[24px] w-full">
             {playing ? (
                 <video
-                    src={SAMPLE_VIDEO}
+                    src={src}
                     poster={poster ?? undefined}
                     controls
                     autoPlay
@@ -60,15 +61,17 @@ function ContextOverlay({ text }: { text: string }) {
 }
 
 export default function MarketingShareables({
-    slug, galleryUrls, heroUrl, theme,
+    slug, galleryUrls, heroUrl, videoUrl = null, theme,
 }: {
     slug: string;
     galleryUrls: string[];
     heroUrl: string | null;
+    videoUrl?: string | null;
     theme: MarketingTheme;
 }) {
     const [hintOpen, setHintOpen] = useState(true);
     const photos = galleryUrls.filter(Boolean);
+    const videoSrc = videoUrl?.trim() || SAMPLE_VIDEO;
     const videoThumb = heroUrl ?? photos[0] ?? null;
     const graphicA = photos[0] ?? heroUrl ?? null;
     const graphicB = photos[1] ?? photos[0] ?? heroUrl ?? null;
@@ -91,7 +94,7 @@ export default function MarketingShareables({
 
             <div className="w-full max-w-[1152px] flex flex-col gap-[24px] items-center justify-center">
                 {/* Campaign video */}
-                <VideoTile poster={videoThumb} />
+                <VideoTile src={videoSrc} poster={videoThumb} />
 
                 {/* Shareable graphics + QR */}
                 <div className="flex flex-col md:flex-row md:flex-wrap xl:flex-nowrap gap-[24px] items-center w-full">

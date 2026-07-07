@@ -221,7 +221,7 @@ export default async function CampaignPublicPage({
     // explanatory notice (draft / upcoming / completed / paused) instead of the form.
     const donateNotice = canDonate ? null
         : campaign.status === "draft"     ? { title: "Almost there!",    message: "Donations go live the moment this campaign is published." }
-        : campaign.status === "upcoming"  ? { title: "Not open yet",     message: `Donations open when the campaign starts${startDateLabel ? ` on ${startDateLabel}` : ""}.` }
+        : campaign.status === "upcoming"  ? { title: "Not open yet",     message: `Donations open when the campaign starts${fmtDate(campaign.start_date) ? ` on ${fmtDate(campaign.start_date)}` : ""}.` }
         : campaign.status === "completed" ? { title: "Campaign ended",   message: "This campaign has wrapped up and is no longer accepting donations. Thank you for the support!" }
         :                                   { title: "Donations paused", message: campaign.donations_disabled_message?.trim() || "This campaign has temporarily paused donations — please check back soon." };
 
@@ -287,7 +287,7 @@ export default async function CampaignPublicPage({
                 } : null}
             />
 
-            <MarketingShareables slug={slug} galleryUrls={galleryUrls} heroUrl={heroMedia?.url ?? null} theme={theme} />
+            <MarketingShareables slug={slug} galleryUrls={galleryUrls} heroUrl={heroMedia?.url ?? null} videoUrl={campaign.video_url ?? null} theme={theme} />
 
             <MarketingLeaderboard
                 participants={participants}

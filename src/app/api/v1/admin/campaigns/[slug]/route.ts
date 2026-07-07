@@ -20,8 +20,10 @@ const patchSchema = z.object({
     visibility:                 z.nativeEnum(CampaignVisibility).optional(),
     donations_enabled:          z.boolean().optional(),
     donations_disabled_message: z.string().max(300).nullable().optional(),
+    video_url:                  z.union([z.string().trim().url().max(2048), z.null()]).optional(),
 }).strict().refine(
-    (d) => d.visibility !== undefined || d.donations_enabled !== undefined || d.donations_disabled_message !== undefined,
+    (d) => d.visibility !== undefined || d.donations_enabled !== undefined
+        || d.donations_disabled_message !== undefined || d.video_url !== undefined,
     { message: "At least one field is required." },
 );
 
@@ -58,7 +60,7 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
         });
         if (!campaign) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-        const { visibility, donations_enabled, donations_disabled_message } = parsed.data;
+        const { visibility, donations_enabled, donations_disabled_message, video_url } = parsed.data;
         const memberIds = campaign.members.map((m) => m.id);
         const updateData: Record<string, unknown> = {};
         const notifTasks: Promise<unknown>[] = [];
@@ -94,6 +96,11 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
                 donations_enabled:          donations_enabled,
                 donations_disabled_message: newMessage,
             }).catch(console.error);
+        }
+
+        // ── Campaign video ────────────────────────────────────────────────────
+        if (video_url !== undefined) {
+            updateData.video_url = video_url === null || video_url === "" ? null : video_url;
         }
 
         // ── Disabled message only (no toggle) ────────────────────────────────

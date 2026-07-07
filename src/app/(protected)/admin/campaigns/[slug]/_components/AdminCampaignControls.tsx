@@ -10,6 +10,7 @@ type Props = {
     visibility:               Visibility;
     donationsEnabled:         boolean;
     donationsDisabledMessage: string | null;
+    videoUrl:                 string | null;
     status:                   string;
 };
 
@@ -24,6 +25,7 @@ export default function AdminCampaignControls({
     visibility,
     donationsEnabled,
     donationsDisabledMessage,
+    videoUrl,
     status,
 }: Props) {
     const router = useRouter();
@@ -34,6 +36,8 @@ export default function AdminCampaignControls({
     const [error,       setError]       = useState<string | null>(null);
     const [disabledMsg, setDisabledMsg] = useState(donationsDisabledMessage ?? "");
     const [savingMsg,   setSavingMsg]   = useState(false);
+    const [video,       setVideo]       = useState(videoUrl ?? "");
+    const [savingVideo, setSavingVideo] = useState(false);
     const [toast,       setToast]       = useState<string | null>(null);
 
     const isDraft     = status === "draft";
@@ -79,6 +83,15 @@ export default function AdminCampaignControls({
         catch (e) { setError((e as Error).message); }
         setSavingMsg(false);
     }
+    async function saveVideo() {
+        setSavingVideo(true); setError(null);
+        try { await patch({ video_url: video.trim() || null }); showToast(video.trim() ? "Campaign video saved." : "Campaign video removed."); }
+        catch (e) { setError((e as Error).message); }
+        setSavingVideo(false);
+    }
+
+    const trimmedVideo   = video.trim();
+    const videoUnchanged = trimmedVideo === (videoUrl ?? "");
 
     return (
         <>
@@ -192,6 +205,43 @@ export default function AdminCampaignControls({
                                 {(isCompleted || isDraft) && (
                                     <p className="text-xs text-[#9aa7b8]">{isDraft ? "Donations can be toggled after launch." : "Campaign is completed — donations are closed."}</p>
                                 )}
+                            </div>
+
+                            {/* Campaign video */}
+                            <div className="space-y-3 px-6 py-5">
+                                <div>
+                                    <p className="text-sm font-bold text-[#003060]">Campaign Video</p>
+                                    <p className="mt-0.5 text-xs text-[#9aa7b8]">Shown in “Spread the Word” on the public page. Paste a direct video link (.mp4) or leave blank for the default clip.</p>
+                                </div>
+                                <div className="space-y-2">
+                                    <input
+                                        type="url"
+                                        inputMode="url"
+                                        value={video}
+                                        onChange={(e) => setVideo(e.target.value)}
+                                        placeholder="https://example.com/campaign.mp4"
+                                        className="w-full rounded-xl border border-[#e7e9eb] bg-white px-3 py-2.5 text-sm text-[#003060] placeholder:text-[#9aa7b8] focus:border-[#0268c0] focus:outline-none focus:ring-2 focus:ring-[#0268c0]/20"
+                                    />
+                                    <div className="flex items-center justify-end gap-2">
+                                        {trimmedVideo && (
+                                            <button
+                                                onClick={() => { setVideo(""); }}
+                                                disabled={savingVideo}
+                                                className="rounded-lg px-3 py-1.5 text-xs font-semibold text-[#9aa7b8] transition-colors hover:text-[#003060] disabled:opacity-50"
+                                            >
+                                                Clear
+                                            </button>
+                                        )}
+                                        <button
+                                            onClick={saveVideo}
+                                            disabled={savingVideo || videoUnchanged}
+                                            className="rounded-lg bg-[#0268c0] px-3 py-1.5 text-xs font-semibold text-white transition-[filter] hover:brightness-110 disabled:opacity-50"
+                                        >
+                                            {savingVideo ? "Saving…" : "Save Video"}
+                                        </button>
+                                    </div>
+                                    <p className="text-xs text-[#9aa7b8]">Leaving this blank shows the default sample clip on the campaign page.</p>
+                                </div>
                             </div>
                         </div>
 
