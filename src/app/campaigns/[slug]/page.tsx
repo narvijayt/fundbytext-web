@@ -1,7 +1,5 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import Link from "next/link";
-import Image from "next/image";
 import { prisma } from "@/lib/prisma";
 import { getAuthUser } from "@/lib/session";
 import { getDefaultCampaignVideo, getDefaultCampaignVideoThumbnail } from "@/lib/settings";
@@ -12,6 +10,7 @@ import MarketingDetails from "./_components/MarketingDetails";
 import MarketingShareables from "./_components/MarketingShareables";
 import MarketingLeaderboard from "./_components/MarketingLeaderboard";
 import MarketingFooter from "./_components/MarketingFooter";
+import ErrorScreen, { PrimaryLink, SecondaryLink } from "@/components/ErrorScreen";
 import CampaignPreviewBar from "./_components/CampaignPreviewBar";
 import DonateModalHost from "./_components/DonateModalHost";
 import ShareModalHost from "./_components/ShareModalHost";
@@ -119,38 +118,23 @@ export default async function CampaignPublicPage({
     // Draft: non-organizers always get a hard 404.
     if (campaign.status === "draft" && !isOrganizer) notFound();
 
-    // Private: only members can view; everyone else gets the "not available" page.
+    // Private: only members can view; everyone else gets a branded 403.
     if (campaign.visibility === "private" && !isMember) {
         return (
-            <div className="min-h-screen bg-gray-50 font-sans flex flex-col">
+            <>
                 <CampaignUpdater campaignSlug={slug} status={campaign.status} />
-                <nav className="flex items-center justify-between px-6 py-3 shadow-md" style={{ background: "#1565C0" }}>
-                    <Link href="/" className="flex items-center gap-2.5">
-                        <Image src="/assets/campaigns/app-logo.svg" width={28} height={40} alt="FundByText" className="app-logo w-6 h-9 brightness-0 invert" />
-                        <span className="font-extrabold text-lg tracking-tight text-white hidden sm:block">FundByText</span>
-                    </Link>
-                    <Link href="/campaigns/create" className="px-5 py-2 rounded-lg text-white font-bold text-sm" style={{ background: "linear-gradient(135deg, #f97316 0%, #ea580c 100%)" }}>
-                        Get Started
-                    </Link>
-                </nav>
-                <div className="flex-1 flex items-center justify-center px-4 py-20">
-                    <div className="text-center max-w-md">
-                        <div className="w-20 h-20 rounded-full bg-orange-50 flex items-center justify-center mx-auto mb-6">
-                            <svg className="w-10 h-10 text-orange-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
-                            </svg>
-                        </div>
-                        <h1 className="text-2xl font-extrabold text-gray-900 mb-2">Campaign Not Found</h1>
-                        <p className="text-gray-500 text-sm leading-relaxed mb-8">
-                            This campaign doesn&apos;t exist or the link you followed may be incorrect.
-                        </p>
-                        <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-                            <Link href="/" className="inline-flex items-center gap-2 px-5 py-2.5 bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold rounded-xl transition-colors">Go Home</Link>
-                            <Link href="/dashboard" className="inline-flex items-center gap-2 px-5 py-2.5 bg-white border border-gray-200 hover:border-gray-300 text-gray-700 text-sm font-semibold rounded-xl transition-colors">My Dashboard</Link>
-                        </div>
-                    </div>
-                </div>
-            </div>
+                <ErrorScreen
+                    code="403"
+                    title="This campaign is private"
+                    message="Only the organizer and campaign members can view this page. If you should have access, ask them to add you — otherwise, let’s get you back home."
+                    actions={
+                        <>
+                            <PrimaryLink href="/">Back to home</PrimaryLink>
+                            <SecondaryLink href="/dashboard">My dashboard</SecondaryLink>
+                        </>
+                    }
+                />
+            </>
         );
     }
 
