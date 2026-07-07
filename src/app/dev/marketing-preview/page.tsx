@@ -51,6 +51,7 @@ export default function MarketingPreview() {
                 story="<p>Help our soccer team get new uniforms and travel costs. This is for the upcoming regional tournament. Every little bit counts! Lorem ipsum dolor sit amet, consectetur adipiscing elit sed do eiusmod tempor incididunt ut. More text to trigger read more so we can see the clamp behaviour clearly across a few lines.</p>"
                 organizerName="Stephanie Smith" organizerPhotoUrl={null} orgBadge="ABC University"
                 endDateLabel="March 5, 2025" startDateLabel="January 1, 2025"
+                startDate="2025-01-01T09:00:00.000Z"
                 status="active" donationsEnabled donationsDisabledMessage={null} isFixedGoal={false}
                 inlineRef={null}
             />

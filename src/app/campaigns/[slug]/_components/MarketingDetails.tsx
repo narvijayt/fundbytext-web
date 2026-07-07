@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { DONATE_EVENT } from "./DonateNavButton";
+import CountdownBadge from "@/components/CountdownBadge";
 import InlineDonateForm from "./InlineDonateForm";
 import type { RecentDonation } from "../page";
 import type { MarketingTheme } from "./marketingTheme";
@@ -56,6 +57,7 @@ type Props = {
     orgBadge:          string | null;
     endDateLabel:      string | null;
     startDateLabel:    string | null;
+    startDate:         string | null; // ISO — for the live "starts in…" countdown
     status:            string;
     donationsEnabled:  boolean;
     donationsDisabledMessage: string | null;
@@ -72,7 +74,7 @@ type Props = {
 
 export default function MarketingDetails({
     theme, totalRaised, goalAmount, donorCount, pct, daysLeft, recentDonations,
-    story, organizerName, organizerPhotoUrl, orgBadge, endDateLabel, startDateLabel,
+    story, organizerName, organizerPhotoUrl, orgBadge, endDateLabel, startDateLabel, startDate,
     status, donationsEnabled, donationsDisabledMessage, isFixedGoal, inlineRef,
 }: Props) {
     const { accent } = theme;
@@ -143,13 +145,14 @@ export default function MarketingDetails({
     }
 
     const dateLabel = isUpcoming ? startDateLabel : endDateLabel;
+    // Upcoming campaigns get a live "Starts in …" countdown (rendered below);
+    // this label covers completed / active.
     const subLabel  = isCompleted
         ? "Campaign ended"
-        : isUpcoming
-            ? "Starting soon"
-            : daysLeft != null
-                ? `${daysLeft} day${daysLeft !== 1 ? "s" : ""} left!`
-                : null;
+        : daysLeft != null
+            ? `${daysLeft} day${daysLeft !== 1 ? "s" : ""} left!`
+            : null;
+    const subCls = "font-black text-[12px] text-[#f47435] tracking-[1px] uppercase w-full leading-none";
 
     return (
         <div className="max-w-[1152px] mx-auto px-[16px] md:px-[24px] xl:px-0 mt-[48px] flex flex-col md:gap-[40px] xl:flex-row xl:gap-[122px] items-start">
@@ -198,7 +201,9 @@ export default function MarketingDetails({
                                         {donors} donation{donors !== 1 ? "s" : ""}
                                     </span>
                                 </span>
-                                {subLabel && <span className="font-black text-[12px] text-[#f47435] tracking-[1px] uppercase w-full leading-none">{subLabel}</span>}
+                                {isUpcoming
+                                    ? <CountdownBadge date={startDate} mode="toStart" className={subCls} />
+                                    : subLabel && <span className={subCls}>{subLabel}</span>}
                             </span>
                         </div>
                     </div>

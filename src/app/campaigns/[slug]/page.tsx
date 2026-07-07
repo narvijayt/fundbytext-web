@@ -278,6 +278,7 @@ export default async function CampaignPublicPage({
                 orgBadge={orgBadge}
                 endDateLabel={fmtDate(campaign.end_date)}
                 startDateLabel={fmtDate(campaign.start_date)}
+                startDate={campaign.start_date?.toISOString() ?? null}
                 status={campaign.status}
                 donationsEnabled={campaign.donations_enabled ?? true}
                 donationsDisabledMessage={campaign.donations_disabled_message ?? null}
