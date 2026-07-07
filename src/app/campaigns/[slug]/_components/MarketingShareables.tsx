@@ -1,11 +1,48 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import MarketingShare from "./MarketingShare";
 import type { MarketingTheme } from "./marketingTheme";
 
 const A = "/assets/marketing";
+
+// Placeholder demo clip — "Big Buck Bunny" (© Blender Foundation, CC-BY 3.0), the
+// standard freely-licensed open sample video. Shown until campaigns can upload
+// their own video; loads only when the viewer presses play.
+const SAMPLE_VIDEO = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4";
+
+/* The Spread-the-Word video tile: poster + play button, swapped for a real
+   <video> player on click. */
+function VideoTile({ poster }: { poster: string | null }) {
+    const [playing, setPlaying] = useState(false);
+    return (
+        <div className="group bg-[#e8eaee] h-[320px] md:h-[550px] overflow-hidden relative rounded-[24px] w-full">
+            {playing ? (
+                <video
+                    src={SAMPLE_VIDEO}
+                    poster={poster ?? undefined}
+                    controls
+                    autoPlay
+                    playsInline
+                    className="absolute inset-0 w-full h-full object-cover bg-black"
+                />
+            ) : (
+                <button type="button" onClick={() => setPlaying(true)} aria-label="Play campaign video" className="absolute inset-0 h-full w-full cursor-pointer">
+                    {poster && (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={poster} alt="" className="absolute inset-0 w-full h-full object-cover" />
+                    )}
+                    <span aria-hidden className="absolute inset-0 bg-black/20" />
+                    <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[120px] h-[120px] md:w-[254px] md:h-[254px] transition-transform group-hover:scale-105">
+                        <Image src={`${A}/shareables/play-button.svg`} alt="" width={254} height={254} className="block max-w-none size-full" />
+                    </span>
+                    <ContextOverlay text="Play the campaign video, then share it to rally support." />
+                </button>
+            )}
+        </div>
+    );
+}
 
 /* Context caption revealed on hover — the FundBuddy hint tells users to hover a
    shareable to learn what it's for. */
@@ -35,6 +72,11 @@ export default function MarketingShareables({
     const graphicA = photos[0] ?? heroUrl ?? null;
     const graphicB = photos[1] ?? photos[0] ?? heroUrl ?? null;
 
+    // QR encodes this campaign's public URL — resolved on the client from the origin.
+    const [campaignUrl, setCampaignUrl] = useState(`/campaigns/${slug}`);
+    useEffect(() => { setCampaignUrl(`${window.location.origin}/campaigns/${slug}`); }, [slug]);
+    const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=264x264&margin=0&data=${encodeURIComponent(campaignUrl)}`;
+
     return (
         <div className="flex flex-col gap-[40px] items-center justify-center pb-[40px] md:pb-[75px] pt-[40px] md:pt-[80px] xl:pt-[112px] px-[16px] md:px-[24px] xl:px-0">
             <div className="w-full max-w-[1152px] flex flex-col gap-[24px] items-center md:flex-row md:justify-center px-[8px]">
@@ -47,17 +89,8 @@ export default function MarketingShareables({
             </div>
 
             <div className="w-full max-w-[1152px] flex flex-col gap-[24px] items-center justify-center">
-                {/* Video placeholder (no campaign video — static placeholder per design) */}
-                <div className="bg-[#e8eaee] h-[320px] md:h-[550px] overflow-hidden relative rounded-[24px] w-full">
-                    {videoThumb && (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={videoThumb} alt="" className="absolute inset-0 w-full h-full object-cover" />
-                    )}
-                    <span aria-hidden className="absolute inset-0 bg-black/20" />
-                    <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[120px] h-[120px] md:w-[254px] md:h-[254px]">
-                        <Image src={`${A}/shareables/play-button.svg`} alt="Play video" width={254} height={254} className="block max-w-none size-full" />
-                    </span>
-                </div>
+                {/* Campaign video */}
+                <VideoTile poster={videoThumb} />
 
                 {/* Shareable graphics + QR */}
                 <div className="flex flex-col md:flex-row md:flex-wrap xl:flex-nowrap gap-[24px] items-center w-full">
@@ -77,7 +110,9 @@ export default function MarketingShareables({
                     </div>
                     <div className="group bg-white h-[400px] overflow-hidden relative rounded-[24px] w-full xl:w-[320px] xl:flex-none xl:shrink-0 border border-[#eff4f9] flex items-center justify-center">
                         <span className="w-[264px] h-[264px] flex items-center justify-center">
-                            <Image src={`${A}/shareables/qr-code.svg`} alt="Campaign QR code" width={264} height={264} className="block max-w-none size-full" />
+                            {/* Real QR for this campaign's public URL (generated client-side). */}
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={qrSrc} alt="Scan to open the campaign page" width={264} height={264} className="block h-[264px] w-[264px] max-w-none" />
                         </span>
                         <ContextOverlay text="Scan this QR code to open the campaign's donation page." />
                     </div>
