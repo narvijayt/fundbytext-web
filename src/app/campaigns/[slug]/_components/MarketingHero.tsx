@@ -75,11 +75,12 @@ export default function MarketingHero({
                        stretching blew the motif up several times larger than intended. */
                     <div
                         aria-hidden
-                        className="absolute inset-0 opacity-[0.12]"
+                        className={`absolute inset-0 ${theme.themeCover ? "opacity-[0.18]" : "opacity-[0.12]"}`}
                         style={{
                             backgroundImage: `url('${theme.themeImage}')`,
-                            backgroundRepeat: "repeat",
+                            backgroundRepeat: theme.themeCover ? "no-repeat" : "repeat",
                             backgroundSize: theme.themeSize,
+                            backgroundPosition: "center",
                         }}
                     />
                 )}

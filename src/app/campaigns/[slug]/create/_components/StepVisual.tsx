@@ -5,7 +5,7 @@ import Image from "next/image";
 import { createPortal } from "react-dom";
 import { QuestionCard, InfoTooltip } from "./ui";
 import UploadBox from "./UploadBox";
-import { THEME_TILES, CUSTOM_THEME_SIZE } from "../../_components/marketingTheme";
+import { THEME_TILES } from "../../_components/marketingTheme";
 
 /* Image that stays transparent until it is fully loaded, then fades in over its
    container's placeholder — so the user never watches it decode top-to-bottom
@@ -841,24 +841,26 @@ function CampaignPreview({
 }) {
     const gallery = galleryUrls.filter(Boolean).slice(0, 4);
     // The custom upload applies only while its tile ("logo" slot) is selected —
-    // switching to a preset shows that preset (mirrors getMarketingTheme).
+    // switching to a preset shows that preset (mirrors getMarketingTheme). A
+    // custom image is a single cover graphic; presets tile.
     const bandTile = bgTheme === "logo" && customBgUrl
-        ? { src: customBgUrl, size: CUSTOM_THEME_SIZE }
-        : (THEME_TILES[bgTheme] ?? null);
+        ? { src: customBgUrl, size: "cover", cover: true }
+        : (THEME_TILES[bgTheme] ? { ...THEME_TILES[bgTheme], cover: false } : null);
     return (
         <div className="relative rounded-2xl overflow-hidden border border-[#d4dee7] shadow-sm">
             {/* Header band */}
             <div className="relative px-4 py-4 sm:px-6 sm:py-5" style={{ background: accentColor }}>
                 {bandTile && (
-                    /* Tile the seamless extracted pattern at its native motif size
-                       (the swatch images have a baked border and don't tile). */
+                    /* Presets tile at their native motif size; a custom upload is a
+                       single cover image (shown once, cropped to fill). */
                     <div
                         aria-hidden
-                        className="absolute inset-0 opacity-15"
+                        className={`absolute inset-0 ${bandTile.cover ? "opacity-25" : "opacity-15"}`}
                         style={{
                             backgroundImage: `url('${bandTile.src}')`,
-                            backgroundRepeat: "repeat",
+                            backgroundRepeat: bandTile.cover ? "no-repeat" : "repeat",
                             backgroundSize: bandTile.size,
+                            backgroundPosition: "center",
                         }}
                     />
                 )}

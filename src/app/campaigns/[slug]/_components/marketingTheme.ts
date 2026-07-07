@@ -30,6 +30,9 @@ export const THEME_TILES: Record<string, { src: string; size: string }> = {
     // "logo" has no pattern — the band shows the accent colour alone.
 };
 
+// A custom uploaded background is shown once as a cover image (not a repeating
+// pattern); background-size: cover fills the band and crops responsively.
+
 export type MarketingThemeInput = {
     accent_color:          string | null;
     secondary_color:       string | null;
@@ -38,10 +41,6 @@ export type MarketingThemeInput = {
     custom_background_url?: string | null;
 };
 
-// A custom uploaded pattern has no known repeat period, so tile it at a fixed,
-// moderate size that reads like the preset motifs on the accent band.
-export const CUSTOM_THEME_SIZE = "260px auto";
-
 export type MarketingTheme = {
     accent:     string;
     secondary:  string;
@@ -49,6 +48,8 @@ export type MarketingTheme = {
     themeImage: string | null;
     /** background-size that shows the tile at its intended motif scale. */
     themeSize:  string;
+    /** true → the image is a single cover graphic (custom upload), not a repeating pattern. */
+    themeCover: boolean;
 };
 
 export function getMarketingTheme(c: MarketingThemeInput): MarketingTheme {
@@ -62,6 +63,7 @@ export function getMarketingTheme(c: MarketingThemeInput): MarketingTheme {
         secondary:  c.secondary_color ?? "#003060",
         tertiary:   c.tertiary_color  ?? "#ffffff",
         themeImage: custom ?? tile?.src ?? null,
-        themeSize:  custom ? CUSTOM_THEME_SIZE : (tile?.size ?? "217px auto"),
+        themeSize:  custom ? "cover" : (tile?.size ?? "217px auto"),
+        themeCover: !!custom,
     };
 }

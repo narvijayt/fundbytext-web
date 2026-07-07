@@ -165,11 +165,12 @@ export default function MarketingLeaderboard({
                    stretching one copy down a tall band, which ballooned the motif. */
                 <div
                     aria-hidden
-                    className="absolute inset-x-0 top-0 h-[1047px] opacity-[0.1] pointer-events-none"
+                    className={`absolute inset-x-0 top-0 h-[1047px] pointer-events-none ${theme.themeCover ? "opacity-[0.18]" : "opacity-[0.1]"}`}
                     style={{
                         backgroundImage: `url('${theme.themeImage}')`,
-                        backgroundRepeat: "repeat",
+                        backgroundRepeat: theme.themeCover ? "no-repeat" : "repeat",
                         backgroundSize: theme.themeSize,
+                        backgroundPosition: "center",
                     }}
                 />
             )}
