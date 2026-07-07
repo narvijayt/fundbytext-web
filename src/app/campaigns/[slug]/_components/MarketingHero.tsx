@@ -69,6 +69,10 @@ export default function MarketingHero({
                 className="absolute inset-x-0 top-0 h-[498px] md:h-[635px] overflow-hidden"
                 style={{ background: `linear-gradient(157deg, ${theme.accent} 0%, ${theme.secondary} 100%)` }}
             >
+                {/* Layer order: background gradient → halo → pattern. The glow sits
+                    UNDER the pattern so the motif stays visible over it (a lighter
+                    tint of the accent, centred on the right edge per the Figma). */}
+                <span aria-hidden className="absolute inset-0" style={{ background: `radial-gradient(75% 95% at 100% 55%, color-mix(in oklch, ${theme.accent} 58%, white) 0%, transparent 62%)` }} />
                 {theme.themeImage && (
                     /* Tile the pattern at its native motif size (the same size shown in
                        the theme picker) instead of stretching one copy to cover the band —
@@ -84,9 +88,6 @@ export default function MarketingHero({
                         }}
                     />
                 )}
-                {/* Right-side glow — a lighter tint of the accent (not a white halo),
-                    matching the Figma hero which brightens toward the right edge. */}
-                <span aria-hidden className="absolute inset-0" style={{ background: `radial-gradient(75% 95% at 100% 38%, color-mix(in oklch, ${theme.accent} 58%, white) 0%, transparent 62%)` }} />
             </div>
 
             <div className="relative max-w-[1152px] mx-auto px-[16px] md:px-[24px] xl:px-0">
