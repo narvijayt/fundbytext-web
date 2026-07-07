@@ -36,7 +36,24 @@ export default function HelpSpreadModal({ isOpen, onClose, slug, campaignName, h
         return () => window.removeEventListener("keydown", h);
     }, [onClose]);
 
-    if (!isOpen) return null;
+    // Enter/exit animation. Mount on open (and keep mounted through the exit
+    // transition on close); flip `shown` only after the mount has painted so the
+    // enter transition actually plays.
+    const [render, setRender] = useState(isOpen);
+    const [shown,  setShown]  = useState(false);
+    useEffect(() => {
+        if (isOpen) { setRender(true); return; }
+        setShown(false);
+        const t = setTimeout(() => setRender(false), 200);
+        return () => clearTimeout(t);
+    }, [isOpen]);
+    useEffect(() => {
+        if (!render || !isOpen) return;
+        const raf = requestAnimationFrame(() => setShown(true));
+        return () => cancelAnimationFrame(raf);
+    }, [render, isOpen]);
+
+    if (!render) return null;
 
     const open = (href: string) => window.open(href, "_blank", "noopener,noreferrer");
     const copy = async () => {
@@ -78,8 +95,10 @@ export default function HelpSpreadModal({ isOpen, onClose, slug, campaignName, h
     const pill = "flex h-11 items-center justify-center gap-2 rounded-[12px] border border-[#dde0e3] bg-white text-[15px] font-medium tracking-[0.15px] text-[#003060] transition-colors hover:bg-[#f6f8fa]";
 
     return (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center p-3 sm:p-6" style={{ background: "rgba(0,30,60,0.55)", backdropFilter: "blur(3px)" }} onClick={onClose}>
-            <div className="relative flex max-h-[92vh] w-full max-w-[612px] flex-col overflow-y-auto overflow-x-hidden rounded-[20px] bg-white shadow-[0px_40px_80px_-20px_rgba(0,48,96,0.45)] [scrollbar-color:#c9d2dc_transparent] [scrollbar-width:thin] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[#c9d2dc] [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar]:w-1.5" onClick={(ev) => ev.stopPropagation()}>
+        <div className={`fixed inset-0 z-[110] flex items-center justify-center p-3 transition-opacity duration-200 ease-out motion-reduce:transition-none sm:p-6 ${shown ? "opacity-100" : "opacity-0"}`} style={{ background: "rgba(0,30,60,0.55)", backdropFilter: "blur(3px)" }} onClick={onClose}>
+            <div className={`relative flex max-h-[92vh] w-full max-w-[612px] flex-col overflow-hidden rounded-[20px] bg-white shadow-[0px_40px_80px_-20px_rgba(0,48,96,0.45)] transition-all duration-200 ease-out motion-reduce:transition-none ${shown ? "translate-y-0 scale-100 opacity-100" : "translate-y-2 scale-95 opacity-0"}`} onClick={(ev) => ev.stopPropagation()}>
+              {/* Inner scroll area — keeps the scrollbar inside the rounded corners */}
+              <div className="relative flex min-h-0 flex-1 flex-col overflow-y-auto overflow-x-hidden [scrollbar-color:#c9d2dc_transparent] [scrollbar-width:thin] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[#c9d2dc] [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar]:w-1.5">
                 {/* Blue band — fixed-height background; the video overlaps its lower portion */}
                 <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-[300px] overflow-hidden sm:h-[347px]" style={{ background: `linear-gradient(150deg, ${accent} 0%, ${accent} 60%, color-mix(in srgb, ${accent} 78%, #000) 140%)` }}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -134,6 +153,7 @@ export default function HelpSpreadModal({ isOpen, onClose, slug, campaignName, h
                         </button>
                     </div>
                 </div>
+              </div>
             </div>
         </div>
     );
