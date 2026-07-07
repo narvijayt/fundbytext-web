@@ -97,8 +97,10 @@ export default function HelpSpreadModal({ isOpen, onClose, slug, campaignName, h
     return (
         <div className={`fixed inset-0 z-[110] flex items-center justify-center p-3 transition-opacity duration-200 ease-out motion-reduce:transition-none sm:p-6 ${shown ? "opacity-100" : "opacity-0"}`} style={{ background: "rgba(0,30,60,0.55)", backdropFilter: "blur(3px)" }} onClick={onClose}>
             <div className={`relative flex max-h-[92vh] w-full max-w-[612px] flex-col overflow-hidden rounded-[20px] bg-white shadow-[0px_40px_80px_-20px_rgba(0,48,96,0.45)] transition-all duration-200 ease-out motion-reduce:transition-none ${shown ? "translate-y-0 scale-100 opacity-100" : "translate-y-2 scale-95 opacity-0"}`} onClick={(ev) => ev.stopPropagation()}>
-              {/* Inner scroll area — keeps the scrollbar inside the rounded corners */}
-              <div className="relative flex min-h-0 flex-1 flex-col overflow-y-auto overflow-x-hidden [scrollbar-color:#c9d2dc_transparent] [scrollbar-width:thin] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[#c9d2dc] [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar]:w-1.5">
+              {/* Inner scroll area — keeps the scrollbar inside the rounded corners.
+                  No custom scrollbar styling → inherits the app-wide one (globals.css),
+                  matching the Default-video modal. */}
+              <div className="relative flex min-h-0 flex-1 flex-col overflow-y-auto overflow-x-hidden">
                 {/* Blue band — fixed-height background; the video overlaps its lower portion */}
                 <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-[300px] overflow-hidden sm:h-[347px]" style={{ background: `linear-gradient(150deg, ${accent} 0%, ${accent} 60%, color-mix(in srgb, ${accent} 78%, #000) 140%)` }}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
