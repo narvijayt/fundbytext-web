@@ -186,8 +186,8 @@ export default function MarketingHero({
 
             {/* Slide-in menu (hamburger) */}
             {menuOpen && (
-                <div className={`fixed inset-0 z-[95] transition-opacity duration-200 motion-reduce:transition-none ${menuShown ? "opacity-100" : "opacity-0"}`}>
-                    <div className="absolute inset-0 bg-[#0f1d43]/45 backdrop-blur-sm" onClick={closeMenu} />
+                <div className="fixed inset-0 z-[95]">
+                    <div className={`absolute inset-0 bg-[#0f1d43]/45 backdrop-blur-sm transition-opacity duration-150 ease-out motion-reduce:transition-none ${menuShown ? "opacity-100" : "opacity-0"}`} onClick={closeMenu} />
                     <aside className={`absolute right-0 top-0 flex h-full w-[300px] max-w-[85vw] flex-col bg-white shadow-2xl transition-transform duration-200 ease-out motion-reduce:transition-none ${menuShown ? "translate-x-0" : "translate-x-full"}`}>
                         <div className="flex items-center justify-between border-b border-[#eef1f4] px-5 py-4">
                             <Image src={`${A}/nav/logo.svg`} alt="FundbyText" width={150} height={30} className="h-[26px] w-auto" />
