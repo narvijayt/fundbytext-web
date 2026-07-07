@@ -132,7 +132,7 @@ export default function MarketingHero({
                             <div className="flex flex-col items-center md:flex-1 md:flex-row md:items-center md:justify-between min-w-0">
                                 <div className="md:h-[104px] flex items-center py-2 md:py-0">
                                     <h1
-                                        className="font-black text-[32px] xl:text-[40px] text-white tracking-[-1px] text-center md:text-left w-full md:max-w-[500px]"
+                                        className="font-black text-[32px] xl:text-[36px] 2xl:text-[40px] text-white tracking-[-1px] text-center md:text-left w-full md:max-w-[500px]"
                                         style={{ lineHeight: 1.1, textShadow: "0px 32px 40px rgba(2,104,192,0.16), 0px 12px 12px rgba(0,48,96,0.04)" }}
                                     >
                                         {title}

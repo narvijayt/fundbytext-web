@@ -86,7 +86,7 @@ export default function MarketingShareables({
     return (
         <div className="flex flex-col gap-[40px] items-center justify-center pb-[40px] md:pb-[75px] pt-[40px] md:pt-[80px] xl:pt-[112px] px-[16px] md:px-[24px] xl:px-0">
             <div className="w-full max-w-[1152px] flex flex-col gap-[24px] items-center md:flex-row md:justify-center px-[8px]">
-                <h2 className="md:flex-1 font-black text-[32px] xl:text-[46px] tracking-[-1.5px] leading-none text-center md:text-left" style={{ color: theme.secondary }}>
+                <h2 className="md:flex-1 font-black text-[32px] xl:text-[38px] 2xl:text-[46px] tracking-[-1.5px] leading-none text-center md:text-left" style={{ color: theme.secondary }}>
                     Spread the Word
                 </h2>
                 <div className="flex items-start justify-end p-[4px] shrink-0">

@@ -182,7 +182,7 @@ export default function MarketingLeaderboard({
                         <div className="relative w-full h-[96px] md:h-[132px] rounded-[17px] md:rounded-[24px]" style={{ background: `linear-gradient(180deg, ${accent} 18%, ${theme.secondary} 130%)`, boxShadow: "0px 0px 40px 0px rgba(0,48,96,0.4)" }}>
                             <span aria-hidden className="absolute inset-0 rounded-[inherit]" style={{ boxShadow: "inset 0px -4px 8px 0px rgba(0,48,96,0.1), inset 0px 4px 8px -3px rgba(255,255,255,0.5)" }} />
                         </div>
-                        <p className="absolute left-1/2 top-[65px] md:top-[90px] -translate-x-1/2 -translate-y-1/2 font-black text-[33px] md:text-[46px] text-white text-center tracking-[-1.5px] leading-none whitespace-nowrap" style={{ textShadow: "0px 0px 16px rgba(0,48,96,0.6), 0px 0px 4px rgba(0,48,96,0.6)" }}>Leaderboard</p>
+                        <p className="absolute left-1/2 top-[65px] md:top-[90px] -translate-x-1/2 -translate-y-1/2 font-black text-[33px] md:text-[38px] 2xl:text-[46px] text-white text-center tracking-[-1.5px] leading-none whitespace-nowrap" style={{ textShadow: "0px 0px 16px rgba(0,48,96,0.6), 0px 0px 4px rgba(0,48,96,0.6)" }}>Leaderboard</p>
                         <span aria-hidden className="absolute inset-0 pointer-events-none rounded-[inherit]" style={{ boxShadow: "inset 0px 5px 4px -3px rgba(255,255,255,0.5)" }} />
                     </div>
                     <div className="absolute left-1/2 top-[100px] md:top-[128px] -translate-x-1/2 z-10 w-[290px] md:w-[460px]">
