@@ -5,10 +5,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getAuthUserFromRequest } from "@/lib/session";
-import { getDefaultCampaignVideo, setSetting, SETTING_KEYS } from "@/lib/settings";
+import { getDefaultCampaignVideo, getDefaultCampaignVideoThumbnail, setSetting, SETTING_KEYS } from "@/lib/settings";
 
+const urlOrNull = z.union([z.string().trim().url().max(2048), z.null()]);
 const bodySchema = z.object({
-    video_url: z.union([z.string().trim().url().max(2048), z.null()]),
+    video_url:           urlOrNull.optional(),
+    video_thumbnail_url: urlOrNull.optional(),
+}).refine((d) => d.video_url !== undefined || d.video_thumbnail_url !== undefined, {
+    message: "At least one field is required.",
 });
 
 async function requireAdmin(req: NextRequest) {
@@ -18,7 +22,8 @@ async function requireAdmin(req: NextRequest) {
 
 export async function GET(req: NextRequest) {
     if (!(await requireAdmin(req))) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    return NextResponse.json({ video_url: await getDefaultCampaignVideo() });
+    const [video_url, video_thumbnail_url] = await Promise.all([getDefaultCampaignVideo(), getDefaultCampaignVideoThumbnail()]);
+    return NextResponse.json({ video_url, video_thumbnail_url });
 }
 
 export async function PUT(req: NextRequest) {
@@ -29,10 +34,11 @@ export async function PUT(req: NextRequest) {
         const parsed = bodySchema.safeParse(body);
         if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 422 });
 
-        const value = parsed.data.video_url === "" ? null : parsed.data.video_url;
-        await setSetting(SETTING_KEYS.defaultCampaignVideo, value);
+        const { video_url, video_thumbnail_url } = parsed.data;
+        if (video_url !== undefined) await setSetting(SETTING_KEYS.defaultCampaignVideo, video_url || null);
+        if (video_thumbnail_url !== undefined) await setSetting(SETTING_KEYS.defaultCampaignVideoThumbnail, video_thumbnail_url || null);
 
-        return NextResponse.json({ ok: true, video_url: value });
+        return NextResponse.json({ ok: true, video_url, video_thumbnail_url });
     } catch (err) {
         console.error("[PUT admin/settings/campaign-video]", err);
         return NextResponse.json({ error: "Internal server error" }, { status: 500 });

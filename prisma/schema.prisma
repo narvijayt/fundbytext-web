@@ -206,6 +206,7 @@ model Campaign {
     org_display_name           String?            @db.VarChar(100) // free-text display label (public page)
     story                      String?            @db.Text
     video_url                  String?            @db.VarChar(2048) // optional campaign video shown in Spread the Word
+    video_thumbnail_url        String?            @db.VarChar(2048) // optional poster image shown before the video plays
     timezone                   String?            @default("America/New_York") @db.VarChar(50)
     start_date                 DateTime?          @db.Timestamptz(3)
     end_date                   DateTime?          @db.Timestamptz(3)

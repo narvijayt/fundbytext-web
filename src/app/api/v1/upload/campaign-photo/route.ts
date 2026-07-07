@@ -9,7 +9,7 @@ import { getAuthUserFromRequest } from "@/lib/session";
 
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
 const MAX_SIZE_BYTES = 10 * 1024 * 1024; // 10 MB
-const ALLOWED_MEDIA_TYPES = ["profile", "hero", "gallery"];
+const ALLOWED_MEDIA_TYPES = ["profile", "hero", "gallery", "video_thumbnail"];
 
 export async function POST(req: NextRequest) {
     try {
@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
         }
         if (!mediaType || !ALLOWED_MEDIA_TYPES.includes(mediaType)) {
             return NextResponse.json(
-                { error: "type must be profile, hero, or gallery" },
+                { error: "type must be profile, hero, gallery, or video_thumbnail" },
                 { status: 400 }
             );
         }

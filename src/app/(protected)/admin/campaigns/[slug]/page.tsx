@@ -284,7 +284,7 @@ export default async function AdminCampaignDetailPage({ params }: Ctx) {
                     />
                 </div>
                 <div className="w-full shrink-0 space-y-4 lg:w-80">
-                    <AdminCampaignVideoCard campaignSlug={slug} videoUrl={campaign.video_url ?? null} defaultVideoUrl={defaultVideo} />
+                    <AdminCampaignVideoCard campaignSlug={slug} videoUrl={campaign.video_url ?? null} videoThumbnailUrl={campaign.video_thumbnail_url ?? null} defaultVideoUrl={defaultVideo} />
                     <LiveDonationFeed donations={feedDonations} totalCount={donationTotal} campaignSlug={slug} isCompleted={campaign.status === "completed"} />
                 </div>
             </div>

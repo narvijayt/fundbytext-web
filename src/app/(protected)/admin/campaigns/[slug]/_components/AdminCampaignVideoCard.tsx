@@ -4,39 +4,45 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 type Props = {
-    campaignSlug:    string;
-    videoUrl:        string | null;
-    defaultVideoUrl: string | null;
+    campaignSlug:      string;
+    videoUrl:          string | null;
+    videoThumbnailUrl: string | null;
+    defaultVideoUrl:   string | null;
 };
 
 const MAX_MB = 64;
+const MAX_THUMB_MB = 10;
 const ACCEPT = "video/mp4,video/webm,video/ogg,video/quicktime";
+const THUMB_ACCEPT = "image/jpeg,image/png,image/webp";
 
-export default function AdminCampaignVideoCard({ campaignSlug, videoUrl, defaultVideoUrl }: Props) {
+export default function AdminCampaignVideoCard({ campaignSlug, videoUrl, videoThumbnailUrl, defaultVideoUrl }: Props) {
     const router = useRouter();
     const fileRef = useRef<HTMLInputElement>(null);
+    const thumbRef = useRef<HTMLInputElement>(null);
 
     const [url,       setUrl]       = useState(videoUrl ?? "");
     const [uploading, setUploading] = useState(false);
     const [saving,    setSaving]    = useState(false);
     const [removing,  setRemoving]  = useState(false);
+    const [thumbBusy, setThumbBusy] = useState(false);
     const [error,     setError]     = useState<string | null>(null);
     const [ok,        setOk]        = useState<string | null>(null);
 
-    const busy       = uploading || saving || removing;
+    const busy       = uploading || saving || removing || thumbBusy;
     const trimmed    = url.trim();
     const unchanged  = trimmed === (videoUrl ?? "");
 
     function flash(msg: string) { setOk(msg); setTimeout(() => setOk(null), 3000); }
 
-    async function patchVideo(value: string | null) {
+    async function patch(body: Record<string, unknown>) {
         const res = await fetch(`/api/v1/admin/campaigns/${campaignSlug}`, {
             method: "PATCH", headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ video_url: value }),
+            body: JSON.stringify(body),
         });
-        if (!res.ok) { const j = await res.json().catch(() => ({})); throw new Error(typeof j.error === "string" ? j.error : "Failed to save video."); }
+        if (!res.ok) { const j = await res.json().catch(() => ({})); throw new Error(typeof j.error === "string" ? j.error : "Failed to save."); }
         router.refresh();
     }
+    const patchVideo = (value: string | null) => patch({ video_url: value });
 
     async function onPickFile(e: React.ChangeEvent<HTMLInputElement>) {
         const file = e.target.files?.[0];
@@ -72,6 +78,34 @@ export default function AdminCampaignVideoCard({ campaignSlug, videoUrl, default
         try { await patchVideo(null); setUrl(""); flash("Video removed."); }
         catch (err) { setError((err as Error).message); }
         setRemoving(false);
+    }
+
+    async function onPickThumb(e: React.ChangeEvent<HTMLInputElement>) {
+        const file = e.target.files?.[0];
+        e.target.value = "";
+        if (!file) return;
+        setError(null); setOk(null);
+        if (file.size > MAX_THUMB_MB * 1024 * 1024) { setError(`Thumbnail must be under ${MAX_THUMB_MB} MB.`); return; }
+
+        setThumbBusy(true);
+        try {
+            const fd = new FormData();
+            fd.append("photo", file);
+            fd.append("type", "video_thumbnail");
+            const res = await fetch("/api/v1/upload/campaign-photo", { method: "POST", body: fd });
+            const j = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(typeof j.error === "string" ? j.error : "Upload failed.");
+            await patch({ video_thumbnail_url: j.url });
+            flash("Thumbnail uploaded.");
+        } catch (err) { setError((err as Error).message); }
+        setThumbBusy(false);
+    }
+
+    async function removeThumb() {
+        setError(null); setOk(null); setThumbBusy(true);
+        try { await patch({ video_thumbnail_url: null }); flash("Thumbnail removed."); }
+        catch (err) { setError((err as Error).message); }
+        setThumbBusy(false);
     }
 
     return (
@@ -141,6 +175,37 @@ export default function AdminCampaignVideoCard({ campaignSlug, videoUrl, default
                 <button onClick={saveLink} disabled={busy || unchanged} className="rounded-lg border border-[#e7e9eb] px-3 py-1.5 text-xs font-semibold text-[#003060] transition-colors hover:bg-gray-50 disabled:opacity-50">
                     {saving ? "Saving…" : "Save link"}
                 </button>
+            </div>
+
+            {/* Video thumbnail (poster) */}
+            <div className="mt-4 border-t border-[#eef1f4] pt-4">
+                <p className="text-sm font-bold text-[#003060]">Video thumbnail</p>
+                <p className="text-[11px] text-[#9aa7b8]">Poster image shown before the video plays.</p>
+
+                <div className="mt-2 overflow-hidden rounded-xl border border-[#eef1f4] bg-[#f7f9fb]">
+                    {videoThumbnailUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={videoThumbnailUrl} alt="Video thumbnail" className="aspect-video w-full object-cover" />
+                    ) : (
+                        <div className="flex aspect-video w-full flex-col items-center justify-center gap-1 text-center">
+                            <svg className="h-6 w-6 text-[#c3ccd6]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.6}><path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14M4 6h16a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V8a2 2 0 012-2z" /></svg>
+                            <p className="text-[11px] text-[#9aa7b8]">No thumbnail — the hero image is used.</p>
+                        </div>
+                    )}
+                </div>
+
+                <input ref={thumbRef} type="file" accept={THUMB_ACCEPT} onChange={onPickThumb} className="hidden" />
+                <div className="mt-2 flex items-center justify-between gap-2">
+                    {videoThumbnailUrl ? (
+                        <button onClick={removeThumb} disabled={busy} className="rounded-lg px-2 py-1.5 text-xs font-semibold text-[#c2404b] transition-colors hover:bg-red-50 disabled:opacity-50">Remove</button>
+                    ) : <span />}
+                    <button onClick={() => thumbRef.current?.click()} disabled={busy} className="flex items-center gap-2 rounded-lg bg-[#0268c0] px-3 py-1.5 text-xs font-semibold text-white transition-[filter] hover:brightness-110 disabled:opacity-50">
+                        {thumbBusy ? (
+                            <><span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/40 border-t-white" />Uploading…</>
+                        ) : (videoThumbnailUrl ? "Replace thumbnail" : "Upload thumbnail")}
+                    </button>
+                </div>
+                <p className="mt-1.5 text-[11px] text-[#9aa7b8]">JPEG, PNG or WebP · up to {MAX_THUMB_MB} MB</p>
             </div>
 
             {error && <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600">{error}</p>}

@@ -61,18 +61,20 @@ function ContextOverlay({ text }: { text: string }) {
 }
 
 export default function MarketingShareables({
-    slug, galleryUrls, heroUrl, videoUrl = null, theme,
+    slug, galleryUrls, heroUrl, videoUrl = null, videoThumbnail = null, theme,
 }: {
     slug: string;
     galleryUrls: string[];
     heroUrl: string | null;
     videoUrl?: string | null;
+    videoThumbnail?: string | null;
     theme: MarketingTheme;
 }) {
     const [hintOpen, setHintOpen] = useState(true);
     const photos = galleryUrls.filter(Boolean);
     const videoSrc = videoUrl?.trim() || SAMPLE_VIDEO;
-    const videoThumb = heroUrl ?? photos[0] ?? null;
+    // Poster: an explicit thumbnail wins, else fall back to the hero / first photo.
+    const videoThumb = videoThumbnail?.trim() || heroUrl || photos[0] || null;
     const graphicA = photos[0] ?? heroUrl ?? null;
     const graphicB = photos[1] ?? photos[0] ?? heroUrl ?? null;
 
