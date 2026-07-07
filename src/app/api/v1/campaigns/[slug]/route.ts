@@ -6,6 +6,7 @@ import { z } from "zod";
 import { del } from "@vercel/blob";
 import { prisma } from "@/lib/prisma";
 import { getAuthUserFromRequest } from "@/lib/session";
+import { collectCampaignBlobUrls, purgeBlobs } from "@/lib/campaign-blobs";
 import { Prisma } from "@/generated/prisma/client";
 import {
     notifyCampaignExtended,
@@ -434,6 +435,10 @@ export async function DELETE(req: NextRequest, ctx: Ctx) {
             }
         }
 
+        // Gather the campaign's own uploaded blobs before the rows are gone, so
+        // deleting the campaign doesn't leave orphaned files in blob storage.
+        const blobUrls = await collectCampaignBlobUrls(ids.campaignId);
+
         await prisma.campaign.delete({ where: { id: ids.campaignId } });
 
         // ── Clean up Organization if this was its only campaign ───────────────
@@ -442,11 +447,19 @@ export async function DELETE(req: NextRequest, ctx: Ctx) {
                 where: { organization_id: campaign.organization_id },
             });
             if (remaining === 0) {
+                const org = await prisma.organization.findUnique({
+                    where:  { id: campaign.organization_id },
+                    select: { logo_url: true },
+                });
+                if (org?.logo_url) blobUrls.push(org.logo_url);
                 await prisma.organization.delete({
                     where: { id: campaign.organization_id },
                 }).catch(console.error); // non-fatal — FK may already be null
             }
         }
+
+        // Best-effort blob cleanup (never fails the request).
+        await purgeBlobs(blobUrls);
 
         return NextResponse.json({ ok: true });
     } catch (err) {

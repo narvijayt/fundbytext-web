@@ -13,6 +13,7 @@ import {
     broadcastAdminDonationsResumed,
 } from "@/lib/notifications";
 import { publishControlsChanged } from "@/lib/ably";
+import { collectCampaignBlobUrls, purgeBlobs } from "@/lib/campaign-blobs";
 
 type Ctx = { params: Promise<{ slug: string }> };
 
@@ -153,7 +154,13 @@ export async function DELETE(req: NextRequest, ctx: Ctx) {
             return NextResponse.json({ error: "Only draft campaigns can be deleted." }, { status: 422 });
         }
 
+        // Collect the campaign's own uploaded blobs before the rows are gone.
+        const blobUrls = await collectCampaignBlobUrls(campaign.id);
+
         await prisma.campaign.delete({ where: { id: campaign.id } });
+
+        // Best-effort blob cleanup so deleted images/video don't linger in storage.
+        await purgeBlobs(blobUrls);
 
         return NextResponse.json({ ok: true });
     } catch (err) {
