@@ -15,6 +15,7 @@ import {
 import type { DonorPrefill } from "./CampaignDonateShell";
 import { prefilledAmountRaw } from "./CampaignDonateShell";
 import DonationSuccess, { type DonationSuccessData } from "./DonationSuccess";
+import CountrySelect from "./CountrySelect";
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
 const M = "/assets/marketing";
@@ -51,12 +52,6 @@ type Props = {
 function fmt(n: number) {
     return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(n);
 }
-
-const COUNTRIES: { code: string; label: string }[] = [
-    { code: "US", label: "United States" }, { code: "CA", label: "Canada" }, { code: "GB", label: "United Kingdom" },
-    { code: "AU", label: "Australia" }, { code: "IN", label: "India" }, { code: "DE", label: "Germany" },
-    { code: "FR", label: "France" }, { code: "MX", label: "Mexico" }, { code: "BR", label: "Brazil" },
-];
 
 const STRIPE_STYLE = {
     base: {
@@ -239,7 +234,11 @@ function DonateForm({
     );
 
     return (
-        <form onSubmit={handleSubmit} className="no-scrollbar relative flex max-h-[92vh] w-full flex-col overflow-y-auto rounded-3xl bg-white shadow-[0px_40px_80px_-20px_rgba(0,48,96,0.45)]">
+        <form onSubmit={handleSubmit} className="relative flex max-h-[92vh] w-full flex-col overflow-hidden rounded-3xl bg-white shadow-[0px_40px_80px_-20px_rgba(0,48,96,0.45)]">
+          {/* Inner scroll wrapper — the form clips to its rounded corners
+              (overflow-hidden) so the scrollbar never spills past the radius. The
+              bar shows on mobile like a normal scroll and is hidden on desktop. */}
+          <div className="flex w-full flex-1 flex-col overflow-y-auto [scrollbar-width:thin] lg:[scrollbar-width:none] lg:[&::-webkit-scrollbar]:hidden">
             {/* ── Blue header band — spans the full width; content stays in the left
                  column so the summary card can float over the band on desktop. ── */}
             <div
@@ -317,12 +316,11 @@ function DonateForm({
                     <div className="flex flex-col gap-5 sm:flex-row">
                         <div className="flex flex-col gap-2.5 sm:w-[184px] sm:shrink-0">
                             <FieldLabel>Card Option</FieldLabel>
-                            <div className={`${FIELD} justify-between cursor-default`}>
-                                <span className="flex items-center gap-2 text-[14px]">
-                                    <Image src={`${M}/footer/mastercard.svg`} alt="" width={24} height={24} className="size-5" />
-                                    Credit / Debit
-                                </span>
-                                <svg className="size-4 text-[#aeb5bd]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"><path d="M6 9l6 6 6-6" /></svg>
+                            {/* Only one payment method today, so this is a static
+                                indicator (no dropdown affordance) rather than a select. */}
+                            <div className={`${FIELD} cursor-default gap-2 bg-[#f8fafc] text-[14px]`}>
+                                <Image src={`${M}/footer/mastercard.svg`} alt="" width={24} height={24} className="size-5 shrink-0" />
+                                <span className="truncate whitespace-nowrap">Credit / Debit</span>
                             </div>
                         </div>
                         <div className="flex min-w-0 flex-1 flex-col gap-2.5">
@@ -354,12 +352,7 @@ function DonateForm({
                     <div className="flex gap-3 sm:gap-5">
                         <div className="flex min-w-0 flex-1 flex-col gap-2.5">
                             <FieldLabel>Location</FieldLabel>
-                            <div className={`${FIELD} relative p-0`}>
-                                <select value={country} onChange={(e) => setCountry(e.target.value)} className="h-full w-full appearance-none bg-transparent px-4 pr-10 text-[15px] font-medium text-[#003060] focus:outline-none">
-                                    {COUNTRIES.map((c) => <option key={c.code} value={c.code}>{c.label}</option>)}
-                                </select>
-                                <svg className="pointer-events-none absolute right-4 top-1/2 size-4 -translate-y-1/2 text-[#aeb5bd]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"><path d="M6 9l6 6 6-6" /></svg>
-                            </div>
+                            <CountrySelect value={country} onChange={setCountry} />
                         </div>
                         <div className="flex min-w-0 flex-1 flex-col gap-2.5">
                             <FieldLabel>ZIP</FieldLabel>
@@ -420,8 +413,10 @@ function DonateForm({
 
                 {/* RIGHT — summary + attribution (stacked below the form on tablet/mobile) */}
                 <div className="flex shrink-0 flex-col gap-4 px-5 pb-6 sm:px-8 lg:w-[344px] lg:py-0 lg:pl-0 lg:pr-6">
-                    {/* Summary card — floats over the blue band on desktop */}
-                    <div className="flex flex-col rounded-2xl bg-white p-4 shadow-[0px_16px_40px_-16px_rgba(0,48,96,0.22)] ring-1 ring-[#eef1f6] lg:-mt-[92px]">
+                    {/* Summary card — floats over the blue band on desktop. `relative`
+                        so the whole white card (not just the positioned hero image)
+                        paints on top of the positioned blue header it overlaps. */}
+                    <div className="relative flex flex-col rounded-2xl bg-white p-4 shadow-[0px_16px_40px_-16px_rgba(0,48,96,0.22)] ring-1 ring-[#eef1f6] lg:-mt-[92px]">
                         <div className="relative h-[164px] shrink-0 overflow-hidden rounded-[12px] bg-[#e7e9eb]">
                             {heroUrl && (
                                 // eslint-disable-next-line @next/next/no-img-element
@@ -508,6 +503,7 @@ function DonateForm({
                     )}
                 </div>
             </div>
+          </div>
         </form>
     );
 }
