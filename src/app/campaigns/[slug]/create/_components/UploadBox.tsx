@@ -25,12 +25,17 @@ function Skeleton() {
    background-theme tile) can reuse the exact same edit/replace/remove menu. */
 export function EditMenu({
     anchorRef, canRemove, onUploadNew, onRemove, onClose,
+    uploadLabel = "Upload a new photo", removeLabel = "Remove photo",
 }: {
     anchorRef: React.RefObject<HTMLButtonElement | null>;
     canRemove: boolean;
     onUploadNew: () => void;
     onRemove: () => void;
     onClose: () => void;
+    /* Wording of the two actions — overridable so non-photo uploaders (e.g. the
+       custom background theme) can say "background" instead of "photo". */
+    uploadLabel?: string;
+    removeLabel?: string;
 }) {
     const menuRef = useRef<HTMLDivElement>(null);
     const [rect, setRect] = useState<DOMRect | null>(null);
@@ -95,7 +100,7 @@ export function EditMenu({
                     <path d="M12 16V6m0 0L8 10m4-4l4 4" />
                     <path d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2" />
                 </svg>
-                Upload a new photo
+                {uploadLabel}
             </button>
             {canRemove && (
                 <button
@@ -107,7 +112,7 @@ export function EditMenu({
                     <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
                         <path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 002 2h6a2 2 0 002-2l1-12M9 7V4h6v3" />
                     </svg>
-                    Remove photo
+                    {removeLabel}
                 </button>
             )}
         </div>,

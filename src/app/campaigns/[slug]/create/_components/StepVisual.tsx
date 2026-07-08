@@ -72,16 +72,17 @@ function toGallerySlots(prev: string[]): string[] {
 
 /* ── Background themes — pattern art exported from Figma ───────────────── */
 const THEMES: { value: string; label: string; img?: string; size?: string }[] = [
+    // Seamless, border-free hero tiles (per-theme size balances the motif scale).
     // Use the seamless hero tiles (border-free) rather than the raw Figma swatch
     // crops, which have a rounded border baked into the image. Rendered as a
     // repeating background (see the tile below) so the motif reads like the hero,
     // with a per-theme size that keeps the doodles complete and legible.
     { value: "logo",        label: "Custom" },
-    { value: "athletic",    label: "Athletic",     img: "/assets/campaigns/tiles/theme-athletic-tile.png",  size: "auto 96px"  },
-    { value: "sports",      label: "Sports",       img: "/assets/campaigns/tiles/theme-sports-tile.png",    size: "156px auto" },
-    { value: "trophy_wall", label: "Trophy Wall",  img: "/assets/campaigns/tiles/theme-trophy-tile.png",    size: "132px auto" },
-    { value: "geometric",   label: "Geometric",    img: "/assets/campaigns/tiles/theme-geometric-tile.png", size: "128px auto" },
-    { value: "abstract",    label: "Abstract",     img: "/assets/campaigns/tiles/theme-abstract-tile.png",  size: "140px auto" },
+    { value: "athletic",    label: "Athletic",     img: "/assets/campaigns/tiles/theme-athletic-tile.png",  size: "auto 62px"  },
+    { value: "sports",      label: "Sports",       img: "/assets/campaigns/tiles/theme-sports-tile.png",    size: "150px auto" },
+    { value: "trophy_wall", label: "Trophy Wall",  img: "/assets/campaigns/tiles/theme-trophy-tile.png",    size: "104px auto" },
+    { value: "geometric",   label: "Geometric",    img: "/assets/campaigns/tiles/theme-geometric-tile.png", size: "124px auto" },
+    { value: "abstract",    label: "Abstract",     img: "/assets/campaigns/tiles/theme-abstract-tile.png",  size: "176px auto" },
 ];
 
 /* ── Colour helpers (hex ⇄ rgb ⇄ hsv) ─────────────────────────────────── */
@@ -814,7 +815,7 @@ export default function StepVisual({
                                             ref={bgBadgeRef}
                                             type="button"
                                             onClick={() => setBgMenuOpen((o) => !o)}
-                                            aria-label="Edit background photo"
+                                            aria-label="Edit background"
                                             className="absolute top-0 right-0 z-10 h-9 w-9 sm:h-10 sm:w-10"
                                         >
                                             {/* square corner — the tile's overflow-hidden rounds it to match */}
@@ -829,6 +830,8 @@ export default function StepVisual({
                                             <EditMenu
                                                 anchorRef={bgBadgeRef}
                                                 canRemove
+                                                uploadLabel="Upload a new background"
+                                                removeLabel="Remove background"
                                                 onUploadNew={() => { setBgMenuOpen(false); bgFileRef.current?.click(); }}
                                                 onRemove={() => { setBgMenuOpen(false); removeBackground(); }}
                                                 onClose={() => setBgMenuOpen(false)}
