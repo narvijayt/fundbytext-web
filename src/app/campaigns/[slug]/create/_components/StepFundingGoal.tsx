@@ -121,6 +121,24 @@ export default function StepFundingGoal({
         ? isParticipantGoal ? "Per Participant Goal" : "Total Organization Goal"
         : "Total Campaign Goal";
 
+    // The two goal-type options differ by campaign type, so the "?" tooltip and
+    // the Ask-FundBuddy tips must describe the options this user actually sees —
+    // Fixed / Open-Ended for individuals, Organization / Participant for orgs.
+    const goalTip = isOrg
+        ? "Your overall funding goal is the total your organization is aiming to raise. Pick an Organization Goal — one shared target everyone contributes to — or a Participant Goal, where each participant raises their own amount. Then enter the amount; you can adjust it anytime before launch."
+        : "Your overall funding goal is the total you're aiming to raise. Pick a Fixed Goal that stops at a set target, or an Open-Ended Goal that keeps growing 20% past it. Then enter the amount; you can adjust it anytime before launch.";
+    const goalSuggestions = isOrg
+        ? [
+            "Pick a goal that covers your real costs plus fees.",
+            "Organization goals rally everyone around one shared target.",
+            "Participant goals let each person aim for their own amount.",
+        ]
+        : [
+            "Pick a goal that covers your real costs plus fees.",
+            "Open-ended goals keep momentum after you hit the target.",
+            "Round numbers like $5,000 feel approachable to donors.",
+        ];
+
     // Card 2 asks "how many people should each participant reach out to" for both
     // org goal types — same underlying count (stored in donors_per_participant),
     // only the wording differs: "donors" for an org goal, "contacts" for a
@@ -166,15 +184,11 @@ export default function StepFundingGoal({
             <QuestionCard
                 icon="/assets/campaigns/question-dollar.svg"
                 title="What's your overall funding goal?"
-                titleInfoTip="Your overall funding goal is the total you're aiming to raise. Choose a fixed target, an open-ended goal that keeps growing past it, or a per-participant goal, then enter the amount — you can adjust it anytime before launch."
+                titleInfoTip={goalTip}
                 description="Enter your total fundraising target for this campaign."
                 askBuddyText="Ask FundBuddy for additional context."
                 askBuddySuggestionsHeading="Hey there buddy, here's how to set a great goal!"
-                askBuddySuggestions={[
-                    "Pick a goal that covers your real costs plus fees.",
-                    "Open-ended goals keep momentum after you hit the target.",
-                    "Round numbers like $5,000 feel approachable to donors.",
-                ]}
+                askBuddySuggestions={goalSuggestions}
             >
                 <div className="space-y-6 sm:space-y-8">
                     {/* Goal type selector */}
