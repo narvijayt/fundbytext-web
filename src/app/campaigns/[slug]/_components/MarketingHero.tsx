@@ -75,9 +75,14 @@ export default function MarketingHero({
 
     return (
         <div className="relative">
-            {/* Brand band — accent→secondary gradient + theme pattern overlay */}
+            {/* Brand band — accent→secondary gradient + theme pattern overlay.
+                On the narrowest phones the long title wraps an extra line and pushes
+                the hero photo down ~36px, which lost its overlap onto the band. The
+                base height is the taller value and a min-width override drops it back
+                once the title fits again — the band step and the title-wrap happen at
+                the same width, so the photo keeps the same ~15% overlap everywhere. */}
             <div
-                className="absolute inset-x-0 top-0 h-[498px] md:h-[635px] overflow-hidden"
+                className="absolute inset-x-0 top-0 h-[534px] min-[380px]:h-[498px] md:h-[635px] overflow-hidden"
                 style={{ background: `linear-gradient(157deg, ${theme.accent} 0%, ${theme.secondary} 100%)` }}
             >
                 {/* Layer order: background gradient → halo → pattern. The glow sits
