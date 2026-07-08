@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { loadStripe } from "@stripe/stripe-js";
@@ -60,7 +60,7 @@ const COUNTRIES: { code: string; label: string }[] = [
 
 const STRIPE_STYLE = {
     base: {
-        fontSize: "16px",
+        fontSize: "15px",
         color: "#003060",
         fontFamily: "var(--font-sans), system-ui, sans-serif",
         fontWeight: "500",
@@ -71,9 +71,9 @@ const STRIPE_STYLE = {
 
 // ── Shared field bits ──────────────────────────────────────────────────────────
 function FieldLabel({ children }: { children: React.ReactNode }) {
-    return <span className="text-[12px] font-black uppercase leading-none tracking-[1px] text-[#003060]">{children}</span>;
+    return <span className="text-[11px] font-black uppercase leading-none tracking-[1px] text-[#003060]">{children}</span>;
 }
-const FIELD = "flex h-14 w-full items-center gap-3 rounded-xl border border-[#d4dee7] bg-white px-5 text-[16px] font-medium text-[#003060] placeholder:text-[#aeb5bd] focus-within:border-[#0278de] focus:outline-none";
+const FIELD = "flex h-[52px] w-full items-center gap-3 rounded-xl border border-[#d4dee7] bg-white px-4 text-[15px] font-medium text-[#003060] placeholder:text-[#aeb5bd] focus-within:border-[#0278de] focus:outline-none";
 
 function StripeField({ children }: { children: React.ReactNode }) {
     return <div className={FIELD}><div className="flex-1 min-w-0">{children}</div></div>;
@@ -122,6 +122,11 @@ function DonateForm({
     const [attrOpen,   setAttrOpen]   = useState(true);
     const [submitting, setSubmitting] = useState(false);
     const [error,      setError]      = useState<string | null>(null);
+    // Defer mounting the Stripe card iframes until just after the modal's enter
+    // animation — creating them synchronously on open blocks the first frames and
+    // makes the modal appear to "stick" before it animates in.
+    const [cardReady,  setCardReady]  = useState(false);
+    useEffect(() => { const t = setTimeout(() => setCardReady(true), 240); return () => clearTimeout(t); }, []);
 
     const cents = Math.round((parseFloat(raw) || 0) * 100);
     const exceedsMax = maxDonationCents !== null && cents > maxDonationCents;
@@ -219,26 +224,26 @@ function DonateForm({
     // ── Legal note + submit — rendered at the bottom of the form on desktop and
     //    between the summary and attribution when the modal is stacked. ──────────
     const submitBlock = (
-        <div className="flex flex-col gap-5">
-            {error && <p className="rounded-xl bg-red-50 px-4 py-2.5 text-[14px] text-[#C9261D]">{error}</p>}
-            <p className="px-2 text-center text-[13px] leading-[1.6] text-[#aeb5bd]">
+        <div className="flex flex-col gap-4">
+            {error && <p className="rounded-xl bg-red-50 px-4 py-2.5 text-[13px] text-[#C9261D]">{error}</p>}
+            <p className="px-2 text-center text-[12px] leading-[1.6] text-[#aeb5bd]">
                 Your donation is processed securely through Stripe. We never store your card details. A receipt is emailed
                 to you as soon as the payment is confirmed.
             </p>
             <button type="submit" disabled={submitting || !stripe || cents < 100 || exceedsMax}
-                className="flex h-14 w-full items-center justify-center rounded-2xl text-white transition hover:brightness-105 active:scale-[0.99] disabled:opacity-50 disabled:active:scale-100"
+                className="flex h-[52px] w-full items-center justify-center rounded-2xl text-white transition hover:brightness-105 active:scale-[0.99] disabled:opacity-50 disabled:active:scale-100"
                 style={{ background: "linear-gradient(180deg, #F47435 0%, #EA6725 100%)", boxShadow: "0px 20px 40px -16px rgba(244,116,53,0.5)" }}>
-                <span className="text-[14px] font-black uppercase tracking-[1px]">{submitting ? "Processing…" : cents >= 100 ? `Confirm & Donate ${fmt(cents / 100)}` : "Confirm and Donate"}</span>
+                <span className="text-[13px] font-black uppercase tracking-[1px]">{submitting ? "Processing…" : cents >= 100 ? `Confirm & Donate ${fmt(cents / 100)}` : "Confirm and Donate"}</span>
             </button>
         </div>
     );
 
     return (
-        <form onSubmit={handleSubmit} className="relative flex max-h-[92vh] w-full flex-col overflow-y-auto rounded-3xl bg-white shadow-[0px_40px_80px_-20px_rgba(0,48,96,0.45)]">
+        <form onSubmit={handleSubmit} className="relative flex max-h-[92vh] w-full flex-col overflow-y-auto rounded-3xl bg-white shadow-[0px_40px_80px_-20px_rgba(0,48,96,0.45)] [scrollbar-width:thin]">
             {/* ── Blue header band — spans the full width; content stays in the left
                  column so the summary card can float over the band on desktop. ── */}
             <div
-                className="relative shrink-0 overflow-hidden px-6 pt-6 pb-7 sm:px-9 lg:pb-[44px]"
+                className="relative shrink-0 overflow-hidden px-5 pt-5 pb-6 sm:px-8 lg:pb-[38px]"
                 style={{
                     // Base accent gradient + two soft "halo" glows (color-dodge) that
                     // brighten the top-left and right, matching the Figma header.
@@ -260,30 +265,30 @@ function DonateForm({
                         }}
                     />
                 )}
-                <div className="relative lg:pr-[404px]">
-                    <div className="flex items-center gap-3">
+                <div className="relative lg:pr-[344px]">
+                    <div className="flex items-center gap-2.5">
                         {targetMember && (
-                            <span className="size-10 shrink-0 overflow-hidden rounded-full bg-white/25 ring-2 ring-white/50">
+                            <span className="size-9 shrink-0 overflow-hidden rounded-full bg-white/25 ring-2 ring-white/50">
                                 {targetMember.profile_photo_url
                                     // eslint-disable-next-line @next/next/no-img-element
                                     ? <img src={targetMember.profile_photo_url} alt="" className="size-full object-cover" />
                                     : <span className="flex size-full items-center justify-center font-bold text-white">{targetMember.first_name.charAt(0)}</span>}
                             </span>
                         )}
-                        <h2 className="text-[22px] font-black leading-[1.2] text-white sm:text-[26px]">
+                        <h2 className="text-[18px] font-black leading-[1.2] text-white sm:text-[21px]">
                             {targetMember ? `Donate to ${targetMember.first_name} ${targetMember.last_name}'s Campaign` : "Donate to this campaign"}
                         </h2>
                     </div>
 
                     {/* Amount */}
-                    <div className="mt-5">
-                        <div className={`flex h-14 w-full items-center gap-3 rounded-xl bg-white pl-4 pr-5 ${exceedsMax ? "ring-2 ring-red-400" : ""}`}>
-                            <span className="text-[20px] font-black text-[#003060]">$</span>
-                            <span className="h-7 w-px shrink-0 bg-[#d4dee7]" />
+                    <div className="mt-4">
+                        <div className={`flex h-[52px] w-full items-center gap-2.5 rounded-xl bg-white pl-4 pr-4 ${exceedsMax ? "ring-2 ring-red-400" : ""}`}>
+                            <span className="text-[18px] font-black text-[#003060]">$</span>
+                            <span className="h-6 w-px shrink-0 bg-[#d4dee7]" />
                             <input
                                 type="text" inputMode="decimal" placeholder="0.00" value={raw} autoFocus autoComplete="off"
                                 onChange={(e) => { const v = e.target.value; if (v === "" || /^\d*\.?\d{0,2}$/.test(v)) setRaw(v); }}
-                                className="min-w-0 flex-1 bg-transparent text-[20px] font-black text-[#003060] placeholder:font-medium placeholder:text-[#aeb5bd] focus:outline-none"
+                                className="min-w-0 flex-1 bg-transparent text-[18px] font-black text-[#003060] placeholder:font-medium placeholder:text-[#aeb5bd] focus:outline-none"
                             />
                             {maxDonationCents !== null && maxDonationCents > 0 && (
                                 <button type="button" onClick={() => setRaw(String(maxDonationCents / 100))} className="shrink-0 text-[12px] font-bold text-[#0268c0] hover:underline">Max {fmt(maxDonationCents / 100)}</button>
@@ -293,11 +298,11 @@ function DonateForm({
                     </div>
 
                     {/* Pay With + card brands */}
-                    <div className="mt-5 flex items-center justify-between gap-3">
-                        <p className="text-[20px] font-black text-white sm:text-[22px]">Pay With</p>
-                        <div className="flex items-center gap-3">
+                    <div className="mt-4 flex items-center justify-between gap-3">
+                        <p className="text-[17px] font-black text-white sm:text-[19px]">Pay With</p>
+                        <div className="flex items-center gap-2.5">
                             {["visa", "mastercard", "paypal", "jcb", "swift"].map((b) => (
-                                <Image key={b} src={`${M}/footer/${b}.svg`} alt={b} width={32} height={32} className="size-7 sm:size-8" />
+                                <Image key={b} src={`${M}/footer/${b}.svg`} alt={b} width={32} height={32} className="size-6 sm:size-7" />
                             ))}
                         </div>
                     </div>
@@ -307,83 +312,87 @@ function DonateForm({
             {/* ── Body — two columns on desktop, stacked below ── */}
             <div className="flex flex-1 flex-col lg:flex-row lg:items-start">
                 {/* LEFT — the form */}
-                <div className="flex min-w-0 flex-col gap-6 px-6 py-7 sm:px-9 lg:flex-1">
+                <div className="flex min-w-0 flex-col gap-5 px-5 py-6 sm:px-8 lg:flex-1">
                     {/* Card Option + Card Number */}
-                    <div className="flex flex-col gap-6 sm:flex-row">
-                        <div className="flex flex-col gap-3 sm:w-[210px] sm:shrink-0">
+                    <div className="flex flex-col gap-5 sm:flex-row">
+                        <div className="flex flex-col gap-2.5 sm:w-[184px] sm:shrink-0">
                             <FieldLabel>Card Option</FieldLabel>
                             <div className={`${FIELD} justify-between cursor-default`}>
-                                <span className="flex items-center gap-2.5 text-[15px]">
-                                    <Image src={`${M}/footer/mastercard.svg`} alt="" width={24} height={24} className="size-6" />
+                                <span className="flex items-center gap-2 text-[14px]">
+                                    <Image src={`${M}/footer/mastercard.svg`} alt="" width={24} height={24} className="size-5" />
                                     Credit / Debit
                                 </span>
                                 <svg className="size-4 text-[#aeb5bd]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"><path d="M6 9l6 6 6-6" /></svg>
                             </div>
                         </div>
-                        <div className="flex min-w-0 flex-1 flex-col gap-3">
+                        <div className="flex min-w-0 flex-1 flex-col gap-2.5">
                             <FieldLabel>Card Number</FieldLabel>
-                            <StripeField><CardNumberElement options={{ style: STRIPE_STYLE, placeholder: "0123 4567 8910 1112" }} /></StripeField>
+                            <StripeField>{cardReady ? <CardNumberElement options={{ style: STRIPE_STYLE, placeholder: "0123 4567 8910 1112" }} onChange={(e) => { if (e.complete) elements?.getElement(CardExpiryElement)?.focus(); }} /> : <span className="text-[#aeb5bd]">0123 4567 8910 1112</span>}</StripeField>
                         </div>
                     </div>
 
                     {/* Expiration + CVV */}
-                    <div className="flex gap-4 sm:gap-6">
-                        <div className="flex min-w-0 flex-1 flex-col gap-3">
+                    <div className="flex gap-3 sm:gap-5">
+                        <div className="flex min-w-0 flex-1 flex-col gap-2.5">
                             <FieldLabel>Expiration</FieldLabel>
-                            <StripeField><CardExpiryElement options={{ style: STRIPE_STYLE }} /></StripeField>
+                            <StripeField>{cardReady ? <CardExpiryElement options={{ style: STRIPE_STYLE }} onChange={(e) => { if (e.complete) elements?.getElement(CardCvcElement)?.focus(); }} /> : <span className="text-[#aeb5bd]">MM / YY</span>}</StripeField>
                         </div>
-                        <div className="flex min-w-0 flex-1 flex-col gap-3">
+                        <div className="flex min-w-0 flex-1 flex-col gap-2.5">
                             <FieldLabel>CVV</FieldLabel>
-                            <StripeField><CardCvcElement options={{ style: STRIPE_STYLE }} /></StripeField>
+                            <StripeField>{cardReady ? <CardCvcElement options={{ style: STRIPE_STYLE }} /> : <span className="text-[#aeb5bd]">CVC</span>}</StripeField>
                         </div>
                     </div>
 
                     {/* Card Holder Name */}
-                    <div className="flex flex-col gap-3">
+                    <div className="flex flex-col gap-2.5">
                         <FieldLabel>Card Holder Name</FieldLabel>
                         <input type="text" value={holderName} placeholder="Full name on card"
                             onChange={(e) => setHolderName(e.target.value)} className={FIELD} />
                     </div>
 
                     {/* Location + ZIP */}
-                    <div className="flex gap-4 sm:gap-6">
-                        <div className="flex min-w-0 flex-1 flex-col gap-3">
+                    <div className="flex gap-3 sm:gap-5">
+                        <div className="flex min-w-0 flex-1 flex-col gap-2.5">
                             <FieldLabel>Location</FieldLabel>
                             <div className={`${FIELD} relative p-0`}>
-                                <select value={country} onChange={(e) => setCountry(e.target.value)} className="h-full w-full appearance-none bg-transparent px-5 pr-10 text-[16px] font-medium text-[#003060] focus:outline-none">
+                                <select value={country} onChange={(e) => setCountry(e.target.value)} className="h-full w-full appearance-none bg-transparent px-4 pr-10 text-[15px] font-medium text-[#003060] focus:outline-none">
                                     {COUNTRIES.map((c) => <option key={c.code} value={c.code}>{c.label}</option>)}
                                 </select>
                                 <svg className="pointer-events-none absolute right-4 top-1/2 size-4 -translate-y-1/2 text-[#aeb5bd]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"><path d="M6 9l6 6 6-6" /></svg>
                             </div>
                         </div>
-                        <div className="flex min-w-0 flex-1 flex-col gap-3">
+                        <div className="flex min-w-0 flex-1 flex-col gap-2.5">
                             <FieldLabel>ZIP</FieldLabel>
                             <input type="text" value={zip} onChange={(e) => setZip(e.target.value)} placeholder="12345" maxLength={10} className={FIELD} />
                         </div>
                     </div>
 
                     {/* Email */}
-                    <div className="flex flex-col gap-3">
+                    <div className="flex flex-col gap-2.5">
                         <FieldLabel>Email</FieldLabel>
                         <input type="email" value={email} readOnly={lockedEmail} placeholder="Enter a valid email address"
                             onChange={(e) => !lockedEmail && setEmail(e.target.value)}
                             className={`${FIELD} ${lockedEmail ? "bg-[#f4f8f9] text-[#8f98a3]" : ""}`} />
+                        <p className="flex items-center gap-1.5 text-[12px] text-[#8f98a3]">
+                            <svg className="size-3.5 shrink-0 text-[#0268c0]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 16v-4m0-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                            Optional — add your email to get a donation receipt.
+                        </p>
                     </div>
 
                     {/* Phone */}
-                    <div className="flex flex-col gap-3">
+                    <div className="flex flex-col gap-2.5">
                         <FieldLabel>Phone</FieldLabel>
                         <div className={FIELD}>
-                            <span className="text-[16px] font-medium text-[#8f98a3]">+1</span>
-                            <span className="h-7 w-px bg-[#d4dee7]" />
+                            <span className="text-[15px] font-medium text-[#8f98a3]">+1</span>
+                            <span className="h-6 w-px bg-[#d4dee7]" />
                             <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="(214) 987-6543" className="min-w-0 flex-1 bg-transparent focus:outline-none" />
                         </div>
                     </div>
 
                     {/* Donator name */}
-                    <div className="flex flex-col gap-3">
+                    <div className="flex flex-col gap-2.5">
                         <FieldLabel>Donator</FieldLabel>
-                        <div className="flex gap-4 sm:gap-6">
+                        <div className="flex gap-3 sm:gap-5">
                             <input type="text" value={firstName} readOnly={lockedFirst} placeholder="First Name"
                                 onChange={(e) => !lockedFirst && setFirstName(e.target.value)}
                                 className={`${FIELD} ${lockedFirst ? "bg-[#f4f8f9] text-[#8f98a3]" : ""}`} />
@@ -394,14 +403,14 @@ function DonateForm({
                     </div>
 
                     {/* Checkboxes */}
-                    <div className="flex flex-col gap-[18px] border-t border-[#e7e9eb] pt-6">
+                    <div className="flex flex-col gap-4 border-t border-[#e7e9eb] pt-5">
                         <label className="flex items-center gap-2.5 cursor-pointer">
-                            <input type="checkbox" checked={anonymous} onChange={(e) => setAnonymous(e.target.checked)} className="size-[18px] shrink-0 rounded-[4px] accent-[#0268c0]" />
-                            <span className="text-[14px] text-[#57728d]">Please keep my name anonymous on the campaign.</span>
+                            <input type="checkbox" checked={anonymous} onChange={(e) => setAnonymous(e.target.checked)} className="size-4 shrink-0 rounded-[4px] accent-[#0268c0]" />
+                            <span className="text-[13px] text-[#57728d]">Please keep my name anonymous on the campaign.</span>
                         </label>
                         <label className="flex items-start gap-2.5 cursor-pointer">
-                            <input type="checkbox" checked={agreeTerms} onChange={(e) => setAgreeTerms(e.target.checked)} className="mt-0.5 size-[18px] shrink-0 rounded-[4px] accent-[#0268c0]" required />
-                            <span className="text-[14px] leading-[1.5] text-[#57728d]">By signing up, you confirm that you agree to FundByText&apos;s <Link href="/terms" className="text-[#0268c0] underline">Terms of Service</Link> and acknowledge our <Link href="/privacy" className="text-[#0268c0] underline">Privacy Policy</Link>.</span>
+                            <input type="checkbox" checked={agreeTerms} onChange={(e) => setAgreeTerms(e.target.checked)} className="mt-0.5 size-4 shrink-0 rounded-[4px] accent-[#0268c0]" required />
+                            <span className="text-[13px] leading-[1.5] text-[#57728d]">By signing up, you confirm that you agree to FundByText&apos;s <Link href="/terms" className="text-[#0268c0] underline">Terms of Service</Link> and acknowledge our <Link href="/privacy" className="text-[#0268c0] underline">Privacy Policy</Link>.</span>
                         </label>
                     </div>
 
@@ -410,37 +419,37 @@ function DonateForm({
                 </div>
 
                 {/* RIGHT — summary + attribution (stacked below the form on tablet/mobile) */}
-                <div className="flex shrink-0 flex-col gap-5 px-6 pb-7 sm:px-9 lg:w-[404px] lg:py-0 lg:pl-0 lg:pr-7">
+                <div className="flex shrink-0 flex-col gap-4 px-5 pb-6 sm:px-8 lg:w-[344px] lg:py-0 lg:pl-0 lg:pr-6">
                     {/* Summary card — floats over the blue band on desktop */}
-                    <div className="flex flex-col rounded-2xl bg-white p-5 shadow-[0px_16px_40px_-16px_rgba(0,48,96,0.22)] ring-1 ring-[#eef1f6] lg:-mt-[114px]">
-                        <div className="relative h-[190px] shrink-0 overflow-hidden rounded-[12px] bg-[#e7e9eb]">
+                    <div className="flex flex-col rounded-2xl bg-white p-4 shadow-[0px_16px_40px_-16px_rgba(0,48,96,0.22)] ring-1 ring-[#eef1f6] lg:-mt-[92px]">
+                        <div className="relative h-[164px] shrink-0 overflow-hidden rounded-[12px] bg-[#e7e9eb]">
                             {heroUrl && (
                                 // eslint-disable-next-line @next/next/no-img-element
                                 <img src={heroUrl} alt={campaignName} className="size-full object-cover" />
                             )}
                             {daysLeft != null && (
-                                <span className="absolute left-3 top-3 flex items-center gap-1.5 rounded-full bg-white/90 px-2.5 py-1 backdrop-blur">
+                                <span className="absolute left-3 bottom-3 flex items-center gap-1.5 rounded-full bg-white/90 px-2.5 py-1 backdrop-blur">
                                     <span className="size-1.5 rounded-full bg-[#f47435]" />
                                     <span className="text-[12px] font-bold text-[#003060]">{daysLeft} Days</span>
                                 </span>
                             )}
                         </div>
-                        <p className="mt-4 text-[18px] font-black leading-[1.25] text-[#003060]">{campaignName}</p>
+                        <p className="mt-3.5 text-[16px] font-black leading-[1.25] text-[#003060]">{campaignName}</p>
                         {campaignStory && (
-                            <div className="story-content mt-2 line-clamp-3 text-[14px] leading-[1.5] text-[#8f98a3]" dangerouslySetInnerHTML={{ __html: campaignStory }} />
+                            <div className="story-content mt-1.5 line-clamp-3 text-[13px] leading-[1.5] text-[#8f98a3]" dangerouslySetInnerHTML={{ __html: campaignStory }} />
                         )}
 
                         {/* Donation details */}
-                        <div className="mt-5 border-t border-[#e7e9eb] pt-5">
-                            <p className="text-[16px] font-black text-[#003060]">Donation Details</p>
-                            <div className="mt-4 flex items-center justify-between text-[15px]">
+                        <div className="mt-4 border-t border-[#e7e9eb] pt-4">
+                            <p className="text-[15px] font-black text-[#003060]">Donation Details</p>
+                            <div className="mt-3.5 flex items-center justify-between text-[14px]">
                                 <span className="font-medium text-[#8f98a3]">Your donation</span>
                                 <span className="font-semibold text-[#8f98a3]">{cents >= 100 ? fmt(cents / 100) : "—"}</span>
                             </div>
                         </div>
-                        <div className="mt-4 flex items-center justify-between border-t border-[#e7e9eb] pt-4">
-                            <span className="text-[16px] font-black text-[#003060]">Total due today</span>
-                            <span className="text-[20px] font-black text-[#003060]">{cents >= 100 ? fmt(cents / 100) : "—"}</span>
+                        <div className="mt-3.5 flex items-center justify-between border-t border-[#e7e9eb] pt-3.5">
+                            <span className="text-[15px] font-black text-[#003060]">Total due today</span>
+                            <span className="text-[18px] font-black text-[#003060]">{cents >= 100 ? fmt(cents / 100) : "—"}</span>
                         </div>
                     </div>
 
@@ -449,42 +458,42 @@ function DonateForm({
 
                     {/* Attribution card */}
                     {showAttribution && (
-                        <div className="flex flex-col rounded-2xl bg-white p-5 shadow-[0px_16px_40px_-16px_rgba(0,48,96,0.22)] ring-1 ring-[#eef1f6]">
+                        <div className="flex flex-col rounded-2xl bg-white p-4 shadow-[0px_16px_40px_-16px_rgba(0,48,96,0.22)] ring-1 ring-[#eef1f6]">
                             <button type="button" onClick={() => setAttrOpen((o) => !o)} className="flex items-center justify-between gap-3 text-left">
-                                <span className="text-[13px] font-black uppercase tracking-[1px] text-[#003060]">Donation Attribution</span>
+                                <span className="text-[12px] font-black uppercase tracking-[1px] text-[#003060]">Donation Attribution</span>
                                 <svg className={`size-5 shrink-0 text-[#8f98a3] transition-transform ${attrOpen ? "" : "-rotate-90"}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M6 9l6 6 6-6" /></svg>
                             </button>
                             {attrOpen && (
                                 <>
-                                    <p className="mt-2 text-[15px] leading-[1.4] text-[#003060]">Which Participant would you like to attribute this to?</p>
+                                    <p className="mt-2 text-[14px] leading-[1.4] text-[#003060]">Which Participant would you like to attribute this to?</p>
                                     <button type="button" onClick={() => setAttributedTo(null)}
-                                        className="mt-4 flex items-center gap-3 rounded-full px-2.5 py-2 text-[15px] font-bold transition-colors"
+                                        className="mt-3.5 flex items-center gap-2.5 rounded-full px-2.5 py-2 text-[14px] font-bold transition-colors"
                                         style={{ background: attributedTo === null ? accent : "#eef2f7", color: attributedTo === null ? "#fff" : "#003060" }}>
-                                        <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-white">
+                                        <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-white">
                                             <svg className="size-4 text-[#0268c0]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" /></svg>
                                         </span>
                                         General Fund
                                     </button>
                                     {participants.length > 4 && (
-                                        <div className="relative mt-3">
+                                        <div className="relative mt-2.5">
                                             <svg className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-[#aeb5bd]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="7" /><path d="M21 21l-4.3-4.3" /></svg>
                                             <input type="text" value={memberSearch} onChange={(e) => setMemberSearch(e.target.value)} placeholder="Search Participant"
-                                                className="w-full rounded-xl border border-[#d4dee7] py-2.5 pl-10 pr-3 text-[14px] text-[#003060] placeholder:text-[#aeb5bd] focus:border-[#0278de] focus:outline-none" />
+                                                className="w-full rounded-xl border border-[#d4dee7] py-2.5 pl-10 pr-3 text-[13px] text-[#003060] placeholder:text-[#aeb5bd] focus:border-[#0278de] focus:outline-none" />
                                         </div>
                                     )}
-                                    <ul className="mt-3 flex max-h-[248px] flex-col gap-1 overflow-y-auto [scrollbar-width:thin]">
+                                    <ul className="mt-2.5 flex max-h-[232px] flex-col gap-1 overflow-y-auto [scrollbar-width:thin]">
                                         {filteredParticipants.map((p) => {
                                             const sel = attributedTo === p.id;
                                             return (
                                                 <li key={p.id}>
                                                     <button type="button" onClick={() => setAttributedTo(p.id)}
-                                                        className={`flex w-full items-center gap-3 rounded-xl px-2 py-2 text-[15px] font-medium transition-colors ${sel ? "" : "text-[#57728d] hover:bg-[#f4f6fa]"}`}
+                                                        className={`flex w-full items-center gap-2.5 rounded-xl px-2 py-1.5 text-[14px] font-medium transition-colors ${sel ? "" : "text-[#57728d] hover:bg-[#f4f6fa]"}`}
                                                         style={sel ? { background: `${accent}14`, color: accent } : undefined}>
-                                                        <span className="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#eef2f7]">
+                                                        <span className="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#eef2f7]">
                                                             {p.profile_photo_url
                                                                 // eslint-disable-next-line @next/next/no-img-element
                                                                 ? <img src={p.profile_photo_url} alt="" className="size-full object-cover" />
-                                                                : <span className="text-[13px] font-bold uppercase text-[#8f98a3]">{p.first_name.charAt(0)}{p.last_name.charAt(0)}</span>}
+                                                                : <span className="text-[12px] font-bold uppercase text-[#8f98a3]">{p.first_name.charAt(0)}{p.last_name.charAt(0)}</span>}
                                                         </span>
                                                         <span className="flex-1 truncate text-left">{p.first_name} {p.last_name}</span>
                                                         {sel && <svg className="size-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"><path d="M5 13l4 4L19 7" /></svg>}
@@ -512,6 +521,9 @@ export default function DonateModal({
     donationsEnabled, donationsDisabledMessage, maxDonationCents, daysLeft = null,
 }: Props) {
     const [successData, setSuccessData] = useState<DonationSuccessData | null>(null);
+    // Only treat it as an outside-click when the press *started* on the backdrop,
+    // so selecting text inside an input and releasing on the backdrop won't close.
+    const downOnBackdrop = useRef(false);
 
     const targetMember = targetMemberId ? (participants.find((p) => p.id === targetMemberId) ?? null) : null;
 
@@ -547,12 +559,12 @@ export default function DonateModal({
     if (!render) return null;
 
     return (
-        <div className={`fixed inset-0 z-50 flex items-center justify-center p-3 transition-opacity duration-200 ease-out motion-reduce:transition-none sm:p-6 ${shown ? "opacity-100" : "opacity-0"}`} style={{ background: "rgba(0,30,60,0.55)", backdropFilter: "blur(3px)" }} onClick={handleClose}>
-            <div className={`relative w-full max-w-[1140px] transition-all duration-200 ease-out motion-reduce:transition-none ${shown ? "translate-y-0 scale-100 opacity-100" : "translate-y-2 scale-95 opacity-0"}`} onClick={(e) => e.stopPropagation()}>
+        <div className={`fixed inset-0 z-50 flex items-center justify-center p-3 transition-opacity duration-200 ease-out motion-reduce:transition-none sm:p-6 ${shown ? "opacity-100" : "opacity-0"}`} style={{ background: "rgba(0,30,60,0.55)", backdropFilter: "blur(3px)" }} onMouseDown={(e) => { downOnBackdrop.current = e.target === e.currentTarget; }} onClick={(e) => { if (downOnBackdrop.current && e.target === e.currentTarget) handleClose(); }}>
+            <div className={`relative w-full max-w-[940px] transition-all duration-200 ease-out motion-reduce:transition-none ${shown ? "translate-y-0 scale-100 opacity-100" : "translate-y-2 scale-95 opacity-0"}`} onClick={(e) => e.stopPropagation()}>
                 {/* Close — top-right (form state; the success view carries its own). */}
                 {donationsEnabled && !successData && (
-                    <button type="button" onClick={handleClose} aria-label="Close" className="absolute right-4 top-4 z-10 flex size-8 items-center justify-center rounded-full bg-white/20 text-white backdrop-blur transition-colors hover:bg-white/35">
-                        <svg className="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                    <button type="button" onClick={handleClose} aria-label="Close" className="absolute right-4 top-4 z-10 flex size-7 items-center justify-center text-white transition-opacity hover:opacity-70">
+                        <svg className="size-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
                     </button>
                 )}
 
