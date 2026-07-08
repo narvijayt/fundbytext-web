@@ -810,9 +810,10 @@ export default function StepVisual({
                                             aria-label="Edit background photo"
                                             className="absolute top-0 right-0 z-10 h-9 w-9 sm:h-10 sm:w-10"
                                         >
+                                            {/* square corner — the tile's overflow-hidden rounds it to match */}
                                             <span
                                                 aria-hidden
-                                                className="absolute top-0 right-0 h-full w-full rounded-tr-2xl"
+                                                className="absolute inset-0"
                                                 style={{ background: "#0268C0", clipPath: "polygon(100% 0, 0 0, 100% 100%)" }}
                                             />
                                             <Image src="/assets/campaigns/edit-pencil.svg" width={16} height={16} alt="" className="absolute top-1.5 right-1.5 w-3.5 h-3.5" />
