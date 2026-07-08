@@ -21,8 +21,9 @@ function Skeleton() {
 }
 
 /* Action menu shown when the edit badge is clicked — portal'd so the card's
-   overflow-hidden can't clip it. */
-function EditMenu({
+   overflow-hidden can't clip it. Exported so other uploaders (e.g. the custom
+   background-theme tile) can reuse the exact same edit/replace/remove menu. */
+export function EditMenu({
     anchorRef, canRemove, onUploadNew, onRemove, onClose,
 }: {
     anchorRef: React.RefObject<HTMLButtonElement | null>;

@@ -3,8 +3,8 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { createPortal } from "react-dom";
-import { QuestionCard, InfoTooltip } from "./ui";
-import UploadBox from "./UploadBox";
+import { QuestionCard, InfoTooltip, Loader } from "./ui";
+import UploadBox, { EditMenu } from "./UploadBox";
 import { THEME_TILES } from "../../_components/marketingTheme";
 
 /* Image that stays transparent until it is fully loaded, then fades in over its
@@ -514,8 +514,12 @@ export default function StepVisual({
     const [picking, setPicking] = useState<null | 0 | 1 | 2>(null);
     const customRefs = [useRef<HTMLDivElement>(null), useRef<HTMLDivElement>(null), useRef<HTMLDivElement>(null)];
 
-    // Custom background upload (the "Upload your own" theme tile).
+    // Custom background upload (the "Upload your own" theme tile). It mirrors the
+    // profile/photo UploadBox UX: a branded loader while uploading and an edit
+    // badge (Upload a new photo / Remove photo) once an image is present.
     const bgFileRef = useRef<HTMLInputElement>(null);
+    const bgBadgeRef = useRef<HTMLButtonElement>(null);
+    const [bgMenuOpen, setBgMenuOpen] = useState(false);
     const bgUploading = uploadingPhoto === "background";
     async function onPickBackground(e: React.ChangeEvent<HTMLInputElement>) {
         const file = e.target.files?.[0];
@@ -523,6 +527,12 @@ export default function StepVisual({
         if (!file) return;
         const url = await uploadPhoto(file, "background", "background");
         if (url) { setCustomBgUrl(url); setBgTheme("logo"); clearFE("bgTheme"); }
+    }
+    function removeBackground() {
+        setCustomBgUrl(null);
+        // The custom tile is now empty — if it was the selected theme, fall back
+        // to the default preset so the page never keeps a background that's gone.
+        if (bgTheme === "logo") { setBgTheme("sports"); clearFE("bgTheme"); }
     }
 
     // Pull the logo's colours into the (independent) logo box.
@@ -755,16 +765,17 @@ export default function StepVisual({
                                     while the theme image loads. */}
                                     <div className="relative h-[110px] sm:h-[130px] min-h-[110px] sm:min-h-[130px] bg-[#eaeef3]">
                                         {isUpload ? (
-                                            customBgUrl ? (
+                                            bgUploading ? (
+                                                // Branded loader while uploading — matches the profile/photo UploadBox.
+                                                <div className="absolute inset-0 flex items-center justify-center bg-[#f4f8f9]">
+                                                    <Loader className="w-8 h-8 sm:w-9 sm:h-9" />
+                                                </div>
+                                            ) : customBgUrl ? (
                                                 <FadeInImg src={customBgUrl} />
                                             ) : (
                                                 <div className="w-full h-full flex flex-col items-center justify-center gap-1.5 border-2 border-dashed border-[#c3d2e0] text-[#57728d]">
-                                                    {bgUploading ? (
-                                                        <span className="h-6 w-6 animate-spin rounded-full border-2 border-[#c3d2e0] border-t-[#0268c0]" />
-                                                    ) : (
-                                                        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
-                                                    )}
-                                                    <span className="text-[11px] font-semibold">{bgUploading ? "Uploading…" : "Upload your own"}</span>
+                                                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+                                                    <span className="text-[11px] font-semibold">Upload your own</span>
                                                 </div>
                                             )
                                         ) : t.img ? (
@@ -787,15 +798,35 @@ export default function StepVisual({
                                         )}
                                     </div>
                                 </button>
-                                {/* Replace affordance (upload tile with an image) */}
-                                {isUpload && customBgUrl && (
-                                    <button
-                                        type="button"
-                                        onClick={() => bgFileRef.current?.click()}
-                                        className="absolute right-2 top-2 z-10 rounded-full bg-black/55 px-2.5 py-1 text-[11px] font-semibold text-white backdrop-blur-sm transition-colors hover:bg-black/70"
-                                    >
-                                        {bgUploading ? "Uploading…" : "Replace"}
-                                    </button>
+                                {/* Edit affordance (upload tile with an image) — same pencil
+                                    badge + menu (Upload a new photo / Remove photo) as the
+                                    profile/photo UploadBox, for a consistent UX. */}
+                                {isUpload && customBgUrl && !bgUploading && (
+                                    <>
+                                        <button
+                                            ref={bgBadgeRef}
+                                            type="button"
+                                            onClick={() => setBgMenuOpen((o) => !o)}
+                                            aria-label="Edit background photo"
+                                            className="absolute top-0 right-0 z-10 h-9 w-9 sm:h-10 sm:w-10"
+                                        >
+                                            <span
+                                                aria-hidden
+                                                className="absolute top-0 right-0 h-full w-full rounded-tr-2xl"
+                                                style={{ background: "#0268C0", clipPath: "polygon(100% 0, 0 0, 100% 100%)" }}
+                                            />
+                                            <Image src="/assets/campaigns/edit-pencil.svg" width={16} height={16} alt="" className="absolute top-1.5 right-1.5 w-3.5 h-3.5" />
+                                        </button>
+                                        {bgMenuOpen && (
+                                            <EditMenu
+                                                anchorRef={bgBadgeRef}
+                                                canRemove
+                                                onUploadNew={() => { setBgMenuOpen(false); bgFileRef.current?.click(); }}
+                                                onRemove={() => { setBgMenuOpen(false); removeBackground(); }}
+                                                onClose={() => setBgMenuOpen(false)}
+                                            />
+                                        )}
+                                    </>
                                 )}
                             </div>
                         );
