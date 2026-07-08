@@ -112,6 +112,7 @@ function DonateForm({
     const [phone,      setPhone]      = useState("");
     const [anonymous,  setAnonymous]  = useState(false);
     const [agreeTerms, setAgreeTerms] = useState(false);
+    const [termsError, setTermsError] = useState(false);
     const [attributedTo, setAttributedTo] = useState<string | null>(targetMember?.id ?? null);
     const [memberSearch, setMemberSearch] = useState("");
     const [attrOpen,   setAttrOpen]   = useState(true);
@@ -141,7 +142,8 @@ function DonateForm({
         if (!firstName.trim() || !lastName.trim()) { setError("Please enter your first and last name."); return; }
         if (!holderName.trim()) { setError("Please enter the name on your card."); return; }
         if (!email && !phone) { setError("Please provide at least an email or phone number."); return; }
-        if (!agreeTerms) { setError("Please accept the terms to continue."); return; }
+        if (!agreeTerms) { setTermsError(true); setError("Please accept the terms to continue."); return; }
+        setTermsError(false);
         if (!stripe || !elements) return;
         const cardNumber = elements.getElement(CardNumberElement);
         if (!cardNumber) { setError("Card details are not ready yet."); return; }
@@ -242,7 +244,7 @@ function DonateForm({
             {/* ── Blue header band — spans the full width; content stays in the left
                  column so the summary card can float over the band on desktop. ── */}
             <div
-                className="relative shrink-0 overflow-hidden px-5 pt-5 pb-6 sm:px-8 lg:pb-[38px]"
+                className="relative shrink-0 overflow-hidden px-5 pt-5 pb-6 sm:px-8 lg:pb-[10px]"
                 style={{
                     // Base accent gradient + two soft "halo" glows (color-dodge) that
                     // brighten the top-left and right, matching the Figma header.
@@ -402,8 +404,8 @@ function DonateForm({
                             <span className="text-[13px] text-[#57728d]">Please keep my name anonymous on the campaign.</span>
                         </label>
                         <label className="flex items-start gap-2.5 cursor-pointer">
-                            <input type="checkbox" checked={agreeTerms} onChange={(e) => setAgreeTerms(e.target.checked)} className="mt-0.5 size-4 shrink-0 rounded-[4px] accent-[#0268c0]" required />
-                            <span className="text-[13px] leading-[1.5] text-[#57728d]">By signing up, you confirm that you agree to FundByText&apos;s <Link href="/terms" className="text-[#0268c0] underline">Terms of Service</Link> and acknowledge our <Link href="/privacy" className="text-[#0268c0] underline">Privacy Policy</Link>.</span>
+                            <input type="checkbox" checked={agreeTerms} onChange={(e) => { setAgreeTerms(e.target.checked); if (e.target.checked) setTermsError(false); }} className={`mt-0.5 size-4 shrink-0 rounded-[4px] accent-[#0268c0] ${termsError ? "ring-2 ring-red-400 ring-offset-1" : ""}`} />
+                            <span className={`text-[13px] leading-[1.5] ${termsError ? "text-[#C9261D]" : "text-[#57728d]"}`}>By signing up, you confirm that you agree to FundByText&apos;s <Link href="/terms" className="text-[#0268c0] underline">Terms of Service</Link> and acknowledge our <Link href="/privacy" className="text-[#0268c0] underline">Privacy Policy</Link>.</span>
                         </label>
                     </div>
 
@@ -416,7 +418,7 @@ function DonateForm({
                     {/* Summary card — floats over the blue band on desktop. `relative`
                         so the whole white card (not just the positioned hero image)
                         paints on top of the positioned blue header it overlaps. */}
-                    <div className="relative flex flex-col rounded-2xl bg-white p-4 shadow-[0px_16px_40px_-16px_rgba(0,48,96,0.22)] ring-1 ring-[#eef1f6] lg:-mt-[92px]">
+                    <div className="relative flex flex-col rounded-2xl bg-white p-4 shadow-[0px_16px_40px_-16px_rgba(0,48,96,0.22)] ring-1 ring-[#eef1f6] lg:-mt-[64px]">
                         <div className="relative h-[164px] shrink-0 overflow-hidden rounded-[12px] bg-[#e7e9eb]">
                             {heroUrl && (
                                 // eslint-disable-next-line @next/next/no-img-element
