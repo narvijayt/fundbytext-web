@@ -91,13 +91,14 @@ type FormProps = {
     onClose:          () => void;
     onSuccess:        (data: DonationSuccessData) => void;
     onFailure:        (failure: DonationFailure, amount: number) => void;
+    dirtyRef:         React.MutableRefObject<boolean>;
     donorPrefill?:    DonorPrefill | null;
     maxDonationCents: number | null;
 };
 
 function DonateForm({
     campaignSlug, campaignName, campaignStory, heroUrl, accent, patternImage, patternSize, patternCover, daysLeft,
-    participants, targetMember, onClose, onSuccess, onFailure, donorPrefill, maxDonationCents,
+    participants, targetMember, onClose, onSuccess, onFailure, dirtyRef, donorPrefill, maxDonationCents,
 }: FormProps) {
     const stripe   = useStripe();
     const elements = useElements();
@@ -125,6 +126,28 @@ function DonateForm({
     // makes the modal appear to "stick" before it animates in.
     const [cardReady,  setCardReady]  = useState(false);
     useEffect(() => { const t = setTimeout(() => setCardReady(true), 240); return () => clearTimeout(t); }, []);
+    // Stripe card iframes can't be read back, so track whether the donor has typed
+    // into any of them (flipped from each element's onChange below).
+    const [cardTouched, setCardTouched] = useState(false);
+
+    // "Dirty" = the donor has entered/changed anything that would be lost on close.
+    // Snapshot the seed values once (so a realtime prop refresh, e.g. a changing
+    // remaining-goal, can't make an untouched — incl. invite-prefilled — form look
+    // dirty); such a form still closes freely on an outside click.
+    const initial = useRef<{ raw: string; first: string; last: string; holder: string; email: string } | null>(null);
+    initial.current ??= { raw, first: firstName, last: lastName, holder: holderName, email };
+    const dirty =
+        raw        !== initial.current.raw    ||
+        firstName  !== initial.current.first  ||
+        lastName   !== initial.current.last   ||
+        holderName !== initial.current.holder ||
+        email      !== initial.current.email  ||
+        zip.trim() !== "" || phone.trim() !== "" ||
+        anonymous || agreeTerms || cardTouched;
+    // Expose to the parent (which owns the backdrop/Escape close handlers) via a ref
+    // so a stray dismissal can be blocked without re-rendering on every keystroke.
+    useEffect(() => { dirtyRef.current = dirty; }, [dirty, dirtyRef]);
+    useEffect(() => () => { dirtyRef.current = false; }, [dirtyRef]);
 
     const cents = Math.round((parseFloat(raw) || 0) * 100);
     const exceedsMax = maxDonationCents !== null && cents > maxDonationCents;
@@ -330,7 +353,7 @@ function DonateForm({
                         </div>
                         <div className="flex min-w-0 flex-1 flex-col gap-2.5">
                             <FieldLabel>Card Number</FieldLabel>
-                            <StripeField>{cardReady ? <CardNumberElement options={{ style: STRIPE_STYLE, placeholder: "0123 4567 8910 1112" }} onChange={(e) => { if (e.complete) elements?.getElement(CardExpiryElement)?.focus(); }} /> : <span className="text-[#aeb5bd]">0123 4567 8910 1112</span>}</StripeField>
+                            <StripeField>{cardReady ? <CardNumberElement options={{ style: STRIPE_STYLE, placeholder: "0123 4567 8910 1112" }} onChange={(e) => { if (!e.empty) setCardTouched(true); if (e.complete) elements?.getElement(CardExpiryElement)?.focus(); }} /> : <span className="text-[#aeb5bd]">0123 4567 8910 1112</span>}</StripeField>
                         </div>
                     </div>
 
@@ -338,11 +361,11 @@ function DonateForm({
                     <div className="flex gap-3 sm:gap-5">
                         <div className="flex min-w-0 flex-1 flex-col gap-2.5">
                             <FieldLabel>Expiration</FieldLabel>
-                            <StripeField>{cardReady ? <CardExpiryElement options={{ style: STRIPE_STYLE }} onChange={(e) => { if (e.complete) elements?.getElement(CardCvcElement)?.focus(); }} /> : <span className="text-[#aeb5bd]">MM / YY</span>}</StripeField>
+                            <StripeField>{cardReady ? <CardExpiryElement options={{ style: STRIPE_STYLE }} onChange={(e) => { if (!e.empty) setCardTouched(true); if (e.complete) elements?.getElement(CardCvcElement)?.focus(); }} /> : <span className="text-[#aeb5bd]">MM / YY</span>}</StripeField>
                         </div>
                         <div className="flex min-w-0 flex-1 flex-col gap-2.5">
                             <FieldLabel>CVV</FieldLabel>
-                            <StripeField>{cardReady ? <CardCvcElement options={{ style: STRIPE_STYLE }} /> : <span className="text-[#aeb5bd]">CVC</span>}</StripeField>
+                            <StripeField>{cardReady ? <CardCvcElement options={{ style: STRIPE_STYLE }} onChange={(e) => { if (!e.empty) setCardTouched(true); }} /> : <span className="text-[#aeb5bd]">CVC</span>}</StripeField>
                         </div>
                     </div>
 
@@ -528,6 +551,11 @@ export default function DonateModal({
     // Only treat it as an outside-click when the press *started* on the backdrop,
     // so selecting text inside an input and releasing on the backdrop won't close.
     const downOnBackdrop = useRef(false);
+    // Set by the form while the donor has entered anything (card fields included).
+    // Used to block a stray outside-click / Escape from discarding a started form.
+    const dirtyRef = useRef(false);
+    const [nudge, setNudge] = useState(false);
+    const nudgeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     const targetMember = targetMemberId ? (participants.find((p) => p.id === targetMemberId) ?? null) : null;
 
@@ -551,20 +579,36 @@ export default function DonateModal({
 
     const handleClose = () => onClose();
 
+    // Quick-dismiss (outside click / Escape). If the donor has started filling the
+    // form, protect it: nudge the modal instead of closing so an accidental click
+    // can't wipe their card + details. The ✕ button still closes outright.
+    const tryDismiss = () => {
+        if (dirtyRef.current && !successData && !failureData) {
+            setNudge(true);
+            if (nudgeTimer.current) clearTimeout(nudgeTimer.current);
+            nudgeTimer.current = setTimeout(() => setNudge(false), 450);
+            return;
+        }
+        handleClose();
+    };
+    // Keep the latest tryDismiss reachable from the (stable) key listener.
+    const tryDismissRef = useRef(tryDismiss);
+    tryDismissRef.current = tryDismiss;
+
     // Key scroll-lock on the mount lifetime (`render`), not `isOpen`, so the page
     // stays locked through the exit animation while the modal is still visible.
     useEffect(() => { document.body.style.overflow = render ? "hidden" : ""; return () => { document.body.style.overflow = ""; }; }, [render]);
     useEffect(() => {
-        const h = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+        const h = (e: KeyboardEvent) => { if (e.key === "Escape") tryDismissRef.current(); };
         window.addEventListener("keydown", h);
         return () => window.removeEventListener("keydown", h);
-    }, [onClose]);
+    }, []);
 
     if (!render) return null;
 
     return (
-        <div className={`fixed inset-0 z-50 flex items-center justify-center p-3 transition-opacity duration-200 ease-out motion-reduce:transition-none sm:p-6 ${shown ? "opacity-100" : "opacity-0"}`} style={{ background: "rgba(0,30,60,0.55)", backdropFilter: "blur(3px)" }} onMouseDown={(e) => { downOnBackdrop.current = e.target === e.currentTarget; }} onClick={(e) => { if (downOnBackdrop.current && e.target === e.currentTarget) handleClose(); }}>
-            <div className={`relative w-full max-w-[940px] transition-all duration-200 ease-out motion-reduce:transition-none ${shown ? "translate-y-0 scale-100 opacity-100" : "translate-y-2 scale-95 opacity-0"}`} onClick={(e) => e.stopPropagation()}>
+        <div className={`fixed inset-0 z-50 flex items-center justify-center p-3 transition-opacity duration-200 ease-out motion-reduce:transition-none sm:p-6 ${shown ? "opacity-100" : "opacity-0"}`} style={{ background: "rgba(0,30,60,0.55)", backdropFilter: "blur(3px)" }} onMouseDown={(e) => { downOnBackdrop.current = e.target === e.currentTarget; }} onClick={(e) => { if (downOnBackdrop.current && e.target === e.currentTarget) tryDismiss(); }}>
+            <div className={`relative w-full max-w-[940px] transition-all duration-200 ease-out motion-reduce:transition-none ${nudge ? "modal-nudge" : ""} ${shown ? "translate-y-0 scale-100 opacity-100" : "translate-y-2 scale-95 opacity-0"}`} onClick={(e) => e.stopPropagation()}>
                 {/* Close — top-right (form state; the success/failure views carry their own). */}
                 {donationsEnabled && !successData && !failureData && (
                     <button type="button" onClick={handleClose} aria-label="Close" className="absolute right-4 top-4 z-10 flex size-7 items-center justify-center text-white transition-opacity hover:opacity-70">
@@ -596,6 +640,7 @@ export default function DonateModal({
                                     onClose={handleClose}
                                     onSuccess={(data) => { setSuccessData(data); onDonationSuccess?.(data.amount); }}
                                     onFailure={(f, amt) => setFailureData({ failure: f, amount: amt })}
+                                    dirtyRef={dirtyRef}
                                     donorPrefill={donorPrefill} maxDonationCents={maxDonationCents}
                                 />
                             </Elements>

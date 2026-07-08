@@ -349,3 +349,17 @@ input[type=number] {
 @media (prefers-reduced-motion: reduce) {
     .splash-logo, .splash-bar { animation: none; }
 }
+
+/* ── Modal "protected" nudge ──────────────────────────────────────────────
+   A subtle horizontal shake played when a click outside (or Escape) tries to
+   dismiss a modal that has unsaved input — signals "your data is safe, use ✕".
+   Uses `transform` so it composes with the enter/exit translate/scale utilities. */
+@keyframes modalNudge {
+    0%, 100%      { transform: translateX(0); }
+    20%, 60%      { transform: translateX(-6px); }
+    40%, 80%      { transform: translateX(6px); }
+}
+.modal-nudge { animation: modalNudge 0.4s ease; }
+@media (prefers-reduced-motion: reduce) {
+    .modal-nudge { animation: none; }
+}
