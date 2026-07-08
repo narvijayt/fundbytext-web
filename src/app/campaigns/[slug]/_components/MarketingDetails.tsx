@@ -194,7 +194,7 @@ export default function MarketingDetails({
                             {raised > 0 && livePct < 100 && (
                                 <span
                                     aria-hidden
-                                    className="pointer-events-none absolute top-1/2 h-[40px] w-[7px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#2bbd5f] shadow-[0px_2px_6px_-1px_rgba(0,48,96,0.28)] transition-[left] duration-1000 ease-out"
+                                    className="pointer-events-none absolute top-1/2 h-[48px] w-[7px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#2bbd5f] shadow-[0px_2px_6px_-1px_rgba(0,48,96,0.28)] transition-[left] duration-1000 ease-out"
                                     style={{ left: `max(${barW}%, 44px)` }}
                                 />
                             )}
