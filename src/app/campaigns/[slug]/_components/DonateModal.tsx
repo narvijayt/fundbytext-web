@@ -141,7 +141,8 @@ function DonateForm({
         if (exceedsMax)  return;
         if (!firstName.trim() || !lastName.trim()) { setError("Please enter your first and last name."); return; }
         if (!holderName.trim()) { setError("Please enter the name on your card."); return; }
-        if (!email && !phone) { setError("Please provide at least an email or phone number."); return; }
+        // Email + phone are optional (only used for the receipt / donation emails);
+        // the payment works without either, so we don't require one.
         if (!agreeTerms) { setTermsError(true); setError("Please accept the terms to continue."); return; }
         setTermsError(false);
         if (!stripe || !elements) return;
