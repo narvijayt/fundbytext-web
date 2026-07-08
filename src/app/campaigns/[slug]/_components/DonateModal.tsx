@@ -15,6 +15,7 @@ import {
 import type { DonorPrefill } from "./CampaignDonateShell";
 import { prefilledAmountRaw } from "./CampaignDonateShell";
 import DonationSuccess, { type DonationSuccessData } from "./DonationSuccess";
+import DonationFailed, { type DonationFailure } from "./DonationFailed";
 import CountrySelect from "./CountrySelect";
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
@@ -89,13 +90,14 @@ type FormProps = {
     targetMember:     ModalParticipant | null;
     onClose:          () => void;
     onSuccess:        (data: DonationSuccessData) => void;
+    onFailure:        (failure: DonationFailure, amount: number) => void;
     donorPrefill?:    DonorPrefill | null;
     maxDonationCents: number | null;
 };
 
 function DonateForm({
     campaignSlug, campaignName, campaignStory, heroUrl, accent, patternImage, patternSize, patternCover, daysLeft,
-    participants, targetMember, onClose, onSuccess, donorPrefill, maxDonationCents,
+    participants, targetMember, onClose, onSuccess, onFailure, donorPrefill, maxDonationCents,
 }: FormProps) {
     const stripe   = useStripe();
     const elements = useElements();
@@ -177,7 +179,7 @@ function DonateForm({
             if (!res.ok) throw new Error(data.error ?? "Failed to start payment.");
             clientSecret = data.client_secret;
         } catch (err) {
-            setError(err instanceof Error ? err.message : "Something went wrong.");
+            onFailure({ message: err instanceof Error ? err.message : "Something went wrong." }, parseFloat(raw) || 0);
             setSubmitting(false);
             return;
         }
@@ -197,7 +199,7 @@ function DonateForm({
         });
 
         if (stripeErr || paymentIntent?.status !== "succeeded") {
-            setError(stripeErr?.message ?? "Payment failed. Please try again.");
+            onFailure({ code: stripeErr?.code ?? null, declineCode: stripeErr?.decline_code ?? null, message: stripeErr?.message ?? null }, parseFloat(raw) || 0);
             setSubmitting(false);
             return;
         }
@@ -520,6 +522,9 @@ export default function DonateModal({
     donationsEnabled, donationsDisabledMessage, maxDonationCents, daysLeft = null,
 }: Props) {
     const [successData, setSuccessData] = useState<DonationSuccessData | null>(null);
+    // A payment failure swaps the form for the failure screen. The form stays
+    // mounted (hidden) underneath so "Try Again" keeps everything the donor typed.
+    const [failureData, setFailureData] = useState<{ failure: DonationFailure; amount: number } | null>(null);
     // Only treat it as an outside-click when the press *started* on the backdrop,
     // so selecting text inside an input and releasing on the backdrop won't close.
     const downOnBackdrop = useRef(false);
@@ -535,7 +540,7 @@ export default function DonateModal({
     useEffect(() => {
         if (isOpen) { setRender(true); return; }
         setShown(false);
-        const t = setTimeout(() => { setRender(false); setSuccessData(null); }, 200);
+        const t = setTimeout(() => { setRender(false); setSuccessData(null); setFailureData(null); }, 200);
         return () => clearTimeout(t);
     }, [isOpen]);
     useEffect(() => {
@@ -560,8 +565,8 @@ export default function DonateModal({
     return (
         <div className={`fixed inset-0 z-50 flex items-center justify-center p-3 transition-opacity duration-200 ease-out motion-reduce:transition-none sm:p-6 ${shown ? "opacity-100" : "opacity-0"}`} style={{ background: "rgba(0,30,60,0.55)", backdropFilter: "blur(3px)" }} onMouseDown={(e) => { downOnBackdrop.current = e.target === e.currentTarget; }} onClick={(e) => { if (downOnBackdrop.current && e.target === e.currentTarget) handleClose(); }}>
             <div className={`relative w-full max-w-[940px] transition-all duration-200 ease-out motion-reduce:transition-none ${shown ? "translate-y-0 scale-100 opacity-100" : "translate-y-2 scale-95 opacity-0"}`} onClick={(e) => e.stopPropagation()}>
-                {/* Close — top-right (form state; the success view carries its own). */}
-                {donationsEnabled && !successData && (
+                {/* Close — top-right (form state; the success/failure views carry their own). */}
+                {donationsEnabled && !successData && !failureData && (
                     <button type="button" onClick={handleClose} aria-label="Close" className="absolute right-4 top-4 z-10 flex size-7 items-center justify-center text-white transition-opacity hover:opacity-70">
                         <svg className="size-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
                     </button>
@@ -579,16 +584,34 @@ export default function DonateModal({
                         </div>
                     </div>
                 ) : !successData ? (
-                    <Elements stripe={stripePromise}>
-                        <DonateForm
-                            campaignSlug={campaignSlug} campaignName={campaignName} campaignStory={campaignStory}
-                            heroUrl={heroUrl} accent={accent} patternImage={patternImage} patternSize={patternSize} patternCover={patternCover}
-                            daysLeft={daysLeft} participants={participants} targetMember={targetMember}
-                            onClose={handleClose}
-                            onSuccess={(data) => { setSuccessData(data); onDonationSuccess?.(data.amount); }}
-                            donorPrefill={donorPrefill} maxDonationCents={maxDonationCents}
-                        />
-                    </Elements>
+                    <>
+                        {/* The form stays mounted (hidden) while the failure screen shows, so
+                            the Stripe card fields + entered details survive a "Try Again". */}
+                        <div className={failureData ? "hidden" : "contents"}>
+                            <Elements stripe={stripePromise}>
+                                <DonateForm
+                                    campaignSlug={campaignSlug} campaignName={campaignName} campaignStory={campaignStory}
+                                    heroUrl={heroUrl} accent={accent} patternImage={patternImage} patternSize={patternSize} patternCover={patternCover}
+                                    daysLeft={daysLeft} participants={participants} targetMember={targetMember}
+                                    onClose={handleClose}
+                                    onSuccess={(data) => { setSuccessData(data); onDonationSuccess?.(data.amount); }}
+                                    onFailure={(f, amt) => setFailureData({ failure: f, amount: amt })}
+                                    donorPrefill={donorPrefill} maxDonationCents={maxDonationCents}
+                                />
+                            </Elements>
+                        </div>
+                        {failureData && (
+                            <div className="mx-auto w-full max-w-[460px]">
+                                <DonationFailed
+                                    amount={failureData.amount}
+                                    accent={accent} patternImage={patternImage} patternSize={patternSize} patternCover={patternCover}
+                                    failure={failureData.failure}
+                                    onRetry={() => setFailureData(null)}
+                                    onClose={handleClose}
+                                />
+                            </div>
+                        )}
+                    </>
                 ) : (
                     <div className="mx-auto w-full max-w-[460px]">
                         <DonationSuccess {...successData} campaignSlug={campaignSlug} campaignName={campaignName} campaignStory={campaignStory} heroUrl={heroUrl} accent={accent} patternImage={patternImage} patternSize={patternSize} patternCover={patternCover} daysLeft={daysLeft} onClose={handleClose} />
