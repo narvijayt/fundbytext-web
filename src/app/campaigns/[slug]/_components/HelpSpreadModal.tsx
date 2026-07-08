@@ -120,7 +120,7 @@ export default function HelpSpreadModal({ isOpen, onClose, slug, campaignName, h
                     aria-hidden
                     className="pointer-events-none absolute inset-x-0 top-0 h-[300px] overflow-hidden sm:h-[347px]"
                     style={{
-                        backgroundImage: `radial-gradient(58% 72% at 50% 16%, rgba(160,210,255,0.6), rgba(160,210,255,0) 62%), linear-gradient(160deg, ${accent} 0%, ${accent} 52%, color-mix(in srgb, ${accent} 74%, #000) 120%)`,
+                        backgroundImage: `radial-gradient(62% 86% at 50% 50%, rgba(160,210,255,0.58), rgba(160,210,255,0) 66%), linear-gradient(160deg, ${accent} 0%, ${accent} 52%, color-mix(in srgb, ${accent} 74%, #000) 120%)`,
                         backgroundBlendMode: "color-dodge, normal",
                     }}
                 >

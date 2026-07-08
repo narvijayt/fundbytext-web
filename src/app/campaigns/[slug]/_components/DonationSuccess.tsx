@@ -65,7 +65,7 @@ export default function DonationSuccess({
             <div
                 className="relative shrink-0 overflow-hidden px-6 pt-9 pb-8 text-center sm:px-8"
                 style={{
-                    backgroundImage: `radial-gradient(58% 72% at 50% 16%, rgba(160,210,255,0.6), rgba(160,210,255,0) 62%), linear-gradient(160deg, ${accent} 0%, ${accent} 52%, color-mix(in srgb, ${accent} 74%, #000) 120%)`,
+                    backgroundImage: `radial-gradient(62% 86% at 50% 50%, rgba(160,210,255,0.58), rgba(160,210,255,0) 66%), linear-gradient(160deg, ${accent} 0%, ${accent} 52%, color-mix(in srgb, ${accent} 74%, #000) 120%)`,
                     backgroundBlendMode: "color-dodge, normal",
                 }}
             >
@@ -142,7 +142,7 @@ export default function DonationSuccess({
                         <button type="button" onClick={openShare} title="Share"
                             className="flex size-10 shrink-0 items-center justify-center rounded-full text-white transition hover:brightness-105 active:scale-95"
                             style={{ background: "linear-gradient(180deg, #F47435 0%, #EA6725 100%)" }}>
-                            <svg className="size-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M4 12v7a1 1 0 001 1h14a1 1 0 001-1v-7M16 6l-4-4-4 4M12 2v13" /></svg>
+                            <svg className="size-[18px]" viewBox="0 0 18 18" fill="currentColor"><path d="M15.9373 17.9998H2.06239C0.924628 17.9998 0 17.075 0 15.9374V5.06239C0 3.92463 0.924628 3 2.06239 3H4.68741C4.99791 3 5.2499 3.252 5.2499 3.56249C5.2499 3.87299 4.99791 4.12499 4.68741 4.12499H2.06239C1.54562 4.12499 1.12499 4.54562 1.12499 5.06239V15.9374C1.12499 16.454 1.54562 16.8748 2.06239 16.8748H15.9373C16.4541 16.8748 16.8748 16.454 16.8748 15.9374V9.56234C16.8748 9.25184 17.1268 8.99985 17.4373 8.99985C17.7478 8.99985 17.9998 9.25184 17.9998 9.56234V15.9374C17.9998 17.075 17.0751 17.9998 15.9373 17.9998Z" /><path d="M5.05776 11.9904C5.01657 11.9904 4.97523 11.9858 4.93403 11.9753C4.67984 11.9161 4.49609 11.6985 4.49609 11.4376V10.3126C4.49609 6.28069 7.77658 3.0002 11.8085 3.0002H11.996V0.562633C11.996 0.333158 12.1355 0.126892 12.3485 0.04065C12.5607 -0.0447679 12.8044 0.00686729 12.9634 0.172622L17.8384 5.23507C18.0484 5.4526 18.0484 5.79757 17.8384 6.01509L12.9634 11.0775C12.8044 11.2433 12.5592 11.2944 12.3485 11.2095C12.1355 11.1233 11.996 10.917 11.996 10.6875V8.2501H11.105C8.74556 8.2501 6.62522 9.56103 5.57082 11.6708C5.474 11.8658 5.27076 11.9904 5.05776 11.9904ZM11.8085 4.12519C8.6585 4.12519 6.05009 6.49135 5.66832 9.54002C7.03171 8.01912 8.98699 7.12511 11.105 7.12511H12.5585C12.869 7.12511 13.121 7.37711 13.121 7.68761V9.29256L16.6526 5.62508L13.121 1.95761V3.56269C13.121 3.87319 12.869 4.12519 12.5585 4.12519H11.8085Z" /></svg>
                         </button>
                     </div>
                     <div className="my-4 border-t border-[#eef1f4]" />
