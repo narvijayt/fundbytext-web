@@ -4,17 +4,18 @@ import { useEffect, useState } from "react";
 import { SAMPLE_VIDEO } from "./MarketingShareables";
 
 const M = "/assets/marketing";
+const SHARE = "/assets/campaigns/share";
 
 export const SHARE_EVENT = "fbt:open-share";
 
-/* Brand glyphs (inline, brand-coloured) — 18×18 per the Figma pill spec. */
-const ICONS: Record<string, React.ReactNode> = {
-    facebook:  <svg viewBox="0 0 24 24" className="size-[18px] shrink-0" fill="#1877F2"><path d="M18.77 7.46H14.5v-1.9c0-.9.6-1.1 1-1.1h3V.5h-4.33C10.24.5 9.5 3.44 9.5 5.32v2.15h-3v4h3v12h5v-12h3.85l.42-4z" /></svg>,
-    twitter:   <svg viewBox="0 0 24 24" className="size-[18px] shrink-0" fill="#000"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" /></svg>,
-    instagram: <svg viewBox="0 0 24 24" className="size-[18px] shrink-0" fill="#E1306C"><path d="M12 2.16c3.2 0 3.58.01 4.85.07 3.25.15 4.77 1.69 4.92 4.92.06 1.27.07 1.65.07 4.85s-.01 3.58-.07 4.85c-.15 3.23-1.66 4.77-4.92 4.92-1.27.06-1.65.07-4.85.07s-3.58-.01-4.85-.07c-3.26-.15-4.77-1.7-4.92-4.92C2.17 15.58 2.16 15.2 2.16 12s.01-3.58.07-4.85C2.38 3.92 3.9 2.38 7.15 2.23 8.42 2.17 8.8 2.16 12 2.16zm0 1.62c-3.15 0-3.52.01-4.76.07-2.4.11-3.5 1.23-3.61 3.61-.06 1.24-.07 1.61-.07 4.76s.01 3.52.07 4.76c.11 2.38 1.21 3.5 3.61 3.61 1.24.06 1.61.07 4.76.07s3.52-.01 4.76-.07c2.4-.11 3.5-1.23 3.61-3.61.06-1.24.07-1.61.07-4.76s-.01-3.52-.07-4.76c-.11-2.38-1.21-3.5-3.61-3.61-1.24-.06-1.61-.07-4.76-.07zm0 4.05a4.17 4.17 0 100 8.34 4.17 4.17 0 000-8.34zm0 6.88a2.7 2.7 0 110-5.41 2.7 2.7 0 010 5.41zm5.31-7.06a.97.97 0 11-1.94 0 .97.97 0 011.94 0z" /></svg>,
-    linkedin:  <svg viewBox="0 0 24 24" className="size-[18px] shrink-0" fill="#0A66C2"><path d="M20.45 20.45h-3.56v-5.57c0-1.33-.02-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.67H9.35V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.45v6.29zM5.34 7.43a2.06 2.06 0 110-4.12 2.06 2.06 0 010 4.12zM7.12 20.45H3.56V9h3.56v11.45zM22.22 0H1.77C.79 0 0 .77 0 1.73v20.54C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.73V1.73C24 .77 23.2 0 22.22 0z" /></svg>,
-    messenger: <svg viewBox="0 0 24 24" className="size-[18px] shrink-0" fill="#0084FF"><path d="M12 2C6.36 2 2 6.13 2 11.7c0 2.9 1.19 5.4 3.14 7.13.16.14.26.34.27.56l.05 1.78c.02.57.6.94 1.12.71l1.99-.88c.17-.07.36-.09.53-.04.91.25 1.88.38 2.8.38 5.64 0 10-4.13 10-9.7S17.64 2 12 2zm6 7.46l-2.94 4.66c-.47.74-1.47.93-2.17.4l-2.34-1.75a.6.6 0 00-.72 0l-3.16 2.4c-.42.32-.97-.18-.69-.63l2.94-4.66c.47-.74 1.47-.93 2.17-.4l2.34 1.75a.6.6 0 00.72 0l3.16-2.4c.42-.32.97.18.69.63z" /></svg>,
-    whatsapp:  <svg viewBox="0 0 24 24" className="size-[18px] shrink-0" fill="#25D366"><path d="M12 2C6.48 2 2 6.48 2 12c0 1.99.58 3.84 1.59 5.4L2 22l4.77-1.56A9.94 9.94 0 0012 22c5.52 0 10-4.48 10-10S17.52 2 12 2zm5.47 14.38c-.23.64-1.34 1.23-1.84 1.28-.49.05-.95.23-3.2-.67-2.7-1.06-4.4-3.84-4.53-4.02-.13-.18-1.08-1.43-1.08-2.73s.68-1.94.92-2.2c.24-.27.53-.33.7-.33.18 0 .35 0 .5.01.16.01.38-.06.59.45.23.55.77 1.9.84 2.04.07.13.11.29.02.47-.09.18-.13.29-.27.45-.13.16-.28.35-.4.47-.13.13-.27.28-.12.54.16.27.7 1.15 1.5 1.86 1.03.92 1.9 1.2 2.17 1.34.27.13.42.11.58-.07.16-.18.66-.77.84-1.04.18-.27.35-.22.59-.13.24.09 1.52.72 1.78.85.27.13.44.2.5.31.07.11.07.62-.16 1.26z" /></svg>,
+/* Exact Figma brand icons (18×18, Streamline set) exported from the design. */
+const ICONS: Record<string, string> = {
+    facebook:  `${SHARE}/facebook.svg`,
+    twitter:   `${SHARE}/twitter.svg`,
+    instagram: `${SHARE}/instagram.svg`,
+    linkedin:  `${SHARE}/linkedin.svg`,
+    messenger: `${SHARE}/messenger.svg`,
+    whatsapp:  `${SHARE}/whatsapp.svg`,
 };
 
 type Props = {
@@ -24,11 +25,15 @@ type Props = {
     campaignName: string;
     heroUrl:      string | null;
     accent:       string;
+    patternImage?: string | null;
+    patternSize?:  string;
+    patternCover?: boolean;
     videoUrl?:    string | null;
     videoPoster?: string | null;
 };
 
-export default function HelpSpreadModal({ isOpen, onClose, slug, campaignName, heroUrl, accent, videoUrl = null, videoPoster = null }: Props) {
+export default function HelpSpreadModal({ isOpen, onClose, slug, campaignName, heroUrl, accent, patternImage = null, patternSize = "", patternCover = false, videoUrl = null, videoPoster = null }: Props) {
+    const pat = patternImage ?? `${M}/leaderboard/bg-pattern.png`;
     const [url, setUrl] = useState(`/campaigns/${slug}`);
     const [copied, setCopied] = useState(false);
     const [playing, setPlaying] = useState(false);
@@ -99,19 +104,35 @@ export default function HelpSpreadModal({ isOpen, onClose, slug, campaignName, h
     ];
 
     // Social / Download pill — transparent, 1px #dde0e3, 12px radius, 48px tall, 16px #003060 label.
-    const pill = "flex h-11 items-center justify-center gap-2 rounded-[12px] border border-[#dde0e3] bg-white text-[15px] font-medium tracking-[0.15px] text-[#003060] transition-colors hover:bg-[#f6f8fa]";
+    const pill = "flex h-12 items-center justify-center gap-2 rounded-[12px] border border-[#dde0e3] bg-white text-[16px] font-medium tracking-[0.15px] text-[#003060] transition-colors hover:bg-[#f6f8fa]";
 
     return (
         <div className={`fixed inset-0 z-[110] flex items-center justify-center p-3 transition-opacity duration-200 ease-out motion-reduce:transition-none sm:p-6 ${shown ? "opacity-100" : "opacity-0"}`} style={{ background: "rgba(0,30,60,0.55)", backdropFilter: "blur(3px)" }} onClick={onClose}>
-            <div className={`relative flex max-h-[92vh] w-full max-w-[612px] flex-col overflow-hidden rounded-[20px] bg-white shadow-[0px_40px_80px_-20px_rgba(0,48,96,0.45)] transition-all duration-200 ease-out motion-reduce:transition-none ${shown ? "translate-y-0 scale-100 opacity-100" : "translate-y-2 scale-95 opacity-0"}`} onClick={(ev) => ev.stopPropagation()}>
+            <div className={`relative flex max-h-[92vh] w-full max-w-[612px] flex-col overflow-hidden rounded-3xl bg-white shadow-[0px_40px_80px_-20px_rgba(0,48,96,0.45)] transition-all duration-200 ease-out motion-reduce:transition-none ${shown ? "translate-y-0 scale-100 opacity-100" : "translate-y-2 scale-95 opacity-0"}`} onClick={(ev) => ev.stopPropagation()}>
               {/* Inner scroll area — keeps the scrollbar inside the rounded corners.
                   Thin, and inherits the app-wide scrollbar colour from globals.css
                   (scrollbar-width isn't inherited, so it's set explicitly here). */}
               <div className="modal-scroll relative flex min-h-0 flex-1 flex-col overflow-y-auto overflow-x-hidden">
-                {/* Blue band — fixed-height background; the video overlaps its lower portion */}
-                <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-[300px] overflow-hidden sm:h-[347px]" style={{ background: `linear-gradient(150deg, ${accent} 0%, ${accent} 60%, color-mix(in srgb, ${accent} 78%, #000) 140%)` }}>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={`${M}/leaderboard/bg-pattern.png`} alt="" className="absolute inset-0 h-full w-full object-cover opacity-[0.12]" />
+                {/* Blue band — accent gradient + centred color-dodge halo + the campaign's
+                    selected theme pattern as a watermark (same treatment as the donation
+                    success modal); the video overlaps its lower portion. */}
+                <div
+                    aria-hidden
+                    className="pointer-events-none absolute inset-x-0 top-0 h-[300px] overflow-hidden sm:h-[347px]"
+                    style={{
+                        backgroundImage: `radial-gradient(58% 72% at 50% 16%, rgba(160,210,255,0.6), rgba(160,210,255,0) 62%), linear-gradient(160deg, ${accent} 0%, ${accent} 52%, color-mix(in srgb, ${accent} 74%, #000) 120%)`,
+                        backgroundBlendMode: "color-dodge, normal",
+                    }}
+                >
+                    <div
+                        className={`absolute inset-0 ${patternCover ? "opacity-[0.16]" : "opacity-[0.12]"}`}
+                        style={{
+                            backgroundImage: `url('${pat}')`,
+                            backgroundRepeat: patternCover ? "no-repeat" : "repeat",
+                            backgroundSize: patternImage ? patternSize : "cover",
+                            backgroundPosition: patternCover ? "center" : undefined,
+                        }}
+                    />
                 </div>
 
                 {/* Close — 24px bare white X, 16px inset */}
@@ -123,14 +144,14 @@ export default function HelpSpreadModal({ isOpen, onClose, slug, campaignName, h
                 <div className="relative">
                     {/* Header text + copy-link (inside the band) */}
                     <div className="px-6 pt-8 sm:px-10 sm:pt-10">
-                        <h2 className="text-[22px] font-black leading-[1.15] text-white sm:text-[28px]">Help Spread the Word</h2>
-                        <p className="mt-2.5 text-[14px] font-medium leading-[1.4] text-white/90 sm:mt-3.5 sm:text-[16px]">Download this resource and share with your friends directly and on social media!</p>
+                        <h2 className="text-[22px] font-black leading-[1.15] text-white sm:text-[32px]">Help Spread the Word</h2>
+                        <p className="mt-2.5 text-[14px] font-medium leading-[1.4] text-white/90 sm:mt-3.5 sm:text-[18px]">Download this resource and share with your friends directly and on social media!</p>
 
                         {/* Copy-link pill: white field + solid orange button, joined, 12px outer radius */}
                         <div className="mt-4 flex h-[46px] overflow-hidden rounded-[12px] border border-[#dde0e3] bg-white sm:mt-5 sm:h-[50px]">
-                            <span className="min-w-0 flex-1 self-center truncate px-4 text-[14px] text-[#aeb5bd] sm:px-5 sm:text-[16px]">{url}</span>
-                            <button type="button" onClick={copy} className="flex shrink-0 items-center gap-2 bg-[#f47435] px-4 text-[14px] font-medium tracking-[0.15px] text-white transition hover:brightness-105 sm:px-5 sm:text-[15px]">
-                                <svg className="size-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="11" height="11" rx="2.5" /><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" /></svg>
+                            <span className="min-w-0 flex-1 self-center truncate px-4 text-[14px] text-[#aeb5bd] sm:px-5 sm:text-[18px]">{url}</span>
+                            <button type="button" onClick={copy} className="flex shrink-0 items-center gap-2 bg-[#f47435] px-4 text-[14px] font-medium tracking-[0.15px] text-white transition hover:brightness-105 sm:px-5 sm:text-[16px]">
+                                <svg className="size-[18px]" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round"><path d="M12 9.675V12.825C12 15.45 10.95 16.5 8.325 16.5H5.175C2.55 16.5 1.5 15.45 1.5 12.825V9.675C1.5 7.05 2.55 6 5.175 6H8.325C10.95 6 12 7.05 12 9.675Z" /><path d="M16.5 5.175V8.325C16.5 10.95 15.45 12 12.825 12H12V9.675C12 7.05 10.95 6 8.325 6H6V5.175C6 2.55 7.05 1.5 9.675 1.5H12.825C15.45 1.5 16.5 2.55 16.5 5.175Z" /></svg>
                                 <span className="whitespace-nowrap">{copied ? "Copied!" : "Copy Link"}</span>
                             </button>
                         </div>
@@ -161,11 +182,13 @@ export default function HelpSpreadModal({ isOpen, onClose, slug, campaignName, h
                     <div className="grid grid-cols-2 gap-4 px-6 pb-6 pt-5 sm:grid-cols-3 sm:px-10 sm:pb-10 sm:pt-8">
                         {NETWORKS.map((n) => (
                             <button key={n.key} type="button" onClick={n.onClick} className={pill}>
-                                {ICONS[n.key]}{n.label}
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img src={ICONS[n.key]} alt="" className="size-[18px] shrink-0" />{n.label}
                             </button>
                         ))}
                         <button type="button" onClick={download} disabled={!heroUrl} className={`${pill} col-span-2 gap-3 disabled:cursor-not-allowed disabled:opacity-50 sm:col-span-3`}>
-                            <svg className="size-[18px] shrink-0 text-[#003060]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2" /></svg>
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={`${SHARE}/download.svg`} alt="" className="size-[18px] shrink-0" />
                             Download
                         </button>
                     </div>

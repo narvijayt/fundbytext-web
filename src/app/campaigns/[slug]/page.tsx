@@ -334,7 +334,7 @@ export default async function CampaignPublicPage({
 
             {/* Help-Spread-the-Word modal — opened by any "share / more" affordance
                 (hero + shareables share rows, and the thank-you modal). */}
-            <ShareModalHost slug={slug} campaignName={displayTitle} heroUrl={heroMedia?.url ?? null} accent={accent} videoUrl={campaign.video_url ?? defaultVideo} videoPoster={campaign.video_thumbnail_url ?? defaultVideoThumb ?? heroMedia?.url ?? null} />
+            <ShareModalHost slug={slug} campaignName={displayTitle} heroUrl={heroMedia?.url ?? null} accent={accent} patternImage={theme.themeImage} patternSize={theme.themeSize} patternCover={theme.themeCover} videoUrl={campaign.video_url ?? defaultVideo} videoPoster={campaign.video_thumbnail_url ?? defaultVideoThumb ?? heroMedia?.url ?? null} />
         </div>
     );
 }
