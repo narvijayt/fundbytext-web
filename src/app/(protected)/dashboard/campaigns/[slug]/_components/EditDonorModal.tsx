@@ -110,7 +110,7 @@ export default function EditDonorModal({ donorId, campaignSlug, initialFirst, in
                     </button>
                 </div>
 
-                <div className="grid flex-1 grid-cols-1 content-start gap-4 overflow-y-auto p-5 sm:grid-cols-2">
+                <div className="modal-scroll grid flex-1 grid-cols-1 content-start gap-4 overflow-y-auto p-5 sm:grid-cols-2">
                     <div>
                         <label className={LABEL}>First Name</label>
                         <input ref={firstRef} value={firstName} onChange={(e) => { setFirstName(e.target.value); setFieldErrors((f) => ({ ...f, firstName: "" })); }} className={fieldErrors.firstName ? INPUT_ERR : INPUT} placeholder="Jane" />

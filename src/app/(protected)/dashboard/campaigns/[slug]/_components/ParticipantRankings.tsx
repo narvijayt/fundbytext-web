@@ -111,7 +111,7 @@ export default function ParticipantRankings({ participants, myMemberId }: Props)
                             </button>
                         </div>
 
-                        <div className="flex-1 divide-y divide-gray-50 overflow-y-auto [scrollbar-width:thin]">
+                        <div className="modal-scroll flex-1 divide-y divide-gray-50 overflow-y-auto">
                             {modalItems.map((p, i) => (
                                 <RankRow key={p.id} p={p} rank={i + 1} isMe={p.id === myMemberId} />
                             ))}

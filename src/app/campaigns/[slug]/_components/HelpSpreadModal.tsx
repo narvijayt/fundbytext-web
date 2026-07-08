@@ -107,7 +107,7 @@ export default function HelpSpreadModal({ isOpen, onClose, slug, campaignName, h
               {/* Inner scroll area — keeps the scrollbar inside the rounded corners.
                   Thin, and inherits the app-wide scrollbar colour from globals.css
                   (scrollbar-width isn't inherited, so it's set explicitly here). */}
-              <div className="relative flex min-h-0 flex-1 flex-col overflow-y-auto overflow-x-hidden [scrollbar-width:thin]">
+              <div className="modal-scroll relative flex min-h-0 flex-1 flex-col overflow-y-auto overflow-x-hidden">
                 {/* Blue band — fixed-height background; the video overlaps its lower portion */}
                 <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-[300px] overflow-hidden sm:h-[347px]" style={{ background: `linear-gradient(150deg, ${accent} 0%, ${accent} 60%, color-mix(in srgb, ${accent} 78%, #000) 140%)` }}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}

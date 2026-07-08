@@ -197,7 +197,7 @@ export default function LiveDonationFeed({ donations, totalCount, campaignSlug, 
                         </div>
 
                         <div
-                            className="flex-1 divide-y divide-gray-50 overflow-y-auto [scrollbar-width:thin]"
+                            className="modal-scroll flex-1 divide-y divide-gray-50 overflow-y-auto"
                             onScroll={onModalScroll}
                         >
                             {loading && modalItems.length === 0 ? (

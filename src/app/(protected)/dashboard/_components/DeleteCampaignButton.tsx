@@ -85,7 +85,7 @@ export default function DeleteCampaignButton({
                     {/* Backdrop */}
                     <div className={`absolute inset-0 bg-black/30 backdrop-blur-[2px] transition-opacity duration-200 ease-out motion-reduce:transition-none ${shown ? "opacity-100" : "opacity-0"}`} onClick={() => { if (!loading) close(); }} />
                     {/* Modal */}
-                    <div className={`relative z-10 w-full max-w-sm rounded-2xl bg-white p-6 shadow-[0px_24px_48px_-12px_rgba(0,48,96,0.35)] max-h-[calc(100vh-2rem)] overflow-y-auto transition-all duration-200 ease-out motion-reduce:transition-none ${shown ? "translate-y-0 scale-100 opacity-100" : "translate-y-2 scale-95 opacity-0"}`}>
+                    <div className={`modal-scroll relative z-10 w-full max-w-sm rounded-2xl bg-white p-6 shadow-[0px_24px_48px_-12px_rgba(0,48,96,0.35)] max-h-[calc(100vh-2rem)] overflow-y-auto transition-all duration-200 ease-out motion-reduce:transition-none ${shown ? "translate-y-0 scale-100 opacity-100" : "translate-y-2 scale-95 opacity-0"}`}>
                         <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-50">
                             <svg className="h-6 w-6 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />

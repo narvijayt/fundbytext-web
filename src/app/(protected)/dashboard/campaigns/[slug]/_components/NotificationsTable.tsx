@@ -211,7 +211,7 @@ export default function NotificationsTable({ title, notifications, totalCount, c
                                 <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} strokeLinecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
                             </button>
                         </div>
-                        <div className="flex-1 divide-y divide-[#eef1f4] overflow-y-auto [scrollbar-width:thin]">
+                        <div className="modal-scroll flex-1 divide-y divide-[#eef1f4] overflow-y-auto">
                             {loading && modalItems.length === 0 ? (
                                 <div className="flex items-center justify-center py-12">
                                     <div className="h-5 w-5 animate-spin rounded-full border-2 border-[#0268c0] border-t-transparent" />

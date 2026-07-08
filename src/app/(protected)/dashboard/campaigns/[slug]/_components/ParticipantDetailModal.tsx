@@ -110,7 +110,7 @@ export default function ParticipantDetailModal({ memberId, myMemberId, campaignS
                     </button>
                 </div>
 
-                <div className="flex-1 overflow-y-auto p-5">
+                <div className="modal-scroll flex-1 overflow-y-auto p-5">
                     {loading && (
                         <div className="flex items-center justify-center py-12">
                             <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#0268c0] border-t-transparent" />

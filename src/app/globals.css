@@ -240,6 +240,21 @@ html {
     display: none;
 }
 
+/* Modal scroll containers — a thin mobile-style scrollbar on small screens,
+   hidden on desktop (scroll still works). Applied to every modal's scrollable
+   area so the whole app is consistent. */
+.modal-scroll {
+    scrollbar-width: thin;
+}
+@media (min-width: 1024px) {
+    .modal-scroll {
+        scrollbar-width: none;
+    }
+    .modal-scroll::-webkit-scrollbar {
+        display: none;
+    }
+}
+
 ::-webkit-scrollbar-corner {
     background: #f1f5f9;
 }

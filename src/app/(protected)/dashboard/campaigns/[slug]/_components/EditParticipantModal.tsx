@@ -127,7 +127,7 @@ export default function EditParticipantModal({ memberId, campaignSlug, onClose }
                         <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#0268c0] border-t-transparent" />
                     </div>
                 ) : (
-                    <form onSubmit={handleSubmit} className="flex-1 space-y-4 overflow-y-auto p-5">
+                    <form onSubmit={handleSubmit} className="modal-scroll flex-1 space-y-4 overflow-y-auto p-5">
                         <div className="flex gap-2.5 rounded-xl border border-[#cfe0f3] bg-[#eef5fc] px-3.5 py-3 text-[12px] leading-snug text-[#0268c0]">
                             <svg className="mt-0.5 h-4 w-4 shrink-0 text-[#0268c0]" fill="currentColor" viewBox="0 0 20 20">
                                 <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />

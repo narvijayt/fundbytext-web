@@ -133,7 +133,7 @@ export default function AddDonorModal({ campaignSlug, participants, isOrganizer,
                 {/* 2-column on desktop so the form fits without scrolling; stacks and
                     scrolls on smaller screens. */}
                 <form onSubmit={handleSubmit} className="flex flex-1 flex-col overflow-hidden">
-                    <div className="grid flex-1 grid-cols-1 content-start gap-4 overflow-y-auto p-5 sm:grid-cols-2">
+                    <div className="modal-scroll grid flex-1 grid-cols-1 content-start gap-4 overflow-y-auto p-5 sm:grid-cols-2">
                         {/* Invite info */}
                         <div className="flex gap-2.5 rounded-xl border border-[#cfe0f3] bg-[#eef5fc] px-3.5 py-3 text-[12px] leading-snug text-[#0268c0] sm:col-span-2">
                             <svg className="mt-0.5 h-4 w-4 shrink-0 text-[#0268c0]" fill="currentColor" viewBox="0 0 20 20">

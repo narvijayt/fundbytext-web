@@ -61,7 +61,7 @@ export default function DeleteCampaignButton({ campaignSlug }: { campaignSlug: s
                         onClick={(e) => e.stopPropagation()}
                         className={`w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-[0px_16px_40px_-8px_rgba(15,29,67,0.3)] transition-transform duration-200 motion-reduce:transition-none ${shown ? "scale-100" : "scale-95"}`}
                     >
-                        <div className="max-h-[calc(100vh-2rem)] space-y-4 overflow-y-auto p-6">
+                        <div className="modal-scroll max-h-[calc(100vh-2rem)] space-y-4 overflow-y-auto p-6">
                             <div className="flex items-start gap-3">
                                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-100 text-red-600">
                                     <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" /></svg>

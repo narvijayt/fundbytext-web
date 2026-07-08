@@ -282,7 +282,7 @@ function ModalBody({ user, onClose }: { user: User; onClose: () => void }) {
 
     return (
         <form onSubmit={(e) => { e.preventDefault(); handleSave(); }} className="flex flex-1 flex-col overflow-hidden">
-            <div className="flex flex-1 flex-col gap-5 overflow-y-auto p-5">
+            <div className="modal-scroll flex flex-1 flex-col gap-5 overflow-y-auto p-5">
                 {/* Change Profile Picture */}
                 <div className="flex items-center gap-4">
                     <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#e7e9eb]">

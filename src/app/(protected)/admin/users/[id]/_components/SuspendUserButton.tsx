@@ -80,7 +80,7 @@ export default function SuspendUserButton({
                         onClick={(e) => e.stopPropagation()}
                         className={`w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-[0px_16px_40px_-8px_rgba(15,29,67,0.3)] transition-transform duration-200 motion-reduce:transition-none ${shown ? "scale-100" : "scale-95"}`}
                     >
-                        <div className="max-h-[calc(100vh-2rem)] space-y-4 overflow-y-auto p-6">
+                        <div className="modal-scroll max-h-[calc(100vh-2rem)] space-y-4 overflow-y-auto p-6">
                             <div className="flex items-start gap-3">
                                 <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${isSuspended ? "bg-green-100 text-green-600" : "bg-red-100 text-red-600"}`}>
                                     {isSuspended ? (

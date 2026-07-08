@@ -146,7 +146,7 @@ export default function GlobalCampaignVideo({ currentUrl, currentThumbnailUrl }:
                             </button>
                         </div>
 
-                        <div className="overflow-y-auto p-6">
+                        <div className="modal-scroll overflow-y-auto p-6">
                             <p className="text-[13px] leading-snug text-[#5b6b7c]">
                                 Shown in “Spread the Word” on every campaign that hasn’t uploaded its own video. To use a different video for one campaign, open that campaign and upload one there.
                             </p>

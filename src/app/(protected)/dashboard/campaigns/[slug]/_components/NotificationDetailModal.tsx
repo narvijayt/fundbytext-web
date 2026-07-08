@@ -103,7 +103,7 @@ export default function NotificationDetailModal({ notif, participantName, organi
                 </div>
 
                 {/* Body */}
-                <div className="flex-1 space-y-6 overflow-y-auto p-6">
+                <div className="modal-scroll flex-1 space-y-6 overflow-y-auto p-6">
                     {/* Message "letter" card */}
                     <div className="overflow-hidden rounded-2xl border border-[#dde0e3]">
                         {/* greeting strip */}

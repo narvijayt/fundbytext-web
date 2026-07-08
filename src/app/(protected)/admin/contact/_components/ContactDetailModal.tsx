@@ -51,7 +51,7 @@ export default function ContactDetailModal({ submission, busy, onToggleRead, onC
                 </div>
 
                 {/* Body */}
-                <div className="flex-1 space-y-5 overflow-y-auto p-5">
+                <div className="modal-scroll flex-1 space-y-5 overflow-y-auto p-5">
                     {/* Sender */}
                     <div className="flex items-center gap-3">
                         <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#aed9fe] text-sm font-bold text-[#0268c0]">{initials || "?"}</div>
@@ -79,7 +79,7 @@ export default function ContactDetailModal({ submission, busy, onToggleRead, onC
                     {/* Message */}
                     <div>
                         <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-[#9aa7b8]">Message</p>
-                        <div className="max-h-64 overflow-y-auto whitespace-pre-wrap rounded-xl border border-[#eef1f4] bg-[#fbfcfe] px-4 py-3.5 text-sm leading-relaxed text-[#5b6b7c]">{s.message}</div>
+                        <div className="modal-scroll max-h-64 overflow-y-auto whitespace-pre-wrap rounded-xl border border-[#eef1f4] bg-[#fbfcfe] px-4 py-3.5 text-sm leading-relaxed text-[#5b6b7c]">{s.message}</div>
                     </div>
                 </div>
 

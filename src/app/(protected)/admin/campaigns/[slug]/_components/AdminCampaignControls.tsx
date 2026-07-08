@@ -117,7 +117,7 @@ export default function AdminCampaignControls({
                             </button>
                         </div>
 
-                        <div className="flex-1 divide-y divide-[#eef1f4] overflow-y-auto">
+                        <div className="modal-scroll flex-1 divide-y divide-[#eef1f4] overflow-y-auto">
                             {/* Notice */}
                             <div className="border-b border-amber-100 bg-amber-50 px-6 py-3">
                                 <p className="text-xs leading-snug text-amber-700">Changes made here notify the organizer and participants. Use carefully.</p>

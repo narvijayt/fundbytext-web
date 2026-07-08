@@ -213,7 +213,7 @@ export default function CampaignControls({
                             </button>
                         </div>
 
-                        <div className="flex-1 divide-y divide-[#eef1f4] overflow-y-auto [scrollbar-width:thin]">
+                        <div className="modal-scroll flex-1 divide-y divide-[#eef1f4] overflow-y-auto">
 
                             {/* ── Visibility ── */}
                             <div className="space-y-3 px-5 py-5">

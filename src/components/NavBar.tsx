@@ -104,7 +104,7 @@ export default function NavBar({ user }: { user: { id: string } | null }) {
                     </div>
 
                     {/* Links */}
-                    <nav className="flex-1 overflow-y-auto px-5 py-4">
+                    <nav className="modal-scroll flex-1 overflow-y-auto px-5 py-4">
                         <ul>
                             {[
                                 { href: "/",              label: "Home" },

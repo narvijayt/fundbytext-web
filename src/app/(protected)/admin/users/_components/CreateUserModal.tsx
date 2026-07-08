@@ -127,7 +127,7 @@ export default function CreateUserModal({ onClose, onSaved }: { onClose: () => v
                 </div>
 
                 <form onSubmit={handleSubmit} className="flex flex-1 flex-col overflow-hidden">
-                    <div className="grid flex-1 grid-cols-1 content-start gap-4 overflow-y-auto p-5 sm:grid-cols-2">
+                    <div className="modal-scroll grid flex-1 grid-cols-1 content-start gap-4 overflow-y-auto p-5 sm:grid-cols-2">
                         <div>
                             <label className={LABEL}>First Name</label>
                             <input

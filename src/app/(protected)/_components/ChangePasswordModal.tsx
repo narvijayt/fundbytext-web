@@ -127,7 +127,7 @@ export default function ChangePasswordModal({ onClose }: { onClose: () => void }
                     </div>
                 ) : (
                     <form onSubmit={handleSubmit} className="flex flex-1 flex-col overflow-hidden">
-                        <div className="flex flex-1 flex-col gap-4 overflow-y-auto p-5">
+                        <div className="modal-scroll flex flex-1 flex-col gap-4 overflow-y-auto p-5">
                             {apiError && <p role="alert" className="rounded-lg bg-red-50 px-3.5 py-2.5 text-[13px] font-medium text-red-600">{apiError}</p>}
 
                             <div>

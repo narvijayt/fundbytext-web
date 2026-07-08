@@ -241,7 +241,7 @@ function DonateForm({
           {/* Inner scroll wrapper — the form clips to its rounded corners
               (overflow-hidden) so the scrollbar never spills past the radius. The
               bar shows on mobile like a normal scroll and is hidden on desktop. */}
-          <div className="flex w-full flex-1 flex-col overflow-y-auto [scrollbar-width:thin] lg:[scrollbar-width:none] lg:[&::-webkit-scrollbar]:hidden">
+          <div className="modal-scroll flex w-full flex-1 flex-col overflow-y-auto">
             {/* ── Blue header band — spans the full width; content stays in the left
                  column so the summary card can float over the band on desktop. ── */}
             <div

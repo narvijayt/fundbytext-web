@@ -105,7 +105,7 @@ export default function DonorInfoModal({ donor, isOrganizer, myMemberId, onClose
                     </div>
                 </div>
 
-                <div className="flex-1 overflow-y-auto p-5">
+                <div className="modal-scroll flex-1 overflow-y-auto p-5">
                     <div className="space-y-5">
                         {/* Identity */}
                         <div className="flex items-center gap-4">
