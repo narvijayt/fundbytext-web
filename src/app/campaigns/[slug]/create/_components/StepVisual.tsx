@@ -573,7 +573,7 @@ export default function StepVisual({
                             info={
                                 isOrg
                                     ? "Your organization's logo or profile photo. It appears next to your name across your campaign page, so use a clear, square image."
-                                    : "The photo supporters will recognize you by — your profile picture or logo. It appears next to your name across your campaign page."
+                                    : "Your profile picture or logo — the image supporters will recognize you by. It appears next to your name across your campaign page."
                             }
                         >
                             {isOrg ? "Organization Logo / Profile Photo" : "Profile Picture / Logo"}
