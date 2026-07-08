@@ -591,7 +591,7 @@ export default function DonateModal({
                     </Elements>
                 ) : (
                     <div className="mx-auto w-full max-w-[460px]">
-                        <DonationSuccess {...successData} campaignSlug={campaignSlug} campaignName={campaignName} campaignStory={campaignStory} heroUrl={heroUrl} accent={accent} daysLeft={daysLeft} onClose={handleClose} />
+                        <DonationSuccess {...successData} campaignSlug={campaignSlug} campaignName={campaignName} campaignStory={campaignStory} heroUrl={heroUrl} accent={accent} patternImage={patternImage} patternSize={patternSize} patternCover={patternCover} daysLeft={daysLeft} onClose={handleClose} />
                     </div>
                 )}
             </div>
