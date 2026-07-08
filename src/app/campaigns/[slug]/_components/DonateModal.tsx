@@ -239,7 +239,7 @@ function DonateForm({
     );
 
     return (
-        <form onSubmit={handleSubmit} className="relative flex max-h-[92vh] w-full flex-col overflow-y-auto rounded-3xl bg-white shadow-[0px_40px_80px_-20px_rgba(0,48,96,0.45)] [scrollbar-width:thin]">
+        <form onSubmit={handleSubmit} className="no-scrollbar relative flex max-h-[92vh] w-full flex-col overflow-y-auto rounded-3xl bg-white shadow-[0px_40px_80px_-20px_rgba(0,48,96,0.45)]">
             {/* ── Blue header band — spans the full width; content stays in the left
                  column so the summary card can float over the band on desktop. ── */}
             <div
