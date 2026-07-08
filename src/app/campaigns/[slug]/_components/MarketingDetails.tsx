@@ -173,20 +173,31 @@ export default function MarketingDetails({
                             )}
                         </div>
                         {/* Progress bar — green-on-green striped "raised" fill on a striped gray
-                            track, matching the dashboard CampaignProgressBar. */}
-                        <div className="h-[32px] relative rounded-full w-full overflow-hidden" style={{ background: TRACK_STRIPES }}>
-                            <style>{`@keyframes mkt-pb-shimmer{0%{transform:translateX(-120%)}100%{transform:translateX(400%)}}`}</style>
-                            <div
-                                className="absolute left-0 top-0 h-full overflow-hidden rounded-l-full transition-[width] duration-1000 ease-out"
-                                style={{ width: `${barW}%`, minWidth: raised > 0 ? 44 : 0, background: GREEN_STRIPES }}
-                            >
+                            track (both the same height), with a taller rounded green marker
+                            at the current progress point. The marker lives outside the clipped
+                            track so it can stand proud of the bar. */}
+                        <div className="relative w-full">
+                            <div className="h-[32px] relative rounded-full w-full overflow-hidden" style={{ background: TRACK_STRIPES }}>
+                                <style>{`@keyframes mkt-pb-shimmer{0%{transform:translateX(-120%)}100%{transform:translateX(400%)}}`}</style>
+                                <div
+                                    className="absolute left-0 top-0 h-full overflow-hidden rounded-l-full transition-[width] duration-1000 ease-out"
+                                    style={{ width: `${barW}%`, minWidth: raised > 0 ? 44 : 0, background: GREEN_STRIPES }}
+                                >
+                                    <span
+                                        aria-hidden
+                                        className="absolute inset-y-0 left-0 w-[35%]"
+                                        style={{ background: "linear-gradient(90deg,transparent,rgba(255,255,255,0.5) 50%,transparent)", animation: "mkt-pb-shimmer 2.2s ease-in-out infinite" }}
+                                    />
+                                </div>
+                                <span aria-hidden className="absolute inset-0 pointer-events-none rounded-[inherit]" style={{ boxShadow: "inset 0px 2px 8px 0px rgba(0,48,96,0.08)" }} />
+                            </div>
+                            {raised > 0 && livePct < 100 && (
                                 <span
                                     aria-hidden
-                                    className="absolute inset-y-0 left-0 w-[35%]"
-                                    style={{ background: "linear-gradient(90deg,transparent,rgba(255,255,255,0.5) 50%,transparent)", animation: "mkt-pb-shimmer 2.2s ease-in-out infinite" }}
+                                    className="pointer-events-none absolute top-1/2 h-[40px] w-[11px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#2bbd5f] shadow-[0px_2px_6px_-1px_rgba(0,48,96,0.28)] transition-[left] duration-1000 ease-out"
+                                    style={{ left: `max(${barW}%, 44px)` }}
                                 />
-                            </div>
-                            <span aria-hidden className="absolute inset-0 pointer-events-none rounded-[inherit]" style={{ boxShadow: "inset 0px 2px 8px 0px rgba(0,48,96,0.08)" }} />
+                            )}
                         </div>
                         {/* Date + days + donations */}
                         <div className="flex gap-[6px] items-center justify-center px-[4px] w-full">
