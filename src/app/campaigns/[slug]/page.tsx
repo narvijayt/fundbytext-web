@@ -319,6 +319,9 @@ export default async function CampaignPublicPage({
                     campaignName={displayTitle}
                     campaignStory={campaign.story}
                     heroUrl={heroMedia?.url ?? null}
+                    patternImage={theme.themeImage}
+                    patternSize={theme.themeSize}
+                    patternCover={theme.themeCover}
                     defaultTargetMemberId={defaultTargetMemberId}
                     donationsEnabled={campaign.donations_enabled ?? true}
                     donationsDisabledMessage={campaign.donations_disabled_message ?? null}

@@ -22,6 +22,9 @@ type Props = {
     campaignName:             string;
     campaignStory:            string | null;
     heroUrl:                  string | null;
+    patternImage:             string | null;
+    patternSize:              string;
+    patternCover:             boolean;
     defaultTargetMemberId?:   string | null;
     donationsEnabled:         boolean;
     donationsDisabledMessage: string | null;
@@ -34,6 +37,7 @@ type Props = {
 export default function DonateModalHost({
     totalRaised, goalAmount, accent, participants,
     campaignSlug, campaignName, campaignStory, heroUrl,
+    patternImage, patternSize, patternCover,
     defaultTargetMemberId, donationsEnabled, donationsDisabledMessage,
     status, isFixedGoal, donorPrefill, daysLeft = null,
 }: Props) {
@@ -105,6 +109,9 @@ export default function DonateModalHost({
             campaignStory={campaignStory}
             heroUrl={heroUrl}
             accent={accent}
+            patternImage={patternImage}
+            patternSize={patternSize}
+            patternCover={patternCover}
             participants={modalParticipants}
             targetMemberId={targetMember}
             donationsEnabled={enabled}

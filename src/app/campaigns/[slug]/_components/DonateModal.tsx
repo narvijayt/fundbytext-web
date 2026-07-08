@@ -35,6 +35,10 @@ type Props = {
     campaignStory:            string | null;
     heroUrl:                  string | null;
     accent:                   string;
+    /* Selected background-theme pattern (matches the marketing page bands). */
+    patternImage?:            string | null;
+    patternSize?:             string;
+    patternCover?:            boolean;
     participants:             ModalParticipant[];
     targetMemberId:           string | null;
     donorPrefill?:            DonorPrefill | null;
@@ -82,6 +86,9 @@ type FormProps = {
     campaignStory:    string | null;
     heroUrl:          string | null;
     accent:           string;
+    patternImage:     string | null;
+    patternSize:      string;
+    patternCover:     boolean;
     daysLeft:         number | null;
     participants:     ModalParticipant[];
     targetMember:     ModalParticipant | null;
@@ -92,7 +99,7 @@ type FormProps = {
 };
 
 function DonateForm({
-    campaignSlug, campaignName, campaignStory, heroUrl, accent, daysLeft,
+    campaignSlug, campaignName, campaignStory, heroUrl, accent, patternImage, patternSize, patternCover, daysLeft,
     participants, targetMember, onClose, onSuccess, donorPrefill, maxDonationCents,
 }: FormProps) {
     const stripe   = useStripe();
@@ -230,9 +237,29 @@ function DonateForm({
         <form onSubmit={handleSubmit} className="relative flex max-h-[92vh] w-full flex-col overflow-y-auto rounded-3xl bg-white shadow-[0px_40px_80px_-20px_rgba(0,48,96,0.45)]">
             {/* ── Blue header band — spans the full width; content stays in the left
                  column so the summary card can float over the band on desktop. ── */}
-            <div className="relative shrink-0 overflow-hidden px-6 pt-6 pb-7 sm:px-9 lg:pb-[44px]" style={{ background: `linear-gradient(150deg, ${accent} 0%, ${accent} 55%, color-mix(in srgb, ${accent} 78%, #000) 130%)` }}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={`${M}/leaderboard/bg-pattern.png`} alt="" aria-hidden className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-[0.12]" />
+            <div
+                className="relative shrink-0 overflow-hidden px-6 pt-6 pb-7 sm:px-9 lg:pb-[44px]"
+                style={{
+                    // Base accent gradient + two soft "halo" glows (color-dodge) that
+                    // brighten the top-left and right, matching the Figma header.
+                    backgroundImage: `radial-gradient(58% 190% at 6% -34%, rgba(158,208,255,0.55), rgba(158,208,255,0) 60%), radial-gradient(50% 200% at 98% 128%, rgba(158,208,255,0.5), rgba(158,208,255,0) 58%), linear-gradient(150deg, ${accent} 0%, ${accent} 58%, color-mix(in srgb, ${accent} 80%, #000) 128%)`,
+                    backgroundBlendMode: "color-dodge, color-dodge, normal",
+                }}
+            >
+                {/* Selected background-theme pattern — same watermark treatment as the
+                    marketing hero band, so the modal reflects the campaign's theme. */}
+                {(patternImage ?? `${M}/leaderboard/bg-pattern.png`) && (
+                    <div
+                        aria-hidden
+                        className={`pointer-events-none absolute inset-0 ${patternCover ? "opacity-[0.16]" : "opacity-[0.12]"}`}
+                        style={{
+                            backgroundImage: `url('${patternImage ?? `${M}/leaderboard/bg-pattern.png`}')`,
+                            backgroundRepeat: patternCover ? "no-repeat" : "repeat",
+                            backgroundSize: patternImage ? patternSize : "cover",
+                            backgroundPosition: patternCover ? "center" : undefined,
+                        }}
+                    />
+                )}
                 <div className="relative lg:pr-[404px]">
                     <div className="flex items-center gap-3">
                         {targetMember && (
@@ -480,28 +507,48 @@ function DonateForm({
 export default function DonateModal({
     isOpen, onClose, onDonationSuccess,
     campaignSlug, campaignName, campaignStory, heroUrl,
-    accent, participants, targetMemberId, donorPrefill,
+    accent, patternImage = null, patternSize = "", patternCover = false,
+    participants, targetMemberId, donorPrefill,
     donationsEnabled, donationsDisabledMessage, maxDonationCents, daysLeft = null,
 }: Props) {
     const [successData, setSuccessData] = useState<DonationSuccessData | null>(null);
 
     const targetMember = targetMemberId ? (participants.find((p) => p.id === targetMemberId) ?? null) : null;
 
-    // Reset success → form on close (not in an effect) so a fresh open shows the form.
-    const handleClose = () => { setSuccessData(null); onClose(); };
-
-    useEffect(() => { document.body.style.overflow = isOpen ? "hidden" : ""; return () => { document.body.style.overflow = ""; }; }, [isOpen]);
+    // Enter/exit animation (same pattern as the other modals): keep mounted through
+    // the exit transition, and only flip `shown` after the mount paints so the enter
+    // transition plays. The success→form reset happens after the exit completes so
+    // the closing view doesn't flash back to the form.
+    const [render, setRender] = useState(isOpen);
+    const [shown,  setShown]  = useState(false);
     useEffect(() => {
-        const h = (e: KeyboardEvent) => { if (e.key === "Escape") { setSuccessData(null); onClose(); } };
+        if (isOpen) { setRender(true); return; }
+        setShown(false);
+        const t = setTimeout(() => { setRender(false); setSuccessData(null); }, 200);
+        return () => clearTimeout(t);
+    }, [isOpen]);
+    useEffect(() => {
+        if (!render || !isOpen) return;
+        const raf = requestAnimationFrame(() => setShown(true));
+        return () => cancelAnimationFrame(raf);
+    }, [render, isOpen]);
+
+    const handleClose = () => onClose();
+
+    // Key scroll-lock on the mount lifetime (`render`), not `isOpen`, so the page
+    // stays locked through the exit animation while the modal is still visible.
+    useEffect(() => { document.body.style.overflow = render ? "hidden" : ""; return () => { document.body.style.overflow = ""; }; }, [render]);
+    useEffect(() => {
+        const h = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
         window.addEventListener("keydown", h);
         return () => window.removeEventListener("keydown", h);
     }, [onClose]);
 
-    if (!isOpen) return null;
+    if (!render) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6" style={{ background: "rgba(0,30,60,0.55)", backdropFilter: "blur(3px)" }} onClick={handleClose}>
-            <div className="relative w-full max-w-[1140px]" onClick={(e) => e.stopPropagation()}>
+        <div className={`fixed inset-0 z-50 flex items-center justify-center p-3 transition-opacity duration-200 ease-out motion-reduce:transition-none sm:p-6 ${shown ? "opacity-100" : "opacity-0"}`} style={{ background: "rgba(0,30,60,0.55)", backdropFilter: "blur(3px)" }} onClick={handleClose}>
+            <div className={`relative w-full max-w-[1140px] transition-all duration-200 ease-out motion-reduce:transition-none ${shown ? "translate-y-0 scale-100 opacity-100" : "translate-y-2 scale-95 opacity-0"}`} onClick={(e) => e.stopPropagation()}>
                 {/* Close — top-right (form state; the success view carries its own). */}
                 {donationsEnabled && !successData && (
                     <button type="button" onClick={handleClose} aria-label="Close" className="absolute right-4 top-4 z-10 flex size-8 items-center justify-center rounded-full bg-white/20 text-white backdrop-blur transition-colors hover:bg-white/35">
@@ -524,7 +571,8 @@ export default function DonateModal({
                     <Elements stripe={stripePromise}>
                         <DonateForm
                             campaignSlug={campaignSlug} campaignName={campaignName} campaignStory={campaignStory}
-                            heroUrl={heroUrl} accent={accent} daysLeft={daysLeft} participants={participants} targetMember={targetMember}
+                            heroUrl={heroUrl} accent={accent} patternImage={patternImage} patternSize={patternSize} patternCover={patternCover}
+                            daysLeft={daysLeft} participants={participants} targetMember={targetMember}
                             onClose={handleClose}
                             onSuccess={(data) => { setSuccessData(data); onDonationSuccess?.(data.amount); }}
                             donorPrefill={donorPrefill} maxDonationCents={maxDonationCents}
