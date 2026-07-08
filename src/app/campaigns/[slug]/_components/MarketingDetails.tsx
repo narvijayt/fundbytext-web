@@ -177,7 +177,7 @@ export default function MarketingDetails({
                         <div className="h-[32px] relative rounded-full w-full overflow-hidden" style={{ background: TRACK_STRIPES }}>
                             <style>{`@keyframes mkt-pb-shimmer{0%{transform:translateX(-120%)}100%{transform:translateX(400%)}}`}</style>
                             <div
-                                className="absolute left-0 top-0 h-full overflow-hidden rounded-full transition-[width] duration-1000 ease-out"
+                                className="absolute left-0 top-0 h-full overflow-hidden rounded-l-full transition-[width] duration-1000 ease-out"
                                 style={{ width: `${barW}%`, minWidth: raised > 0 ? 44 : 0, background: GREEN_STRIPES }}
                             >
                                 <span
