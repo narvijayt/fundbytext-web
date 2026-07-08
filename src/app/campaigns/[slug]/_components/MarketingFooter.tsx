@@ -1,4 +1,5 @@
 import Image from "next/image";
+import CurrentYear from "@/components/CurrentYear";
 import Link from "next/link";
 
 const A = "/assets/marketing";
@@ -73,7 +74,7 @@ export default function MarketingFooter({ accent }: { accent: string }) {
             </div>
 
             <div className="flex flex-col gap-[4px] items-start md:flex-row md:items-center md:justify-between px-[8px] w-full max-w-[1152px] font-normal text-[14px] text-white leading-none">
-                <p style={{ lineHeight: 1.25 }}>© FundbyText 2026 — All Rights Reserved.</p>
+                <p style={{ lineHeight: 1.25 }}>© FundbyText <CurrentYear /> — All Rights Reserved.</p>
                 <p className="md:text-right" style={{ lineHeight: 1.25 }}><Link href="/privacy" className="hover:underline">Privacy.</Link> <Link href="/terms" className="hover:underline">Terms &amp; Conditions.</Link></p>
             </div>
         </div>

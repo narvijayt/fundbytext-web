@@ -1,4 +1,5 @@
 import Link from "next/link";
+import CurrentYear from "@/components/CurrentYear";
 import { prisma } from "@/lib/prisma";
 import { getAuthUser } from "@/lib/session";
 import CountdownBadge from "@/components/CountdownBadge";
@@ -930,7 +931,7 @@ export default async function HomePage() {
                 </div>
 
                 <div className="max-w-[1280px] mx-auto mt-8 flex flex-col sm:flex-row items-center justify-between gap-3">
-                    <p className="text-white/50 text-xs">© FundbyText 2025 — All Rights Reserved.</p>
+                    <p className="text-white/50 text-xs">© FundbyText <CurrentYear /> — All Rights Reserved.</p>
                     <div className="flex items-center gap-1.5">
                         <Link href="/privacy" className="text-white/50 text-xs hover:text-white transition-colors">Privacy.</Link>
                         <Link href="/terms" className="text-white/50 text-xs hover:text-white transition-colors">Terms &amp; Conditions.</Link>

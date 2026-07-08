@@ -1,4 +1,5 @@
 import Image from "next/image";
+import CurrentYear from "@/components/CurrentYear";
 
 const A = "/assets/marketing";
 
@@ -88,7 +89,7 @@ export default function MarketingFooter() {
 
             {/* Bottom row */}
             <div className="flex flex-col gap-[4px] items-start md:flex-row md:items-center md:justify-between px-[8px] w-full max-w-[1152px] font-normal text-[14px] text-white leading-none">
-                <p style={{ lineHeight: 1.25 }}>© FundbyText 2025 — All Rights Reserved.</p>
+                <p style={{ lineHeight: 1.25 }}>© FundbyText <CurrentYear /> — All Rights Reserved.</p>
                 <p className="md:text-right" style={{ lineHeight: 1.25 }}>Privacy. Terms &amp; Conditions.</p>
             </div>
         </div>
