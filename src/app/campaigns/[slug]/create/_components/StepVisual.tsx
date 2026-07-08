@@ -741,7 +741,7 @@ export default function StepVisual({
                 askBuddySuggestionsHeading="Hey there buddy, about backgrounds!"
                 askBuddySuggestions={[
                     "Pick a theme that matches your cause or sport.",
-                    "Choose \"Your Logo Here\" for a clean, branded look.",
+                    "Choose \"Custom\" to upload your own background image.",
                     "You can change the background anytime before launch.",
                 ]}
             >
