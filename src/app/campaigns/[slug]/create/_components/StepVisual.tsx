@@ -71,13 +71,17 @@ function toGallerySlots(prev: string[]): string[] {
 }
 
 /* ── Background themes — pattern art exported from Figma ───────────────── */
-const THEMES: { value: string; label: string; img?: string }[] = [
+const THEMES: { value: string; label: string; img?: string; size?: string }[] = [
+    // Use the seamless hero tiles (border-free) rather than the raw Figma swatch
+    // crops, which have a rounded border baked into the image. Rendered as a
+    // repeating background (see the tile below) so the motif reads like the hero,
+    // with a per-theme size that keeps the doodles complete and legible.
     { value: "logo",        label: "Custom" },
-    { value: "athletic",    label: "Athletic",     img: "/assets/campaigns/theme-athletic.png" },
-    { value: "sports",      label: "Sports",       img: "/assets/campaigns/theme-sports.png" },
-    { value: "trophy_wall", label: "Trophy Wall",  img: "/assets/campaigns/theme-trophy.png" },
-    { value: "geometric",   label: "Geometric",    img: "/assets/campaigns/theme-geometric.png" },
-    { value: "abstract",    label: "Abstract",     img: "/assets/campaigns/theme-abstract.png" },
+    { value: "athletic",    label: "Athletic",     img: "/assets/campaigns/tiles/theme-athletic-tile.png",  size: "auto 96px"  },
+    { value: "sports",      label: "Sports",       img: "/assets/campaigns/tiles/theme-sports-tile.png",    size: "156px auto" },
+    { value: "trophy_wall", label: "Trophy Wall",  img: "/assets/campaigns/tiles/theme-trophy-tile.png",    size: "132px auto" },
+    { value: "geometric",   label: "Geometric",    img: "/assets/campaigns/tiles/theme-geometric-tile.png", size: "128px auto" },
+    { value: "abstract",    label: "Abstract",     img: "/assets/campaigns/tiles/theme-abstract-tile.png",  size: "140px auto" },
 ];
 
 /* ── Colour helpers (hex ⇄ rgb ⇄ hsv) ─────────────────────────────────── */
@@ -779,7 +783,10 @@ export default function StepVisual({
                                                 </div>
                                             )
                                         ) : t.img ? (
-                                            <FadeInImg src={t.img} />
+                                            <div
+                                                className="absolute inset-0 bg-white"
+                                                style={{ backgroundImage: `url(${t.img})`, backgroundRepeat: "repeat", backgroundSize: t.size ?? "auto", backgroundPosition: "center" }}
+                                            />
                                         ) : null}
                                     </div>
                                     {/* Label bar */}
