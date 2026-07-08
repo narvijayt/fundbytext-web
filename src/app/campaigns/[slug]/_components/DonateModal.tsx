@@ -99,6 +99,10 @@ function DonateForm({
     const elements = useElements();
 
     const [raw,        setRaw]        = useState(() => prefilledAmountRaw(donorPrefill, maxDonationCents));
+    // Donator identity (recorded against the donation) — separate from the name on
+    // the card. Prefilled + locked when the donor came from an invite link.
+    const [firstName,  setFirstName]  = useState(donorPrefill?.firstName ?? "");
+    const [lastName,   setLastName]   = useState(donorPrefill?.lastName ?? "");
     const [holderName, setHolderName] = useState(donorPrefill ? `${donorPrefill.firstName} ${donorPrefill.lastName}`.trim() : "");
     const [country,    setCountry]    = useState("US");
     const [zip,        setZip]        = useState("");
@@ -108,13 +112,16 @@ function DonateForm({
     const [agreeTerms, setAgreeTerms] = useState(false);
     const [attributedTo, setAttributedTo] = useState<string | null>(targetMember?.id ?? null);
     const [memberSearch, setMemberSearch] = useState("");
+    const [attrOpen,   setAttrOpen]   = useState(true);
     const [submitting, setSubmitting] = useState(false);
     const [error,      setError]      = useState<string | null>(null);
 
     const cents = Math.round((parseFloat(raw) || 0) * 100);
     const exceedsMax = maxDonationCents !== null && cents > maxDonationCents;
-    const lockedName  = !!donorPrefill;
+    const lockedFirst = !!donorPrefill?.firstName;
+    const lockedLast  = !!donorPrefill?.lastName;
     const lockedEmail = !!(donorPrefill?.email);
+    const showAttribution = !targetMember && participants.length > 0;
 
     const filteredParticipants = participants.filter((p) =>
         `${p.first_name} ${p.last_name}`.toLowerCase().includes(memberSearch.toLowerCase())
@@ -124,8 +131,8 @@ function DonateForm({
         e.preventDefault();
         if (cents < 100) { setError("Please enter at least $1."); return; }
         if (exceedsMax)  return;
-        const nameParts = holderName.trim().split(/\s+/);
-        if (nameParts.length < 2) { setError("Please enter the full name on the card (first and last)."); return; }
+        if (!firstName.trim() || !lastName.trim()) { setError("Please enter your first and last name."); return; }
+        if (!holderName.trim()) { setError("Please enter the name on your card."); return; }
         if (!email && !phone) { setError("Please provide at least an email or phone number."); return; }
         if (!agreeTerms) { setError("Please accept the terms to continue."); return; }
         if (!stripe || !elements) return;
@@ -134,9 +141,6 @@ function DonateForm({
 
         setSubmitting(true);
         setError(null);
-
-        const firstName = nameParts[0];
-        const lastName  = nameParts.slice(1).join(" ");
 
         // 1. Create the PaymentIntent with full donor info + attribution.
         let clientSecret: string;
@@ -150,8 +154,8 @@ function DonateForm({
                     member_id:         attributedTo ?? null,
                     campaign_donor_id: donorPrefill?.donorId ?? null,
                     donor_source:      donorPrefill && !donorPrefill.donorId ? "link_self" : null,
-                    donor_first_name:  firstName,
-                    donor_last_name:   lastName,
+                    donor_first_name:  firstName.trim(),
+                    donor_last_name:   lastName.trim(),
                     donor_email:       email || null,
                     donor_phone:       phone || null,
                     is_anonymous:      anonymous,
@@ -205,36 +209,54 @@ function DonateForm({
         });
     }
 
+    // ── Legal note + submit — rendered at the bottom of the form on desktop and
+    //    between the summary and attribution when the modal is stacked. ──────────
+    const submitBlock = (
+        <div className="flex flex-col gap-5">
+            {error && <p className="rounded-xl bg-red-50 px-4 py-2.5 text-[14px] text-[#C9261D]">{error}</p>}
+            <p className="px-2 text-center text-[13px] leading-[1.6] text-[#aeb5bd]">
+                Your donation is processed securely through Stripe. We never store your card details. A receipt is emailed
+                to you as soon as the payment is confirmed.
+            </p>
+            <button type="submit" disabled={submitting || !stripe || cents < 100 || exceedsMax}
+                className="flex h-14 w-full items-center justify-center rounded-2xl text-white transition hover:brightness-105 active:scale-[0.99] disabled:opacity-50 disabled:active:scale-100"
+                style={{ background: "linear-gradient(180deg, #F47435 0%, #EA6725 100%)", boxShadow: "0px 20px 40px -16px rgba(244,116,53,0.5)" }}>
+                <span className="text-[14px] font-black uppercase tracking-[1px]">{submitting ? "Processing…" : cents >= 100 ? `Confirm & Donate ${fmt(cents / 100)}` : "Confirm and Donate"}</span>
+            </button>
+        </div>
+    );
+
     return (
-        <form onSubmit={handleSubmit} className="flex w-full max-w-[1100px] max-h-[92vh] flex-col overflow-y-auto rounded-3xl bg-white shadow-[0px_40px_80px_-20px_rgba(0,48,96,0.45)] lg:flex-row lg:overflow-hidden">
-            {/* ── Left column (form) ── */}
-            <div className="flex min-w-0 flex-col lg:flex-1 lg:overflow-y-auto">
-                {/* Blue header band — title + amount + Pay With */}
-                <div className="relative shrink-0 overflow-hidden px-6 pt-6 pb-7 sm:px-9" style={{ background: `linear-gradient(150deg, ${accent} 0%, ${accent} 60%, color-mix(in srgb, ${accent} 75%, #000) 130%)` }}>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={`${M}/leaderboard/bg-pattern.png`} alt="" aria-hidden className="absolute inset-0 h-full w-full object-cover opacity-[0.12] pointer-events-none" />
-                    <div className="relative flex items-center gap-3">
+        <form onSubmit={handleSubmit} className="relative flex max-h-[92vh] w-full flex-col overflow-y-auto rounded-3xl bg-white shadow-[0px_40px_80px_-20px_rgba(0,48,96,0.45)]">
+            {/* ── Blue header band — spans the full width; content stays in the left
+                 column so the summary card can float over the band on desktop. ── */}
+            <div className="relative shrink-0 overflow-hidden px-6 pt-6 pb-7 sm:px-9 lg:pb-[44px]" style={{ background: `linear-gradient(150deg, ${accent} 0%, ${accent} 55%, color-mix(in srgb, ${accent} 78%, #000) 130%)` }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={`${M}/leaderboard/bg-pattern.png`} alt="" aria-hidden className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-[0.12]" />
+                <div className="relative lg:pr-[404px]">
+                    <div className="flex items-center gap-3">
                         {targetMember && (
-                            <span className="size-9 shrink-0 overflow-hidden rounded-full bg-white/20">
+                            <span className="size-10 shrink-0 overflow-hidden rounded-full bg-white/25 ring-2 ring-white/50">
                                 {targetMember.profile_photo_url
                                     // eslint-disable-next-line @next/next/no-img-element
                                     ? <img src={targetMember.profile_photo_url} alt="" className="size-full object-cover" />
                                     : <span className="flex size-full items-center justify-center font-bold text-white">{targetMember.first_name.charAt(0)}</span>}
                             </span>
                         )}
-                        <h2 className="text-[22px] font-black leading-[1.2] text-white">
+                        <h2 className="text-[22px] font-black leading-[1.2] text-white sm:text-[26px]">
                             {targetMember ? `Donate to ${targetMember.first_name} ${targetMember.last_name}'s Campaign` : "Donate to this campaign"}
                         </h2>
                     </div>
 
                     {/* Amount */}
-                    <div className="relative mt-5">
-                        <div className={`flex h-14 w-full items-center gap-2 rounded-xl border bg-white px-5 ${exceedsMax ? "border-red-400" : "border-white/40"}`}>
+                    <div className="mt-5">
+                        <div className={`flex h-14 w-full items-center gap-3 rounded-xl bg-white pl-4 pr-5 ${exceedsMax ? "ring-2 ring-red-400" : ""}`}>
                             <span className="text-[20px] font-black text-[#003060]">$</span>
+                            <span className="h-7 w-px shrink-0 bg-[#d4dee7]" />
                             <input
                                 type="text" inputMode="decimal" placeholder="0.00" value={raw} autoFocus autoComplete="off"
                                 onChange={(e) => { const v = e.target.value; if (v === "" || /^\d*\.?\d{0,2}$/.test(v)) setRaw(v); }}
-                                className="min-w-0 flex-1 bg-transparent text-[20px] font-black text-[#003060] placeholder:text-[#aeb5bd] focus:outline-none"
+                                className="min-w-0 flex-1 bg-transparent text-[20px] font-black text-[#003060] placeholder:font-medium placeholder:text-[#aeb5bd] focus:outline-none"
                             />
                             {maxDonationCents !== null && maxDonationCents > 0 && (
                                 <button type="button" onClick={() => setRaw(String(maxDonationCents / 100))} className="shrink-0 text-[12px] font-bold text-[#0268c0] hover:underline">Max {fmt(maxDonationCents / 100)}</button>
@@ -244,8 +266,8 @@ function DonateForm({
                     </div>
 
                     {/* Pay With + card brands */}
-                    <div className="relative mt-5 flex items-end justify-between gap-3">
-                        <p className="text-[20px] font-black text-white">Pay With</p>
+                    <div className="mt-5 flex items-center justify-between gap-3">
+                        <p className="text-[20px] font-black text-white sm:text-[22px]">Pay With</p>
                         <div className="flex items-center gap-3">
                             {["visa", "mastercard", "paypal", "jcb", "swift"].map((b) => (
                                 <Image key={b} src={`${M}/footer/${b}.svg`} alt={b} width={32} height={32} className="size-7 sm:size-8" />
@@ -253,9 +275,12 @@ function DonateForm({
                         </div>
                     </div>
                 </div>
+            </div>
 
-                {/* White card form */}
-                <div className="flex flex-col gap-6 px-6 py-7 sm:px-9">
+            {/* ── Body — two columns on desktop, stacked below ── */}
+            <div className="flex flex-1 flex-col lg:flex-row lg:items-start">
+                {/* LEFT — the form */}
+                <div className="flex min-w-0 flex-col gap-6 px-6 py-7 sm:px-9 lg:flex-1">
                     {/* Card Option + Card Number */}
                     <div className="flex flex-col gap-6 sm:flex-row">
                         <div className="flex flex-col gap-3 sm:w-[210px] sm:shrink-0">
@@ -275,7 +300,7 @@ function DonateForm({
                     </div>
 
                     {/* Expiration + CVV */}
-                    <div className="flex gap-6">
+                    <div className="flex gap-4 sm:gap-6">
                         <div className="flex min-w-0 flex-1 flex-col gap-3">
                             <FieldLabel>Expiration</FieldLabel>
                             <StripeField><CardExpiryElement options={{ style: STRIPE_STYLE }} /></StripeField>
@@ -289,13 +314,12 @@ function DonateForm({
                     {/* Card Holder Name */}
                     <div className="flex flex-col gap-3">
                         <FieldLabel>Card Holder Name</FieldLabel>
-                        <input type="text" value={holderName} readOnly={lockedName} placeholder="Full name on card"
-                            onChange={(e) => !lockedName && setHolderName(e.target.value)}
-                            className={`${FIELD} ${lockedName ? "bg-[#f4f8f9] text-[#8f98a3]" : ""}`} />
+                        <input type="text" value={holderName} placeholder="Full name on card"
+                            onChange={(e) => setHolderName(e.target.value)} className={FIELD} />
                     </div>
 
                     {/* Location + ZIP */}
-                    <div className="flex gap-6">
+                    <div className="flex gap-4 sm:gap-6">
                         <div className="flex min-w-0 flex-1 flex-col gap-3">
                             <FieldLabel>Location</FieldLabel>
                             <div className={`${FIELD} relative p-0`}>
@@ -314,7 +338,7 @@ function DonateForm({
                     {/* Email */}
                     <div className="flex flex-col gap-3">
                         <FieldLabel>Email</FieldLabel>
-                        <input type="email" value={email} readOnly={lockedEmail} placeholder="your@email.com"
+                        <input type="email" value={email} readOnly={lockedEmail} placeholder="Enter a valid email address"
                             onChange={(e) => !lockedEmail && setEmail(e.target.value)}
                             className={`${FIELD} ${lockedEmail ? "bg-[#f4f8f9] text-[#8f98a3]" : ""}`} />
                     </div>
@@ -325,107 +349,128 @@ function DonateForm({
                         <div className={FIELD}>
                             <span className="text-[16px] font-medium text-[#8f98a3]">+1</span>
                             <span className="h-7 w-px bg-[#d4dee7]" />
-                            <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="(214) 761-6542" className="min-w-0 flex-1 bg-transparent focus:outline-none" />
+                            <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="(214) 987-6543" className="min-w-0 flex-1 bg-transparent focus:outline-none" />
+                        </div>
+                    </div>
+
+                    {/* Donator name */}
+                    <div className="flex flex-col gap-3">
+                        <FieldLabel>Donator</FieldLabel>
+                        <div className="flex gap-4 sm:gap-6">
+                            <input type="text" value={firstName} readOnly={lockedFirst} placeholder="First Name"
+                                onChange={(e) => !lockedFirst && setFirstName(e.target.value)}
+                                className={`${FIELD} ${lockedFirst ? "bg-[#f4f8f9] text-[#8f98a3]" : ""}`} />
+                            <input type="text" value={lastName} readOnly={lockedLast} placeholder="Last Name"
+                                onChange={(e) => !lockedLast && setLastName(e.target.value)}
+                                className={`${FIELD} ${lockedLast ? "bg-[#f4f8f9] text-[#8f98a3]" : ""}`} />
                         </div>
                     </div>
 
                     {/* Checkboxes */}
-                    <div className="flex flex-col gap-[18px] border-y border-[#e7e9eb] py-6">
-                        <label className="flex items-center gap-2 cursor-pointer">
-                            <input type="checkbox" checked={anonymous} onChange={(e) => setAnonymous(e.target.checked)} className="size-[17px] shrink-0 rounded-[3px] accent-[#0268c0]" />
+                    <div className="flex flex-col gap-[18px] border-t border-[#e7e9eb] pt-6">
+                        <label className="flex items-center gap-2.5 cursor-pointer">
+                            <input type="checkbox" checked={anonymous} onChange={(e) => setAnonymous(e.target.checked)} className="size-[18px] shrink-0 rounded-[4px] accent-[#0268c0]" />
                             <span className="text-[14px] text-[#57728d]">Please keep my name anonymous on the campaign.</span>
                         </label>
-                        <label className="flex items-start gap-2 cursor-pointer">
-                            <input type="checkbox" checked={agreeTerms} onChange={(e) => setAgreeTerms(e.target.checked)} className="mt-0.5 size-[17px] shrink-0 rounded-[3px] accent-[#0268c0]" required />
-                            <span className="text-[14px] text-[#57728d]">By placing this donation you agree to FundbyText&apos;s <Link href="/terms" className="text-[#0268c0] underline">Terms of Service</Link> and <Link href="/privacy" className="text-[#0268c0] underline">Privacy Policy</Link>.</span>
+                        <label className="flex items-start gap-2.5 cursor-pointer">
+                            <input type="checkbox" checked={agreeTerms} onChange={(e) => setAgreeTerms(e.target.checked)} className="mt-0.5 size-[18px] shrink-0 rounded-[4px] accent-[#0268c0]" required />
+                            <span className="text-[14px] leading-[1.5] text-[#57728d]">By signing up, you confirm that you agree to FundByText&apos;s <Link href="/terms" className="text-[#0268c0] underline">Terms of Service</Link> and acknowledge our <Link href="/privacy" className="text-[#0268c0] underline">Privacy Policy</Link>.</span>
                         </label>
                     </div>
 
-                    {error && <p className="rounded-xl bg-red-50 px-4 py-2.5 text-[14px] text-[#C9261D]">{error}</p>}
-
-                    <button type="submit" disabled={submitting || !stripe || cents < 100 || exceedsMax}
-                        className="flex h-14 w-full items-center justify-center rounded-2xl text-white transition hover:brightness-105 active:scale-[0.99] disabled:opacity-50 disabled:active:scale-100"
-                        style={{ background: "linear-gradient(180deg, #F47435 0%, #EA6725 100%)", boxShadow: "0px 20px 40px -16px rgba(244,116,53,0.5)" }}>
-                        <span className="text-[14px] font-black uppercase tracking-[1px]">{submitting ? "Processing…" : cents >= 100 ? `Confirm & Donate ${fmt(cents / 100)}` : "Confirm and Donate"}</span>
-                    </button>
+                    {/* Legal + submit (desktop position) */}
+                    <div className="mt-auto hidden lg:block">{submitBlock}</div>
                 </div>
-            </div>
 
-            {/* ── Right column (summary) ── */}
-            <div className="flex shrink-0 flex-col gap-6 bg-[#f9f9fc] px-6 py-7 sm:px-7 lg:w-[372px] lg:overflow-y-auto">
-                {/* Campaign card */}
-                <div className="shrink-0 overflow-hidden">
-                    <div className="relative h-[200px] shrink-0 overflow-hidden rounded-[12px] bg-[#e7e9eb]">
-                        {heroUrl && (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img src={heroUrl} alt={campaignName} className="size-full object-cover" />
+                {/* RIGHT — summary + attribution (stacked below the form on tablet/mobile) */}
+                <div className="flex shrink-0 flex-col gap-5 px-6 pb-7 sm:px-9 lg:w-[404px] lg:py-0 lg:pl-0 lg:pr-7">
+                    {/* Summary card — floats over the blue band on desktop */}
+                    <div className="flex flex-col rounded-2xl bg-white p-5 shadow-[0px_16px_40px_-16px_rgba(0,48,96,0.22)] ring-1 ring-[#eef1f6] lg:-mt-[114px]">
+                        <div className="relative h-[190px] shrink-0 overflow-hidden rounded-[12px] bg-[#e7e9eb]">
+                            {heroUrl && (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img src={heroUrl} alt={campaignName} className="size-full object-cover" />
+                            )}
+                            {daysLeft != null && (
+                                <span className="absolute left-3 top-3 flex items-center gap-1.5 rounded-full bg-white/90 px-2.5 py-1 backdrop-blur">
+                                    <span className="size-1.5 rounded-full bg-[#f47435]" />
+                                    <span className="text-[12px] font-bold text-[#003060]">{daysLeft} Days</span>
+                                </span>
+                            )}
+                        </div>
+                        <p className="mt-4 text-[18px] font-black leading-[1.25] text-[#003060]">{campaignName}</p>
+                        {campaignStory && (
+                            <div className="story-content mt-2 line-clamp-3 text-[14px] leading-[1.5] text-[#8f98a3]" dangerouslySetInnerHTML={{ __html: campaignStory }} />
                         )}
-                        {daysLeft != null && (
-                            <span className="absolute left-3 top-3 flex items-center gap-1.5 rounded-full bg-white/90 px-2.5 py-1 backdrop-blur">
-                                <span className="size-1.5 rounded-full bg-[#f47435]" />
-                                <span className="text-[12px] font-bold text-[#003060]">{daysLeft} Days</span>
-                            </span>
-                        )}
+
+                        {/* Donation details */}
+                        <div className="mt-5 border-t border-[#e7e9eb] pt-5">
+                            <p className="text-[16px] font-black text-[#003060]">Donation Details</p>
+                            <div className="mt-4 flex items-center justify-between text-[15px]">
+                                <span className="font-medium text-[#8f98a3]">Your donation</span>
+                                <span className="font-semibold text-[#8f98a3]">{cents >= 100 ? fmt(cents / 100) : "—"}</span>
+                            </div>
+                        </div>
+                        <div className="mt-4 flex items-center justify-between border-t border-[#e7e9eb] pt-4">
+                            <span className="text-[16px] font-black text-[#003060]">Total due today</span>
+                            <span className="text-[20px] font-black text-[#003060]">{cents >= 100 ? fmt(cents / 100) : "—"}</span>
+                        </div>
                     </div>
-                    <p className="mt-3.5 text-[18px] font-black leading-[1.25] text-[#003060]">{campaignName}</p>
-                    {campaignStory && (
-                        <div className="story-content mt-2 line-clamp-3 text-[14px] text-[#7e8a96]" dangerouslySetInnerHTML={{ __html: campaignStory }} />
+
+                    {/* Legal + submit (stacked position — between summary and attribution) */}
+                    <div className="lg:hidden">{submitBlock}</div>
+
+                    {/* Attribution card */}
+                    {showAttribution && (
+                        <div className="flex flex-col rounded-2xl bg-white p-5 shadow-[0px_16px_40px_-16px_rgba(0,48,96,0.22)] ring-1 ring-[#eef1f6]">
+                            <button type="button" onClick={() => setAttrOpen((o) => !o)} className="flex items-center justify-between gap-3 text-left">
+                                <span className="text-[13px] font-black uppercase tracking-[1px] text-[#003060]">Donation Attribution</span>
+                                <svg className={`size-5 shrink-0 text-[#8f98a3] transition-transform ${attrOpen ? "" : "-rotate-90"}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M6 9l6 6 6-6" /></svg>
+                            </button>
+                            {attrOpen && (
+                                <>
+                                    <p className="mt-2 text-[15px] leading-[1.4] text-[#003060]">Which Participant would you like to attribute this to?</p>
+                                    <button type="button" onClick={() => setAttributedTo(null)}
+                                        className="mt-4 flex items-center gap-3 rounded-full px-2.5 py-2 text-[15px] font-bold transition-colors"
+                                        style={{ background: attributedTo === null ? accent : "#eef2f7", color: attributedTo === null ? "#fff" : "#003060" }}>
+                                        <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-white">
+                                            <svg className="size-4 text-[#0268c0]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" /></svg>
+                                        </span>
+                                        General Fund
+                                    </button>
+                                    {participants.length > 4 && (
+                                        <div className="relative mt-3">
+                                            <svg className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-[#aeb5bd]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="7" /><path d="M21 21l-4.3-4.3" /></svg>
+                                            <input type="text" value={memberSearch} onChange={(e) => setMemberSearch(e.target.value)} placeholder="Search Participant"
+                                                className="w-full rounded-xl border border-[#d4dee7] py-2.5 pl-10 pr-3 text-[14px] text-[#003060] placeholder:text-[#aeb5bd] focus:border-[#0278de] focus:outline-none" />
+                                        </div>
+                                    )}
+                                    <ul className="mt-3 flex max-h-[248px] flex-col gap-1 overflow-y-auto [scrollbar-width:thin]">
+                                        {filteredParticipants.map((p) => {
+                                            const sel = attributedTo === p.id;
+                                            return (
+                                                <li key={p.id}>
+                                                    <button type="button" onClick={() => setAttributedTo(p.id)}
+                                                        className={`flex w-full items-center gap-3 rounded-xl px-2 py-2 text-[15px] font-medium transition-colors ${sel ? "" : "text-[#57728d] hover:bg-[#f4f6fa]"}`}
+                                                        style={sel ? { background: `${accent}14`, color: accent } : undefined}>
+                                                        <span className="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#eef2f7]">
+                                                            {p.profile_photo_url
+                                                                // eslint-disable-next-line @next/next/no-img-element
+                                                                ? <img src={p.profile_photo_url} alt="" className="size-full object-cover" />
+                                                                : <span className="text-[13px] font-bold uppercase text-[#8f98a3]">{p.first_name.charAt(0)}{p.last_name.charAt(0)}</span>}
+                                                        </span>
+                                                        <span className="flex-1 truncate text-left">{p.first_name} {p.last_name}</span>
+                                                        {sel && <svg className="size-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"><path d="M5 13l4 4L19 7" /></svg>}
+                                                    </button>
+                                                </li>
+                                            );
+                                        })}
+                                    </ul>
+                                </>
+                            )}
+                        </div>
                     )}
                 </div>
-
-                {/* Donation details */}
-                <div className="flex shrink-0 flex-col gap-4 border-y border-[#e7e9eb] py-6">
-                    <p className="text-[12px] font-black uppercase tracking-[1px] text-[#aeb5bd]">Donation Details</p>
-                    <div className="flex items-center justify-between text-[16px]">
-                        <span className="font-medium text-[#7e8a96]">Your donation</span>
-                        <span className="font-bold text-[#003060]">{cents >= 100 ? fmt(cents / 100) : "—"}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                        <span className="text-[16px] font-black text-[#003060]">Total due today</span>
-                        <span className="text-[18px] font-black text-[#003060]">{cents >= 100 ? fmt(cents / 100) : "—"}</span>
-                    </div>
-                </div>
-
-                {/* Attribution (only when no participant is pre-selected) */}
-                {!targetMember && participants.length > 0 && (
-                    <div className="flex shrink-0 flex-col gap-3">
-                        <p className="text-[12px] font-black uppercase tracking-[1px] text-[#aeb5bd]">Donation Attribution</p>
-                        <p className="text-[13px] text-[#7e8a96]">Which participant would you like to attribute this to?</p>
-                        <button type="button" onClick={() => setAttributedTo(null)}
-                            className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-[14px] font-bold transition-colors"
-                            style={{ background: attributedTo === null ? accent : "#eef2f7", color: attributedTo === null ? "#fff" : "#003060" }}>
-                            <span className={`flex size-7 items-center justify-center rounded-full ${attributedTo === null ? "bg-white/20" : "bg-white"}`}>
-                                <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" /></svg>
-                            </span>
-                            General Fund
-                        </button>
-                        {participants.length > 4 && (
-                            <input type="text" value={memberSearch} onChange={(e) => setMemberSearch(e.target.value)} placeholder="Search participant…"
-                                className="rounded-lg border border-[#d4dee7] px-3 py-2 text-[14px] placeholder:text-[#aeb5bd] focus:border-[#0278de] focus:outline-none" />
-                        )}
-                        <ul className="flex max-h-[220px] flex-col gap-1 overflow-y-auto">
-                            {filteredParticipants.map((p) => {
-                                const sel = attributedTo === p.id;
-                                return (
-                                    <li key={p.id}>
-                                        <button type="button" onClick={() => setAttributedTo(p.id)}
-                                            className={`flex w-full items-center gap-3 rounded-xl px-3 py-2 text-[14px] font-semibold transition-colors ${sel ? "" : "text-[#003060] hover:bg-[#eef2f7]"}`}
-                                            style={sel ? { background: `${accent}1a`, color: accent } : undefined}>
-                                            <span className="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#eef2f7]">
-                                                {p.profile_photo_url
-                                                    // eslint-disable-next-line @next/next/no-img-element
-                                                    ? <img src={p.profile_photo_url} alt="" className="size-full object-cover" />
-                                                    : <span className="text-[13px] font-bold text-[#7e8a96]">{p.first_name.charAt(0)}</span>}
-                                            </span>
-                                            <span className="flex-1 truncate text-left">{p.first_name} {p.last_name}</span>
-                                            {sel && <svg className="size-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"><path d="M5 13l4 4L19 7" /></svg>}
-                                        </button>
-                                    </li>
-                                );
-                            })}
-                        </ul>
-                    </div>
-                )}
             </div>
         </form>
     );
@@ -456,7 +501,7 @@ export default function DonateModal({
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6" style={{ background: "rgba(0,30,60,0.55)", backdropFilter: "blur(3px)" }} onClick={handleClose}>
-            <div className="relative w-full max-w-[1100px]" onClick={(e) => e.stopPropagation()}>
+            <div className="relative w-full max-w-[1140px]" onClick={(e) => e.stopPropagation()}>
                 {/* Close — top-right (form state; the success view carries its own). */}
                 {donationsEnabled && !successData && (
                     <button type="button" onClick={handleClose} aria-label="Close" className="absolute right-4 top-4 z-10 flex size-8 items-center justify-center rounded-full bg-white/20 text-white backdrop-blur transition-colors hover:bg-white/35">
