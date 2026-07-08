@@ -186,12 +186,28 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
                 visibility:                  true,
                 initial_goal_amount:         true,
                 goal_type:         true,
+                total_raised:      true,
                 members: {
                     where:  { roles: { some: { role: "participant" } } },
                     select: { id: true },
                 },
             },
         });
+
+        // ── A fixed goal can't be set below what's already been raised.
+        if ("goal_amount" in data && data.goal_amount != null) {
+            const effectiveGoalType = (data.goal_type as string | undefined) ?? current?.goal_type;
+            if (effectiveGoalType === GoalType.fixed) {
+                const raised = Number(current?.total_raised ?? 0);
+                if ((data.goal_amount as number) < raised) {
+                    const raisedLabel = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(raised);
+                    return NextResponse.json(
+                        { error: `Your goal can't be less than the ${raisedLabel} already raised.` },
+                        { status: 422 },
+                    );
+                }
+            }
+        }
 
         const now        = new Date();
         const memberIds  = current?.members.map((m) => m.id) ?? [];

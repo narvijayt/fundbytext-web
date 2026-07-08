@@ -42,6 +42,7 @@ export default async function CampaignEditPage({
             slug={slug}
             initialStep={requestedStep}
             isEditMode
+            amountRaised={Number(campaign.total_raised)}
         />
     );
 }

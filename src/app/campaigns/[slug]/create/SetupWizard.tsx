@@ -67,6 +67,9 @@ function localToUTCISO(localStr: string, tz: string): string {
     return new Date(candidate.getTime() + offsetMs).toISOString();
 }
 
+const fmtUsd = (n: number) =>
+    new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(n);
+
 // ── Main component ─────────────────────────────────────────────────────────
 
 export default function SetupWizard({
@@ -77,6 +80,7 @@ export default function SetupWizard({
     defaultOrgDisplayName,
     hasDonations = false,
     organizerInfo,
+    amountRaised = 0,
 }: {
     campaign: Campaign;
     slug: string;
@@ -85,6 +89,8 @@ export default function SetupWizard({
     defaultOrgDisplayName?: string | null;
     hasDonations?: boolean;
     organizerInfo?: { first_name: string; last_name: string; email: string; phone: string };
+    /* Total already raised — a fixed goal can't be edited below this. */
+    amountRaised?: number;
 }) {
     const router = useRouter();
 
@@ -368,6 +374,9 @@ export default function SetupWizard({
         const errs: Record<string, string> = {};
         if (!goalType)   errs.goal_type   = "Please select a goal type.";
         if (!goalAmount) errs.goal_amount  = "Fundraising goal is required.";
+        // A fixed goal can't be lowered below what's already been raised.
+        else if (goalType === "fixed" && amountRaised > 0 && Number(goalAmount) < amountRaised)
+            errs.goal_amount = `Your goal can't be less than the ${fmtUsd(amountRaised)} already raised.`;
         if (isOrg && !donorsPerParticipant) errs.donors_per_participant = goalType === "participant_goal"
             ? "Target contacts per participant is required."
             : "Donors per participant is required.";
