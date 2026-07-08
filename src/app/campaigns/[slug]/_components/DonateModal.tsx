@@ -140,9 +140,9 @@ function DonateForm({
         if (cents < 100) { setError("Please enter at least $1."); return; }
         if (exceedsMax)  return;
         if (!firstName.trim() || !lastName.trim()) { setError("Please enter your first and last name."); return; }
-        if (!holderName.trim()) { setError("Please enter the name on your card."); return; }
-        // Email + phone are optional (only used for the receipt / donation emails);
-        // the payment works without either, so we don't require one.
+        if (!zip.trim()) { setError("Please enter your ZIP / postal code."); return; }
+        // Card holder name, email and phone are optional — the payment works without
+        // them (email/phone only power the receipt + donation emails).
         if (!agreeTerms) { setTermsError(true); setError("Please accept the terms to continue."); return; }
         setTermsError(false);
         if (!stripe || !elements) return;
@@ -187,7 +187,7 @@ function DonateForm({
             payment_method: {
                 card: cardNumber,
                 billing_details: {
-                    name:  holderName.trim(),
+                    name:  holderName.trim() || undefined,
                     email: email || undefined,
                     phone: phone || undefined,
                     address: { country, postal_code: zip || undefined },
