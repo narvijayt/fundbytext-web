@@ -225,7 +225,7 @@ export default function MarketingDetails({
                                 {goldPct > 0 && (
                                     <div
                                         aria-hidden
-                                        className="absolute inset-0"
+                                        className="absolute inset-0 overflow-hidden"
                                         style={{
                                             background: GOLD_STRIPES,
                                             clipPath: `inset(0 ${100 - (greenPct + goldW)}% 0 ${greenPct}%)`,
@@ -233,17 +233,24 @@ export default function MarketingDetails({
                                             transition: "clip-path 700ms ease-out, -webkit-clip-path 700ms ease-out",
                                             transitionDelay: "1000ms",
                                         }}
-                                    />
+                                    >
+                                        <span
+                                            className="absolute inset-y-0 w-[35%]"
+                                            style={{ left: `${greenPct}%`, background: "linear-gradient(90deg,transparent,rgba(255,255,255,0.5) 50%,transparent)", animation: "mkt-pb-shimmer 2.2s ease-in-out infinite", animationDelay: "1000ms" }}
+                                        />
+                                    </div>
                                 )}
                                 <span aria-hidden className="absolute inset-0 pointer-events-none rounded-[inherit]" style={{ boxShadow: "inset 0px 2px 8px 0px rgba(0,48,96,0.08)" }} />
                             </div>
                             {/* Tall green marker at the end of the green segment — the initial-goal
-                                point when the goal has scaled, or the progress head otherwise. */}
+                                point when the goal has scaled, or the progress head otherwise. Pinned
+                                at that point and faded in only once the green fill reaches it (delay
+                                matched to the green fill), so it never floats ahead of the progress. */}
                             {raised > 0 && greenPct < 100 && (
                                 <span
                                     aria-hidden
-                                    className="pointer-events-none absolute top-1/2 h-[44px] w-[7px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#2bbd5f] shadow-[0px_2px_6px_-1px_rgba(0,48,96,0.28)] transition-[left] duration-1000 ease-out"
-                                    style={{ left: `max(${greenW}%, 44px)` }}
+                                    className="pointer-events-none absolute top-1/2 h-[44px] w-[7px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#2bbd5f] shadow-[0px_2px_6px_-1px_rgba(0,48,96,0.28)] transition-opacity duration-300 ease-out"
+                                    style={{ left: `max(${greenPct}%, 44px)`, opacity: greenW > 0 ? 1 : 0, transitionDelay: "900ms" }}
                                 />
                             )}
                         </div>
