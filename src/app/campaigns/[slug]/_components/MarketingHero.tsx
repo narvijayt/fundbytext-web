@@ -37,10 +37,10 @@ export default function MarketingHero({
     donateNotice?: DonateNotice;
 }) {
     // Only the gallery photos the organizer actually added (already compacted by
-    // the page query), capped at 4 for the hero grid. Missing slots are dropped —
-    // never rendered as empty cards — and the layout adapts to however many exist.
+    // the page query), capped at 4 for the hero grid. Fewer than 4 keep the same
+    // fixed 2×2 cell size — the unused positions are simply left blank (never
+    // stretched to fill and never drawn as empty grey cards).
     const gallery = galleryUrls.filter(Boolean).slice(0, 4);
-    const galleryRows = [gallery.slice(0, 2), gallery.slice(2, 4)].filter((r) => r.length > 0);
     const [menuOpen, setMenuOpen] = useState(false);
     const [menuShown, setMenuShown] = useState(false);
     const [noticeOpen, setNoticeOpen] = useState(false);
@@ -189,15 +189,11 @@ export default function MarketingHero({
                             )}
                         </div>
                         {gallery.length > 0 && (
-                            <div className="flex flex-1 flex-col gap-[24px] w-full xl:h-full items-start justify-center min-w-0">
-                                {galleryRows.map((row, ri) => (
-                                    <div key={ri} className="flex xl:flex-1 gap-[24px] items-start min-h-0 w-full">
-                                        {row.map((url, ci) => (
-                                            <div key={ci} className="bg-[#e7e9eb] flex-1 h-[129px] md:h-[153px] xl:h-full min-w-0 overflow-hidden relative rounded-[16px]">
-                                                {/* eslint-disable-next-line @next/next/no-img-element */}
-                                                <img src={url} alt="" className="absolute inset-0 w-full h-full object-cover" />
-                                            </div>
-                                        ))}
+                            <div className="grid grid-cols-2 content-start gap-[24px] w-full min-w-0 xl:flex-1">
+                                {gallery.map((url, i) => (
+                                    <div key={i} className="bg-[#e7e9eb] h-[129px] md:h-[153px] xl:h-[220px] min-w-0 overflow-hidden relative rounded-[16px]">
+                                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                                        <img src={url} alt="" className="absolute inset-0 w-full h-full object-cover" />
                                     </div>
                                 ))}
                             </div>
