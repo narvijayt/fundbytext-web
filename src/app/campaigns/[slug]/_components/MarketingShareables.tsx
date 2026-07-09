@@ -97,8 +97,9 @@ export default function MarketingShareables({
     const photoCards = photos.slice(0, 2);
     // A spare gallery photo sits behind the QR; with none, it uses a branded panel.
     const qrPhoto = photos[2] ?? null;
-    // Speech-bubble tail colour — the box gradient's mid tone, so it blends in.
-    const arrowColor = `color-mix(in srgb, ${theme.accent}, ${theme.secondary})`;
+    // Speech-bubble tail colour — the branded gradient is accent-leaning at the
+    // bubble's left edge (where the tail attaches), so match that.
+    const arrowColor = `color-mix(in srgb, ${theme.accent} 82%, ${theme.secondary})`;
 
     // QR encodes this campaign's public URL — resolved on the client from the origin.
     const [campaignUrl, setCampaignUrl] = useState(`/campaigns/${slug}`);
@@ -175,23 +176,24 @@ export default function MarketingShareables({
                     <Image src={`${A}/shareables/fundbuddy-small.svg`} alt="" width={63} height={80} className="md:hidden h-[62px] w-[49px] shrink-0 self-center" />
                     <div className="relative flex-1 min-w-0">
                         <div
-                            className="ml-[16px] flex flex-col gap-[12px] items-end px-[18px] md:px-[24px] py-[14px] md:py-[16px] rounded-[14px] xl:max-w-[952px]"
-                            style={{
-                                background: `linear-gradient(0deg, ${theme.accent} 0%, ${theme.secondary} 100%)`,
-                                boxShadow: "0px 16px 30px -8px rgba(20,65,109,0.28)",
-                            }}
+                            className="relative ml-[16px] overflow-hidden rounded-[14px] xl:max-w-[952px]"
+                            style={{ boxShadow: "0px 16px 30px -8px rgba(20,65,109,0.28)" }}
                         >
-                            <p className="font-medium text-[13px] md:text-[15px] text-white w-full" style={{ lineHeight: 1.4 }}>
-                                Hover over any tile above to see what it&rsquo;s for &mdash; then use the share buttons or QR code to spread the word!
-                            </p>
-                            <button
-                                type="button"
-                                onClick={() => setHintOpen(false)}
-                                className="bg-white flex items-center justify-center overflow-hidden pb-[8px] pt-[7px] px-[13px] rounded-[10px] transition-transform hover:scale-105"
-                                style={{ boxShadow: "0px 8px 24px -8px rgba(255,255,255,0.7)" }}
-                            >
-                                <span className="font-bold text-[13px] leading-none whitespace-nowrap" style={{ color: theme.accent }}>Got it!</span>
-                            </button>
+                            {/* Same branded fill (gradient + theme pattern) as the QR panel. */}
+                            <BrandedBg theme={theme} />
+                            <div className="relative flex flex-col gap-[12px] items-end px-[18px] md:px-[24px] py-[14px] md:py-[16px]">
+                                <p className="font-medium text-[13px] md:text-[15px] text-white w-full" style={{ lineHeight: 1.4 }}>
+                                    Hover over any tile above to see what it&rsquo;s for &mdash; then use the share buttons or QR code to spread the word!
+                                </p>
+                                <button
+                                    type="button"
+                                    onClick={() => setHintOpen(false)}
+                                    className="bg-white flex items-center justify-center overflow-hidden pb-[8px] pt-[7px] px-[13px] rounded-[10px] transition-transform hover:scale-105"
+                                    style={{ boxShadow: "0px 8px 24px -8px rgba(255,255,255,0.7)" }}
+                                >
+                                    <span className="font-bold text-[13px] leading-none whitespace-nowrap" style={{ color: theme.accent }}>Got it!</span>
+                                </button>
+                            </div>
                         </div>
                         {/* Speech-bubble tail — a clean CSS triangle, vertically centred on
                             the bubble so it never spills over the top edge. */}
