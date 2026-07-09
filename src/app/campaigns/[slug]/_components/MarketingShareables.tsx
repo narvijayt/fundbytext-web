@@ -132,37 +132,37 @@ export default function MarketingShareables({
                 </div>
             </div>
 
-            {/* FundBuddy hint */}
+            {/* FundBuddy hint — a compact, dismissible tip. */}
             {hintOpen && (
-                <div className="w-full max-w-[1152px] flex items-center justify-center">
-                    <div className="hidden md:block h-[189px] w-[143px] relative shrink-0 overflow-hidden">
+                <div className="w-full max-w-[720px] flex items-center justify-center">
+                    <div className="hidden md:block h-[116px] w-[88px] relative shrink-0 overflow-hidden">
                         <span className="absolute inset-[7.81%_3.93%_4.69%_4.13%]">
                             <Image src={`${A}/shareables/fundbuddy-large.svg`} alt="" width={132} height={166} className="absolute inset-0 block max-w-none size-full" />
                         </span>
                     </div>
-                    <Image src={`${A}/shareables/fundbuddy-small.svg`} alt="" width={63} height={80} className="md:hidden h-[80px] w-[63px] shrink-0 self-center" />
+                    <Image src={`${A}/shareables/fundbuddy-small.svg`} alt="" width={63} height={80} className="md:hidden h-[62px] w-[49px] shrink-0 self-center" />
                     <div className="relative flex-1 min-w-0">
                         <div
-                            className="ml-[16px] md:ml-[49px] flex flex-col gap-[24px] items-end px-[24px] md:px-[32px] py-[24px] rounded-[15px] xl:max-w-[952px]"
+                            className="ml-[12px] md:ml-[24px] flex flex-col gap-[12px] items-end px-[18px] md:px-[22px] py-[14px] md:py-[16px] rounded-[14px]"
                             style={{
                                 background: `linear-gradient(0deg, ${theme.accent} 0%, ${theme.secondary} 100%)`,
-                                boxShadow: "0px 32px 40px 0px rgba(20,65,109,0.26), 0px 12px 12px 0px rgba(0,91,172,0.25)",
+                                boxShadow: "0px 16px 30px -8px rgba(20,65,109,0.28)",
                             }}
                         >
-                            <p className="font-normal text-[18px] md:text-[22px] text-white w-full" style={{ lineHeight: 1.25 }}>
+                            <p className="font-medium text-[13px] md:text-[15px] text-white w-full" style={{ lineHeight: 1.4 }}>
                                 Hover over any tile above to see what it&rsquo;s for &mdash; then use the share buttons or QR code to spread the word!
                             </p>
                             <button
                                 type="button"
                                 onClick={() => setHintOpen(false)}
-                                className="bg-white flex items-center justify-center overflow-hidden pb-[13px] pt-[12px] px-[14px] rounded-[12px] transition-transform hover:scale-105"
-                                style={{ boxShadow: "0px 12px 40px -8px rgba(255,255,255,0.74)" }}
+                                className="bg-white flex items-center justify-center overflow-hidden pb-[8px] pt-[7px] px-[13px] rounded-[10px] transition-transform hover:scale-105"
+                                style={{ boxShadow: "0px 8px 24px -8px rgba(255,255,255,0.7)" }}
                             >
-                                <span className="font-bold text-[14px] leading-none whitespace-nowrap" style={{ color: theme.accent }}>Got it!</span>
+                                <span className="font-bold text-[13px] leading-none whitespace-nowrap" style={{ color: theme.accent }}>Got it!</span>
                             </button>
                         </div>
-                        <span className="absolute left-[-18px] md:left-0 top-[26px] md:top-[46px] w-[51px] h-[56px] flex items-center justify-center">
-                            <Image src={`${A}/shareables/bubble-arrow.svg`} alt="" width={56} height={51} className="-rotate-90 w-[56px] h-[51px] max-w-none" />
+                        <span className="absolute left-[-11px] md:left-[-3px] top-[15px] md:top-[20px] w-[32px] h-[36px] flex items-center justify-center">
+                            <Image src={`${A}/shareables/bubble-arrow.svg`} alt="" width={56} height={51} className="-rotate-90 size-full max-w-none" />
                         </span>
                     </div>
                 </div>
