@@ -179,8 +179,8 @@ export default function MarketingShareables({
                             className="relative ml-[16px] overflow-hidden rounded-[14px] xl:max-w-[952px]"
                             style={{ boxShadow: "0px 16px 30px -8px rgba(20,65,109,0.28)" }}
                         >
-                            {/* Same branded fill (gradient + theme pattern) as the QR panel. */}
-                            <BrandedBg theme={theme} />
+                            {/* Branded gradient fill (matches the QR panel's colour, no pattern). */}
+                            <span aria-hidden className="absolute inset-0" style={{ background: `linear-gradient(157deg, ${theme.accent} 0%, ${theme.secondary} 100%)` }} />
                             <div className="relative flex flex-col gap-[12px] items-end px-[18px] md:px-[24px] py-[14px] md:py-[16px]">
                                 <p className="font-medium text-[13px] md:text-[15px] text-white w-full" style={{ lineHeight: 1.4 }}>
                                     Hover over any tile above to see what it&rsquo;s for &mdash; then use the share buttons or QR code to spread the word!
