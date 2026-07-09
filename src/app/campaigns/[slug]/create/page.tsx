@@ -25,7 +25,9 @@ export default async function CampaignSetupPage({
                 media:   { orderBy: { sort_order: "asc" } },
                 payout:  true,
                 members: { include: { roles: { select: { role: true } } }, orderBy: { created_at: "asc" } },
-                donors:  { orderBy: { created_at: "asc" }, select: { id: true, first_name: true, last_name: true, email: true, phone: true } },
+                // Only the donors the organizer added (source "invited"); walk-ins and
+                // other organic entries from the live campaign don't belong in this list.
+                donors:  { where: { source: "invited" }, orderBy: { created_at: "asc" }, select: { id: true, first_name: true, last_name: true, email: true, phone: true } },
             },
         }),
         prisma.donation.count({ where: { campaign: { slug }, payment_status: "completed" } }),
