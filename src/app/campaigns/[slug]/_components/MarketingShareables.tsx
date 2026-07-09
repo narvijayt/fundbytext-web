@@ -39,7 +39,7 @@ function VideoTile({ src, poster }: { src: string; poster: string | null }) {
                     <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[120px] h-[120px] md:w-[254px] md:h-[254px] transition-transform group-hover:scale-105">
                         <Image src={`${A}/shareables/play-button.svg`} alt="" width={254} height={254} className="block max-w-none size-full" />
                     </span>
-                    <ContextOverlay text="Play the campaign video, then share it to rally support." />
+                    <ContextOverlay text="The campaign's cover video — press play to watch." />
                 </button>
             )}
         </div>
@@ -47,7 +47,7 @@ function VideoTile({ src, poster }: { src: string; poster: string | null }) {
 }
 
 /* Context caption revealed on hover — the FundBuddy hint tells users to hover a
-   shareable to learn what it's for. */
+   tile to learn what it's for. */
 function ContextOverlay({ text }: { text: string }) {
     return (
         <span
@@ -75,13 +75,15 @@ export default function MarketingShareables({
     const videoSrc = videoUrl?.trim() || SAMPLE_VIDEO;
     // Poster: an explicit thumbnail wins, else fall back to the hero / first photo.
     const videoThumb = videoThumbnail?.trim() || heroUrl || photos[0] || null;
-    const graphicA = photos[0] ?? heroUrl ?? null;
-    const graphicB = photos[1] ?? photos[0] ?? heroUrl ?? null;
+    // Only real gallery photos become standalone tiles — the hero already shows as
+    // the video poster, so nothing is repeated when a campaign has few/no photos.
+    const photoCards = photos.slice(0, 2);
+    // A spare gallery photo sits behind the QR; with none, it uses a branded panel.
+    const qrPhoto = photos[2] ?? null;
 
     // QR encodes this campaign's public URL — resolved on the client from the origin.
     const [campaignUrl, setCampaignUrl] = useState(`/campaigns/${slug}`);
     useEffect(() => { setCampaignUrl(`${window.location.origin}/campaigns/${slug}`); }, [slug]);
-    const qrBg = photos[2] ?? heroUrl ?? photos[0] ?? null;
 
     return (
         <div className="flex flex-col gap-[40px] items-center justify-center pb-[40px] md:pb-[75px] pt-[40px] md:pt-[80px] xl:pt-[112px] px-[16px] md:px-[24px] xl:px-0">
@@ -98,32 +100,34 @@ export default function MarketingShareables({
                 {/* Campaign video */}
                 <VideoTile src={videoSrc} poster={videoThumb} />
 
-                {/* Shareable graphics + QR */}
-                <div className="flex flex-col md:flex-row md:flex-wrap xl:flex-nowrap gap-[24px] items-center w-full">
-                    <div className="group bg-[#e8eaee] h-[400px] overflow-hidden relative rounded-[24px] w-full md:w-[320px] md:shrink-0">
-                        {graphicA && (
+                {/* Campaign photos (gallery only) + the campaign's QR code. Only real
+                    photos are shown as tiles, and the QR always has a background — a
+                    spare photo, or a branded panel — so the row degrades gracefully. */}
+                <div className="flex w-full flex-col flex-wrap items-stretch justify-center gap-[24px] md:flex-row">
+                    {photoCards.map((p, i) => (
+                        <div key={i} className="group relative h-[400px] w-full overflow-hidden rounded-[24px] bg-[#e8eaee] md:min-w-[280px] md:flex-1">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={p} alt="Campaign photo" className="absolute inset-0 h-full w-full object-cover" />
+                            <ContextOverlay text={i === 0 ? "A photo from this campaign." : "Another photo from this campaign."} />
+                        </div>
+                    ))}
+                    <div className="group relative h-[400px] w-full overflow-hidden rounded-[24px] bg-[#e8eaee] md:w-[340px] md:shrink-0">
+                        {qrPhoto ? (
                             // eslint-disable-next-line @next/next/no-img-element
-                            <img src={graphicA} alt="Shareable graphic" className="absolute inset-0 w-full h-full object-cover" />
-                        )}
-                        <ContextOverlay text="A campaign photo — share it on social to spread the word." />
-                    </div>
-                    <div className="group bg-[#e8eaee] h-[400px] overflow-hidden relative rounded-[24px] w-full md:flex-1 md:min-w-0">
-                        {graphicB && (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img src={graphicB} alt="Shareable graphic" className="absolute inset-0 w-full h-full object-cover" />
-                        )}
-                        <ContextOverlay text="Another campaign photo, ready to post anywhere." />
-                    </div>
-                    <div className="group bg-[#e8eaee] h-[400px] overflow-hidden relative rounded-[24px] w-full xl:w-[320px] xl:flex-none xl:shrink-0">
-                        {qrBg && (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img src={qrBg} alt="" className="absolute inset-0 w-full h-full object-cover" />
+                            <img src={qrPhoto} alt="" className="absolute inset-0 h-full w-full object-cover" />
+                        ) : (
+                            <>
+                                <span aria-hidden className="absolute inset-0" style={{ background: `linear-gradient(157deg, ${theme.accent} 0%, ${theme.secondary} 100%)` }} />
+                                {theme.themeImage && (
+                                    <span aria-hidden className={`absolute inset-0 ${theme.themeCover ? "opacity-[0.16]" : "opacity-[0.12]"}`} style={{ backgroundImage: `url('${theme.themeImage}')`, backgroundRepeat: theme.themeCover ? "no-repeat" : "repeat", backgroundSize: theme.themeSize, backgroundPosition: "center" }} />
+                                )}
+                            </>
                         )}
                         {/* White card holding a blue QR for this campaign's URL (matches Figma). */}
                         <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center rounded-[24px] bg-white p-[26px] shadow-[0px_16px_40px_-8px_rgba(0,48,96,0.25)]">
                             <QRCodeSVG value={campaignUrl} size={188} level="M" fgColor={theme.accent} bgColor="#ffffff" title="Scan to open the campaign page" />
                         </span>
-                        <ContextOverlay text="Scan this QR code to open the campaign's donation page." />
+                        <ContextOverlay text="Scan this code to open the campaign page — or share the link to spread the word." />
                     </div>
                 </div>
             </div>
@@ -146,7 +150,7 @@ export default function MarketingShareables({
                             }}
                         >
                             <p className="font-normal text-[18px] md:text-[22px] text-white w-full" style={{ lineHeight: 1.25 }}>
-                                Hover on any of the shareables above to get context about what they&rsquo;re for!
+                                Hover over any tile above to see what it&rsquo;s for &mdash; then use the share buttons or QR code to spread the word!
                             </p>
                             <button
                                 type="button"
