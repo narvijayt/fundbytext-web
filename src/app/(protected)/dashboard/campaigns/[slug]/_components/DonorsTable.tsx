@@ -369,12 +369,12 @@ export default function DonorsTable({ donors: initialDonors, initialTotal, campa
                             <table className="w-full min-w-[960px] table-fixed text-sm">
                                 <colgroup>
                                     <col className="w-[19%]" />
-                                    <col className="w-[16%]" />
-                                    {showAssignment && <col className="w-[13%]" />}
-                                    <col className="w-[13%]" />
-                                    <col className="w-[11%]" />
+                                    <col className="w-[22%]" />
+                                    {showAssignment && <col className="w-[11%]" />}
+                                    <col className="w-[12%]" />
                                     <col className="w-[10%]" />
-                                    <col className="w-[10%]" />
+                                    <col className="w-[9%]" />
+                                    <col className="w-[9%]" />
                                     <col className="w-[64px]" />
                                 </colgroup>
                                 <thead>
@@ -447,8 +447,8 @@ export default function DonorsTable({ donors: initialDonors, initialTotal, campa
                                                     </td>
                                                     {/* Contact */}
                                                     <td className="px-4 py-3.5 text-[#7e8a96]">
-                                                        <p className="truncate text-[13px]">{d.email ?? "—"}</p>
-                                                        {d.phone && <p className="truncate text-xs text-[#9aa7b8]">{d.phone}</p>}
+                                                        <p className="truncate text-[13px]" title={d.email ?? undefined}>{d.email ?? "—"}</p>
+                                                        {d.phone && <p className="truncate text-xs text-[#9aa7b8]" title={d.phone}>{d.phone}</p>}
                                                     </td>
                                                     {/* Associated Participant */}
                                                     {showAssignment && (
