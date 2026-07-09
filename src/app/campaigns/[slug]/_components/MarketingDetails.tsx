@@ -198,29 +198,43 @@ export default function MarketingDetails({
                         <div className="relative w-full">
                             <div className="h-[32px] relative rounded-full w-full overflow-hidden" style={{ background: TRACK_STRIPES }}>
                                 <style>{`@keyframes mkt-pb-shimmer{0%{transform:translateX(-120%)}100%{transform:translateX(400%)}}`}</style>
-                                {/* Green fill — raised up to the initial goal */}
-                                <div
-                                    className="absolute left-0 top-0 h-full rounded-l-full transition-[width] duration-1000 ease-out"
-                                    style={{ width: `${greenW}%`, minWidth: raised > 0 ? 44 : 0, background: GREEN_STRIPES }}
-                                />
-                                {/* Gold fill — everything raised beyond the initial goal (open-ended scaling) */}
-                                {goldW > 0 && (
-                                    <div
-                                        className="absolute top-0 h-full transition-[left,width] duration-1000 ease-out"
-                                        style={{ left: `max(${greenW}%, 44px)`, width: `${goldW}%`, background: GOLD_STRIPES }}
-                                    />
-                                )}
-                                {/* Shimmer sweeping the full fill (green + gold) */}
+                                {/* Green fill — raised up to the initial goal. Each colour is a
+                                    FULL-WIDTH striped layer revealed with clip-path (not a
+                                    width-sized div) so the diagonal stripes share one origin and
+                                    stay continuous across the green→gold→track boundaries. */}
                                 <div
                                     aria-hidden
-                                    className="absolute left-0 top-0 h-full overflow-hidden pointer-events-none transition-[width] duration-1000 ease-out"
-                                    style={{ width: `${greenW + goldW}%`, minWidth: raised > 0 ? 44 : 0 }}
+                                    className="absolute inset-0 overflow-hidden"
+                                    style={{
+                                        background: GREEN_STRIPES,
+                                        // max(…,44px) keeps a small donation's green nub visible and
+                                        // aligned with the marker, mirroring the old min-width guard.
+                                        clipPath: `inset(0 calc(100% - max(${greenW}%, 44px)) 0 0)`,
+                                        WebkitClipPath: `inset(0 calc(100% - max(${greenW}%, 44px)) 0 0)`,
+                                        transition: "clip-path 1000ms ease-out, -webkit-clip-path 1000ms ease-out",
+                                    }}
                                 >
                                     <span
                                         className="absolute inset-y-0 left-0 w-[35%]"
                                         style={{ background: "linear-gradient(90deg,transparent,rgba(255,255,255,0.5) 50%,transparent)", animation: "mkt-pb-shimmer 2.2s ease-in-out infinite" }}
                                     />
                                 </div>
+                                {/* Gold fill — raised beyond the initial goal (open-ended scaling).
+                                    Its left edge is fixed at the initial-goal point and it only
+                                    starts filling once the green segment has finished (delay). */}
+                                {goldPct > 0 && (
+                                    <div
+                                        aria-hidden
+                                        className="absolute inset-0"
+                                        style={{
+                                            background: GOLD_STRIPES,
+                                            clipPath: `inset(0 ${100 - (greenPct + goldW)}% 0 ${greenPct}%)`,
+                                            WebkitClipPath: `inset(0 ${100 - (greenPct + goldW)}% 0 ${greenPct}%)`,
+                                            transition: "clip-path 700ms ease-out, -webkit-clip-path 700ms ease-out",
+                                            transitionDelay: "1000ms",
+                                        }}
+                                    />
+                                )}
                                 <span aria-hidden className="absolute inset-0 pointer-events-none rounded-[inherit]" style={{ boxShadow: "inset 0px 2px 8px 0px rgba(0,48,96,0.08)" }} />
                             </div>
                             {/* Tall green marker at the end of the green segment — the initial-goal
