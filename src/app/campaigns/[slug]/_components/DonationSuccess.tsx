@@ -59,7 +59,7 @@ export default function DonationSuccess({
     const pat = patternImage ?? `${M}/leaderboard/bg-pattern.png`;
 
     return (
-        <div className="modal-scroll flex max-h-[92vh] flex-col overflow-y-auto overflow-x-hidden rounded-3xl bg-white shadow-[0px_40px_80px_-20px_rgba(0,48,96,0.45)]">
+        <div className="modal-scroll flex max-h-[92dvh] flex-col overflow-y-auto overflow-x-hidden rounded-3xl bg-white shadow-[0px_40px_80px_-20px_rgba(0,48,96,0.45)]">
             {/* ── Themed header band — accent gradient + centred color-dodge halo,
                  with the campaign's selected theme pattern as a watermark. ── */}
             <div

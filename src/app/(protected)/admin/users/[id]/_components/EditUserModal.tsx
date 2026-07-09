@@ -173,7 +173,7 @@ export default function EditUserModal({ userId, isSelf, initial, onClose, onSave
             <div
                 role="dialog" aria-modal="true" aria-labelledby="edit-user-title"
                 onClick={(e) => e.stopPropagation()}
-                className={`flex max-h-[calc(100vh-2rem)] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-white shadow-[0px_16px_40px_-8px_rgba(15,29,67,0.3)] transition-transform duration-200 motion-reduce:transition-none ${shown ? "scale-100" : "scale-95"}`}
+                className={`flex max-h-[calc(100dvh-2rem)] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-white shadow-[0px_16px_40px_-8px_rgba(15,29,67,0.3)] transition-transform duration-200 motion-reduce:transition-none ${shown ? "scale-100" : "scale-95"}`}
             >
                 <div className="flex shrink-0 items-center justify-between gap-3 bg-[#0268c0] px-5 py-4 text-white">
                     <h2 id="edit-user-title" className="text-[16px] font-bold">Edit User</h2>

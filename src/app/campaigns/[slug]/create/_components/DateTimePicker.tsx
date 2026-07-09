@@ -662,7 +662,7 @@ export function TimezoneBoxesPopover({
 
     return (
         <AnchoredPopover anchorRef={anchorRef} matchAnchorWidth>
-            <div ref={ref} className="max-h-[55vh] overflow-y-auto -m-1 p-1">
+            <div ref={ref} className="max-h-[55dvh] overflow-y-auto -m-1 p-1">
                 <TimezoneSelector value={value} onSelect={(tz) => { onSelect(tz); onClose(); }} />
             </div>
         </AnchoredPopover>

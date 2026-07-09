@@ -92,7 +92,7 @@ export default function NotificationDetailModal({ notif, participantName, organi
                 aria-modal="true"
                 aria-labelledby="notif-detail-title"
                 onClick={(e) => e.stopPropagation()}
-                className={`flex max-h-[calc(100vh-2rem)] w-full max-w-[600px] flex-col overflow-hidden rounded-2xl bg-white shadow-[0px_16px_32px_0px_rgba(15,29,67,0.24)] transition-transform duration-200 motion-reduce:transition-none ${shown ? "scale-100" : "scale-95"}`}
+                className={`flex max-h-[calc(100dvh-2rem)] w-full max-w-[600px] flex-col overflow-hidden rounded-2xl bg-white shadow-[0px_16px_32px_0px_rgba(15,29,67,0.24)] transition-transform duration-200 motion-reduce:transition-none ${shown ? "scale-100" : "scale-95"}`}
             >
                 {/* Header */}
                 <div className="flex shrink-0 items-center justify-between border-b border-[#e8eaee] bg-[#0278de] py-4 pl-6 pr-4 text-white">

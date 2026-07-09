@@ -262,7 +262,7 @@ function DonateForm({
     );
 
     return (
-        <form onSubmit={handleSubmit} className="relative flex max-h-[92vh] w-full flex-col overflow-hidden rounded-3xl bg-white shadow-[0px_40px_80px_-20px_rgba(0,48,96,0.45)]">
+        <form onSubmit={handleSubmit} className="relative flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-3xl bg-white shadow-[0px_40px_80px_-20px_rgba(0,48,96,0.45)]">
           {/* Inner scroll wrapper — the form clips to its rounded corners
               (overflow-hidden) so the scrollbar never spills past the radius. The
               bar shows on mobile like a normal scroll and is hidden on desktop. */}

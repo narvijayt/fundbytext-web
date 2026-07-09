@@ -108,7 +108,7 @@ export default function HelpSpreadModal({ isOpen, onClose, slug, campaignName, h
 
     return (
         <div className={`fixed inset-0 z-[110] flex items-center justify-center p-3 transition-opacity duration-200 ease-out motion-reduce:transition-none sm:p-6 ${shown ? "opacity-100" : "opacity-0"}`} style={{ background: "rgba(0,30,60,0.55)", backdropFilter: "blur(3px)" }} onClick={onClose}>
-            <div className={`relative flex max-h-[92vh] w-full max-w-[612px] flex-col overflow-hidden rounded-3xl bg-white shadow-[0px_40px_80px_-20px_rgba(0,48,96,0.45)] transition-all duration-200 ease-out motion-reduce:transition-none ${shown ? "translate-y-0 scale-100 opacity-100" : "translate-y-2 scale-95 opacity-0"}`} onClick={(ev) => ev.stopPropagation()}>
+            <div className={`relative flex max-h-[92dvh] w-full max-w-[612px] flex-col overflow-hidden rounded-3xl bg-white shadow-[0px_40px_80px_-20px_rgba(0,48,96,0.45)] transition-all duration-200 ease-out motion-reduce:transition-none ${shown ? "translate-y-0 scale-100 opacity-100" : "translate-y-2 scale-95 opacity-0"}`} onClick={(ev) => ev.stopPropagation()}>
               {/* Inner scroll area — keeps the scrollbar inside the rounded corners.
                   Thin, and inherits the app-wide scrollbar colour from globals.css
                   (scrollbar-width isn't inherited, so it's set explicitly here). */}

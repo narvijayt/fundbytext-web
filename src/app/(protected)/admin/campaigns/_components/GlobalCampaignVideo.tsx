@@ -134,7 +134,7 @@ export default function GlobalCampaignVideo({ currentUrl, currentThumbnailUrl }:
                     <div
                         role="dialog" aria-modal="true"
                         onClick={(e) => e.stopPropagation()}
-                        className={`flex max-h-[90vh] w-full max-w-md flex-col overflow-hidden rounded-2xl bg-white shadow-2xl transition-all duration-200 sm:max-w-2xl ${shown ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0"}`}
+                        className={`flex max-h-[90dvh] w-full max-w-md flex-col overflow-hidden rounded-2xl bg-white shadow-2xl transition-all duration-200 sm:max-w-2xl ${shown ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0"}`}
                     >
                         <div className="flex shrink-0 items-center justify-between gap-3 bg-[#0268c0] px-6 py-4 text-white">
                             <div>
