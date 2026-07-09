@@ -71,8 +71,18 @@ function FieldLabel({ children }: { children: React.ReactNode }) {
 }
 const FIELD = "flex h-[52px] w-full items-center gap-3 rounded-xl border border-[#d4dee7] bg-white px-4 text-[15px] font-medium text-[#003060] placeholder:text-[#aeb5bd] focus-within:border-[#0278de] focus:outline-none";
 
-function StripeField({ children }: { children: React.ReactNode }) {
-    return <div className={FIELD}><div className="flex-1 min-w-0">{children}</div></div>;
+function StripeField({ children, onFocusRequest }: { children: React.ReactNode; onFocusRequest?: () => void }) {
+    // A Stripe field is an iframe centred in a padded box; clicking the padding
+    // wouldn't focus it, so forward those clicks to the element (but let clicks
+    // inside the iframe position the caret themselves).
+    return (
+        <div
+            className={`${FIELD} cursor-text`}
+            onMouseDown={onFocusRequest ? (e) => { if ((e.target as HTMLElement).tagName !== "IFRAME") { e.preventDefault(); onFocusRequest(); } } : undefined}
+        >
+            <div className="flex-1 min-w-0">{children}</div>
+        </div>
+    );
 }
 
 // ── Donation form (inside Stripe Elements) ──────────────────────────────────────
@@ -309,7 +319,7 @@ function DonateForm({
 
                     {/* Amount */}
                     <div className="mt-4">
-                        <div className={`flex h-[52px] w-full items-center gap-2.5 rounded-xl bg-white pl-4 pr-4 ${exceedsMax ? "ring-2 ring-red-400" : ""}`}>
+                        <label className={`flex h-[52px] w-full cursor-text items-center gap-2.5 rounded-xl bg-white pl-4 pr-4 ${exceedsMax ? "ring-2 ring-red-400" : ""}`}>
                             <span className="text-[18px] font-black text-[#003060]">$</span>
                             <span className="h-6 w-px shrink-0 bg-[#d4dee7]" />
                             <input
@@ -320,7 +330,7 @@ function DonateForm({
                             {maxDonationCents !== null && maxDonationCents > 0 && (
                                 <button type="button" onClick={() => setRaw(String(maxDonationCents / 100))} className="shrink-0 text-[12px] font-bold text-[#0268c0] hover:underline">Max {fmt(maxDonationCents / 100)}</button>
                             )}
-                        </div>
+                        </label>
                         {exceedsMax && <p className="mt-1 text-[12px] font-medium text-red-200">Exceeds remaining goal of {fmt(maxDonationCents! / 100)}</p>}
                     </div>
 
@@ -353,7 +363,7 @@ function DonateForm({
                         </div>
                         <div className="flex min-w-0 flex-1 flex-col gap-2.5">
                             <FieldLabel>Card Number</FieldLabel>
-                            <StripeField>{cardReady ? <CardNumberElement options={{ style: STRIPE_STYLE, placeholder: "0123 4567 8910 1112" }} onChange={(e) => { if (!e.empty) setCardTouched(true); if (e.complete) elements?.getElement(CardExpiryElement)?.focus(); }} /> : <span className="text-[#aeb5bd]">0123 4567 8910 1112</span>}</StripeField>
+                            <StripeField onFocusRequest={() => elements?.getElement(CardNumberElement)?.focus()}>{cardReady ? <CardNumberElement options={{ style: STRIPE_STYLE, placeholder: "0123 4567 8910 1112" }} onChange={(e) => { if (!e.empty) setCardTouched(true); if (e.complete) elements?.getElement(CardExpiryElement)?.focus(); }} /> : <span className="text-[#aeb5bd]">0123 4567 8910 1112</span>}</StripeField>
                         </div>
                     </div>
 
@@ -361,11 +371,11 @@ function DonateForm({
                     <div className="flex gap-3 sm:gap-5">
                         <div className="flex min-w-0 flex-1 flex-col gap-2.5">
                             <FieldLabel>Expiration</FieldLabel>
-                            <StripeField>{cardReady ? <CardExpiryElement options={{ style: STRIPE_STYLE }} onChange={(e) => { if (!e.empty) setCardTouched(true); if (e.complete) elements?.getElement(CardCvcElement)?.focus(); }} /> : <span className="text-[#aeb5bd]">MM / YY</span>}</StripeField>
+                            <StripeField onFocusRequest={() => elements?.getElement(CardExpiryElement)?.focus()}>{cardReady ? <CardExpiryElement options={{ style: STRIPE_STYLE }} onChange={(e) => { if (!e.empty) setCardTouched(true); if (e.complete) elements?.getElement(CardCvcElement)?.focus(); }} /> : <span className="text-[#aeb5bd]">MM / YY</span>}</StripeField>
                         </div>
                         <div className="flex min-w-0 flex-1 flex-col gap-2.5">
                             <FieldLabel>CVV</FieldLabel>
-                            <StripeField>{cardReady ? <CardCvcElement options={{ style: STRIPE_STYLE }} onChange={(e) => { if (!e.empty) setCardTouched(true); }} /> : <span className="text-[#aeb5bd]">CVC</span>}</StripeField>
+                            <StripeField onFocusRequest={() => elements?.getElement(CardCvcElement)?.focus()}>{cardReady ? <CardCvcElement options={{ style: STRIPE_STYLE }} onChange={(e) => { if (!e.empty) setCardTouched(true); }} /> : <span className="text-[#aeb5bd]">CVC</span>}</StripeField>
                         </div>
                     </div>
 
@@ -403,11 +413,11 @@ function DonateForm({
                     {/* Phone */}
                     <div className="flex flex-col gap-2.5">
                         <FieldLabel>Phone</FieldLabel>
-                        <div className={FIELD}>
+                        <label className={`${FIELD} cursor-text`}>
                             <span className="text-[15px] font-medium text-[#8f98a3]">+1</span>
                             <span className="h-6 w-px bg-[#d4dee7]" />
                             <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="(214) 987-6543" className="min-w-0 flex-1 bg-transparent focus:outline-none" />
-                        </div>
+                        </label>
                     </div>
 
                     {/* Donator name */}
