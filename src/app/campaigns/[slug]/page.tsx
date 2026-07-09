@@ -70,6 +70,7 @@ async function getCampaign(slug: string) {
                 include: {
                     roles:     { select: { role: true } },
                     donations: { where: { payment_status: "completed" }, select: { amount: true } },
+                    user:      { select: { profile_photo_url: true } },
                 },
             },
             donations: {
@@ -274,7 +275,7 @@ export default async function CampaignPublicPage({
                 recentDonations={recentDonations}
                 story={campaign.story}
                 organizerName={organizerName}
-                organizerPhotoUrl={organizerMember?.profile_photo_url ?? profileMedia?.url ?? null}
+                organizerPhotoUrl={organizerMember?.profile_photo_url ?? organizerMember?.user?.profile_photo_url ?? null}
                 orgBadge={orgBadge}
                 endDateLabel={fmtDate(campaign.end_date)}
                 startDateLabel={fmtDate(campaign.start_date)}
