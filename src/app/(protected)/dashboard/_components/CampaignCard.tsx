@@ -238,7 +238,7 @@ export default function CampaignCard({ campaign }: { campaign: CampaignCardData 
 
             {status === CampaignStatus.completed && (
                 <div className="bg-gradient-to-r from-[#28c45d] to-[#34d56a] px-4 py-4 text-center text-[13px] font-bold leading-snug text-white">
-                    You raised {fmt(raisedAmt)} through {participants} participant{participants !== 1 ? "s" : ""} and {donorsCount} donor{donorsCount !== 1 ? "s" : ""}!
+                    You raised {fmt(raisedAmt)} through {campaign.campaign_type === "organization" && participants > 0 ? `${participants} participant${participants !== 1 ? "s" : ""} and ` : ""}{donorsCount} donor{donorsCount !== 1 ? "s" : ""}!
                 </div>
             )}
 
