@@ -38,6 +38,9 @@ export default function HelpSpreadModal({ isOpen, onClose, slug, campaignName, h
     const [copied, setCopied] = useState(false);
     const [playing, setPlaying] = useState(false);
     const videoSrc = videoUrl?.trim() || SAMPLE_VIDEO;
+    // Only a real, campaign-uploaded video is downloadable — never the bundled
+    // sample clip the tile falls back to for preview.
+    const hasVideo = !!videoUrl?.trim();
     const poster   = videoPoster ?? heroUrl;
     useEffect(() => { setUrl(`${window.location.origin}/campaigns/${slug}`); }, [slug]);
     useEffect(() => { document.body.style.overflow = isOpen ? "hidden" : ""; return () => { document.body.style.overflow = ""; }; }, [isOpen]);
@@ -75,21 +78,21 @@ export default function HelpSpreadModal({ isOpen, onClose, slug, campaignName, h
     const text = encodeURIComponent(`Support ${campaignName}`);
     const isMobile = typeof navigator !== "undefined" && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
-    // Download the campaign's shareable image (e.g. to post on Instagram). The
-    // blob URL is cross-origin, so `download` on a plain <a> is ignored — fetch
-    // the bytes and trigger a real download instead.
+    // Download the campaign video so supporters can re-post it (reels/stories).
+    // The blob URL is cross-origin, so `download` on a plain <a> is ignored —
+    // fetch the bytes and trigger a real download instead.
     const download = async () => {
-        if (!heroUrl) return;
+        if (!hasVideo || !videoUrl) return;
         try {
-            const res  = await fetch(heroUrl);
+            const res  = await fetch(videoUrl);
             const blob = await res.blob();
             const obj  = URL.createObjectURL(blob);
             const a    = document.createElement("a");
             a.href = obj;
-            a.download = `${slug}.${(blob.type.split("/")[1] || "jpg").replace("jpeg", "jpg")}`;
+            a.download = `${slug}.${(blob.type.split("/")[1] || "mp4")}`;
             document.body.appendChild(a); a.click(); a.remove();
             URL.revokeObjectURL(obj);
-        } catch { open(heroUrl); }
+        } catch { open(videoUrl); }
     };
 
     const NETWORKS: { key: string; label: string; onClick: () => void }[] = [
@@ -186,7 +189,7 @@ export default function HelpSpreadModal({ isOpen, onClose, slug, campaignName, h
                                 <img src={ICONS[n.key]} alt="" className="size-[18px] shrink-0" />{n.label}
                             </button>
                         ))}
-                        <button type="button" onClick={download} disabled={!heroUrl} className={`${pill} col-span-2 gap-3 disabled:cursor-not-allowed disabled:opacity-50 sm:col-span-3`}>
+                        <button type="button" onClick={download} disabled={!hasVideo} title={hasVideo ? "Download campaign video" : "No campaign video to download"} className={`${pill} col-span-2 gap-3 disabled:cursor-not-allowed disabled:opacity-50 sm:col-span-3`}>
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img src={`${SHARE}/download.svg`} alt="" className="size-[18px] shrink-0" />
                             Download
