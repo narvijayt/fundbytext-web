@@ -143,14 +143,14 @@ export default function MarketingHero({
                     <div className="relative flex flex-col md:gap-[32px] w-full">
                         {/* Logo + title + edit */}
                         <div className="flex flex-col items-center md:flex-row md:items-stretch md:gap-[24px] w-full xl:pr-[294px]">
-                            <div className="bg-white overflow-hidden relative rounded-[16px] shrink-0 size-[104px]">
-                                {logoUrl ? (
-                                    // eslint-disable-next-line @next/next/no-img-element
+                            {/* Only show the logo tile when the organizer actually uploaded a
+                                logo / profile photo — no static placeholder otherwise. */}
+                            {logoUrl && (
+                                <div className="bg-white overflow-hidden relative rounded-[16px] shrink-0 size-[104px]">
+                                    {/* eslint-disable-next-line @next/next/no-img-element */}
                                     <img src={logoUrl} alt="" className="absolute inset-0 w-full h-full object-cover" />
-                                ) : (
-                                    <Image src={`${A}/hero/org-logo.svg`} alt="" width={76} height={63} className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[76.12px] h-[63.23px]" />
-                                )}
-                            </div>
+                                </div>
+                            )}
                             <div className="flex flex-col items-center md:flex-1 md:flex-row md:items-center md:justify-between min-w-0">
                                 <div className="md:h-[104px] flex items-center py-2 md:py-0">
                                     <h1
