@@ -5,15 +5,17 @@ import FooterShareLinks from "./FooterShareLinks";
 
 const A = "/assets/marketing";
 
-// The FundByText "F" glyph (from logo-icon.svg) — the same mark that drifts
-// behind the campaign-creation steps. Tiled + rotated into a faint white
-// watermark for the CTA card, drifting via the shared `driftLeft` keyframe.
-const F_GLYPH = "M9.21961 0C4.12776 0 0 4.189 0 9.35639V21.9925H6.80123V13.1382C6.80123 11.9286 7.76713 10.9483 8.95907 10.9483H23.0981V14.5017H10.8428V18.7607H21.7073V22.0008H10.8691L3.75375 39H15.5243L27.3901 21.9934V0H9.21961Z";
+// The exact drifting "F" texture from the campaign-creation steps (ui.tsx's
+// VectorWallpaper) — same two glyphs, same upright angles, same 170px tile —
+// recoloured white so it reads as a faint watermark over the accent CTA card,
+// drifting via the shared `driftLeft` keyframe.
+const F_PATH_A = "m23.28 76.64l18.97-6.62 9.55-34.07-12.37-35.43-29.27 10.22c-8.19 2.86-12.49 11.93-9.58 20.25l7.1 20.36 10.96-3.83-4.98-14.26c-0.67-1.95 0.33-4.08 2.25-4.75l22.79-7.96 2 5.73-19.75 6.89 2.4 6.86 17.5-6.11 1.82 5.23-17.46 6.09-1.9 31.39z";
+const F_PATH_B = "M27.9717 0L9.09569 6.86879L0 41.0623L12.8348 76.3241L41.9651 65.7237C50.1204 62.752 54.2958 53.6262 51.279 45.3431L43.9061 25.0827L32.9973 29.0551L38.1658 43.2516C38.8655 45.1926 37.895 47.3292 35.9765 48.0289L13.3012 56.282L11.2248 50.5868L30.8757 43.4321L28.3855 36.601L10.969 42.9431L9.08063 37.7445L26.4595 31.4174L27.9491 0.00752493L27.9717 0Z";
 const F_WATERMARK = `url("data:image/svg+xml,${encodeURIComponent(
-    `<svg xmlns='http://www.w3.org/2000/svg' width='150' height='150' viewBox='0 0 150 150'>` +
-    `<g fill='rgba(255,255,255,0.1)'>` +
-    `<g transform='translate(14,16) rotate(-12) scale(1.25)'><path d='${F_GLYPH}'/></g>` +
-    `<g transform='translate(96,86) rotate(14) scale(0.95)'><path d='${F_GLYPH}'/></g>` +
+    `<svg xmlns='http://www.w3.org/2000/svg' width='170' height='170'>` +
+    `<g fill='rgba(255,255,255,0.16)'>` +
+    `<g transform='translate(16,12)'><path d='${F_PATH_A}'/></g>` +
+    `<g transform='translate(96,90)'><path d='${F_PATH_B}'/></g>` +
     `</g></svg>`,
 )}")`;
 
