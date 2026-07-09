@@ -36,7 +36,11 @@ export default function MarketingHero({
     canDonate: boolean;
     donateNotice?: DonateNotice;
 }) {
-    const photos: Photo[] = [galleryUrls[0] ?? null, galleryUrls[1] ?? null, galleryUrls[2] ?? null, galleryUrls[3] ?? null];
+    // Only the gallery photos the organizer actually added (already compacted by
+    // the page query), capped at 4 for the hero grid. Missing slots are dropped —
+    // never rendered as empty cards — and the layout adapts to however many exist.
+    const gallery = galleryUrls.filter(Boolean).slice(0, 4);
+    const galleryRows = [gallery.slice(0, 2), gallery.slice(2, 4)].filter((r) => r.length > 0);
     const [menuOpen, setMenuOpen] = useState(false);
     const [menuShown, setMenuShown] = useState(false);
     const [noticeOpen, setNoticeOpen] = useState(false);
@@ -174,28 +178,30 @@ export default function MarketingHero({
                         </div>
                     </div>
 
-                    {/* Photo grid */}
+                    {/* Photo grid — hero photo + up to 4 gallery shots. With no gallery
+                        the hero spans the full width; otherwise only the shots that were
+                        added fill the grid (no empty placeholder cards). */}
                     <div className="flex flex-col xl:flex-row gap-[24px] items-start w-full xl:h-[464px]">
-                        <div className="bg-[#e7e9eb] h-[282px] md:h-[330px] xl:h-full overflow-hidden relative rounded-[16px] shrink-0 w-full xl:w-[662px]">
+                        <div className={`bg-[#e7e9eb] h-[282px] md:h-[330px] xl:h-full overflow-hidden relative rounded-[16px] shrink-0 w-full ${gallery.length > 0 ? "xl:w-[662px]" : "xl:w-full"}`}>
                             {heroUrl && (
                                 // eslint-disable-next-line @next/next/no-img-element
                                 <img src={heroUrl} alt={title} className="absolute inset-0 w-full h-full object-cover" />
                             )}
                         </div>
-                        <div className="flex flex-1 flex-col gap-[24px] w-full xl:h-full items-start justify-center min-w-0">
-                            {[[0, 1], [2, 3]].map((row, ri) => (
-                                <div key={ri} className="flex xl:flex-1 gap-[24px] items-start min-h-0 w-full">
-                                    {row.map((idx) => (
-                                        <div key={idx} className="bg-[#e7e9eb] flex-1 h-[129px] md:h-[153px] xl:h-full min-w-0 overflow-hidden relative rounded-[16px]">
-                                            {photos[idx] && (
-                                                // eslint-disable-next-line @next/next/no-img-element
-                                                <img src={photos[idx]!} alt="" className="absolute inset-0 w-full h-full object-cover" />
-                                            )}
-                                        </div>
-                                    ))}
-                                </div>
-                            ))}
-                        </div>
+                        {gallery.length > 0 && (
+                            <div className="flex flex-1 flex-col gap-[24px] w-full xl:h-full items-start justify-center min-w-0">
+                                {galleryRows.map((row, ri) => (
+                                    <div key={ri} className="flex xl:flex-1 gap-[24px] items-start min-h-0 w-full">
+                                        {row.map((url, ci) => (
+                                            <div key={ci} className="bg-[#e7e9eb] flex-1 h-[129px] md:h-[153px] xl:h-full min-w-0 overflow-hidden relative rounded-[16px]">
+                                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                <img src={url} alt="" className="absolute inset-0 w-full h-full object-cover" />
+                                            </div>
+                                        ))}
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
