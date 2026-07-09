@@ -589,10 +589,13 @@ export default async function CampaignDetailPage({
                         {campaign.status === CampaignStatus.completed && (
                             <>
                                 <div className="rounded-2xl overflow-hidden shadow-sm">
+                                    {/* ~7:1 banner renders as a thin strip on narrow phones — crop to a
+                                        taller ratio there (only the outer flag poles trim off; the full
+                                        word stays), and show the full banner from sm up. */}
                                     <img
                                         src="/congratulations.png"
                                         alt="Congratulations! Campaign completed."
-                                        className="w-full object-cover"
+                                        className="w-full aspect-[11/2] object-cover object-center sm:aspect-auto"
                                     />
                                 </div>
                                 <div id="statistics" className="scroll-mt-6">
@@ -723,10 +726,13 @@ export default async function CampaignDetailPage({
                         return (
                             <>
                                 <div className="rounded-2xl overflow-hidden shadow-sm">
+                                    {/* ~7:1 banner renders as a thin strip on narrow phones — crop to a
+                                        taller ratio there (only the outer flag poles trim off; the full
+                                        word stays), and show the full banner from sm up. */}
                                     <img
                                         src="/congratulations.png"
                                         alt="Congratulations! Campaign completed."
-                                        className="w-full object-cover"
+                                        className="w-full aspect-[11/2] object-cover object-center sm:aspect-auto"
                                     />
                                 </div>
                                 <CampaignStatsBars
