@@ -1035,6 +1035,7 @@ export default function SetupWizard({
                         </div>
                         <StepVisual
                             isOrg={isOrg}
+                            lockRequiredPhotos={isEditMode || isLaunched}
                             profileUrl={profileUrl} setProfileUrl={setProfileUrl}
                             heroUrl={heroUrl} setHeroUrl={setHeroUrl}
                             galleryUrls={galleryUrls} setGalleryUrls={setGalleryUrls}

@@ -15,6 +15,7 @@ export default function Step3Preview() {
     const [campaignType, setCampaignType] = useState<"individual" | "organization">("individual");
     const isOrg = campaignType === "organization";
 
+    const [locked, setLocked] = useState(false);
     const [profileUrl, setProfileUrl] = useState<string | null>(null);
     const [heroUrl, setHeroUrl] = useState<string | null>(null);
     const [galleryUrls, setGalleryUrls] = useState<string[]>([]);
@@ -50,6 +51,10 @@ export default function Step3Preview() {
                     <input type="checkbox" checked={isOrg} onChange={(e) => setCampaignType(e.target.checked ? "organization" : "individual")} />
                     Org campaign
                 </label>
+                <label className="flex items-center gap-2">
+                    <input type="checkbox" checked={locked} onChange={(e) => setLocked(e.target.checked)} />
+                    Locked (edit/launched)
+                </label>
             </div>
 
             <div className="relative px-6 pt-10 pb-8 flex justify-center">
@@ -59,6 +64,7 @@ export default function Step3Preview() {
             <div className="w-full max-w-2xl lg:max-w-3xl xl:max-w-4xl mx-auto px-4 pt-5">
                 <StepVisual
                     isOrg={isOrg}
+                    lockRequiredPhotos={locked}
                     profileUrl={profileUrl} setProfileUrl={setProfileUrl}
                     heroUrl={heroUrl} setHeroUrl={setHeroUrl}
                     galleryUrls={galleryUrls} setGalleryUrls={setGalleryUrls}

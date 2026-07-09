@@ -28,6 +28,9 @@ function FadeInImg({ src }: { src: string }) {
 
 type Props = {
     isOrg: boolean;
+    /* Once the campaign is committed (edit / launched) the required profile + hero
+       photos can only be replaced, never removed — they're mandatory. */
+    lockRequiredPhotos: boolean;
     profileUrl: string | null;
     setProfileUrl: (url: string | null) => void;
     heroUrl: string | null;
@@ -501,6 +504,7 @@ function ColorBox({
 
 export default function StepVisual({
     isOrg,
+    lockRequiredPhotos,
     profileUrl, setProfileUrl,
     heroUrl, setHeroUrl,
     galleryUrls, setGalleryUrls,
@@ -603,7 +607,7 @@ export default function StepVisual({
                                 // Always refresh the logo box's colours from the new logo.
                                 applyLogoColors(url);
                             }}
-                            onRemoved={() => setProfileUrl(null)}
+                            onRemoved={lockRequiredPhotos ? undefined : () => setProfileUrl(null)}
                             className={`w-[112px] h-[112px] sm:w-[117px] sm:h-[117px]${fieldErrors.profile ? " ring-2 ring-red-400 rounded-xl" : ""}`}
                             uploadingPhoto={uploadingPhoto}
                             uploadPhoto={uploadPhoto}
@@ -621,7 +625,7 @@ export default function StepVisual({
                                 url={heroUrl}
                                 type="hero"
                                 onUploaded={(url) => { setHeroUrl(url); clearFE("hero"); }}
-                                onRemoved={() => setHeroUrl(null)}
+                                onRemoved={lockRequiredPhotos ? undefined : () => setHeroUrl(null)}
                                 className={`h-[200px] sm:h-[250px]${fieldErrors.hero ? " ring-2 ring-red-400 rounded-xl" : ""}`}
                                 uploadingPhoto={uploadingPhoto}
                                 uploadPhoto={uploadPhoto}
