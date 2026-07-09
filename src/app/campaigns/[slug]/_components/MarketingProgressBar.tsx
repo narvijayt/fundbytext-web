@@ -34,10 +34,12 @@ export default function MarketingProgressBar({ raised, goalAmount, initialGoalAm
     const { greenW, goldW, greenDone } = useStagedFill(greenPct, goldPct);
     const fillW = greenW + goldW;
 
-    // max(…,44px) keeps a tiny donation's nub visible + aligned with the marker.
-    const greenClip = `inset(0 calc(100% - max(${greenW}%, 44px)) 0 0)`;
+    // A tiny donation still shows a visible nub aligned with the marker — but a
+    // campaign with nothing raised yet shows no green at all (min only when raised).
+    const minNub    = raised > 0 ? "44px" : "0px";
+    const greenClip = `inset(0 calc(100% - max(${greenW}%, ${minNub})) 0 0)`;
     const goldClip  = `inset(0 ${100 - (greenPct + goldW)}% 0 ${greenPct}%)`;
-    const fillClip  = `inset(0 calc(100% - max(${fillW}%, 44px)) 0 0)`;
+    const fillClip  = `inset(0 calc(100% - max(${fillW}%, ${minNub})) 0 0)`;
 
     return (
         <div className="relative w-full">
