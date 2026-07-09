@@ -17,6 +17,9 @@ const A = "/assets/marketing";
 // track — matches the dashboard CampaignProgressBar exactly (so the public page
 // and the dashboard campaign view read as the same bar).
 const GREEN_STRIPES = "repeating-linear-gradient(-45deg,#33cc6b,#33cc6b 7px,#23b257 7px,#23b257 14px)";
+// Gold stripes for the "raised beyond the initial goal" segment on open-ended
+// campaigns — matches the dashboard CampaignProgressBar's overflow colour.
+const GOLD_STRIPES  = "repeating-linear-gradient(-45deg,#f5b93f,#f5b93f 7px,#e8a423 7px,#e8a423 14px)";
 const TRACK_STRIPES = "repeating-linear-gradient(-45deg,#eff1f4,#eff1f4 7px,#e4e7eb 7px,#e4e7eb 14px)";
 
 function fmtUSD(n: number) {
@@ -47,6 +50,7 @@ type Props = {
     theme:             MarketingTheme;
     totalRaised:       number;
     goalAmount:        number | null;
+    initialGoalAmount: number | null;
     donorCount:        number;
     pct:               number;
     daysLeft:          number | null;
@@ -73,7 +77,7 @@ type Props = {
 };
 
 export default function MarketingDetails({
-    theme, totalRaised, goalAmount, donorCount, pct, daysLeft, recentDonations,
+    theme, totalRaised, goalAmount, initialGoalAmount, donorCount, pct, daysLeft, recentDonations,
     story, organizerName, organizerPhotoUrl, orgBadge, endDateLabel, startDateLabel, startDate,
     status, donationsEnabled, donationsDisabledMessage, isFixedGoal, inlineRef,
 }: Props) {
@@ -103,9 +107,24 @@ export default function MarketingDetails({
     const isCompleted  = status === "completed";
     const isUpcoming   = status === "upcoming";
 
-    // Animate the bar in on mount.
-    const [barW, setBarW] = useState(0);
-    useEffect(() => { const id = requestAnimationFrame(() => setBarW(livePct)); return () => cancelAnimationFrame(id); }, [livePct]);
+    // Open-ended goals lock their first target in initialGoalAmount and auto-scale
+    // goalAmount +20% each time it's met. The bar shows green up to the initial
+    // goal, gold for everything raised beyond it, and the track's full width is the
+    // current (scaled) goal. For every other goal type initialGoalAmount is null or
+    // equal to goalAmount, so this collapses to a single green fill.
+    const isScaledGoal = initialGoalAmount != null && goalAmount != null && initialGoalAmount !== goalAmount;
+    const splitGoal    = initialGoalAmount ?? goalAmount;
+    const scale        = goalAmount && goalAmount > 0 ? Math.max(raised, goalAmount) : (raised || 1);
+    const greenPct     = splitGoal ? Math.min(raised, splitGoal) / scale * 100 : livePct;
+    const goldPct      = splitGoal && raised > splitGoal ? (raised - splitGoal) / scale * 100 : 0;
+
+    // Animate both segments in on mount (CSS width/left transitions do the tween).
+    const [greenW, setGreenW] = useState(0);
+    const [goldW,  setGoldW]  = useState(0);
+    useEffect(() => {
+        const id = requestAnimationFrame(() => { setGreenW(greenPct); setGoldW(goldPct); });
+        return () => cancelAnimationFrame(id);
+    }, [greenPct, goldPct]);
 
     const textLength = (story ?? "").replace(/<[^>]*>/g, "").length;
     const isLong     = textLength > 320;
@@ -168,7 +187,7 @@ export default function MarketingDetails({
                             </p>
                             {goalAmount != null && (
                                 <p className="font-medium text-[18px] text-[#aeb5bd] whitespace-nowrap" style={{ lineHeight: 1.4 }}>
-                                    {fmtUSD(goalAmount)} goal
+                                    {fmtUSD(initialGoalAmount ?? goalAmount)} {isScaledGoal ? "initial goal" : "goal"}
                                 </p>
                             )}
                         </div>
@@ -179,23 +198,38 @@ export default function MarketingDetails({
                         <div className="relative w-full">
                             <div className="h-[32px] relative rounded-full w-full overflow-hidden" style={{ background: TRACK_STRIPES }}>
                                 <style>{`@keyframes mkt-pb-shimmer{0%{transform:translateX(-120%)}100%{transform:translateX(400%)}}`}</style>
+                                {/* Green fill — raised up to the initial goal */}
                                 <div
-                                    className="absolute left-0 top-0 h-full overflow-hidden rounded-l-full transition-[width] duration-1000 ease-out"
-                                    style={{ width: `${barW}%`, minWidth: raised > 0 ? 44 : 0, background: GREEN_STRIPES }}
+                                    className="absolute left-0 top-0 h-full rounded-l-full transition-[width] duration-1000 ease-out"
+                                    style={{ width: `${greenW}%`, minWidth: raised > 0 ? 44 : 0, background: GREEN_STRIPES }}
+                                />
+                                {/* Gold fill — everything raised beyond the initial goal (open-ended scaling) */}
+                                {goldW > 0 && (
+                                    <div
+                                        className="absolute top-0 h-full transition-[left,width] duration-1000 ease-out"
+                                        style={{ left: `max(${greenW}%, 44px)`, width: `${goldW}%`, background: GOLD_STRIPES }}
+                                    />
+                                )}
+                                {/* Shimmer sweeping the full fill (green + gold) */}
+                                <div
+                                    aria-hidden
+                                    className="absolute left-0 top-0 h-full overflow-hidden pointer-events-none transition-[width] duration-1000 ease-out"
+                                    style={{ width: `${greenW + goldW}%`, minWidth: raised > 0 ? 44 : 0 }}
                                 >
                                     <span
-                                        aria-hidden
                                         className="absolute inset-y-0 left-0 w-[35%]"
                                         style={{ background: "linear-gradient(90deg,transparent,rgba(255,255,255,0.5) 50%,transparent)", animation: "mkt-pb-shimmer 2.2s ease-in-out infinite" }}
                                     />
                                 </div>
                                 <span aria-hidden className="absolute inset-0 pointer-events-none rounded-[inherit]" style={{ boxShadow: "inset 0px 2px 8px 0px rgba(0,48,96,0.08)" }} />
                             </div>
-                            {raised > 0 && livePct < 100 && (
+                            {/* Tall green marker at the end of the green segment — the initial-goal
+                                point when the goal has scaled, or the progress head otherwise. */}
+                            {raised > 0 && greenPct < 100 && (
                                 <span
                                     aria-hidden
                                     className="pointer-events-none absolute top-1/2 h-[44px] w-[7px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#2bbd5f] shadow-[0px_2px_6px_-1px_rgba(0,48,96,0.28)] transition-[left] duration-1000 ease-out"
-                                    style={{ left: `max(${barW}%, 44px)` }}
+                                    style={{ left: `max(${greenW}%, 44px)` }}
                                 />
                             )}
                         </div>

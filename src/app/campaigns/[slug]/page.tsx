@@ -173,6 +173,10 @@ export default async function CampaignPublicPage({
     const isPerParticipantGoal = campaign.goal_type === "participant_goal";
     const participantScale = isPerParticipantGoal && participants.length > 0 ? participants.length : 1;
     const goalAmount = rawGoalAmount != null ? rawGoalAmount * participantScale : null;
+    // Open-ended individual goals lock their first target here; goalAmount then
+    // auto-scales +20% each time it's met, so the public bar can show green up to
+    // the initial goal and gold for everything raised beyond it.
+    const initialGoalAmount = campaign.initial_goal_amount != null ? Number(campaign.initial_goal_amount) : null;
     const pct = goalAmount && goalAmount > 0 ? Math.min(100, (totalRaised / goalAmount) * 100) : 0;
     const perParticipantGoal = isPerParticipantGoal
         ? rawGoalAmount
@@ -269,6 +273,7 @@ export default async function CampaignPublicPage({
                 theme={theme}
                 totalRaised={totalRaised}
                 goalAmount={goalAmount}
+                initialGoalAmount={initialGoalAmount}
                 donorCount={donorCount}
                 pct={pct}
                 daysLeft={daysLeft}
