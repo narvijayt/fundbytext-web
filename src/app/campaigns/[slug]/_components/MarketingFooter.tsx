@@ -1,6 +1,7 @@
 import Image from "next/image";
 import CurrentYear from "@/components/CurrentYear";
 import Link from "next/link";
+import FooterShareLinks from "./FooterShareLinks";
 
 const A = "/assets/marketing";
 const NAV_LINKS = [
@@ -47,10 +48,7 @@ export default function MarketingFooter({ accent }: { accent: string }) {
                         </div>
                     </div>
                     <div className="flex flex-col md:flex-row gap-[16px] md:items-center w-full">
-                        <div className="flex gap-[8px] items-center shrink-0 w-full md:w-[235px] xl:w-[300px]">
-                            <Image src={`${A}/footer/social-1.svg`} alt="Telegram" width={40} height={40} className="size-[40px]" />
-                            <Image src={`${A}/footer/social-2.svg`} alt="WhatsApp" width={40} height={40} className="size-[40px]" />
-                        </div>
+                        <FooterShareLinks />
                         <p className="font-medium text-[14px] text-[#7e8a96] whitespace-nowrap" style={{ lineHeight: 1.25 }}>1901 Thornridge Cir. Shiloh,<br />Hawaii 81063</p>
                     </div>
                 </div>
