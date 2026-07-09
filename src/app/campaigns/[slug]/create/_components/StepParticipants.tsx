@@ -687,6 +687,15 @@ export default function StepParticipants({
                     </p>
                 )}
 
+                {!isOrg && (
+                    <div className="flex items-start gap-2.5 rounded-xl bg-[#eef5fd] px-4 py-3">
+                        <svg className="mt-px size-4 shrink-0 text-[#0268c0]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 16v-4m0-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        <p className="text-[13px] leading-[1.5] text-[#57728d]">
+                            Only the donors you add here are shown. Walk-in donations made directly on your campaign page won&rsquo;t appear in this list.
+                        </p>
+                    </div>
+                )}
+
                 {/* Rows */}
                 <div className="flex flex-col gap-2">
                     {isOrg

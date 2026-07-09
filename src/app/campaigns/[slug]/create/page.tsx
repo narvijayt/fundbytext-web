@@ -24,7 +24,7 @@ export default async function CampaignSetupPage({
             include: {
                 media:   { orderBy: { sort_order: "asc" } },
                 payout:  true,
-                members: { include: { roles: { select: { role: true } } }, orderBy: { created_at: "asc" } },
+                members: { include: { roles: { select: { role: true } }, user: { select: { profile_photo_url: true } } }, orderBy: { created_at: "asc" } },
                 // Only the donors the organizer added (source "invited"); walk-ins and
                 // other organic entries from the live campaign don't belong in this list.
                 donors:  { where: { source: "invited" }, orderBy: { created_at: "asc" }, select: { id: true, first_name: true, last_name: true, email: true, phone: true } },
@@ -77,6 +77,12 @@ export default async function CampaignSetupPage({
 
     // Serialise Decimal / Date values for the client component
     const campaignData = JSON.parse(JSON.stringify(campaign));
+    // Fall back to each member's linked account photo (used for the organizer, whose
+    // photo lives on their user account rather than the campaign membership).
+    campaignData.members = campaignData.members.map((m: { profile_photo_url: string | null; user?: { profile_photo_url: string | null } | null }) => ({
+        ...m,
+        account_photo_url: m.user?.profile_photo_url ?? null,
+    }));
 
     // If a specific step was requested via ?step= use it, otherwise find first incomplete
     const initialStep = requestedStep > 1 ? requestedStep : firstIncompleteStep();

@@ -200,7 +200,7 @@ export async function POST(req: NextRequest) {
                     org_display_name:  true,
                     members: {
                         where: { roles: { some: { role: "organizer" } } },
-                        select: { first_name: true, last_name: true, profile_photo_url: true },
+                        select: { first_name: true, last_name: true, profile_photo_url: true, user: { select: { profile_photo_url: true } } },
                         take: 1,
                     },
                 },
@@ -215,15 +215,15 @@ export async function POST(req: NextRequest) {
                 // The note is signed (name + photo) by the participant it's attributed
                 // to on a participant-goal campaign, otherwise by the organizer.
                 let signerName = organizerName;
-                let signerPhotoUrl: string | null = organizer?.profile_photo_url ?? null;
+                let signerPhotoUrl: string | null = organizer?.profile_photo_url ?? organizer?.user?.profile_photo_url ?? null;
                 if (campaignFull.goal_type === "participant_goal" && resolvedMemberId) {
                     const participant = await prisma.campaignMember.findUnique({
                         where:  { id: resolvedMemberId },
-                        select: { first_name: true, last_name: true, profile_photo_url: true },
+                        select: { first_name: true, last_name: true, profile_photo_url: true, user: { select: { profile_photo_url: true } } },
                     });
                     if (participant) {
                         signerName     = `${participant.first_name} ${participant.last_name}`.trim();
-                        signerPhotoUrl = participant.profile_photo_url ?? null;
+                        signerPhotoUrl = participant.profile_photo_url ?? participant.user?.profile_photo_url ?? null;
                     }
                 }
 

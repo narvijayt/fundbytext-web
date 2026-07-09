@@ -47,7 +47,7 @@ export default function StepThankYou({
     // Avatar next to the sign-off: the organizer's photo for individual/org notes.
     // The participant-goal note is a per-recipient template ("{Participant Name}"),
     // so there's no single face to show — its avatar falls back to a person icon.
-    const signerPhoto   = variant === "participant" ? null : (organizer?.profile_photo_url ?? null);
+    const signerPhoto   = variant === "participant" ? null : (organizer?.profile_photo_url ?? organizer?.account_photo_url ?? null);
     const signerIsToken = signerName.startsWith("{");
     const signerInitials = signerIsToken
         ? ""

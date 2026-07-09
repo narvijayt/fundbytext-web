@@ -24,6 +24,9 @@ export type Member = {
     email: string | null;
     phone: string | null;
     profile_photo_url: string | null;
+    /** Photo from the member's linked user account — the fallback shown when the
+     *  member has no campaign photo of their own (e.g. the organizer). */
+    account_photo_url?: string | null;
     roles: MemberRole[];
 };
 
