@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
+import { useStagedFill } from "@/components/useStagedFill";
 
 const fmtUSD = (n: number) =>
     new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(n);
@@ -38,10 +39,7 @@ type Props = {
 export default function CampaignProgressBar({ raisedAmt, goalAmt, initialGoalAmt, donationCount, endDate, status, goalType, timezone }: Props) {
     const tz = timezone ?? "America/New_York";
     const [countdown,    setCountdown]    = useState<ReturnType<typeof getCountdown> | null>(null);
-    const [animGreenPct, setAnimGreenPct] = useState(0);
-    const [animGoldPct,  setAnimGoldPct]  = useState(0);
     const [tip,          setTip]          = useState<{ text: string; pct: number } | null>(null);
-    const rafRef = useRef<number>(0);
 
     const isUpcoming  = status === "upcoming";
     const isCompleted = status === "completed";
@@ -61,30 +59,9 @@ export default function CampaignProgressBar({ raisedAmt, goalAmt, initialGoalAmt
     const targetGreenPct = splitGoal ? Math.min(raisedAmt, splitGoal) / scale * 100 : (raisedAmt > 0 ? 100 : 0);
     const targetGoldPct  = splitGoal && raisedAmt > splitGoal ? (raisedAmt - splitGoal) / scale * 100 : 0;
 
-    // Animate bar — runs on mount and when raised/goal changes
-    const prevGreenRef = useRef(0);
-    const prevGoldRef  = useRef(0);
-    useEffect(() => {
-        const fromGreen = prevGreenRef.current;
-        const fromGold  = prevGoldRef.current;
-        prevGreenRef.current = targetGreenPct;
-        prevGoldRef.current  = targetGoldPct;
-
-        const start = performance.now();
-        const dur   = 1200;
-
-        function step(now: number) {
-            const t = Math.min(1, (now - start) / dur);
-            const e = 1 - Math.pow(1 - t, 3); // ease-out cubic
-            setAnimGreenPct(fromGreen + e * (targetGreenPct - fromGreen));
-            setAnimGoldPct(fromGold  + e * (targetGoldPct  - fromGold));
-            if (t < 1) rafRef.current = requestAnimationFrame(step);
-        }
-        cancelAnimationFrame(rafRef.current);
-        rafRef.current = requestAnimationFrame(step);
-        return () => cancelAnimationFrame(rafRef.current);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [raisedAmt, goalAmt]);
+    // Green fills first, then the gold overflow — shared with the public campaign
+    // bar. greenDone reveals the goal divider only once the fill reaches it.
+    const { greenW: animGreenPct, goldW: animGoldPct, greenDone } = useStagedFill(targetGreenPct, targetGoldPct);
 
     const urgent = countdown && !countdown.ended && countdown.days <= 2;
 
@@ -107,33 +84,44 @@ export default function CampaignProgressBar({ raisedAmt, goalAmt, initialGoalAmt
             <div className="relative" onMouseLeave={() => setTip(null)}>
                 <style>{`@keyframes pb-shimmer{0%{transform:translateX(-120%)}100%{transform:translateX(400%)}}`}</style>
                 <div className="relative h-7 rounded-full overflow-hidden cursor-pointer" style={{ background: "#e5e7eb" }}>
-                    {animGreenPct > 0 && (
-                        <div className="absolute inset-y-0 left-0" style={{
-                            width: `${animGreenPct}%`,
+                    {/* Green fill — up to the initial goal. Each colour is a full-width
+                        striped layer revealed with clip-path so the diagonal stripes share
+                        one origin and stay continuous across the green→gold boundary. */}
+                    {targetGreenPct > 0 && (
+                        <div aria-hidden className="absolute inset-0 overflow-hidden" style={{
                             background: "repeating-linear-gradient(-45deg,#33cc6b,#33cc6b 7px,#23b257 7px,#23b257 14px)",
+                            clipPath: `inset(0 ${100 - animGreenPct}% 0 0)`,
+                            WebkitClipPath: `inset(0 ${100 - animGreenPct}% 0 0)`,
                         }} />
                     )}
-                    {animGoldPct > 0 && (
-                        <div className="absolute inset-y-0" style={{
-                            left: `${animGreenPct}%`, width: `${animGoldPct}%`,
+                    {/* Gold fill — raised beyond the initial goal (open-ended scaling); its
+                        left edge is pinned at the initial-goal point and it fills only after
+                        the green segment finishes. */}
+                    {targetGoldPct > 0 && (
+                        <div aria-hidden className="absolute inset-0 overflow-hidden" style={{
                             background: "repeating-linear-gradient(-45deg,#f5b93f,#f5b93f 7px,#e8a423 7px,#e8a423 14px)",
+                            clipPath: `inset(0 ${100 - (targetGreenPct + animGoldPct)}% 0 ${targetGreenPct}%)`,
+                            WebkitClipPath: `inset(0 ${100 - (targetGreenPct + animGoldPct)}% 0 ${targetGreenPct}%)`,
                         }} />
                     )}
-                    {/* Goal marker — green tick where the bar crosses the (initial) goal into overflow */}
-                    {animGoldPct > 0.5 && (
-                        <div className="absolute inset-y-0 z-[5] w-[3px] bg-[#178a43]" style={{ left: `calc(${animGreenPct}% - 1.5px)` }} />
-                    )}
+                    {/* One shine sweeping the whole fill (green → gold), behind the divider */}
                     {animGreenPct + animGoldPct > 0 && (
-                        <div className="absolute inset-y-0 left-0 pointer-events-none" style={{
-                            width: `${animGreenPct + animGoldPct}%`, overflow: "hidden",
+                        <div aria-hidden className="absolute inset-0 overflow-hidden pointer-events-none" style={{
+                            clipPath: `inset(0 ${100 - (animGreenPct + animGoldPct)}% 0 0)`,
+                            WebkitClipPath: `inset(0 ${100 - (animGreenPct + animGoldPct)}% 0 0)`,
                         }}>
                             <div style={{
                                 position: "absolute", top: 0, bottom: 0, left: 0,
-                                width: "35%",
+                                width: "30%",
                                 background: "linear-gradient(90deg,transparent,rgba(255,255,255,0.55) 50%,transparent)",
                                 animation: "pb-shimmer 2.2s ease-in-out infinite",
                             }} />
                         </div>
+                    )}
+                    {/* Goal divider — green tick where the bar crosses the initial goal into
+                        overflow. Revealed only once the green fill reaches it. */}
+                    {targetGoldPct > 0 && (
+                        <div className="absolute inset-y-0 z-[5] w-[3px] bg-[#178a43] transition-opacity duration-300" style={{ left: `calc(${targetGreenPct}% - 1.5px)`, opacity: greenDone ? 1 : 0 }} />
                     )}
 
                     {/* Invisible hit areas for tooltips */}

@@ -6,21 +6,13 @@ import { useRouter } from "next/navigation";
 import { DONATE_EVENT } from "./DonateNavButton";
 import CountdownBadge from "@/components/CountdownBadge";
 import InlineDonateForm from "./InlineDonateForm";
+import MarketingProgressBar from "./MarketingProgressBar";
 import type { RecentDonation } from "../page";
 import type { MarketingTheme } from "./marketingTheme";
 import type { DonorPrefill } from "./CampaignDonateShell";
 import type { ModalParticipant } from "./DonateModal";
 
 const A = "/assets/marketing";
-
-// Green-on-green diagonal stripes for the "raised" fill + a subtle striped gray
-// track — matches the dashboard CampaignProgressBar exactly (so the public page
-// and the dashboard campaign view read as the same bar).
-const GREEN_STRIPES = "repeating-linear-gradient(-45deg,#33cc6b,#33cc6b 7px,#23b257 7px,#23b257 14px)";
-// Gold stripes for the "raised beyond the initial goal" segment on open-ended
-// campaigns — matches the dashboard CampaignProgressBar's overflow colour.
-const GOLD_STRIPES  = "repeating-linear-gradient(-45deg,#f5b93f,#f5b93f 7px,#e8a423 7px,#e8a423 14px)";
-const TRACK_STRIPES = "repeating-linear-gradient(-45deg,#eff1f4,#eff1f4 7px,#e4e7eb 7px,#e4e7eb 14px)";
 
 function fmtUSD(n: number) {
     return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(n);
@@ -108,23 +100,10 @@ export default function MarketingDetails({
     const isUpcoming   = status === "upcoming";
 
     // Open-ended goals lock their first target in initialGoalAmount and auto-scale
-    // goalAmount +20% each time it's met. The bar shows green up to the initial
-    // goal, gold for everything raised beyond it, and the track's full width is the
-    // current (scaled) goal. For every other goal type initialGoalAmount is null or
-    // equal to goalAmount, so this collapses to a single green fill.
+    // goalAmount +20% each time it's met. When scaled, the bar shows green up to the
+    // initial goal and gold beyond it (see MarketingProgressBar); the label below
+    // switches to "initial goal" so the header reflects the locked target.
     const isScaledGoal = initialGoalAmount != null && goalAmount != null && initialGoalAmount !== goalAmount;
-    const splitGoal    = initialGoalAmount ?? goalAmount;
-    const scale        = goalAmount && goalAmount > 0 ? Math.max(raised, goalAmount) : (raised || 1);
-    const greenPct     = splitGoal ? Math.min(raised, splitGoal) / scale * 100 : livePct;
-    const goldPct      = splitGoal && raised > splitGoal ? (raised - splitGoal) / scale * 100 : 0;
-
-    // Animate both segments in on mount (CSS width/left transitions do the tween).
-    const [greenW, setGreenW] = useState(0);
-    const [goldW,  setGoldW]  = useState(0);
-    useEffect(() => {
-        const id = requestAnimationFrame(() => { setGreenW(greenPct); setGoldW(goldPct); });
-        return () => cancelAnimationFrame(id);
-    }, [greenPct, goldPct]);
 
     const textLength = (story ?? "").replace(/<[^>]*>/g, "").length;
     const isLong     = textLength > 320;
@@ -191,69 +170,9 @@ export default function MarketingDetails({
                                 </p>
                             )}
                         </div>
-                        {/* Progress bar — green-on-green striped "raised" fill on a striped gray
-                            track (both the same height), with a taller rounded green marker
-                            at the current progress point. The marker lives outside the clipped
-                            track so it can stand proud of the bar. */}
-                        <div className="relative w-full">
-                            <div className="h-[32px] relative rounded-full w-full overflow-hidden" style={{ background: TRACK_STRIPES }}>
-                                <style>{`@keyframes mkt-pb-shimmer{0%{transform:translateX(-120%)}100%{transform:translateX(400%)}}`}</style>
-                                {/* Green fill — raised up to the initial goal. Each colour is a
-                                    FULL-WIDTH striped layer revealed with clip-path (not a
-                                    width-sized div) so the diagonal stripes share one origin and
-                                    stay continuous across the green→gold→track boundaries. */}
-                                <div
-                                    aria-hidden
-                                    className="absolute inset-0 overflow-hidden"
-                                    style={{
-                                        background: GREEN_STRIPES,
-                                        // max(…,44px) keeps a small donation's green nub visible and
-                                        // aligned with the marker, mirroring the old min-width guard.
-                                        clipPath: `inset(0 calc(100% - max(${greenW}%, 44px)) 0 0)`,
-                                        WebkitClipPath: `inset(0 calc(100% - max(${greenW}%, 44px)) 0 0)`,
-                                        transition: "clip-path 1000ms ease-out, -webkit-clip-path 1000ms ease-out",
-                                    }}
-                                >
-                                    <span
-                                        className="absolute inset-y-0 left-0 w-[35%]"
-                                        style={{ background: "linear-gradient(90deg,transparent,rgba(255,255,255,0.5) 50%,transparent)", animation: "mkt-pb-shimmer 2.2s ease-in-out infinite" }}
-                                    />
-                                </div>
-                                {/* Gold fill — raised beyond the initial goal (open-ended scaling).
-                                    Its left edge is fixed at the initial-goal point and it only
-                                    starts filling once the green segment has finished (delay). */}
-                                {goldPct > 0 && (
-                                    <div
-                                        aria-hidden
-                                        className="absolute inset-0 overflow-hidden"
-                                        style={{
-                                            background: GOLD_STRIPES,
-                                            clipPath: `inset(0 ${100 - (greenPct + goldW)}% 0 ${greenPct}%)`,
-                                            WebkitClipPath: `inset(0 ${100 - (greenPct + goldW)}% 0 ${greenPct}%)`,
-                                            transition: "clip-path 700ms ease-out, -webkit-clip-path 700ms ease-out",
-                                            transitionDelay: "1000ms",
-                                        }}
-                                    >
-                                        <span
-                                            className="absolute inset-y-0 w-[35%]"
-                                            style={{ left: `${greenPct}%`, background: "linear-gradient(90deg,transparent,rgba(255,255,255,0.5) 50%,transparent)", animation: "mkt-pb-shimmer 2.2s ease-in-out infinite", animationDelay: "1000ms" }}
-                                        />
-                                    </div>
-                                )}
-                                <span aria-hidden className="absolute inset-0 pointer-events-none rounded-[inherit]" style={{ boxShadow: "inset 0px 2px 8px 0px rgba(0,48,96,0.08)" }} />
-                            </div>
-                            {/* Tall green marker at the end of the green segment — the initial-goal
-                                point when the goal has scaled, or the progress head otherwise. Pinned
-                                at that point and faded in only once the green fill reaches it (delay
-                                matched to the green fill), so it never floats ahead of the progress. */}
-                            {raised > 0 && greenPct < 100 && (
-                                <span
-                                    aria-hidden
-                                    className="pointer-events-none absolute top-1/2 h-[44px] w-[7px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#2bbd5f] shadow-[0px_2px_6px_-1px_rgba(0,48,96,0.28)] transition-opacity duration-300 ease-out"
-                                    style={{ left: `max(${greenPct}%, 44px)`, opacity: greenW > 0 ? 1 : 0, transitionDelay: "900ms" }}
-                                />
-                            )}
-                        </div>
+                        {/* Progress bar — green up to the initial goal, gold for the open-ended
+                            scaling overflow, with the goal divider that reveals as green reaches it. */}
+                        <MarketingProgressBar raised={raised} goalAmount={goalAmount} initialGoalAmount={initialGoalAmount} pct={pct} />
                         {/* Date + days + donations */}
                         <div className="flex gap-[6px] items-center justify-center px-[4px] w-full">
                             <span className="h-[40px] w-[25px] relative shrink-0 overflow-hidden">
