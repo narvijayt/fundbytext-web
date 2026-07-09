@@ -4,6 +4,19 @@ import Link from "next/link";
 import FooterShareLinks from "./FooterShareLinks";
 
 const A = "/assets/marketing";
+
+// The FundByText "F" glyph (from logo-icon.svg) — the same mark that drifts
+// behind the campaign-creation steps. Tiled + rotated into a faint white
+// watermark for the CTA card, drifting via the shared `driftLeft` keyframe.
+const F_GLYPH = "M9.21961 0C4.12776 0 0 4.189 0 9.35639V21.9925H6.80123V13.1382C6.80123 11.9286 7.76713 10.9483 8.95907 10.9483H23.0981V14.5017H10.8428V18.7607H21.7073V22.0008H10.8691L3.75375 39H15.5243L27.3901 21.9934V0H9.21961Z";
+const F_WATERMARK = `url("data:image/svg+xml,${encodeURIComponent(
+    `<svg xmlns='http://www.w3.org/2000/svg' width='150' height='150' viewBox='0 0 150 150'>` +
+    `<g fill='rgba(255,255,255,0.1)'>` +
+    `<g transform='translate(14,16) rotate(-12) scale(1.25)'><path d='${F_GLYPH}'/></g>` +
+    `<g transform='translate(96,86) rotate(14) scale(0.95)'><path d='${F_GLYPH}'/></g>` +
+    `</g></svg>`,
+)}")`;
+
 const NAV_LINKS = [
     { label: "Browse Campaigns", href: "#" },
     { label: "How It Works", href: "/how-it-works" },
@@ -55,6 +68,8 @@ export default function MarketingFooter({ accent }: { accent: string }) {
 
                 {/* CTA card (themed to accent) */}
                 <div className="flex flex-col gap-[32px] items-center justify-center overflow-hidden p-[24px] md:p-[40px] relative rounded-[24px] w-full xl:w-auto xl:shrink-0" style={{ background: accent }}>
+                    {/* Drifting "F" app-logo watermark — the same mark that animates behind the creation steps. */}
+                    <div aria-hidden className="absolute inset-0 pointer-events-none" style={{ backgroundImage: F_WATERMARK, backgroundRepeat: "repeat", backgroundSize: "170px 170px", animation: "driftLeft 18s linear infinite" }} />
                     <div aria-hidden className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0) 100%)" }} />
                     <div className="relative flex flex-col gap-[16px] items-start w-full xl:w-[248px] xl:flex-1 xl:min-h-0">
                         <p className="font-black text-[32px] xl:text-[38px] 2xl:text-[46px] text-white tracking-[-1.5px] w-full" style={{ lineHeight: 1.1 }}>Ready to Fundraise?</p>
