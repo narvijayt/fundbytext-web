@@ -60,6 +60,23 @@ function ContextOverlay({ text }: { text: string }) {
     );
 }
 
+/* On-brand fill (accent→secondary gradient + theme pattern) used behind the QR
+   when there's no spare photo. */
+function BrandedBg({ theme }: { theme: MarketingTheme }) {
+    return (
+        <>
+            <span aria-hidden className="absolute inset-0" style={{ background: `linear-gradient(157deg, ${theme.accent} 0%, ${theme.secondary} 100%)` }} />
+            {theme.themeImage && (
+                <span
+                    aria-hidden
+                    className={`absolute inset-0 ${theme.themeCover ? "opacity-[0.16]" : "opacity-[0.12]"}`}
+                    style={{ backgroundImage: `url('${theme.themeImage}')`, backgroundRepeat: theme.themeCover ? "no-repeat" : "repeat", backgroundSize: theme.themeSize, backgroundPosition: "center" }}
+                />
+            )}
+        </>
+    );
+}
+
 export default function MarketingShareables({
     slug, galleryUrls, heroUrl, videoUrl = null, videoThumbnail = null, theme,
 }: {
@@ -80,6 +97,8 @@ export default function MarketingShareables({
     const photoCards = photos.slice(0, 2);
     // A spare gallery photo sits behind the QR; with none, it uses a branded panel.
     const qrPhoto = photos[2] ?? null;
+    // Speech-bubble tail colour — the box gradient's mid tone, so it blends in.
+    const arrowColor = `color-mix(in srgb, ${theme.accent}, ${theme.secondary})`;
 
     // QR encodes this campaign's public URL — resolved on the client from the origin.
     const [campaignUrl, setCampaignUrl] = useState(`/campaigns/${slug}`);
@@ -100,41 +119,54 @@ export default function MarketingShareables({
                 {/* Campaign video */}
                 <VideoTile src={videoSrc} poster={videoThumb} />
 
-                {/* Campaign photos (gallery only) + the campaign's QR code. Only real
-                    photos are shown as tiles, and the QR always has a background — a
-                    spare photo, or a branded panel — so the row degrades gracefully. */}
-                <div className="flex w-full flex-col flex-wrap items-stretch justify-center gap-[24px] md:flex-row">
-                    {photoCards.map((p, i) => (
-                        <div key={i} className="group relative h-[400px] w-full overflow-hidden rounded-[24px] bg-[#e8eaee] md:min-w-[280px] md:flex-1">
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img src={p} alt="Campaign photo" className="absolute inset-0 h-full w-full object-cover" />
-                            <ContextOverlay text={i === 0 ? "A photo from this campaign." : "Another photo from this campaign."} />
+                {photoCards.length > 0 ? (
+                    /* Campaign photos (gallery only) + the QR code. Only real photos are
+                       tiles; the QR uses a spare photo or a branded panel behind it. */
+                    <div className="flex w-full flex-col flex-wrap items-stretch justify-center gap-[24px] md:flex-row">
+                        {photoCards.map((p, i) => (
+                            <div key={i} className="group relative h-[400px] w-full overflow-hidden rounded-[24px] bg-[#e8eaee] md:min-w-[280px] md:flex-1">
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img src={p} alt="Campaign photo" className="absolute inset-0 h-full w-full object-cover" />
+                                <ContextOverlay text={i === 0 ? "A photo from this campaign." : "Another photo from this campaign."} />
+                            </div>
+                        ))}
+                        <div className="group relative h-[400px] w-full overflow-hidden rounded-[24px] bg-[#e8eaee] md:w-[340px] md:shrink-0">
+                            {qrPhoto ? (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img src={qrPhoto} alt="" className="absolute inset-0 h-full w-full object-cover" />
+                            ) : (
+                                <BrandedBg theme={theme} />
+                            )}
+                            {/* White card holding a blue QR for this campaign's URL (matches Figma). */}
+                            <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center rounded-[24px] bg-white p-[26px] shadow-[0px_16px_40px_-8px_rgba(0,48,96,0.25)]">
+                                <QRCodeSVG value={campaignUrl} size={188} level="M" fgColor={theme.accent} bgColor="#ffffff" title="Scan to open the campaign page" />
+                            </span>
+                            <ContextOverlay text="Scan this code to open the campaign page — or share the link to spread the word." />
                         </div>
-                    ))}
-                    <div className="group relative h-[400px] w-full overflow-hidden rounded-[24px] bg-[#e8eaee] md:w-[340px] md:shrink-0">
-                        {qrPhoto ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img src={qrPhoto} alt="" className="absolute inset-0 h-full w-full object-cover" />
-                        ) : (
-                            <>
-                                <span aria-hidden className="absolute inset-0" style={{ background: `linear-gradient(157deg, ${theme.accent} 0%, ${theme.secondary} 100%)` }} />
-                                {theme.themeImage && (
-                                    <span aria-hidden className={`absolute inset-0 ${theme.themeCover ? "opacity-[0.16]" : "opacity-[0.12]"}`} style={{ backgroundImage: `url('${theme.themeImage}')`, backgroundRepeat: theme.themeCover ? "no-repeat" : "repeat", backgroundSize: theme.themeSize, backgroundPosition: "center" }} />
-                                )}
-                            </>
-                        )}
-                        {/* White card holding a blue QR for this campaign's URL (matches Figma). */}
-                        <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center rounded-[24px] bg-white p-[26px] shadow-[0px_16px_40px_-8px_rgba(0,48,96,0.25)]">
-                            <QRCodeSVG value={campaignUrl} size={188} level="M" fgColor={theme.accent} bgColor="#ffffff" title="Scan to open the campaign page" />
-                        </span>
-                        <ContextOverlay text="Scan this code to open the campaign page — or share the link to spread the word." />
                     </div>
-                </div>
+                ) : (
+                    /* No gallery photos — a wide branded QR banner keeps the section
+                       balanced under the full-width video instead of a lonely card. */
+                    <div className="relative w-full overflow-hidden rounded-[24px]">
+                        <BrandedBg theme={theme} />
+                        <div className="relative flex flex-col items-center justify-center gap-[28px] p-[32px] text-center md:flex-row md:gap-[44px] md:p-[44px] md:text-left">
+                            <span className="flex shrink-0 items-center justify-center rounded-[22px] bg-white p-[22px] shadow-[0px_16px_40px_-8px_rgba(0,48,96,0.25)]">
+                                <QRCodeSVG value={campaignUrl} size={168} level="M" fgColor={theme.accent} bgColor="#ffffff" title="Scan to open the campaign page" />
+                            </span>
+                            <div className="max-w-[440px]">
+                                <h3 className="font-black text-white text-[24px] md:text-[28px]" style={{ lineHeight: 1.15 }}>Scan to open this campaign</h3>
+                                <p className="mt-[10px] font-medium text-white/80 text-[15px] md:text-[16px]" style={{ lineHeight: 1.5 }}>
+                                    Point a phone camera at the code &mdash; or share the campaign link &mdash; to help spread the word.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
 
-            {/* FundBuddy hint — a compact, dismissible tip. */}
+            {/* FundBuddy hint — full-width dismissible tip (just resized smaller). */}
             {hintOpen && (
-                <div className="w-full max-w-[720px] flex items-center justify-center">
+                <div className="w-full max-w-[1152px] flex items-center justify-center">
                     <div className="hidden md:block h-[116px] w-[88px] relative shrink-0 overflow-hidden">
                         <span className="absolute inset-[7.81%_3.93%_4.69%_4.13%]">
                             <Image src={`${A}/shareables/fundbuddy-large.svg`} alt="" width={132} height={166} className="absolute inset-0 block max-w-none size-full" />
@@ -143,7 +175,7 @@ export default function MarketingShareables({
                     <Image src={`${A}/shareables/fundbuddy-small.svg`} alt="" width={63} height={80} className="md:hidden h-[62px] w-[49px] shrink-0 self-center" />
                     <div className="relative flex-1 min-w-0">
                         <div
-                            className="ml-[12px] md:ml-[24px] flex flex-col gap-[12px] items-end px-[18px] md:px-[22px] py-[14px] md:py-[16px] rounded-[14px]"
+                            className="ml-[16px] flex flex-col gap-[12px] items-end px-[18px] md:px-[24px] py-[14px] md:py-[16px] rounded-[14px] xl:max-w-[952px]"
                             style={{
                                 background: `linear-gradient(0deg, ${theme.accent} 0%, ${theme.secondary} 100%)`,
                                 boxShadow: "0px 16px 30px -8px rgba(20,65,109,0.28)",
@@ -161,9 +193,13 @@ export default function MarketingShareables({
                                 <span className="font-bold text-[13px] leading-none whitespace-nowrap" style={{ color: theme.accent }}>Got it!</span>
                             </button>
                         </div>
-                        <span className="absolute left-[-11px] md:left-[-3px] top-[15px] md:top-[20px] w-[32px] h-[36px] flex items-center justify-center">
-                            <Image src={`${A}/shareables/bubble-arrow.svg`} alt="" width={56} height={51} className="-rotate-90 size-full max-w-none" />
-                        </span>
+                        {/* Speech-bubble tail — a clean CSS triangle, vertically centred on
+                            the bubble so it never spills over the top edge. */}
+                        <span
+                            aria-hidden
+                            className="absolute left-[2px] top-1/2 h-0 w-0 -translate-y-1/2"
+                            style={{ borderTop: "8px solid transparent", borderBottom: "8px solid transparent", borderRight: `15px solid ${arrowColor}` }}
+                        />
                     </div>
                 </div>
             )}
