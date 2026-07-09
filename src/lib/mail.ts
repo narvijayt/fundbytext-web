@@ -297,7 +297,8 @@ export async function sendDonorThankYouEmail({
     campaignName,
     campaignUrl,
     amount,
-    organizerName,
+    signerName,
+    signerPhotoUrl,
     orgDisplayName,
     thankYouMessage,
 }: {
@@ -306,7 +307,8 @@ export async function sendDonorThankYouEmail({
     campaignName: string;
     campaignUrl: string;
     amount: number;
-    organizerName: string;
+    signerName: string;
+    signerPhotoUrl?: string | null;
     orgDisplayName?: string | null;
     thankYouMessage: string;
 }) {
@@ -314,9 +316,11 @@ export async function sendDonorThankYouEmail({
         style: "currency", currency: "USD",
     }).format(amount);
 
-    const senderLine = orgDisplayName
-        ? `${organizerName} &mdash; <strong style="color:${INK}">${orgDisplayName}</strong>`
-        : `<strong style="color:${INK}">${organizerName}</strong>`;
+    // Avatar next to the sign-off — the signer's photo, or their initials on a chip.
+    const initials = signerName.split(/\s+/).filter(Boolean).map((w) => w[0]).slice(0, 2).join("").toUpperCase();
+    const avatarCell = signerPhotoUrl
+        ? `<img src="${signerPhotoUrl}" width="44" height="44" alt="" style="width:44px;height:44px;border-radius:50%;object-fit:cover;display:block;border:1px solid ${LINE}">`
+        : `<div style="width:44px;height:44px;border-radius:50%;background:#e8eef7;border:1px solid ${LINE};color:${NAVY};font-size:16px;font-weight:700;line-height:44px;text-align:center">${initials || "&#128512;"}</div>`;
 
     await transporter.sendMail({
         from,
@@ -332,9 +336,15 @@ export async function sendDonorThankYouEmail({
             <table cellpadding="0" cellspacing="0" width="100%" style="margin-bottom:26px">
               <tr>
                 <td style="background:${CARD};border-left:4px solid ${ORANGE};border-radius:0 10px 10px 0;padding:20px 24px">
-                    <p style="margin:0 0 14px;font-size:15px;color:${INK};line-height:1.75">${thankYouMessage.replace(/\n/g, "<br>")}</p>
-                    <p style="margin:0 0 2px;font-size:14px;font-weight:600;color:${INK}">With gratitude,</p>
-                    <p style="margin:0;font-size:13px;color:${BODY}">${senderLine}</p>
+                    <p style="margin:0 0 16px;font-size:15px;color:${INK};line-height:1.75">${thankYouMessage.replace(/\n/g, "<br>")}</p>
+                    <p style="margin:0 0 12px;font-size:14px;font-weight:600;color:${INK}">With gratitude,</p>
+                    <table cellpadding="0" cellspacing="0" role="presentation"><tr>
+                        <td style="padding-right:12px;vertical-align:middle">${avatarCell}</td>
+                        <td style="vertical-align:middle">
+                            <div style="font-size:14px;font-weight:700;color:${INK};line-height:1.3">${signerName}</div>
+                            ${orgDisplayName ? `<div style="font-size:13px;color:${BODY};line-height:1.4;margin-top:2px">${orgDisplayName}</div>` : ""}
+                        </td>
+                    </tr></table>
                 </td>
               </tr>
             </table>

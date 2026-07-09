@@ -195,11 +195,12 @@ export async function POST(req: NextRequest) {
                 select: {
                     name:              true,
                     slug:              true,
+                    goal_type:         true,
                     thank_you_message: true,
                     org_display_name:  true,
                     members: {
                         where: { roles: { some: { role: "organizer" } } },
-                        select: { first_name: true, last_name: true },
+                        select: { first_name: true, last_name: true, profile_photo_url: true },
                         take: 1,
                     },
                 },
@@ -210,6 +211,22 @@ export async function POST(req: NextRequest) {
                 const organizerName = organizer
                     ? `${organizer.first_name} ${organizer.last_name}`
                     : "The Organizer";
+
+                // The note is signed (name + photo) by the participant it's attributed
+                // to on a participant-goal campaign, otherwise by the organizer.
+                let signerName = organizerName;
+                let signerPhotoUrl: string | null = organizer?.profile_photo_url ?? null;
+                if (campaignFull.goal_type === "participant_goal" && resolvedMemberId) {
+                    const participant = await prisma.campaignMember.findUnique({
+                        where:  { id: resolvedMemberId },
+                        select: { first_name: true, last_name: true, profile_photo_url: true },
+                    });
+                    if (participant) {
+                        signerName     = `${participant.first_name} ${participant.last_name}`.trim();
+                        signerPhotoUrl = participant.profile_photo_url ?? null;
+                    }
+                }
+
                 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 
                 sendDonorThankYouEmail({
@@ -218,7 +235,8 @@ export async function POST(req: NextRequest) {
                     campaignName:    campaignFull.name ?? "the campaign",
                     campaignUrl:     `${APP_URL}/campaigns/${campaignFull.slug}`,
                     amount,
-                    organizerName,
+                    signerName,
+                    signerPhotoUrl,
                     orgDisplayName:  campaignFull.org_display_name ?? null,
                     thankYouMessage: campaignFull.thank_you_message,
                 }).catch((err) => console.error("[sendDonorThankYouEmail]", err));

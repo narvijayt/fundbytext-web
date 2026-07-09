@@ -44,6 +44,15 @@ export default function StepThankYou({
     const orgLine =
         variant === "individual" ? null : (orgDisplayName?.trim() || "{Organization}");
 
+    // Avatar next to the sign-off: the organizer's photo for individual/org notes.
+    // The participant-goal note is a per-recipient template ("{Participant Name}"),
+    // so there's no single face to show — its avatar falls back to a person icon.
+    const signerPhoto   = variant === "participant" ? null : (organizer?.profile_photo_url ?? null);
+    const signerIsToken = signerName.startsWith("{");
+    const signerInitials = signerIsToken
+        ? ""
+        : signerName.split(/\s+/).filter(Boolean).map((w) => w[0]).slice(0, 2).join("").toUpperCase();
+
     return (
         <QuestionCard
             askBuddyText="Ask FundBuddy for your personalized thank you note."
@@ -82,7 +91,16 @@ export default function StepThankYou({
                             <span className="hidden sm:inline">Thank you so much,</span>
                         </p>
                         <div className="flex items-center gap-2">
-                            <span className="size-4 shrink-0 rounded-full bg-[#d4dee7] sm:size-6" aria-hidden />
+                            <span className="flex size-5 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#d4dee7] sm:size-7">
+                                {signerPhoto ? (
+                                    // eslint-disable-next-line @next/next/no-img-element
+                                    <img src={signerPhoto} alt="" className="size-full object-cover" />
+                                ) : signerIsToken ? (
+                                    <svg viewBox="0 0 24 24" fill="none" className="size-3.5 text-[#8fa0b3] sm:size-4"><path d="M12 12a4 4 0 100-8 4 4 0 000 8zm0 2c-3.6 0-7 1.9-7 4.2V20h14v-1.8c0-2.3-3.4-4.2-7-4.2z" fill="currentColor" /></svg>
+                                ) : (
+                                    <span className="text-[9px] sm:text-[11px] font-bold text-[#7d8fa3]">{signerInitials}</span>
+                                )}
+                            </span>
                             <span className="text-[14px] sm:text-[15px] font-medium leading-[1.4] text-[#aeb5bd]">
                                 {signerName}
                             </span>
