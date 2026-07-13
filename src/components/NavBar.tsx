@@ -103,6 +103,27 @@ export default function NavBar({ user }: { user: { id: string } | null }) {
                         </button>
                     </div>
 
+                    {/* User */}
+                    <div className="px-5 pt-5">
+                        <Link
+                            href={user ? "/dashboard" : "/login"}
+                            onClick={() => setMenuOpen(false)}
+                            className="flex items-center gap-3 px-4 py-3.5 rounded-2xl bg-white/10 border border-white/20"
+                        >
+                            <span className="flex size-9 items-center justify-center rounded-full bg-white/15 shrink-0">
+                                <img alt="" src={A_NAV_USER} width={16} height={16} style={{ display: "block" }} />
+                            </span>
+                            <span className="flex flex-col min-w-0">
+                                <span className="font-black text-white text-sm leading-tight truncate">
+                                    {user ? "My Account" : "Sign In"}
+                                </span>
+                                <span className="text-white/60 text-xs leading-tight truncate">
+                                    {user ? "Go to your dashboard" : "Access your campaigns"}
+                                </span>
+                            </span>
+                        </Link>
+                    </div>
+
                     {/* Links */}
                     <nav className="modal-scroll flex-1 overflow-y-auto px-5 py-4">
                         <ul>
