@@ -8,10 +8,11 @@ import type { MarketingTheme } from "./marketingTheme";
 
 const A = "/assets/marketing";
 
-// Green-on-green diagonal stripes + a subtle striped gray track — matches the
-// dashboard CampaignProgressBar and the public-page progress bar exactly.
+// Green-on-green diagonal stripes (same as the dashboard/public progress bars)
+// + a striped gray track. The track's stripe contrast is a touch higher than the
+// main progress bar's so the tilt stays visible at 1x on the smaller podium bars.
 const GREEN_STRIPES = "repeating-linear-gradient(-45deg,#33cc6b,#33cc6b 7px,#23b257 7px,#23b257 14px)";
-const TRACK_STRIPES = "repeating-linear-gradient(-45deg,#eff1f4,#eff1f4 7px,#e4e7eb 7px,#e4e7eb 14px)";
+const TRACK_STRIPES = "repeating-linear-gradient(-45deg,#eff1f4,#eff1f4 7px,#dfe3e9 7px,#dfe3e9 14px)";
 const MEDALS = ["medal-gold", "medal-silver", "medal-bronze"];
 const TINTS = [
     "linear-gradient(225deg, #ffe5b2 16.667%, #ffffff 43.333%)",
@@ -300,10 +301,11 @@ export default function MarketingLeaderboard({
                                 const hl = p.id === highlightMemberId;
                                 return (
                                     <div key={p.id} {...clickProps(p.id)} className={`flex w-full xl:flex-1 flex-col gap-[24px] items-start min-w-0 overflow-hidden p-[32px] relative rounded-[20px] ${canDonate ? "cursor-pointer transition-transform hover:-translate-y-1" : ""}`} style={{ backgroundImage: hl ? `linear-gradient(180deg, ${theme.secondary} 0%, color-mix(in srgb, ${accent} 72%, ${theme.secondary}) 100%)` : TINTS[i], boxShadow: "0px 20px 20px -14px rgba(0,0,0,0.15), 0px 30px 40px -16px rgba(0,0,0,0.1)" }}>
-                                        {/* The medal PNGs carry a baked light glow that matches the tinted
-                                            cards; on the navy highlight card, mask that glow to a soft radial
-                                            fade so the coin melts into the dark gradient (as in the Figma). */}
-                                        <Image src={`${A}/leaderboard/${MEDALS[i]}.png`} alt="" width={200} height={200} className="absolute right-[-54px] top-[-54px] size-[200px] max-w-none" style={hl ? { WebkitMaskImage: "radial-gradient(circle at 50% 50%, black 48%, transparent 72%)", maskImage: "radial-gradient(circle at 50% 50%, black 48%, transparent 72%)" } : undefined} />
+                                        {/* The medal PNGs carry a baked light glow. Mask it to a soft radial
+                                            fade so the coin melts into ANY card behind it — the navy highlight
+                                            gradient, and wide cards (1–2 participants) where the tint gradient
+                                            shifts and the baked box otherwise shows as a pale seam. */}
+                                        <Image src={`${A}/leaderboard/${MEDALS[i]}.png`} alt="" width={200} height={200} className="absolute right-[-54px] top-[-54px] size-[200px] max-w-none" style={{ WebkitMaskImage: "radial-gradient(circle at 50% 50%, black 48%, transparent 72%)", maskImage: "radial-gradient(circle at 50% 50%, black 48%, transparent 72%)" }} />
                                         <div className="flex gap-[16px] items-center px-[8px] w-full">
                                             <Avatar name={p.first_name} url={p.profile_photo_url} className="size-[64px]" ring={hl} />
                                             <p className={`text-[20px] min-w-0 ${hl ? "text-white" : "text-[#003060]"}`}>
