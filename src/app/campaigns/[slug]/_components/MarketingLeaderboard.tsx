@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { useEffect, useRef, useState } from "react";
 import { DONATE_EVENT } from "./DonateNavButton";
 import type { ParticipantRow } from "../page";
 import type { MarketingTheme } from "./marketingTheme";
@@ -20,6 +21,88 @@ const TINTS = [
 
 function fmt(n: number) {
     return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(n);
+}
+
+/* ── Section banner — the same plaque + notched-ribbon construction as the
+   campaign-creation StepBanner (create/_components/ui.tsx), themed to the
+   campaign's accent/secondary so the two headers read identically. */
+function BannerDot({ className, accent, secondary }: { className?: string; accent: string; secondary: string }) {
+    return (
+        <span className={`relative shrink-0 rounded-full ${className}`} style={{ background: accent }}>
+            <span className="absolute inset-0 rounded-full" style={{ boxShadow: `inset 0px 3.5px 0px 0px ${secondary}` }} />
+        </span>
+    );
+}
+
+function LeaderboardBanner({ title, subtitle, accent, secondary }: { title: string; subtitle: string; accent: string; secondary: string }) {
+    const plaqueRef = useRef<HTMLDivElement>(null);
+    const subRef = useRef<HTMLParagraphElement>(null);
+    // Ribbon width = max(plaque + flared tips, subtitle + dots/notch padding),
+    // measured like the StepBanner so the tips always flare past the plaque.
+    const [ribbonW, setRibbonW] = useState<number | null>(null);
+    useEffect(() => {
+        function update() {
+            const pl = plaqueRef.current, sub = subRef.current;
+            if (!pl || !sub) return;
+            const isSm = window.matchMedia("(min-width: 640px)").matches;
+            const flare = isSm ? 88 : 52;
+            const subPad = isSm ? 150 : 96;
+            setRibbonW(Math.round(Math.max(pl.offsetWidth + flare, sub.offsetWidth + subPad)));
+        }
+        update();
+        const ro = new ResizeObserver(update);
+        if (plaqueRef.current) ro.observe(plaqueRef.current);
+        if (subRef.current) ro.observe(subRef.current);
+        window.addEventListener("resize", update);
+        return () => { ro.disconnect(); window.removeEventListener("resize", update); };
+    }, [title, subtitle]);
+
+    // StepBanner's fixed blues, derived from the theme. Both plaque stops sit a
+    // touch above the accent so the plaque reads against the accent band (whose
+    // halo brightens it); the ribbon darkens toward secondary like the original.
+    const plaqueTop   = `color-mix(in oklch, ${accent} 91%, white)`;
+    const lightAccent = `color-mix(in oklch, ${accent} 72%, white)`;
+    const ribbonBg    = `color-mix(in srgb, ${accent} 60%, ${secondary})`;
+    const textHalo    = `color-mix(in srgb, ${accent} 75%, ${secondary})`;
+
+    return (
+        <div className="flex flex-col items-center select-none">
+            {/* Plaque (outer frame + inner panel) */}
+            <div
+                ref={plaqueRef}
+                className="relative flex justify-center overflow-hidden rounded-t-[22px] sm:rounded-t-[32px] px-[13px] pt-[13px] sm:px-[18px] sm:pt-[18px]"
+                style={{ background: `linear-gradient(180deg, ${plaqueTop} 0%, ${lightAccent} 66.111%)`, boxShadow: "0px 22px 24px -10px rgba(0,48,96,0.3)" }}
+            >
+                <span aria-hidden className="absolute inset-0 rounded-[inherit] pointer-events-none" style={{ boxShadow: "inset 0px 5px 4px -3px rgba(255,255,255,0.55)" }} />
+                <div
+                    className="relative flex items-center justify-center rounded-t-[14px] sm:rounded-t-[19px] px-[26px] pt-[22px] pb-[12px] sm:px-[44px] sm:pt-[30px] sm:pb-[16px]"
+                    style={{ background: `linear-gradient(180deg, ${plaqueTop} 17.803%, ${lightAccent} 71.97%)`, boxShadow: "0px 0px 30px 0px rgba(0,48,96,0.4)" }}
+                >
+                    <span aria-hidden className="absolute inset-0 rounded-[inherit] pointer-events-none" style={{ boxShadow: "inset 0px -4px 8px 0px rgba(0,48,96,0.1), inset 0px 4px 8px -3px rgba(255,255,255,0.55)" }} />
+                    <h2
+                        className="relative font-black text-white text-center whitespace-nowrap leading-none text-[20px] sm:text-[27px] xl:text-[32px]"
+                        style={{ textShadow: `0px 0px 16px ${textHalo}, 0px 0px 4px ${textHalo}`, letterSpacing: "-1.2px" }}
+                    >
+                        {title}
+                    </h2>
+                </div>
+            </div>
+
+            {/* Ribbon (notched banner via clip-path) */}
+            <div className="relative -mt-px flex items-center justify-center h-[30px] w-[270px] sm:h-[50px] sm:w-[470px]" style={{ width: ribbonW ?? undefined }}>
+                <div aria-hidden className="absolute inset-0 overflow-hidden" style={{ clipPath: "polygon(0 0, 100% 0, 94.35% 50%, 100% 100%, 0 100%, 5.65% 50%)", background: ribbonBg }}>
+                    <span className="absolute inset-0" style={{ backgroundImage: "repeating-linear-gradient(115deg, transparent 0 7px, rgba(0,0,0,0.07) 7px 8px)" }} />
+                </div>
+                <div className="relative flex items-center justify-center gap-[8px] sm:gap-[12px] px-[32px]">
+                    <BannerDot className="size-[6px] sm:size-[9px]" accent={accent} secondary={secondary} />
+                    <p ref={subRef} className="font-bold text-white text-center whitespace-nowrap text-[11px] sm:text-[14px] xl:text-[15px]" style={{ lineHeight: 1.25 }}>
+                        {subtitle}
+                    </p>
+                    <BannerDot className="size-[6px] sm:size-[9px]" accent={accent} secondary={secondary} />
+                </div>
+            </div>
+        </div>
+    );
 }
 function dispatchDonate(memberId: string) {
     window.dispatchEvent(new CustomEvent(DONATE_EVENT, { detail: { memberId } }));
@@ -195,22 +278,9 @@ export default function MarketingLeaderboard({
             <span aria-hidden className="absolute inset-0 pointer-events-none" style={{ background: `linear-gradient(180deg, ${theme.secondary}33 0%, transparent 40%)` }} />
 
             <div className="relative flex flex-col items-center px-[16px] md:px-[24px] xl:px-0">
-                {/* Plaque + ribbon */}
-                <div className="relative pb-[52px] md:pb-[72px]">
-                    <div className="relative flex flex-col items-center overflow-hidden p-[17px] md:p-[24px] rounded-[28px] md:rounded-[40px] w-[313px] h-[130px] md:w-[532px] md:h-[180px]" style={{ background: `linear-gradient(180deg, ${accent} 0%, ${theme.secondary} 120%)`, boxShadow: "0px 30px 30px -10px rgba(0,48,96,0.3)" }}>
-                        <div className="relative w-full h-[96px] md:h-[132px] rounded-[17px] md:rounded-[24px]" style={{ background: `linear-gradient(180deg, ${accent} 18%, ${theme.secondary} 130%)`, boxShadow: "0px 0px 40px 0px rgba(0,48,96,0.4)" }}>
-                            <span aria-hidden className="absolute inset-0 rounded-[inherit]" style={{ boxShadow: "inset 0px -4px 8px 0px rgba(0,48,96,0.1), inset 0px 4px 8px -3px rgba(255,255,255,0.5)" }} />
-                        </div>
-                        <p className="absolute left-1/2 top-[65px] md:top-[90px] -translate-x-1/2 -translate-y-1/2 font-black text-[33px] md:text-[38px] 2xl:text-[46px] text-white text-center tracking-[-1.5px] leading-none whitespace-nowrap" style={{ textShadow: "0px 0px 16px rgba(0,48,96,0.6), 0px 0px 4px rgba(0,48,96,0.6)" }}>Leaderboard</p>
-                        <span aria-hidden className="absolute inset-0 pointer-events-none rounded-[inherit]" style={{ boxShadow: "inset 0px 5px 4px -3px rgba(255,255,255,0.5)" }} />
-                    </div>
-                    <div className="absolute left-1/2 top-[100px] md:top-[128px] -translate-x-1/2 z-10 w-[290px] md:w-[460px]">
-                        <div className="relative flex items-center justify-center gap-[10px] md:gap-[16px] px-[40px] py-[8px] md:py-[12px]" style={{ background: theme.secondary, clipPath: "polygon(0 0, 100% 0, 95% 50%, 100% 100%, 0 100%, 5% 50%)" }}>
-                            <span aria-hidden className="rounded-full shrink-0 size-[7px] md:size-[11px] bg-white/70" />
-                            <p className="font-bold text-[12px] md:text-[20px] text-white text-center whitespace-nowrap" style={{ lineHeight: 1.25 }}>See who&rsquo;s leading the way!</p>
-                            <span aria-hidden className="rounded-full shrink-0 size-[7px] md:size-[11px] bg-white/70" />
-                        </div>
-                    </div>
+                {/* Plaque + ribbon — same construction as the creation-step headers */}
+                <div className="pb-[40px] md:pb-[56px]">
+                    <LeaderboardBanner title="Leaderboard" subtitle="See who’s leading the way!" accent={accent} secondary={theme.secondary} />
                 </div>
 
                 {isParticipantGoal ? (
