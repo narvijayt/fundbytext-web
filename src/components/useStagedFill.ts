@@ -11,9 +11,10 @@ const easeOutCubic = (x: number) => 1 - Math.pow(1 - x, 3);
  * true (and stays true) once the green segment has reached its target — used to
  * reveal the goal divider only when the fill touches it.
  *
- * On the first mount the fill is staged (green, then gold). Later target changes
- * (e.g. a live donation) ease both segments from their current value to the new
- * target simultaneously, so the bar never jumps or replays from zero.
+ * When the bar starts empty (the first fill on load) it is staged (green, then
+ * gold). Later target changes from an already-filled bar (e.g. a live donation)
+ * ease both segments from their current value to the new target simultaneously,
+ * so the bar never jumps or replays from zero.
  */
 export function useStagedFill(
     greenPct: number,
@@ -27,22 +28,25 @@ export function useStagedFill(
     const [goldW,  setGoldW]        = useState(0);
     const [greenDone, setGreenDone] = useState(false);
 
-    const raf     = useRef(0);
-    const mounted = useRef(false);
-    const fromG   = useRef(0);
-    const fromD   = useRef(0);
+    const raf   = useRef(0);
+    const fromG = useRef(0);
+    const fromD = useRef(0);
 
     useEffect(() => {
-        const initial = !mounted.current;
-        mounted.current = true;
-
         const startG = fromG.current;
         const startD = fromD.current;
 
-        // Stage green-then-gold on first paint; ease straight to target afterwards.
-        const gDur   = initial ? greenDur : 800;
-        const dDelay = initial ? greenDur : 0;
-        const dDur   = initial ? goldDur : (goldPct > 0 ? 800 : 0);
+        // Stage green→gold only when the bar is (near) empty — i.e. the first fill on
+        // load. A live update from an already-filled bar eases both segments together.
+        // Deriving this from the current fill (not a "first mount" flag) keeps it
+        // deterministic under React Strict Mode's double-invoked effects, which would
+        // otherwise flip the surviving run to the simultaneous path and make green +
+        // gold animate together instead of green-then-gold.
+        const fromEmpty = startG < 0.5 && startD < 0.5;
+
+        const gDur   = fromEmpty ? greenDur : 800;
+        const dDelay = fromEmpty ? greenDur : 0;
+        const dDur   = fromEmpty ? goldDur : (goldPct > 0 ? 800 : 0);
         const total  = Math.max(gDur, dDelay + dDur);
 
         let startTs: number | null = null;
