@@ -8,11 +8,11 @@ import type { MarketingTheme } from "./marketingTheme";
 
 const A = "/assets/marketing";
 
-// Green-on-green diagonal stripes (same as the dashboard/public progress bars)
-// + a striped gray track. The track's stripe contrast is a touch higher than the
-// main progress bar's so the tilt stays visible at 1x on the smaller podium bars.
+// Green-on-green diagonal stripes for the fill (same as the dashboard/public
+// progress bars). The empty track is PLAIN light gray per the Figma leaderboard
+// bars — unlike the main progress bar, it carries no stripes.
 const GREEN_STRIPES = "repeating-linear-gradient(-45deg,#33cc6b,#33cc6b 7px,#23b257 7px,#23b257 14px)";
-const TRACK_STRIPES = "repeating-linear-gradient(-45deg,#eff1f4,#eff1f4 7px,#dfe3e9 7px,#dfe3e9 14px)";
+const TRACK_BG = "#f2f2f2";
 const MEDALS = ["medal-gold", "medal-silver", "medal-bronze"];
 const TINTS = [
     "linear-gradient(225deg, #ffe5b2 16.667%, #ffffff 43.333%)",
@@ -139,11 +139,19 @@ function RaisedPill({ amount }: { amount: number }) {
    dollar figures (per the Figma "Organization view" leaderboard variant). */
 function Bar({ raised, pct, goal, glow, showAmounts = true }: { raised: number; pct: number; goal?: number | null; glow?: boolean; showAmounts?: boolean }) {
     return (
-        <div className="flex-1 h-[32px] min-w-0 relative rounded-full overflow-hidden" style={{ background: TRACK_STRIPES }}>
+        <div className="flex-1 h-[32px] min-w-0 relative rounded-full overflow-hidden" style={{ background: TRACK_BG }}>
+            <style>{`@keyframes lb-shimmer{0%{transform:translateX(-120%)}100%{transform:translateX(400%)}}`}</style>
             <div
                 className="absolute left-0 top-0 h-full overflow-hidden rounded-full"
                 style={{ width: `${Math.max(pct, raised > 0 ? 12 : 0)}%`, background: GREEN_STRIPES, boxShadow: glow ? "0px 0px 12px 0px rgba(40,196,93,0.5)" : undefined }}
-            />
+            >
+                {/* Shine sweeping the fill — same treatment as the hero progress bar. */}
+                <span
+                    aria-hidden
+                    className="absolute inset-y-0 left-0 w-[35%]"
+                    style={{ background: "linear-gradient(90deg,transparent,rgba(255,255,255,0.5) 50%,transparent)", animation: "lb-shimmer 2.2s ease-in-out infinite" }}
+                />
+            </div>
             {raised > 0 && (
                 <p className="absolute left-[12px] top-1/2 -translate-y-1/2 text-[14px] text-white whitespace-nowrap drop-shadow">
                     <span className="font-black" style={{ lineHeight: 1.25 }}>{showAmounts ? fmt(raised) : `${Math.round(pct)}%`}</span>
