@@ -124,6 +124,15 @@ export default function CampaignCard({ campaign }: { campaign: CampaignCardData 
     const raisedAmt = parseFloat(campaign.total_raised.toString());
     const greenPct = goalAmt > 0 ? Math.min(100, (raisedAmt / goalAmt) * 100) : (raisedAmt > 0 ? 100 : 0);
 
+    // Open-ended campaigns auto-scale +20% once the initial goal is met, so total_raised
+    // can exceed the locked initial goal. When that has happened, split the fill: green up
+    // to the initial goal, gold for the exceeded amount (same split as the public bar, kept
+    // in this card's flat gradient style). Every other goal type stays a single green fill.
+    const isScaledGoal = initialGoalAmt != null && goalAmt > 0 && initialGoalAmt !== goalAmt;
+    const barScale     = goalAmt > 0 ? Math.max(raisedAmt, goalAmt) : (raisedAmt || 1);
+    const greenSegPct  = isScaledGoal && initialGoalAmt != null ? Math.min(raisedAmt, initialGoalAmt) / barScale * 100 : greenPct;
+    const goldSegPct   = isScaledGoal && initialGoalAmt != null && raisedAmt > initialGoalAmt ? (raisedAmt - initialGoalAmt) / barScale * 100 : 0;
+
     const detailHref = `/dashboard/campaigns/${campaign.slug}`;
     const wizardHref = `/campaigns/${campaign.slug}/create`;
     const viewHref = status === CampaignStatus.draft ? wizardHref : detailHref;
@@ -201,7 +210,16 @@ export default function CampaignCard({ campaign }: { campaign: CampaignCardData 
             {status === CampaignStatus.active && (
                 <div className="border-t border-[#e7e9eb] bg-[#f9f9fc] px-4 py-4">
                     <div className="h-5 w-full overflow-hidden rounded-full bg-[#f2f2f2]">
-                        <div className="h-full rounded-full bg-gradient-to-r from-[#28c45d] to-[#34d56a]" style={{ width: `${Math.max(greenPct, raisedAmt > 0 ? 6 : 0)}%` }} />
+                        {goldSegPct > 0 ? (
+                            <div className="relative h-full">
+                                {/* Green — raised up to the initial goal */}
+                                <div className="absolute inset-y-0 left-0 rounded-l-full bg-gradient-to-r from-[#28c45d] to-[#34d56a]" style={{ width: `${greenSegPct}%` }} />
+                                {/* Gold — exceeded beyond the initial goal (open-ended scaling) */}
+                                <div className="absolute inset-y-0 rounded-r-full bg-gradient-to-r from-[#f5b93f] to-[#e8a423]" style={{ left: `${greenSegPct}%`, width: `${goldSegPct}%` }} />
+                            </div>
+                        ) : (
+                            <div className="h-full rounded-full bg-gradient-to-r from-[#28c45d] to-[#34d56a]" style={{ width: `${Math.max(greenPct, raisedAmt > 0 ? 6 : 0)}%` }} />
+                        )}
                     </div>
                     <div className="mt-2 flex items-center justify-between px-0.5">
                         <span className="text-[14px] font-bold text-[#003060]">{fmt(raisedAmt)} <span className="font-normal">raised</span></span>
