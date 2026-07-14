@@ -299,6 +299,20 @@ input[type=number] {
     to   { background-position-x: -170px; }
 }
 
+/* Footer "F" watermark drift. A transform (GPU-composited) animation instead of a
+   background-position one — mobile browsers throttle/skip non-composited paint
+   animations in production, which is why the footer vector drifted on desktop but
+   appeared frozen on phones. The layer is one tile wider than its card and the
+   card clips the overflow, so translating left by exactly one tile (--fd) loops
+   seamlessly. Set --fd to one negative tile width per footer. */
+@keyframes footerDrift {
+    to { transform: translate3d(var(--fd, -170px), 0, 0); }
+}
+.footer-drift {
+    animation: footerDrift 18s linear infinite;
+    will-change: transform;
+}
+
 @keyframes loaderSpin {
     to { transform: rotate(1turn); }
 }
