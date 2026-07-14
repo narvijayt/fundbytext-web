@@ -73,7 +73,7 @@ export default function MarketingFooter({ accent }: { accent: string }) {
                     {/* Drifting "F" app-logo watermark — the same mark that animates behind the
                         creation steps. Transform drift (GPU-composited) so it keeps running in
                         production on mobile; the layer is one tile wider and the card clips it. */}
-                    <div aria-hidden className="footer-drift [--fd:-170px] pointer-events-none absolute top-0 left-0 h-full w-[calc(100%+170px)]" style={{ backgroundImage: F_WATERMARK, backgroundRepeat: "repeat", backgroundSize: "170px 170px" }} />
+                    <div aria-hidden className="footer-drift [--fd:-170px] pointer-events-none absolute inset-y-0 left-0 right-[-170px]" style={{ backgroundImage: F_WATERMARK, backgroundRepeat: "repeat", backgroundSize: "170px 170px" }} />
                     <div aria-hidden className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0) 100%)" }} />
                     <div className="relative flex flex-col gap-[16px] items-start w-full xl:w-[248px] xl:flex-1 xl:min-h-0">
                         <p className="font-black text-[32px] xl:text-[38px] 2xl:text-[46px] text-white tracking-[-1.5px] w-full" style={{ lineHeight: 1.1 }}>Ready to Fundraise?</p>

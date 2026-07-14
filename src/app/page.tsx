@@ -717,7 +717,7 @@ export default async function HomePage() {
                         {/* F-pattern watermark (Figma export) drifting + fading linear overlay.
                             Transform drift (GPU-composited) so it keeps running on mobile; the
                             layer is one tile wider than the card and the card clips the overflow. */}
-                        <div className="footer-drift [--fd:-328px] pointer-events-none absolute top-0 left-0 h-full w-[calc(100%+328px)]"
+                        <div className="footer-drift [--fd:-328px] pointer-events-none absolute inset-y-0 left-0 right-[-328px]"
                             style={{ backgroundImage: `url(${A_F_WATERMARK})`, backgroundRepeat: "repeat", backgroundSize: "328px 412px", backgroundPosition: "center" }} />
                         <div className="absolute inset-0 pointer-events-none"
                             style={{ background: "linear-gradient(to bottom,#0268c0 0%,rgba(2,104,192,0) 100%)" }} />
