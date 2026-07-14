@@ -50,21 +50,23 @@ function RaisedPill({ amount }: { amount: number }) {
     );
 }
 
-/* Green "raised" bar on a gray track (Layout B podium + table). */
-function Bar({ raised, pct, goal, glow, showAmount = true }: { raised: number; pct: number; goal?: number | null; glow?: boolean; showAmount?: boolean }) {
+/* Green "raised" bar on a gray track (Layout B podium + table). Members see
+   dollar amounts + the per-participant goal; the public sees "N% Raised" with no
+   dollar figures (per the Figma "Organization view" leaderboard variant). */
+function Bar({ raised, pct, goal, glow, showAmounts = true }: { raised: number; pct: number; goal?: number | null; glow?: boolean; showAmounts?: boolean }) {
     return (
         <div className="flex-1 h-[32px] min-w-0 relative rounded-full overflow-hidden" style={{ background: TRACK_STRIPES }}>
             <div
                 className="absolute left-0 top-0 h-full overflow-hidden rounded-full"
                 style={{ width: `${Math.max(pct, raised > 0 ? 12 : 0)}%`, background: GREEN_STRIPES, boxShadow: glow ? "0px 0px 12px 0px rgba(40,196,93,0.5)" : undefined }}
             />
-            {showAmount && (
+            {raised > 0 && (
                 <p className="absolute left-[12px] top-1/2 -translate-y-1/2 text-[14px] text-white whitespace-nowrap drop-shadow">
-                    <span className="font-black" style={{ lineHeight: 1.25 }}>{fmt(raised)}</span>
+                    <span className="font-black" style={{ lineHeight: 1.25 }}>{showAmounts ? fmt(raised) : `${Math.round(pct)}%`}</span>
                     <span className="font-medium leading-none"> Raised</span>
                 </p>
             )}
-            {showAmount && goal != null && (
+            {showAmounts && goal != null && (
                 <p className="absolute right-[16px] top-1/2 -translate-y-1/2 text-[14px] text-[#aeb5bd] text-right whitespace-nowrap">
                     <span className="font-black">{fmt(goal)} </span><span className="font-normal">Goal</span>
                 </p>
@@ -101,20 +103,24 @@ function AchieverPanel({
                         {rows.map((p) => {
                             const hl = mode === "progress" && p.id === highlightMemberId;
                             const clickable = !!onDonate;
+                            // On phones the pill wraps to its own line under the name
+                            // (per the mobile Figma); from md up everything sits inline.
                             const inner = hl ? (
-                                <div className="flex items-center gap-[12px] rounded-full py-[8px] pl-[8px] pr-[14px]" style={{ background: `linear-gradient(90deg, ${accent} 0%, ${accent}cc 100%)` }}>
+                                <div className="flex flex-wrap items-center gap-x-[12px] gap-y-[8px] rounded-[24px] md:rounded-full py-[8px] pl-[8px] pr-[14px]" style={{ background: `linear-gradient(90deg, ${accent} 0%, ${accent}cc 100%)` }}>
                                     <Avatar name={p.first_name} url={p.profile_photo_url} className="size-[40px]" ring />
                                     <span className="flex-1 min-w-0 truncate font-black text-[16px] text-white" style={{ lineHeight: 1.2 }}>{p.first_name} {p.last_name}</span>
-                                    {clickable && (
-                                        <svg className="size-[18px] shrink-0 text-white/90" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"><path d="M9 6l6 6-6 6" /></svg>
-                                    )}
-                                    {showAmounts && <RaisedPill amount={p.total_raised} />}
+                                    <span className="flex basis-full md:basis-auto items-center gap-[10px] min-w-0">
+                                        {clickable && (
+                                            <svg className="size-[18px] shrink-0 text-white/90" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"><path d="M9 6l6 6-6 6" /></svg>
+                                        )}
+                                        {showAmounts && <RaisedPill amount={p.total_raised} />}
+                                    </span>
                                 </div>
                             ) : (
-                                <div className="flex items-center gap-[12px] px-[8px] py-[6px]">
+                                <div className="flex flex-wrap items-center gap-x-[12px] gap-y-[8px] px-[8px] py-[6px]">
                                     <Avatar name={p.first_name} url={p.profile_photo_url} className="size-[40px]" />
                                     <span className="flex-1 min-w-0 truncate font-bold text-[16px] text-[#003060]" style={{ lineHeight: 1.2 }}>{p.first_name} {p.last_name}</span>
-                                    {mode === "progress" && showAmounts && <RaisedPill amount={p.total_raised} />}
+                                    {mode === "progress" && showAmounts && <span className="flex basis-full md:basis-auto min-w-0"><RaisedPill amount={p.total_raised} /></span>}
                                 </div>
                             );
                             return clickable ? (
@@ -160,6 +166,18 @@ export default function MarketingLeaderboard({
 
     return (
         <div className="relative overflow-hidden pt-[40px] md:pt-[80px] xl:pt-[112px] pb-[40px] md:pb-[80px] xl:pb-[112px]" style={{ background: accent }}>
+            {/* Halo — the Figma "Ellipse 370": an accent-filled circle (r 576, blur 225)
+                blended with color-dodge, centred behind the plaque/podium so the band
+                glows brightest at its top-centre. The radial stops approximate the
+                Gaussian falloff of the blurred disc; it sits UNDER the pattern. */}
+            <span
+                aria-hidden
+                className="pointer-events-none absolute left-1/2 top-[-280px] size-[1200px] md:top-[-503px] md:size-[2052px] -translate-x-1/2"
+                style={{
+                    background: `radial-gradient(circle closest-side, ${accent} 0%, ${accent} 34%, ${accent}80 56%, ${accent}29 78%, transparent 96%)`,
+                    mixBlendMode: "color-dodge",
+                }}
+            />
             {theme.themeImage && (
                 /* Tile at native motif size (matches the theme picker / hero) instead of
                    stretching one copy down a tall band, which ballooned the motif. */
@@ -205,19 +223,28 @@ export default function MarketingLeaderboard({
                     /* ── Layout B — podium + Other Participants table ── */
                     <>
                         <div className="flex flex-col xl:flex-row gap-[24px] items-stretch w-full max-w-[1152px]">
-                            {top3.map((p, i) => (
-                                <div key={p.id} {...clickProps(p.id)} className={`flex w-full xl:flex-1 flex-col gap-[24px] items-start min-w-0 overflow-hidden p-[32px] relative rounded-[20px] ${canDonate ? "cursor-pointer transition-transform hover:-translate-y-1" : ""}`} style={{ backgroundImage: TINTS[i], boxShadow: "0px 20px 20px -14px rgba(0,0,0,0.15), 0px 30px 40px -16px rgba(0,0,0,0.1)" }}>
-                                    <Image src={`${A}/leaderboard/${MEDALS[i]}.png`} alt="" width={200} height={200} className="absolute right-[-54px] top-[-54px] size-[200px] max-w-none" />
-                                    <div className="flex gap-[16px] items-center px-[8px] w-full">
-                                        <Avatar name={p.first_name} url={p.profile_photo_url} className="size-[64px]" />
-                                        <p className="text-[20px] text-[#003060] min-w-0">
-                                            <span className="block font-black truncate" style={{ lineHeight: 1.25 }}>{p.first_name}</span>
-                                            <span className="block font-medium truncate" style={{ lineHeight: 1.15 }}>{p.last_name}</span>
-                                        </p>
+                            {top3.map((p, i) => {
+                                /* The viewing participant's own podium card gets the navy
+                                   treatment (per the Figma "Participant View" variant):
+                                   secondary→accent-mix vertical gradient + white text. */
+                                const hl = p.id === highlightMemberId;
+                                return (
+                                    <div key={p.id} {...clickProps(p.id)} className={`flex w-full xl:flex-1 flex-col gap-[24px] items-start min-w-0 overflow-hidden p-[32px] relative rounded-[20px] ${canDonate ? "cursor-pointer transition-transform hover:-translate-y-1" : ""}`} style={{ backgroundImage: hl ? `linear-gradient(180deg, ${theme.secondary} 0%, color-mix(in srgb, ${accent} 72%, ${theme.secondary}) 100%)` : TINTS[i], boxShadow: "0px 20px 20px -14px rgba(0,0,0,0.15), 0px 30px 40px -16px rgba(0,0,0,0.1)" }}>
+                                        {/* The medal PNGs carry a baked light glow that matches the tinted
+                                            cards; on the navy highlight card, mask that glow to a soft radial
+                                            fade so the coin melts into the dark gradient (as in the Figma). */}
+                                        <Image src={`${A}/leaderboard/${MEDALS[i]}.png`} alt="" width={200} height={200} className="absolute right-[-54px] top-[-54px] size-[200px] max-w-none" style={hl ? { WebkitMaskImage: "radial-gradient(circle at 50% 50%, black 48%, transparent 72%)", maskImage: "radial-gradient(circle at 50% 50%, black 48%, transparent 72%)" } : undefined} />
+                                        <div className="flex gap-[16px] items-center px-[8px] w-full">
+                                            <Avatar name={p.first_name} url={p.profile_photo_url} className="size-[64px]" ring={hl} />
+                                            <p className={`text-[20px] min-w-0 ${hl ? "text-white" : "text-[#003060]"}`}>
+                                                <span className="block font-black truncate" style={{ lineHeight: 1.25 }}>{p.first_name}</span>
+                                                <span className="block font-medium truncate" style={{ lineHeight: 1.15 }}>{p.last_name}</span>
+                                            </p>
+                                        </div>
+                                        <div className="flex w-full"><Bar raised={p.total_raised} pct={barPct(p.total_raised)} glow={i === 0} showAmounts={showAmounts} /></div>
                                     </div>
-                                    <div className="flex w-full"><Bar raised={p.total_raised} pct={barPct(p.total_raised)} glow={i === 0} showAmount={showAmounts} /></div>
-                                </div>
-                            ))}
+                                );
+                            })}
                         </div>
 
                         {others.length > 0 && (
@@ -231,8 +258,9 @@ export default function MarketingLeaderboard({
                                     )}
                                 </div>
                                 <div className="w-full overflow-x-auto">
-                                    <div className="border border-[#d4dee7] flex flex-col items-start overflow-hidden rounded-[16px] w-full min-w-[680px]">
-                                        <div className="border-b border-[#d4dee7] flex gap-[24px] items-center px-[24px] md:px-[32px] xl:px-[48px] py-[16px] w-full font-black text-[12px] text-[#aeb5bd] tracking-[1px] uppercase leading-none">
+                                    <div className="border border-[#d4dee7] flex flex-col items-start overflow-hidden rounded-[16px] w-full md:min-w-[680px]">
+                                        {/* Column header — dropped on phones, where rows stack (per the mobile Figma). */}
+                                        <div className="hidden md:flex border-b border-[#d4dee7] gap-[24px] items-center px-[24px] md:px-[32px] xl:px-[48px] py-[16px] w-full font-black text-[12px] text-[#aeb5bd] tracking-[1px] uppercase leading-none">
                                             <span className="w-[48px] xl:w-[80px] shrink-0">Rank</span>
                                             <span className="flex-1 min-w-0">Participant Name</span>
                                             <span className="flex-1 min-w-0">Amount Raised</span>
@@ -242,17 +270,21 @@ export default function MarketingLeaderboard({
                                                 const rank = i + 4;
                                                 const hl = p.id === highlightMemberId;
                                                 return (
-                                                    <div key={p.id} {...clickProps(p.id)} className={`flex gap-[24px] items-center px-[24px] md:px-[32px] xl:px-[48px] py-[16px] w-full border-b border-[#d4dee7] ${canDonate ? "hover:bg-[#f8fafc]" : ""} ${hl ? "rounded-[44px]" : ""}`} style={hl ? { backgroundImage: `linear-gradient(172.92deg, ${accent} 0%, ${accent}dd 52%, ${accent} 100%)` } : undefined}>
-                                                        <span className="h-[24px] w-[48px] xl:w-[80px] relative shrink-0">
+                                                    /* Phones: rank+avatar+name on one line, the bar wrapping to its
+                                                       own full-width line below (mobile Figma); md+ single line. */
+                                                    <div key={p.id} {...clickProps(p.id)} className={`flex flex-wrap md:flex-nowrap gap-x-[12px] gap-y-[10px] md:gap-[24px] items-center px-[16px] md:px-[32px] xl:px-[48px] py-[16px] w-full border-b border-[#d4dee7] ${canDonate ? "hover:bg-[#f8fafc]" : ""} ${hl ? "rounded-[20px] md:rounded-[44px]" : ""}`} style={hl ? { backgroundImage: `linear-gradient(172.92deg, ${accent} 0%, ${accent}dd 52%, ${accent} 100%)` } : undefined}>
+                                                        <span className="h-[24px] w-[24px] md:w-[48px] xl:w-[80px] relative shrink-0">
                                                             <span className={`absolute left-0 top-1/2 -translate-y-1/2 rounded-full size-[24px] ${hl ? "bg-white" : "bg-[#aeb5bd]"}`}>
                                                                 <span className={`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 font-bold text-[14px] leading-none ${hl ? "" : "text-white"}`} style={hl ? { color: accent } : undefined}>{rank}</span>
                                                             </span>
                                                         </span>
-                                                        <div className="flex flex-1 gap-[16px] xl:gap-[24px] items-center min-w-0">
-                                                            <Avatar name={p.first_name} url={p.profile_photo_url} className="size-[48px]" />
-                                                            <p className={`text-[16px] md:text-[18px] truncate w-[140px] md:w-[200px] xl:w-[292px] ${hl ? "text-white font-black" : "text-[#003060] font-bold"}`} style={{ lineHeight: 1.15 }}>{p.first_name} {p.last_name}</p>
+                                                        <div className="flex flex-1 gap-[12px] md:gap-[16px] xl:gap-[24px] items-center min-w-0">
+                                                            <Avatar name={p.first_name} url={p.profile_photo_url} className="size-[40px] md:size-[48px]" />
+                                                            <p className={`text-[16px] md:text-[18px] truncate flex-1 min-w-0 md:flex-none md:w-[200px] xl:w-[292px] ${hl ? "text-white font-black" : "text-[#003060] font-bold"}`} style={{ lineHeight: 1.15 }}>{p.first_name} {p.last_name}</p>
                                                         </div>
-                                                        <Bar raised={p.total_raised} pct={barPct(p.total_raised)} goal={perParticipantGoal} showAmount={showAmounts} />
+                                                        <div className="flex basis-full md:basis-auto md:flex-1 min-w-0">
+                                                            <Bar raised={p.total_raised} pct={barPct(p.total_raised)} goal={perParticipantGoal} showAmounts={showAmounts} />
+                                                        </div>
                                                     </div>
                                                 );
                                             })}
