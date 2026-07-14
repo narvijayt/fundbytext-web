@@ -48,6 +48,9 @@ const CASES: { title: string; props: Partial<React.ComponentProps<typeof Marketi
       props: { showAmounts: true, highlightMemberId: "5", isParticipantGoal: true } },
     { title: "Participant goal — PUBLIC view (no pills)",
       props: { showAmounts: false, highlightMemberId: null, isParticipantGoal: true } },
+    { title: "THEMED (red accent) — banner/halo/highlights must recolor",
+      props: { showAmounts: true, highlightMemberId: "1",
+               theme: { ...theme, accent: "#b02a2a", secondary: "#4a0d0d", themeImage: "/assets/campaigns/tiles/theme-trophy-tile.png", themeSize: "12.9vw auto" } } },
 ];
 
 export default function LeaderboardPreview() {
