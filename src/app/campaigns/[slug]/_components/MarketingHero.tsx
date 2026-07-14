@@ -139,7 +139,7 @@ export default function MarketingHero({
                     </div>
                 </div>
 
-                <div className="flex flex-col gap-[32px] pt-[42px] md:pt-[72px] xl:pt-[92px]">
+                <div className="flex flex-col gap-[32px] pt-[30px] md:pt-[45px] xl:pt-[56px]">
                     <div className="relative flex flex-col md:gap-[32px] w-full">
                         {/* Logo + title + edit */}
                         <div className="flex flex-col items-center md:flex-row md:items-stretch md:gap-[24px] w-full xl:pr-[294px]">
