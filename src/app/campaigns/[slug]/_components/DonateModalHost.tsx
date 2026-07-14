@@ -66,6 +66,16 @@ export default function DonateModalHost({
         : null;
     const goalFullyFunded = isFixedGoal && maxDonationCents === 0;
 
+    // Why donations aren't possible right now (if at all). When set, the modal opens
+    // to this message instead of the form — otherwise clicking Donate on an ended or
+    // fully-funded campaign would silently open nothing (or wrongly show the form).
+    const closed =
+        status === "completed" ? { title: "Campaign ended",     message: "This campaign has wrapped up and is no longer accepting donations. Thank you for the support!" }
+        : status === "upcoming" ? { title: "Not open yet",       message: "Donations open once this campaign starts — check back soon!" }
+        : goalFullyFunded       ? { title: "Goal fully funded!", message: "This campaign has reached its goal. Thank you to everyone who gave!" }
+        : !enabled              ? { title: "Donations paused",   message: disabledMsg?.trim() || "This campaign is temporarily not accepting donations. Please check back soon." }
+        : null;
+
     const modalParticipants: ModalParticipant[] = participants.map((p) => ({
         id:                p.id,
         first_name:        p.first_name,
@@ -75,10 +85,11 @@ export default function DonateModalHost({
 
     const isDonorInvite = !!donorPrefill;
 
-    // Open on DONATE_EVENT (nav / Donate Now / leaderboard participant).
+    // Open on DONATE_EVENT (nav / Donate Now / leaderboard participant). Always opens
+    // the modal — when donations aren't possible it shows the `closed` message instead
+    // of the form, so the button never appears to do nothing.
     useEffect(() => {
         const handler = (e: Event) => {
-            if (goalFullyFunded) return;
             const memberId = (e as CustomEvent<{ memberId: string | null }>).detail.memberId;
             setActiveDonorPrefill(donorPrefill ? { ...donorPrefill, donorId: null } : null);
             setTargetMember(memberId);
@@ -87,7 +98,7 @@ export default function DonateModalHost({
         window.addEventListener(DONATE_EVENT, handler);
         return () => window.removeEventListener(DONATE_EVENT, handler);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [goalFullyFunded]);
+    }, []);
 
     // Auto-open for a donor invite link — pre-select the assigned participant.
     useEffect(() => {
@@ -114,8 +125,9 @@ export default function DonateModalHost({
             patternCover={patternCover}
             participants={modalParticipants}
             targetMemberId={targetMember}
-            donationsEnabled={enabled}
-            donationsDisabledMessage={disabledMsg}
+            donationsEnabled={!closed}
+            donationsDisabledMessage={closed?.message ?? null}
+            closedTitle={closed?.title}
             maxDonationCents={maxDonationCents}
             donorPrefill={activeDonorPrefill}
             daysLeft={daysLeft}
