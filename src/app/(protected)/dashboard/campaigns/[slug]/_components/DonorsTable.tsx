@@ -351,14 +351,13 @@ export default function DonorsTable({ donors: initialDonors, initialTotal, campa
                             {participants.map((p) => (<option key={p.id} value={p.id}>{p.first_name} {p.last_name}</option>))}
                         </select>
                     )}
-                    {isOrgCampaign && (
-                        <select value={sourceFilter} onChange={(e) => handleFilterChange({ source: e.target.value })} className={SELECT_CLS}>
-                            <option value="all">All Sources</option>
-                            <option value="invited">Assigned by organizer</option>
-                            <option value="self_added">Added by participant</option>
-                            <option value="walk_in">Walk-in</option>
-                        </select>
-                    )}
+                    <select value={sourceFilter} onChange={(e) => handleFilterChange({ source: e.target.value })} className={SELECT_CLS}>
+                        <option value="all">All Sources</option>
+                        <option value="invited">Assigned by organizer</option>
+                        {/* Individual campaigns have no participants, so hide this option there. */}
+                        {isOrgCampaign && <option value="self_added">Added by participant</option>}
+                        <option value="walk_in">Walk-in</option>
+                    </select>
                     <select value={sort} onChange={(e) => handleFilterChange({ sort: e.target.value })} className={SELECT_CLS}>
                         <option value="date_desc">Newest first</option>
                         <option value="date_asc">Oldest first</option>
