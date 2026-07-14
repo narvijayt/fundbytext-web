@@ -700,6 +700,7 @@ export default async function CampaignDetailPage({
                             initialTotal={donors.length}
                             campaignSlug={slug}
                             isOrganizer={false}
+                            isOrgCampaign={campaign.campaign_type === "organization"}
                             participants={[]}
                             myMemberId={myMembership.id}
                             topDonorId={topDonorId}
@@ -796,6 +797,7 @@ export default async function CampaignDetailPage({
                         initialTotal={donors.length}
                         campaignSlug={slug}
                         isOrganizer={isOrganizer}
+                        isOrgCampaign={campaign.campaign_type === "organization"}
                         myMemberId={myMembership.id}
                         topDonorId={topDonorId}
                         participants={participants.map((p) => {

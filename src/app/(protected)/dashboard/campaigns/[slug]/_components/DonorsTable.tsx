@@ -36,6 +36,9 @@ type Props = {
     initialTotal?: number;
     campaignSlug:  string;
     isOrganizer:   boolean;
+    /** Organization campaigns only — individual campaigns have no participants, so
+        the participant-oriented "source" filter (who added/assigned the donor) is hidden. */
+    isOrgCampaign: boolean;
     participants:  Participant[];
     myMemberId?:   string;
     topDonorId?:   string | null;
@@ -116,7 +119,7 @@ const PAGE_SIZE = 5;
 
 type FetchParams = { page: number; search: string; status: string; member: string; source: string; emailValid: string; sort: string };
 
-export default function DonorsTable({ donors: initialDonors, initialTotal, campaignSlug, isOrganizer, participants, myMemberId, topDonorId: initialTopDonorId, isCompleted, maxPrefillCents, headerExtra }: Props) {
+export default function DonorsTable({ donors: initialDonors, initialTotal, campaignSlug, isOrganizer, isOrgCampaign, participants, myMemberId, topDonorId: initialTopDonorId, isCompleted, maxPrefillCents, headerExtra }: Props) {
     const router = useRouter();
     const showAssignment = isOrganizer && participants.length > 0;
     const [donors,       setDonors]       = useState<DonorRow[]>(initialDonors);
@@ -348,12 +351,14 @@ export default function DonorsTable({ donors: initialDonors, initialTotal, campa
                             {participants.map((p) => (<option key={p.id} value={p.id}>{p.first_name} {p.last_name}</option>))}
                         </select>
                     )}
-                    <select value={sourceFilter} onChange={(e) => handleFilterChange({ source: e.target.value })} className={SELECT_CLS}>
-                        <option value="all">All Sources</option>
-                        <option value="invited">Assigned by organizer</option>
-                        <option value="self_added">Added by participant</option>
-                        <option value="walk_in">Walk-in</option>
-                    </select>
+                    {isOrgCampaign && (
+                        <select value={sourceFilter} onChange={(e) => handleFilterChange({ source: e.target.value })} className={SELECT_CLS}>
+                            <option value="all">All Sources</option>
+                            <option value="invited">Assigned by organizer</option>
+                            <option value="self_added">Added by participant</option>
+                            <option value="walk_in">Walk-in</option>
+                        </select>
+                    )}
                     <select value={sort} onChange={(e) => handleFilterChange({ sort: e.target.value })} className={SELECT_CLS}>
                         <option value="date_desc">Newest first</option>
                         <option value="date_asc">Oldest first</option>
