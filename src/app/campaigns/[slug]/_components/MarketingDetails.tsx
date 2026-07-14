@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { DONATE_EVENT } from "./DonateNavButton";
 import CountdownBadge from "@/components/CountdownBadge";
 import InlineDonateForm from "./InlineDonateForm";
-import MarketingProgressBar from "./MarketingProgressBar";
+import ScalingProgressBar from "@/components/ScalingProgressBar";
 import type { RecentDonation } from "../page";
 import type { MarketingTheme } from "./marketingTheme";
 import type { DonorPrefill } from "./CampaignDonateShell";
@@ -101,7 +101,7 @@ export default function MarketingDetails({
 
     // Open-ended goals lock their first target in initialGoalAmount and auto-scale
     // goalAmount +20% each time it's met. When scaled, the bar shows green up to the
-    // initial goal and gold beyond it (see MarketingProgressBar); the label below
+    // initial goal and gold beyond it (see ScalingProgressBar); the label below
     // switches to "initial goal" so the header reflects the locked target.
     const isScaledGoal = initialGoalAmount != null && goalAmount != null && initialGoalAmount !== goalAmount;
 
@@ -172,7 +172,7 @@ export default function MarketingDetails({
                         </div>
                         {/* Progress bar — green up to the initial goal, gold for the open-ended
                             scaling overflow, with the goal divider that reveals as green reaches it. */}
-                        <MarketingProgressBar raised={raised} goalAmount={goalAmount} initialGoalAmount={initialGoalAmount} pct={pct} />
+                        <ScalingProgressBar raised={raised} goalAmount={goalAmount} initialGoalAmount={initialGoalAmount} />
                         {/* Date + days + donations */}
                         <div className="flex gap-[6px] items-center justify-center px-[4px] w-full">
                             <span className="h-[40px] w-[25px] relative shrink-0 overflow-hidden">

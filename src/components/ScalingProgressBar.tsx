@@ -1,31 +1,39 @@
 "use client";
 
+import { useState } from "react";
 import { useStagedFill } from "@/components/useStagedFill";
 
 // Green-on-green diagonal stripes for the "raised" fill, gold for the "raised
-// beyond the initial goal" overflow, and a subtle striped gray track — matching
-// the dashboard CampaignProgressBar so the public page and dashboard read alike.
+// beyond the initial goal" overflow, and a subtle striped gray track. Shared by
+// the public campaign page, the organizer/participant dashboard and the admin
+// view so every progress bar reads as exactly the same bar.
 const GREEN_STRIPES = "repeating-linear-gradient(-45deg,#33cc6b,#33cc6b 7px,#23b257 7px,#23b257 14px)";
 const GOLD_STRIPES  = "repeating-linear-gradient(-45deg,#f5b93f,#f5b93f 7px,#e8a423 7px,#e8a423 14px)";
 const TRACK_STRIPES = "repeating-linear-gradient(-45deg,#eff1f4,#eff1f4 7px,#e4e7eb 7px,#e4e7eb 14px)";
+
+const fmtUSD = (n: number) =>
+    new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(n);
 
 type Props = {
     raised:            number;
     goalAmount:        number | null;
     initialGoalAmount: number | null;
-    /** Fallback percentage for no-goal campaigns (goalAmount == null). */
-    pct:               number;
+    /** Dashboard/admin: show hover tooltips over each segment. Off on the public page. */
+    showTooltips?:     boolean;
 };
 
 /**
- * Public campaign progress bar. Green fills up to the locked initial goal, gold
+ * The one campaign progress bar. Green fills up to the locked initial goal, gold
  * fills everything raised beyond it (open-ended scaling), and the track's full
  * width is the current (scaled) goal. Each colour is a full-width striped layer
  * revealed with clip-path so the diagonal stripes stay continuous across the
- * green→gold→track boundaries, and a single shine sweeps the whole fill.
+ * green→gold→track boundaries; a single shine sweeps the whole fill; and a tall
+ * green marker reveals at the initial-goal point once the green fill reaches it.
  */
-export default function MarketingProgressBar({ raised, goalAmount, initialGoalAmount, pct }: Props) {
-    const livePct   = goalAmount && goalAmount > 0 ? Math.min(100, (raised / goalAmount) * 100) : pct;
+export default function ScalingProgressBar({ raised, goalAmount, initialGoalAmount, showTooltips = false }: Props) {
+    // No-goal campaigns have no target to measure against, so a raise reads as a
+    // full bar (and $0 reads as empty). Owning this here keeps every caller identical.
+    const livePct   = goalAmount && goalAmount > 0 ? Math.min(100, (raised / goalAmount) * 100) : (raised > 0 ? 100 : 0);
     const splitGoal = initialGoalAmount ?? goalAmount;
     const scale     = goalAmount && goalAmount > 0 ? Math.max(raised, goalAmount) : (raised || 1);
     const greenPct  = splitGoal ? Math.min(raised, splitGoal) / scale * 100 : livePct;
@@ -41,8 +49,10 @@ export default function MarketingProgressBar({ raised, goalAmount, initialGoalAm
     const goldClip  = `inset(0 ${100 - (greenPct + goldW)}% 0 ${greenPct}%)`;
     const fillClip  = `inset(0 calc(100% - max(${fillW}%, ${minNub})) 0 0)`;
 
+    const [tip, setTip] = useState<{ text: string; pct: number } | null>(null);
+
     return (
-        <div className="relative w-full">
+        <div className="relative w-full" onMouseLeave={showTooltips ? () => setTip(null) : undefined}>
             <div className="h-[32px] relative rounded-full w-full overflow-hidden" style={{ background: TRACK_STRIPES }}>
                 <style>{`@keyframes mkt-pb-shimmer{0%{transform:translateX(-120%)}100%{transform:translateX(400%)}}`}</style>
                 {/* Green fill — raised up to the initial goal */}
@@ -59,6 +69,24 @@ export default function MarketingProgressBar({ raised, goalAmount, initialGoalAm
                     />
                 </div>
                 <span aria-hidden className="absolute inset-0 pointer-events-none rounded-[inherit]" style={{ boxShadow: "inset 0px 2px 8px 0px rgba(0,48,96,0.08)" }} />
+
+                {/* Hover hit areas for the per-segment tooltips (dashboard/admin only). */}
+                {showTooltips && (
+                    <div className="absolute inset-0 flex cursor-pointer">
+                        {greenPct > 0 && (
+                            <div style={{ width: `${greenPct}%` }}
+                                onMouseEnter={() => setTip({ text: `${fmtUSD(Math.min(raised, splitGoal ?? raised))} raised`, pct: greenPct / 2 })} />
+                        )}
+                        {goldPct > 0 && (
+                            <div style={{ width: `${goldPct}%` }}
+                                onMouseEnter={() => setTip({ text: `${fmtUSD(raised - (splitGoal ?? 0))} raised beyond goal`, pct: greenPct + goldPct / 2 })} />
+                        )}
+                        {goalAmount && raised < goalAmount && (
+                            <div className="flex-1"
+                                onMouseEnter={() => setTip({ text: `${fmtUSD(goalAmount - raised)} remaining to reach goal`, pct: greenPct + goldPct + (100 - greenPct - goldPct) / 2 })} />
+                        )}
+                    </div>
+                )}
             </div>
             {/* Tall green marker at the end of the green segment — the initial-goal point
                 when the goal has scaled, or the progress head otherwise. Pinned at that
@@ -69,6 +97,16 @@ export default function MarketingProgressBar({ raised, goalAmount, initialGoalAm
                     className="pointer-events-none absolute top-1/2 h-[44px] w-[7px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#2bbd5f] shadow-[0px_2px_6px_-1px_rgba(0,48,96,0.28)] transition-opacity duration-300 ease-out"
                     style={{ left: `max(${greenPct}%, 44px)`, opacity: greenDone ? 1 : 0 }}
                 />
+            )}
+            {/* Segment tooltip (dashboard/admin only) */}
+            {showTooltips && tip && (
+                <div
+                    className="absolute -top-9 -translate-x-1/2 px-3 py-1.5 bg-gray-900 text-white text-xs font-semibold rounded-lg whitespace-nowrap shadow-lg pointer-events-none z-10"
+                    style={{ left: `${Math.min(90, Math.max(10, tip.pct))}%` }}
+                >
+                    {tip.text}
+                    <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900" />
+                </div>
             )}
         </div>
     );
