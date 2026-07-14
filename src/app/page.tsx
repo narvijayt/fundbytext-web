@@ -250,7 +250,7 @@ export default async function HomePage() {
                                     {/* eslint-disable-next-line @next/next/no-img-element */}
                                     <img alt="" src={A_UNDERLINE} width={440} height={16} style={{ display: "block" }} />
                                 </div>
-                                <h1 className="font-black text-3xl sm:text-4xl md:text-5xl lg:text-[56px] xl:text-[64px] leading-[1.1] tracking-[-1px] text-center bg-clip-text text-transparent w-full"
+                                <h1 className="font-black text-[30px] sm:text-[36px] md:text-[42px] lg:text-[48px] xl:text-[54px] leading-[1.1] tracking-[-1px] text-center bg-clip-text text-transparent w-full"
                                     style={{
                                         backgroundImage: "linear-gradient(138deg,rgb(38,91,145) 30.5%,rgb(0,48,96) 69.5%)",
                                     }}>
@@ -312,7 +312,7 @@ export default async function HomePage() {
                                             style={{ width: s.imgW, height: s.imgH }} />
                                     </div>
                                     <div className="flex flex-col gap-1 lg:gap-2 min-w-0">
-                                        <p className="font-black text-[#0268c0] text-[22px] lg:text-[28px] leading-snug truncate">{s.value}</p>
+                                        <p className="font-black text-[#0268c0] text-[20px] lg:text-[24px] leading-snug truncate">{s.value}</p>
                                         <p className="font-black text-[#aeb5bd] text-[8px] lg:text-xs tracking-[1px] uppercase leading-tight">{s.label}</p>
                                     </div>
                                 </div>
@@ -330,7 +330,7 @@ export default async function HomePage() {
                     {/* Header + Subheader */}
                     <div className="flex flex-col items-center gap-5 mb-12 lg:mb-20">
                         <SectionBadge label="HOW it works" />
-                        <h2 className="font-black text-3xl sm:text-4xl lg:text-[56px] leading-none tracking-[-1px] text-center bg-clip-text text-transparent"
+                        <h2 className="font-black text-[26px] sm:text-[32px] lg:text-[40px] xl:text-[44px] leading-none tracking-[-1px] text-center bg-clip-text text-transparent"
                             style={{ backgroundImage: HEADLINE_GRADIENT }}>
                             Fundraising made easy
                         </h2>
@@ -442,7 +442,7 @@ export default async function HomePage() {
                 {/* Noise overlay */}
                 <div className="absolute inset-0 mix-blend-overlay opacity-20 pointer-events-none"
                     style={{ backgroundImage: NOISE_URI, backgroundRepeat: "repeat" }} />
-                <h2 className="relative z-10 font-black text-3xl sm:text-4xl lg:text-[56px] leading-none tracking-[-1px] text-center bg-clip-text text-transparent w-full"
+                <h2 className="relative z-10 font-black text-[26px] sm:text-[32px] lg:text-[40px] xl:text-[44px] leading-none tracking-[-1px] text-center bg-clip-text text-transparent w-full"
                     style={{ backgroundImage: "linear-gradient(172deg,rgb(38,91,145) 30.5%,rgb(0,48,96) 69.5%)" }}>
                     See How It Works
                 </h2>
@@ -469,7 +469,7 @@ export default async function HomePage() {
                 <div className="max-w-[1632px] mx-auto px-4 sm:px-6 lg:px-[144px] mb-10 lg:mb-16">
                     <div className="flex flex-col items-center gap-5">
                         <SectionBadge label="what's the difference?" />
-                        <h2 className="font-black text-3xl sm:text-4xl lg:text-[56px] leading-none tracking-[-1px] text-center bg-clip-text text-transparent"
+                        <h2 className="font-black text-[26px] sm:text-[32px] lg:text-[40px] xl:text-[44px] leading-none tracking-[-1px] text-center bg-clip-text text-transparent"
                             style={{ backgroundImage: HEADLINE_GRADIENT }}>
                             Organization vs. Individual
                         </h2>
@@ -563,7 +563,7 @@ export default async function HomePage() {
                                         {/* inner ring */}
                                         <div className="absolute rounded-full border-[2.5px] border-[#ffdf8a]"
                                             style={{ inset: "26.7%", background: "radial-gradient(circle at 40% 32%,#ffd76b 0%,#f7b62e 70%,#eda31c 100%)" }} />
-                                        <span className="absolute inset-0 flex items-center justify-center font-black text-white text-[25px] leading-none"
+                                        <span className="absolute inset-0 flex items-center justify-center font-black text-white text-[20px] lg:text-[22px] leading-none"
                                             style={{ textShadow: "0 0 8px #d49021,0 0 3px #c66d10" }}>1</span>
                                     </div>
                                     {/* organizer */}
@@ -610,7 +610,7 @@ export default async function HomePage() {
                 <div className="max-w-[1632px] mx-auto px-4 sm:px-6 lg:px-[144px] pt-10">
                     <div className="flex flex-col items-center gap-5 mb-2 lg:mb-4">
                         <SectionBadge label="real stories" />
-                        <h2 className="font-black text-3xl sm:text-4xl lg:text-[56px] leading-none tracking-[-1px] text-center bg-clip-text text-transparent"
+                        <h2 className="font-black text-[26px] sm:text-[32px] lg:text-[40px] xl:text-[44px] leading-none tracking-[-1px] text-center bg-clip-text text-transparent"
                             style={{ backgroundImage: HEADLINE_GRADIENT }}>
                             How people use FundbyText
                         </h2>
@@ -626,11 +626,11 @@ export default async function HomePage() {
                     <div className="max-w-[1632px] mx-auto px-4 sm:px-6 lg:px-[144px] relative z-10">
                         <div className="flex flex-col items-center gap-6 lg:gap-8 py-20 lg:py-28">
                             <div className="flex flex-col items-center gap-4 lg:gap-6 w-full">
-                                <h2 className="font-black text-4xl sm:text-5xl lg:text-[56px] leading-none tracking-[-1px] text-center bg-clip-text text-transparent"
+                                <h2 className="font-black text-[28px] sm:text-[34px] lg:text-[42px] xl:text-[46px] leading-none tracking-[-1px] text-center bg-clip-text text-transparent"
                                     style={{ backgroundImage: "linear-gradient(153deg,rgb(38,91,145) 30.5%,rgb(0,48,96) 69.5%)" }}>
                                     Ready to Inspire?
                                 </h2>
-                                <p className="font-normal text-[#2f3a45] text-lg lg:text-[22px] leading-[1.25] text-center">
+                                <p className="font-normal text-[#2f3a45] text-base lg:text-[18px] leading-[1.25] text-center">
                                     Start Your FundbyText Campaign Today.
                                 </p>
                             </div>
@@ -714,13 +714,15 @@ export default async function HomePage() {
 
                     {/* Column 2 — blue CTA card (328px, stretches to match) */}
                     <div className="relative overflow-hidden rounded-[24px] p-8 sm:p-10 flex flex-col gap-8 w-full lg:w-[328px] lg:flex-none bg-[#0268c0]">
-                        {/* F-pattern watermark (Figma export) + fading linear overlay */}
-                        <div className="absolute inset-0 pointer-events-none"
-                            style={{ backgroundImage: `url(${A_F_WATERMARK})`, backgroundSize: "328px 412px", backgroundPosition: "center" }} />
+                        {/* F-pattern watermark (Figma export) drifting + fading linear overlay.
+                            Transform drift (GPU-composited) so it keeps running on mobile; the
+                            layer is one tile wider than the card and the card clips the overflow. */}
+                        <div className="footer-drift [--fd:-328px] pointer-events-none absolute top-0 left-0 h-full w-[calc(100%+328px)]"
+                            style={{ backgroundImage: `url(${A_F_WATERMARK})`, backgroundRepeat: "repeat", backgroundSize: "328px 412px", backgroundPosition: "center" }} />
                         <div className="absolute inset-0 pointer-events-none"
                             style={{ background: "linear-gradient(to bottom,#0268c0 0%,rgba(2,104,192,0) 100%)" }} />
                         <div className="relative z-10 flex-1 flex flex-col gap-4">
-                            <h3 className="font-black text-[40px] lg:text-5xl leading-[1.1] tracking-[-1px] bg-clip-text text-transparent w-full"
+                            <h3 className="font-black text-[28px] sm:text-[32px] lg:text-[38px] xl:text-[44px] leading-[1.1] tracking-[-1px] bg-clip-text text-transparent w-full"
                                 style={{ backgroundImage: "linear-gradient(to right,#ffffff,rgba(255,255,255,0.8))" }}>
                                 Ready to Inspire?
                             </h3>
