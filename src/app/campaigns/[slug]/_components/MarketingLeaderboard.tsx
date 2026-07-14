@@ -319,6 +319,18 @@ export default function MarketingLeaderboard({
                             })}
                         </div>
 
+                        {others.length === 0 && goalAmount != null && (
+                            /* With ≤3 participants everyone sits on the podium and the
+                               "Other Participants" table (which carries the campaign goal
+                               in the Figma) never renders — show the goal in a slim card
+                               of the same family so it's never lost. */
+                            <div className="bg-white border border-[#eff4f9] flex items-center justify-center px-[24px] py-[18px] md:py-[24px] rounded-[20px] w-full max-w-[1152px] mt-[32px]" style={{ boxShadow: "0px 20px 20px -14px rgba(0,0,0,0.15), 0px 30px 40px -16px rgba(0,0,0,0.1)" }}>
+                                <p className="text-[20px] md:text-[24px] text-[#003060] tracking-[-0.5px] text-center whitespace-nowrap" style={{ lineHeight: 1.15 }}>
+                                    <span className="font-light">Campaign Goal: </span><span className="font-black">{fmt(goalAmount)}</span>
+                                </p>
+                            </div>
+                        )}
+
                         {others.length > 0 && (
                             <div className="bg-white border border-[#eff4f9] flex flex-col gap-[24px] items-start overflow-hidden pb-[24px] pt-[24px] px-[16px] md:pb-[40px] md:pt-[32px] md:px-[40px] rounded-[20px] w-full max-w-[1152px] mt-[32px]" style={{ boxShadow: "0px 20px 20px -14px rgba(0,0,0,0.15), 0px 30px 40px -16px rgba(0,0,0,0.1)" }}>
                                 <div className="flex flex-col gap-[8px] items-start md:flex-row md:items-center md:justify-between w-full">
