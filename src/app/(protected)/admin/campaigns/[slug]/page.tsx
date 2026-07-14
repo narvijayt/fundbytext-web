@@ -258,7 +258,8 @@ export default async function AdminCampaignDetailPage({ params }: Ctx) {
                 ))}
             </div>
 
-            {/* Progress bar */}
+            {/* Progress bar — standalone here (not beside a chart card), so no left
+                padding: it lines up with the stat cards and header above. */}
             <CampaignProgressBar
                 raisedAmt={raisedAmt}
                 goalAmt={effectiveGoalAmt}
@@ -269,6 +270,7 @@ export default async function AdminCampaignDetailPage({ params }: Ctx) {
                 daysLeft={daysLeft}
                 status={campaign.status}
                 goalType={campaign.goal_type}
+                className=""
             />
 
             {/* Chart + Feed (left) · Campaign video (right) */}

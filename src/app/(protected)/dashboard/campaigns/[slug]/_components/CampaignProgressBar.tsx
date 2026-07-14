@@ -34,9 +34,13 @@ type Props = {
     status:         string;
     goalType?:      string | null;
     timezone?:      string | null;
+    /** Root padding. Defaults to `pl-6` so the dashboard bar lines up with its
+        chart card; the admin view (bar is standalone) passes "" to align with the
+        stat cards. */
+    className?:     string;
 };
 
-export default function CampaignProgressBar({ raisedAmt, goalAmt, initialGoalAmt, donationCount, endDate, status, goalType, timezone }: Props) {
+export default function CampaignProgressBar({ raisedAmt, goalAmt, initialGoalAmt, donationCount, endDate, status, goalType, timezone, className = "pl-6" }: Props) {
     const tz = timezone ?? "America/New_York";
     const [countdown,    setCountdown]    = useState<ReturnType<typeof getCountdown> | null>(null);
 
@@ -54,7 +58,7 @@ export default function CampaignProgressBar({ raisedAmt, goalAmt, initialGoalAmt
     const urgent = countdown && !countdown.ended && countdown.days <= 2;
 
     return (
-        <div className="pl-6">
+        <div className={className}>
             {/* Top row */}
             <div className="flex items-baseline justify-between gap-4 mb-3">
                 <p className="text-[26px] font-black leading-none text-[#003060]">
