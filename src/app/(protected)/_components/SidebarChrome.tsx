@@ -236,9 +236,8 @@ export default function SidebarChrome({ data }: { data: SidebarData }) {
             </aside>
 
             <header className="fixed inset-x-0 top-0 z-40 flex h-16 items-center justify-between border-b border-[#e7e9eb] bg-white px-4 md:hidden">
-                {/* logo-main.svg has ~36px of baked-in left whitespace in its viewBox; pull it flush to the px-4 gutter (Figma: logo at x=16) */}
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <Link href="/dashboard" className="overflow-hidden"><img src="/logo-main.svg" alt="FundbyText" className="-ml-9 h-8 w-auto max-w-none" /></Link>
+                <Link href="/dashboard"><img src="/logo-main.svg" alt="FundbyText" className="h-8 w-auto" /></Link>
                 <button type="button" onClick={() => setOpen(true)} aria-label="Open menu" className="flex h-10 w-10 items-center justify-center rounded-lg text-[#003060] hover:bg-[#0268c0]/8">
                     <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round"><path d="M4 7h16M4 12h16M4 17h16" /></svg>
                 </button>
