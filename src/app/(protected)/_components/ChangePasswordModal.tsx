@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
+import { useDismissGuard } from "@/components/useDismissGuard";
 
 // Shared field styles — same tokens as the Create/Edit User + Edit Profile modals.
 const INPUT     = "w-full rounded-[12px] border border-[#d4dee7] bg-white px-4 py-2.5 pr-11 text-[15px] text-[#003060] placeholder:text-[#9aa7b8] transition-colors focus:border-[#0268c0] focus:outline-none focus:ring-2 focus:ring-[#0268c0]/20";
@@ -42,6 +43,9 @@ export default function ChangePasswordModal({ onClose }: { onClose: () => void }
     // Only close on a backdrop click that *started* on the backdrop — so dragging
     // a text selection out of an input doesn't dismiss the modal.
     const downOnBackdrop = useRef(false);
+    // Protect a started form: an outside-click / Escape shakes instead of closing.
+    const dirty = !!(form.new_password || form.confirm_password) && !saving && !success;
+    const { nudge, requestClose } = useDismissGuard(dirty, close);
 
     useEffect(() => { setMounted(true); }, []);
     // Once mounted (portal painted at opacity-0/scale-95), flip on the next frame
@@ -52,7 +56,7 @@ export default function ChangePasswordModal({ onClose }: { onClose: () => void }
         const raf = requestAnimationFrame(() => { setShown(true); firstRef.current?.focus(); });
         const prev = document.body.style.overflow;
         document.body.style.overflow = "hidden";
-        const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") close(); };
+        const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") requestClose(); };
         window.addEventListener("keydown", onKey);
         return () => { cancelAnimationFrame(raf); document.body.style.overflow = prev; window.removeEventListener("keydown", onKey); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -100,14 +104,14 @@ export default function ChangePasswordModal({ onClose }: { onClose: () => void }
         <div
             className={`fixed inset-0 z-[100] flex items-center justify-center bg-[#0f1d43]/45 p-4 backdrop-blur-sm transition-opacity duration-200 motion-reduce:transition-none ${shown ? "opacity-100" : "opacity-0"}`}
             onMouseDown={(e) => { downOnBackdrop.current = e.target === e.currentTarget; }}
-            onClick={(e) => { if (downOnBackdrop.current && e.target === e.currentTarget) close(); }}
+            onClick={(e) => { if (downOnBackdrop.current && e.target === e.currentTarget) requestClose(); }}
         >
             <div
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="change-password-title"
                 onClick={(e) => e.stopPropagation()}
-                className={`flex max-h-[calc(100dvh-2rem)] w-full max-w-md flex-col overflow-hidden rounded-2xl bg-white shadow-[0px_16px_40px_-8px_rgba(15,29,67,0.3)] transition-transform duration-200 motion-reduce:transition-none ${shown ? "scale-100" : "scale-95"}`}
+                className={`flex max-h-[calc(100dvh-2rem)] w-full max-w-md flex-col overflow-hidden rounded-2xl bg-white shadow-[0px_16px_40px_-8px_rgba(15,29,67,0.3)] transition-transform duration-200 motion-reduce:transition-none ${nudge ? "modal-nudge" : ""} ${shown ? "scale-100" : "scale-95"}`}
             >
                 {/* Header */}
                 <div className="flex shrink-0 items-center justify-between gap-3 bg-[#0268c0] px-5 py-4 text-white">

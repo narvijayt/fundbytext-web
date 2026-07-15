@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { useDismissGuard } from "@/components/useDismissGuard";
 
 type Props = {
     memberId:     string;
@@ -28,13 +29,24 @@ export default function EditParticipantModal({ memberId, campaignSlug, onClose }
 
     const firstRef = useRef<HTMLInputElement>(null);
 
+    // Seeded (initial) values — used to detect unsaved edits for the dismiss guard.
+    const initialFirst = useRef("");
+    const initialLast  = useRef("");
+
+    const dirty = (firstName !== initialFirst.current || lastName !== initialLast.current) && !saving;
+    const { nudge, requestClose } = useDismissGuard(dirty, close);
+
     // Load current values (name + phone) — the same GET the detail modal uses.
     useEffect(() => {
         fetch(`/api/v1/campaigns/${campaignSlug}/members/${memberId}`, { credentials: "include" })
             .then((r) => r.json())
             .then((d) => {
                 const m = d.member;
-                if (m) { setFirstName(m.first_name ?? ""); setLastName(m.last_name ?? ""); setPhone(m.phone ?? ""); setEmail(m.email ?? null); }
+                if (m) {
+                    setFirstName(m.first_name ?? ""); initialFirst.current = m.first_name ?? "";
+                    setLastName(m.last_name ?? "");   initialLast.current  = m.last_name ?? "";
+                    setPhone(m.phone ?? ""); setEmail(m.email ?? null);
+                }
             })
             .catch(() => setError("Failed to load participant."))
             .finally(() => setLoading(false));
@@ -44,7 +56,7 @@ export default function EditParticipantModal({ memberId, campaignSlug, onClose }
         const raf = requestAnimationFrame(() => setShown(true));
         const prevOverflow = document.body.style.overflow;
         document.body.style.overflow = "hidden";
-        function onKey(e: KeyboardEvent) { if (e.key === "Escape") close(); }
+        function onKey(e: KeyboardEvent) { if (e.key === "Escape") requestClose(); }
         document.addEventListener("keydown", onKey);
         return () => {
             cancelAnimationFrame(raf);
@@ -95,14 +107,14 @@ export default function EditParticipantModal({ memberId, campaignSlug, onClose }
     return (
         <div
             className={`fixed inset-0 z-[100] flex items-center justify-center bg-[#0f1d43]/45 p-4 backdrop-blur-sm transition-opacity duration-200 motion-reduce:transition-none ${shown ? "opacity-100" : "opacity-0"}`}
-            onClick={close}
+            onClick={requestClose}
         >
             <div
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="edit-participant-title"
                 onClick={(e) => e.stopPropagation()}
-                className={`flex max-h-[calc(100dvh-2rem)] w-full max-w-md flex-col overflow-hidden rounded-2xl bg-white shadow-[0px_16px_40px_-8px_rgba(15,29,67,0.3)] transition-transform duration-200 motion-reduce:transition-none ${shown ? "scale-100" : "scale-95"}`}
+                className={`flex max-h-[calc(100dvh-2rem)] w-full max-w-md flex-col overflow-hidden rounded-2xl bg-white shadow-[0px_16px_40px_-8px_rgba(15,29,67,0.3)] transition-transform duration-200 motion-reduce:transition-none ${nudge ? "modal-nudge" : ""} ${shown ? "scale-100" : "scale-95"}`}
             >
                 {/* Header */}
                 <div className="flex shrink-0 items-center justify-between gap-3 bg-[#0268c0] px-5 py-4 text-white">

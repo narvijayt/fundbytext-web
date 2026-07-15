@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { useDismissGuard } from "@/components/useDismissGuard";
 
 const PASS_CHARS = "ABCDEFGHIJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz0123456789!@#$%^&*";
 
@@ -35,11 +36,14 @@ export default function CreateUserModal({ onClose, onSaved }: { onClose: () => v
         general?:   string;
     }>({});
 
+    const dirty = !!(firstName || lastName || email || phone || password || role !== "user") && !saving;
+    const { nudge, requestClose } = useDismissGuard(dirty, close);
+
     useEffect(() => {
         const raf = requestAnimationFrame(() => { setShown(true); firstRef.current?.focus(); });
         const prev = document.body.style.overflow;
         document.body.style.overflow = "hidden";
-        function onKey(e: KeyboardEvent) { if (e.key === "Escape") close(); }
+        function onKey(e: KeyboardEvent) { if (e.key === "Escape") requestClose(); }
         document.addEventListener("keydown", onKey);
         return () => { cancelAnimationFrame(raf); document.body.style.overflow = prev; document.removeEventListener("keydown", onKey); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -109,14 +113,14 @@ export default function CreateUserModal({ onClose, onSaved }: { onClose: () => v
     return (
         <div
             className={`fixed inset-0 z-[100] flex items-center justify-center bg-[#0f1d43]/45 p-4 backdrop-blur-sm transition-opacity duration-200 motion-reduce:transition-none ${shown ? "opacity-100" : "opacity-0"}`}
-            onClick={close}
+            onClick={requestClose}
         >
             <div
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="create-user-title"
                 onClick={(e) => e.stopPropagation()}
-                className={`flex max-h-[calc(100dvh-2rem)] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-white shadow-[0px_16px_40px_-8px_rgba(15,29,67,0.3)] transition-transform duration-200 motion-reduce:transition-none ${shown ? "scale-100" : "scale-95"}`}
+                className={`flex max-h-[calc(100dvh-2rem)] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-white shadow-[0px_16px_40px_-8px_rgba(15,29,67,0.3)] transition-transform duration-200 motion-reduce:transition-none ${nudge ? "modal-nudge" : ""} ${shown ? "scale-100" : "scale-95"}`}
             >
                 {/* Header */}
                 <div className="flex shrink-0 items-center justify-between gap-3 bg-[#0268c0] px-5 py-4 text-white">

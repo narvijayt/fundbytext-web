@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { z } from "zod";
+import { useDismissGuard } from "@/components/useDismissGuard";
 
 // ── Types ─────────────────────────────────────────────────────
 type FormState = { first_name: string; last_name: string; email: string; confirm_email: string; phone: string };
@@ -109,6 +110,10 @@ export default function EditProfileModal({ onClose }: { onClose: () => void }) {
     // Only treat it as an outside-click when the press *started* on the backdrop,
     // so selecting text inside an input and releasing on the backdrop won't close.
     const downOnBackdrop = useRef(false);
+    // Protect a started edit: an outside-click / Escape shakes instead of closing.
+    // `dirty` is reported up from the form body (ModalBody) once the user loads.
+    const [dirty, setDirty] = useState(false);
+    const { nudge, requestClose } = useDismissGuard(dirty, close);
 
     useEffect(() => { setMounted(true); }, []);
     useEffect(() => {
@@ -122,7 +127,7 @@ export default function EditProfileModal({ onClose }: { onClose: () => void }) {
         const raf = requestAnimationFrame(() => setShown(true));
         const prev = document.body.style.overflow;
         document.body.style.overflow = "hidden";
-        const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") close(); };
+        const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") requestClose(); };
         window.addEventListener("keydown", onKey);
         return () => { cancelAnimationFrame(raf); document.body.style.overflow = prev; window.removeEventListener("keydown", onKey); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -136,14 +141,14 @@ export default function EditProfileModal({ onClose }: { onClose: () => void }) {
         <div
             className={`fixed inset-0 z-[100] flex items-center justify-center bg-[#0f1d43]/45 p-4 backdrop-blur-sm transition-opacity duration-200 motion-reduce:transition-none ${shown ? "opacity-100" : "opacity-0"}`}
             onMouseDown={(e) => { downOnBackdrop.current = e.target === e.currentTarget; }}
-            onClick={(e) => { if (downOnBackdrop.current && e.target === e.currentTarget) close(); }}
+            onClick={(e) => { if (downOnBackdrop.current && e.target === e.currentTarget) requestClose(); }}
         >
             <div
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="edit-profile-title"
                 onClick={(e) => e.stopPropagation()}
-                className={`flex max-h-[calc(100dvh-2rem)] w-full max-w-lg flex-col overflow-hidden rounded-2xl bg-white shadow-[0px_16px_40px_-8px_rgba(15,29,67,0.3)] transition-transform duration-200 motion-reduce:transition-none ${shown ? "scale-100" : "scale-95"}`}
+                className={`flex max-h-[calc(100dvh-2rem)] w-full max-w-lg flex-col overflow-hidden rounded-2xl bg-white shadow-[0px_16px_40px_-8px_rgba(15,29,67,0.3)] transition-transform duration-200 motion-reduce:transition-none ${nudge ? "modal-nudge" : ""} ${shown ? "scale-100" : "scale-95"}`}
             >
                 {/* Header */}
                 <div className="flex shrink-0 items-center justify-between gap-3 bg-[#0268c0] px-5 py-4 text-white">
@@ -154,7 +159,7 @@ export default function EditProfileModal({ onClose }: { onClose: () => void }) {
                 </div>
 
                 {user ? (
-                    <ModalBody user={user} onClose={close} />
+                    <ModalBody user={user} onClose={close} onDirty={setDirty} />
                 ) : (
                     <div className="flex h-64 items-center justify-center"><span className="text-sm text-[#7e8a96]">Loading…</span></div>
                 )}
@@ -165,7 +170,7 @@ export default function EditProfileModal({ onClose }: { onClose: () => void }) {
 }
 
 // ── Body + footer (edit-in-place form) ─────────────────────────
-function ModalBody({ user, onClose }: { user: User; onClose: () => void }) {
+function ModalBody({ user, onClose, onDirty }: { user: User; onClose: () => void; onDirty: (d: boolean) => void }) {
     const router = useRouter();
     const fileInputRef = useRef<HTMLInputElement>(null);
     const firstRef = useRef<HTMLInputElement>(null);
@@ -186,6 +191,18 @@ function ModalBody({ user, onClose }: { user: User; onClose: () => void }) {
         confirm_email: "",
         phone: user.phone ?? "",
     });
+
+    // Report unsaved-edit state up to the shell so a stray outside-click / Escape
+    // shakes instead of discarding changes: dirty when any field differs from its
+    // seeded value, or a new photo was chosen.
+    const dirty =
+        (form.first_name !== user.first_name ||
+            form.last_name !== user.last_name ||
+            form.email !== user.email ||
+            form.phone !== (user.phone ?? "") ||
+            !!photoFile) &&
+        !saving;
+    useEffect(() => { onDirty(dirty); }, [dirty, onDirty]);
 
     // Ask for a confirmation only when the login email is actually being changed.
     const emailChanged = form.email.trim().toLowerCase() !== user.email.trim().toLowerCase();

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useDismissGuard } from "@/components/useDismissGuard";
 
 type Props = {
     donationId: string;
@@ -20,6 +21,11 @@ export default function FlagDonationButton({ donationId, isFlagged, flagNote, on
     const [loading, setLoading] = useState(false);
     const [error,   setError]   = useState<string | null>(null);
 
+    // Compare against the seeded flag note (re-seeded on every open) so an already
+    // flagged donation isn't "dirty" on a fresh open — only an actual edit is.
+    const dirty = note.trim() !== flagNote.trim() && !loading;
+    const { nudge, requestClose } = useDismissGuard(dirty, close);
+
     function close() { if (loading) return; setShown(false); window.setTimeout(() => setOpen(false), 170); }
 
     useEffect(() => {
@@ -27,7 +33,7 @@ export default function FlagDonationButton({ donationId, isFlagged, flagNote, on
         const raf = requestAnimationFrame(() => setShown(true));
         const prev = document.body.style.overflow;
         document.body.style.overflow = "hidden";
-        function onKey(e: KeyboardEvent) { if (e.key === "Escape") close(); }
+        function onKey(e: KeyboardEvent) { if (e.key === "Escape") requestClose(); }
         document.addEventListener("keydown", onKey);
         return () => { cancelAnimationFrame(raf); document.body.style.overflow = prev; document.removeEventListener("keydown", onKey); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -83,13 +89,13 @@ export default function FlagDonationButton({ donationId, isFlagged, flagNote, on
             {open && (
                 <div
                     className={`fixed inset-0 z-[100] flex items-center justify-center bg-[#0f1d43]/45 p-4 backdrop-blur-sm transition-opacity duration-200 motion-reduce:transition-none ${shown ? "opacity-100" : "opacity-0"}`}
-                    onClick={close}
+                    onClick={requestClose}
                 >
                     <div
                         role="dialog"
                         aria-modal="true"
                         onClick={(e) => e.stopPropagation()}
-                        className={`modal-scroll max-h-[calc(100dvh-2rem)] w-full max-w-sm overflow-y-auto rounded-2xl bg-white p-6 shadow-[0px_16px_40px_-8px_rgba(15,29,67,0.3)] transition-transform duration-200 motion-reduce:transition-none ${shown ? "scale-100" : "scale-95"}`}
+                        className={`modal-scroll max-h-[calc(100dvh-2rem)] w-full max-w-sm overflow-y-auto rounded-2xl bg-white p-6 shadow-[0px_16px_40px_-8px_rgba(15,29,67,0.3)] transition-transform duration-200 motion-reduce:transition-none ${nudge ? "modal-nudge" : ""} ${shown ? "scale-100" : "scale-95"}`}
                     >
                         <h2 className="mb-1 text-[15px] font-bold text-[#003060]">
                             {isFlagged ? "Manage Flag" : "Flag Donation"}
