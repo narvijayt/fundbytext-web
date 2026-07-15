@@ -255,6 +255,23 @@ html {
     }
 }
 
+/* Scrollable lists that keep their scrollbar on mobile ONLY — hidden from tablet
+   up (768px), where the list's fade overlays already signal the overflow and a
+   bar would cut into the card. Scrolling itself still works at every size.
+   (Distinct from .modal-scroll, which only hides from 1024px.) */
+.scrollbar-mobile-only {
+    scrollbar-width: thin;
+}
+@media (min-width: 768px) {
+    .scrollbar-mobile-only {
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+    .scrollbar-mobile-only::-webkit-scrollbar {
+        display: none;
+    }
+}
+
 ::-webkit-scrollbar-corner {
     background: #f1f5f9;
 }

@@ -254,7 +254,7 @@ function AchieverPanel({
                     </p>
                 ) : (
                     <>
-                        <div ref={listRef} onScroll={syncFade} className={`flex flex-col overflow-y-auto px-[16px] pb-[16px] md:px-[28px] md:pb-[28px] ${PANEL_MAX}`}>
+                        <div ref={listRef} onScroll={syncFade} className={`scrollbar-mobile-only flex flex-col overflow-y-auto px-[16px] pb-[16px] md:px-[28px] md:pb-[28px] ${PANEL_MAX}`}>
                             {rows.map((p) => {
                                 const hl = mode === "progress" && p.id === highlightMemberId;
                                 const clickable = !!onDonate;
@@ -471,7 +471,7 @@ export default function MarketingLeaderboard({
                                         {/* Fixed-height scroll area sized to ~7 rows: everyone beyond
                                             the visible 10 is reached by scrolling in here, so the
                                             card's height never changes with the participant count. */}
-                                        <div className={`bg-white flex flex-col items-start w-full overflow-y-auto ${TABLE_MAX}`}>
+                                        <div className={`scrollbar-mobile-only bg-white flex flex-col items-start w-full overflow-y-auto ${TABLE_MAX}`}>
                                             {others.map((p, i) => {
                                                 const rank = i + 4;
                                                 const hl = p.id === activeId;
