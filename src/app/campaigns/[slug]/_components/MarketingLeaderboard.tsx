@@ -256,7 +256,7 @@ function AchieverPanel({
 
 // ── Component ────────────────────────────────────────────────────────────────
 export default function MarketingLeaderboard({
-    participants, goalAmount, perParticipantGoal, theme, highlightMemberId, canDonate,
+    participants, goalAmount, perParticipantGoal, theme, canDonate,
     isParticipantGoal, showAmounts, isOrganizer = false,
 }: {
     participants: ParticipantRow[];
@@ -269,15 +269,15 @@ export default function MarketingLeaderboard({
     showAmounts: boolean;
     isOrganizer?: boolean;
 }) {
-    // Clicking a participant "selects" them: their card/row takes the active
-    // treatment AND the donate modal opens targeted at them. A participant viewing
-    // their own page starts with their own card active (highlightMemberId); a click
-    // moves the active card. Organizers additionally see the % of goal on each bar.
+    // No participant is highlighted by default — nothing is auto-selected, so no card
+    // shows the second-colour background on load. A card only takes the active
+    // treatment once the viewer clicks it, which also opens the donate modal targeted
+    // at that participant. Organizers additionally see the % of goal on each bar.
     const [selectedId, setSelectedId] = useState<string | null>(null);
     if (participants.length === 0) return null;
     const { accent, secondary } = theme;
     const HL = hlSurfaces(secondary);
-    const activeId = selectedId ?? highlightMemberId;
+    const activeId = selectedId;
     const onSelect = canDonate ? (id: string) => { setSelectedId(id); dispatchDonate(id); } : null;
     // Progress denominator depends on the goal type:
     //  • participant goal (Layout A) → each participant has their OWN target, so the
