@@ -306,7 +306,7 @@ export default function MarketingLeaderboard({
     const others = participants.slice(3);
 
     return (
-        <div className="relative overflow-hidden pt-[40px] md:pt-[80px] xl:pt-[112px] pb-[40px] md:pb-[80px] xl:pb-[112px]" style={{ background: accent }}>
+        <div className="relative overflow-hidden pt-[32px] md:pt-[52px] xl:pt-[72px] pb-[32px] md:pb-[52px] xl:pb-[72px]" style={{ background: accent }}>
             {/* Halo — the Figma "Ellipse 370": an accent-filled circle (r 576, blur 225)
                 blended with color-dodge, centred behind the plaque/podium so the band
                 glows brightest at its top-centre. The radial stops approximate the
