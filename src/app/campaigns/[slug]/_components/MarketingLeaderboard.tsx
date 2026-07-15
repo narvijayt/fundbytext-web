@@ -13,6 +13,16 @@ const A = "/assets/marketing";
 // bars — unlike the main progress bar, it carries no stripes.
 const GREEN_STRIPES = "repeating-linear-gradient(-45deg,#33cc6b,#33cc6b 7px,#23b257 7px,#23b257 14px)";
 const TRACK_BG = "#f2f2f2";
+
+// The viewer-highlight surfaces (own podium card / table row) use FIXED brand
+// blues — the Figma's "dark-blue-gradient" token (#003060→#005bac) for the podium
+// card and brand blue #0268c0 for the rows — NOT the campaign accent. So a themed
+// (e.g. red) campaign never recolours the participant cards; they stay on-brand
+// blue-on-white. Only the section band + banner follow the campaign colours.
+const HL_CARD    = "linear-gradient(180deg, #003060 0%, #005bac 100%)";
+const HL_ROW     = "linear-gradient(172.92deg, #0268c0 0%, #0268c0dd 52%, #0268c0 100%)";
+const HL_ROW_A   = "linear-gradient(90deg, #0268c0 0%, #0268c0cc 100%)";
+const BRAND_BLUE = "#0268c0";
 const MEDALS = ["medal-gold", "medal-silver", "medal-bronze"];
 const TINTS = [
     "linear-gradient(225deg, #ffe5b2 16.667%, #ffffff 43.333%)",
@@ -170,14 +180,13 @@ function Bar({ raised, pct, goal, glow, showAmounts = true }: { raised: number; 
 
 // ── Layout A panel (Goal Achievers / Goal in Progress) ──────────────────────────
 function AchieverPanel({
-    title, medal, rows, mode, showAmounts, accent, highlightMemberId, onDonate,
+    title, medal, rows, mode, showAmounts, highlightMemberId, onDonate,
 }: {
     title: string;
     medal: string;
     rows: ParticipantRow[];
     mode: "achievers" | "progress";
     showAmounts: boolean;
-    accent: string;
     highlightMemberId: string | null;
     onDonate: ((id: string) => void) | null;
 }) {
@@ -198,7 +207,7 @@ function AchieverPanel({
                             // On phones the pill wraps to its own line under the name
                             // (per the mobile Figma); from md up everything sits inline.
                             const inner = hl ? (
-                                <div className="flex flex-wrap items-center gap-x-[12px] gap-y-[8px] rounded-[24px] md:rounded-full py-[8px] pl-[8px] pr-[14px]" style={{ background: `linear-gradient(90deg, ${accent} 0%, ${accent}cc 100%)` }}>
+                                <div className="flex flex-wrap items-center gap-x-[12px] gap-y-[8px] rounded-[24px] md:rounded-full py-[8px] pl-[8px] pr-[14px]" style={{ background: HL_ROW_A }}>
                                     <Avatar name={p.first_name} url={p.profile_photo_url} className="size-[40px]" ring />
                                     <span className="flex-1 min-w-0 truncate font-black text-[16px] text-white" style={{ lineHeight: 1.2 }}>{p.first_name} {p.last_name}</span>
                                     <span className="flex basis-full md:basis-auto items-center gap-[10px] min-w-0">
@@ -295,8 +304,8 @@ export default function MarketingLeaderboard({
                 {isParticipantGoal ? (
                     /* ── Layout A — Goal Achievers / Goal in Progress ── */
                     <div className="flex w-full max-w-[1152px] flex-col gap-[24px] xl:flex-row xl:items-start">
-                        <AchieverPanel title="Goal Achievers" medal="medal-gold" rows={achievers} mode="achievers" showAmounts={showAmounts} accent={accent} highlightMemberId={highlightMemberId} onDonate={onDonate} />
-                        <AchieverPanel title="Goal in Progress" medal="medal-silver" rows={inProgress} mode="progress" showAmounts={showAmounts} accent={accent} highlightMemberId={highlightMemberId} onDonate={onDonate} />
+                        <AchieverPanel title="Goal Achievers" medal="medal-gold" rows={achievers} mode="achievers" showAmounts={showAmounts} highlightMemberId={highlightMemberId} onDonate={onDonate} />
+                        <AchieverPanel title="Goal in Progress" medal="medal-silver" rows={inProgress} mode="progress" showAmounts={showAmounts} highlightMemberId={highlightMemberId} onDonate={onDonate} />
                     </div>
                 ) : (
                     /* ── Layout B — podium + Other Participants table ── */
@@ -308,7 +317,7 @@ export default function MarketingLeaderboard({
                                    secondary→accent-mix vertical gradient + white text. */
                                 const hl = p.id === highlightMemberId;
                                 return (
-                                    <div key={p.id} {...clickProps(p.id)} className={`flex w-full xl:flex-1 flex-col gap-[24px] items-start min-w-0 overflow-hidden p-[32px] relative rounded-[20px] ${canDonate ? "cursor-pointer transition-transform hover:-translate-y-1" : ""}`} style={{ backgroundImage: hl ? `linear-gradient(180deg, ${theme.secondary} 0%, color-mix(in srgb, ${accent} 72%, ${theme.secondary}) 100%)` : TINTS[i], boxShadow: "0px 20px 20px -14px rgba(0,0,0,0.15), 0px 30px 40px -16px rgba(0,0,0,0.1)" }}>
+                                    <div key={p.id} {...clickProps(p.id)} className={`flex w-full xl:flex-1 flex-col gap-[24px] items-start min-w-0 overflow-hidden p-[32px] relative rounded-[20px] ${canDonate ? "cursor-pointer transition-transform hover:-translate-y-1" : ""}`} style={{ backgroundImage: hl ? HL_CARD : TINTS[i], boxShadow: "0px 20px 20px -14px rgba(0,0,0,0.15), 0px 30px 40px -16px rgba(0,0,0,0.1)" }}>
                                         {/* The medal PNGs carry a baked light glow. Mask it to a soft radial
                                             fade so the coin melts into ANY card behind it — the navy highlight
                                             gradient, and wide cards (1–2 participants) where the tint gradient
@@ -364,10 +373,10 @@ export default function MarketingLeaderboard({
                                                 return (
                                                     /* Phones: rank+avatar+name on one line, the bar wrapping to its
                                                        own full-width line below (mobile Figma); md+ single line. */
-                                                    <div key={p.id} {...clickProps(p.id)} className={`flex flex-wrap md:flex-nowrap gap-x-[12px] gap-y-[10px] md:gap-[24px] items-center px-[16px] md:px-[32px] xl:px-[48px] py-[16px] w-full border-b border-[#d4dee7] ${canDonate ? "hover:bg-[#f8fafc]" : ""} ${hl ? "rounded-[20px] md:rounded-[44px]" : ""}`} style={hl ? { backgroundImage: `linear-gradient(172.92deg, ${accent} 0%, ${accent}dd 52%, ${accent} 100%)` } : undefined}>
+                                                    <div key={p.id} {...clickProps(p.id)} className={`flex flex-wrap md:flex-nowrap gap-x-[12px] gap-y-[10px] md:gap-[24px] items-center px-[16px] md:px-[32px] xl:px-[48px] py-[16px] w-full border-b border-[#d4dee7] ${canDonate ? "hover:bg-[#f8fafc]" : ""} ${hl ? "rounded-[20px] md:rounded-[44px]" : ""}`} style={hl ? { backgroundImage: HL_ROW } : undefined}>
                                                         <span className="h-[24px] w-[24px] md:w-[48px] xl:w-[80px] relative shrink-0">
                                                             <span className={`absolute left-0 top-1/2 -translate-y-1/2 rounded-full size-[24px] ${hl ? "bg-white" : "bg-[#aeb5bd]"}`}>
-                                                                <span className={`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 font-bold text-[14px] leading-none ${hl ? "" : "text-white"}`} style={hl ? { color: accent } : undefined}>{rank}</span>
+                                                                <span className={`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 font-bold text-[14px] leading-none ${hl ? "" : "text-white"}`} style={hl ? { color: BRAND_BLUE } : undefined}>{rank}</span>
                                                             </span>
                                                         </span>
                                                         <div className="flex flex-1 gap-[12px] md:gap-[16px] xl:gap-[24px] items-center min-w-0">
