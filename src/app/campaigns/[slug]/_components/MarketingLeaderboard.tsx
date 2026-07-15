@@ -14,16 +14,20 @@ const A = "/assets/marketing";
 const GREEN_STRIPES = "repeating-linear-gradient(-45deg,#33cc6b,#33cc6b 7px,#23b257 7px,#23b257 14px)";
 const TRACK_BG = "#f2f2f2";
 
-// The viewer-highlight surfaces (own podium card / table row) use FIXED brand
-// blues — the Figma's "dark-blue-gradient" token (#003060→#005bac) for the podium
-// card and brand blue #0268c0 for the rows — NOT the campaign accent. So a themed
-// (e.g. red) campaign never recolours the participant cards; they stay on-brand
-// blue-on-white. Only the section band + banner follow the campaign colours.
-const HL_CARD    = "linear-gradient(180deg, #003060 0%, #005bac 100%)";
-const HL_ROW     = "linear-gradient(172.92deg, #0268c0 0%, #0268c0dd 52%, #0268c0 100%)";
-const HL_ROW_A   = "linear-gradient(90deg, #0268c0 0%, #0268c0cc 100%)";
-const BRAND_BLUE = "#0268c0";
-const MEDALS = ["medal-gold", "medal-silver", "medal-bronze"];
+// The active-participant highlight (the viewer's own / a clicked card + row) takes
+// the campaign's SECOND colour (theme.secondary) chosen at creation, so it matches
+// the selected palette rather than a fixed navy. Resting cards stay white. These
+// build the gradients/solid from whatever `secondary` is (a dark colour by design,
+// so the white card text stays legible).
+const hlSurfaces = (secondary: string) => ({
+    card:  `linear-gradient(180deg, ${secondary} 0%, color-mix(in oklch, ${secondary} 68%, white) 100%)`,
+    row:   `linear-gradient(172.92deg, ${secondary} 0%, color-mix(in srgb, ${secondary} 88%, #000) 52%, ${secondary} 100%)`,
+    rowA:  `linear-gradient(90deg, ${secondary} 0%, color-mix(in srgb, ${secondary} 80%, transparent) 100%)`,
+    rank:  secondary,
+});
+// v2 = coins cleaned of their baked sunburst glow so they read on any card colour
+// (the glow-baked originals are still used by the static /campaign reference).
+const MEDALS = ["medal-gold-v2", "medal-silver-v2", "medal-bronze-v2"];
 
 function fmt(n: number) {
     return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(n);
@@ -178,7 +182,7 @@ function Bar({ raised, pct, glow, showAmounts = true, showPercent = false, hasPc
 
 // ── Layout A panel (Goal Achievers / Goal in Progress) ──────────────────────────
 function AchieverPanel({
-    title, medal, rows, mode, showAmounts, showPercent, pctOf, highlightMemberId, onDonate,
+    title, medal, rows, mode, showAmounts, showPercent, pctOf, highlightMemberId, onDonate, hlRow,
 }: {
     title: string;
     medal: string;
@@ -189,6 +193,7 @@ function AchieverPanel({
     pctOf: (raised: number) => number;
     highlightMemberId: string | null;
     onDonate: ((id: string) => void) | null;
+    hlRow: string;
 }) {
     return (
         <div className="relative w-full xl:flex-1 overflow-hidden rounded-[20px] bg-white p-[24px] md:p-[32px]" style={{ boxShadow: "0px 20px 20px -14px rgba(0,0,0,0.15), 0px 30px 40px -16px rgba(0,0,0,0.1)" }}>
@@ -207,7 +212,7 @@ function AchieverPanel({
                             // On phones the pill wraps to its own line under the name
                             // (per the mobile Figma); from md up everything sits inline.
                             const inner = hl ? (
-                                <div className="flex flex-wrap items-center gap-x-[12px] gap-y-[8px] rounded-[24px] md:rounded-full py-[8px] pl-[8px] pr-[14px]" style={{ background: HL_ROW_A }}>
+                                <div className="flex flex-wrap items-center gap-x-[12px] gap-y-[8px] rounded-[24px] md:rounded-full py-[8px] pl-[8px] pr-[14px]" style={{ background: hlRow }}>
                                     <Avatar name={p.first_name} url={p.profile_photo_url} className="size-[40px]" ring />
                                     <span className="flex-1 min-w-0 truncate font-black text-[14px] md:text-[16px] text-white" style={{ lineHeight: 1.2 }}>{p.first_name} {p.last_name}</span>
                                     <span className="flex basis-full md:basis-auto items-center gap-[10px] min-w-0">
@@ -258,7 +263,8 @@ export default function MarketingLeaderboard({
     // moves the active card. Organizers additionally see the % of goal on each bar.
     const [selectedId, setSelectedId] = useState<string | null>(null);
     if (participants.length === 0) return null;
-    const { accent } = theme;
+    const { accent, secondary } = theme;
+    const HL = hlSurfaces(secondary);
     const activeId = selectedId ?? highlightMemberId;
     const onSelect = canDonate ? (id: string) => { setSelectedId(id); dispatchDonate(id); } : null;
     // Progress denominator depends on the goal type:
@@ -326,8 +332,8 @@ export default function MarketingLeaderboard({
                 {isParticipantGoal ? (
                     /* ── Layout A — Goal Achievers / Goal in Progress ── */
                     <div className="flex w-full max-w-[1152px] flex-col gap-[24px] xl:flex-row xl:items-start">
-                        <AchieverPanel title="Goal Achievers" medal="medal-gold" rows={achievers} mode="achievers" showAmounts={showAmounts} showPercent={isOrganizer} pctOf={barPct} highlightMemberId={activeId} onDonate={onSelect} />
-                        <AchieverPanel title="Goal in Progress" medal="medal-silver" rows={inProgress} mode="progress" showAmounts={showAmounts} showPercent={isOrganizer} pctOf={barPct} highlightMemberId={activeId} onDonate={onSelect} />
+                        <AchieverPanel title="Goal Achievers" medal="medal-gold-v2" rows={achievers} mode="achievers" showAmounts={showAmounts} showPercent={isOrganizer} pctOf={barPct} highlightMemberId={activeId} onDonate={onSelect} hlRow={HL.rowA} />
+                        <AchieverPanel title="Goal in Progress" medal="medal-silver-v2" rows={inProgress} mode="progress" showAmounts={showAmounts} showPercent={isOrganizer} pctOf={barPct} highlightMemberId={activeId} onDonate={onSelect} hlRow={HL.rowA} />
                     </div>
                 ) : (
                     /* ── Layout B — podium + Other Participants table ── */
@@ -341,12 +347,11 @@ export default function MarketingLeaderboard({
                                    never picks up the campaign's selected colours. */
                                 const hl = p.id === activeId;
                                 return (
-                                    <div key={p.id} {...clickProps(p.id)} className={`flex w-full xl:flex-1 flex-col gap-[24px] items-start min-w-0 overflow-hidden p-[32px] relative rounded-[20px] bg-white ${canDonate ? "cursor-pointer transition-transform hover:-translate-y-1" : ""}`} style={{ backgroundImage: hl ? HL_CARD : undefined, boxShadow: "0px 20px 20px -14px rgba(0,0,0,0.15), 0px 30px 40px -16px rgba(0,0,0,0.1)" }}>
-                                        {/* The medal PNGs carry a baked light glow. Mask it to a soft radial
-                                            fade so the coin melts into ANY card behind it — the white default
-                                            card (where the baked box would otherwise show as a pale seam) and
-                                            the navy highlight gradient alike. */}
-                                        <Image src={`${A}/leaderboard/${MEDALS[i]}.png`} alt="" width={200} height={200} className="absolute right-[-32px] top-[-18px] size-[200px] max-w-none" style={{ WebkitMaskImage: "radial-gradient(circle at 50% 50%, black 48%, transparent 72%)", maskImage: "radial-gradient(circle at 50% 50%, black 48%, transparent 72%)" }} />
+                                    <div key={p.id} {...clickProps(p.id)} className={`flex w-full xl:flex-1 flex-col gap-[24px] items-start min-w-0 overflow-hidden p-[32px] relative rounded-[20px] bg-white ${canDonate ? "cursor-pointer transition-transform hover:-translate-y-1" : ""}`} style={{ backgroundImage: hl ? HL.card : undefined, boxShadow: "0px 20px 20px -14px rgba(0,0,0,0.15), 0px 30px 40px -16px rgba(0,0,0,0.1)" }}>
+                                        {/* Clean coin asset (the baked sunburst glow was cropped out of the
+                                            PNG) so the medal reads cleanly on ANY card — the white default
+                                            cards and the themed highlight card alike, with no stray halo. */}
+                                        <Image src={`${A}/leaderboard/${MEDALS[i]}.png`} alt="" width={200} height={200} className="absolute right-[-32px] top-[-18px] size-[200px] max-w-none" />
                                         <div className="flex gap-[16px] items-center px-[8px] w-full">
                                             <Avatar name={p.first_name} url={p.profile_photo_url} className="size-[64px]" ring={hl} />
                                             <p className={`text-[16px] md:text-[18px] xl:text-[20px] min-w-0 ${hl ? "text-white" : "text-[#003060]"}`}>
@@ -397,10 +402,10 @@ export default function MarketingLeaderboard({
                                                 return (
                                                     /* Phones: rank+avatar+name on one line, the bar wrapping to its
                                                        own full-width line below (mobile Figma); md+ single line. */
-                                                    <div key={p.id} {...clickProps(p.id)} className={`flex flex-wrap md:flex-nowrap gap-x-[12px] gap-y-[10px] md:gap-[24px] items-center px-[16px] md:px-[32px] xl:px-[48px] py-[16px] w-full border-b border-[#d4dee7] ${canDonate ? "hover:bg-[#f8fafc]" : ""} ${hl ? "rounded-[20px] md:rounded-[44px]" : ""}`} style={hl ? { backgroundImage: HL_ROW } : undefined}>
+                                                    <div key={p.id} {...clickProps(p.id)} className={`flex flex-wrap md:flex-nowrap gap-x-[12px] gap-y-[10px] md:gap-[24px] items-center px-[16px] md:px-[32px] xl:px-[48px] py-[16px] w-full border-b border-[#d4dee7] ${canDonate ? "hover:bg-[#f8fafc]" : ""} ${hl ? "rounded-[20px] md:rounded-[44px]" : ""}`} style={hl ? { backgroundImage: HL.row } : undefined}>
                                                         <span className="h-[24px] w-[24px] md:w-[48px] xl:w-[80px] relative shrink-0">
                                                             <span className={`absolute left-0 top-1/2 -translate-y-1/2 rounded-full size-[24px] ${hl ? "bg-white" : "bg-[#aeb5bd]"}`}>
-                                                                <span className={`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 font-bold text-[14px] leading-none ${hl ? "" : "text-white"}`} style={hl ? { color: BRAND_BLUE } : undefined}>{rank}</span>
+                                                                <span className={`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 font-bold text-[14px] leading-none ${hl ? "" : "text-white"}`} style={hl ? { color: HL.rank } : undefined}>{rank}</span>
                                                             </span>
                                                         </span>
                                                         <div className="flex flex-1 gap-[12px] md:gap-[16px] xl:gap-[24px] items-center min-w-0">
