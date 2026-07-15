@@ -29,9 +29,13 @@ const hlSurfaces = (secondary: string) => ({
 // coin + number sit on the card while the medal's top-right corner (which carries a
 // stray blue export pixel) overflows off-card and is clipped by overflow-hidden.
 const MEDALS = ["medal-gold", "medal-silver", "medal-bronze"];
-// On the highlighted (coloured) card the sunburst fades to white and would wash out
-// half the selected colour, so THERE we mask the medal down to just the coin — the
-// second colour then shows across the whole card. White cards keep the full rays.
+// The medal PNG's baked glow reaches the square image edge, so unmasked it shows a
+// rectangular "fog" box on the card. Both masks fade it to a soft radial edge (no box):
+//  • RAY_MASK keeps the full sunburst but tapers it to transparent well inside the
+//    square, so white cards get the Figma rays with no boundary.
+//  • COIN_MASK crops down to just the coin for the highlighted card, so the selected
+//    second colour fills the whole card instead of the rays washing out its right half.
+const RAY_MASK  = "radial-gradient(circle at 64% 40%, #000 40%, transparent 70%)";
 const COIN_MASK = "radial-gradient(circle 78px at 64% 38%, #000 82%, transparent 100%)";
 
 function fmt(n: number) {
@@ -357,7 +361,7 @@ export default function MarketingLeaderboard({
                                             The number stays on-card; the corner blue pixel clips off-card. On the
                                             highlighted card the rays are masked to the coin so the selected colour
                                             fills the whole card instead of washing out its right half. */}
-                                        <Image src={`${A}/leaderboard/${MEDALS[i]}.png`} alt="" width={190} height={190} className="absolute right-[-32px] top-[-12px] z-0 size-[190px] max-w-none" style={hl ? { WebkitMaskImage: COIN_MASK, maskImage: COIN_MASK } : undefined} />
+                                        <Image src={`${A}/leaderboard/${MEDALS[i]}.png`} alt="" width={190} height={190} className="absolute right-[-32px] top-[-12px] z-0 size-[190px] max-w-none" style={{ WebkitMaskImage: hl ? COIN_MASK : RAY_MASK, maskImage: hl ? COIN_MASK : RAY_MASK }} />
                                         {/* Content sits ABOVE the medal (positioned art otherwise paints over
                                             in-flow text) so the name reads over the rays; the number still shows
                                             in the empty top-right corner where no content overlaps it. */}
