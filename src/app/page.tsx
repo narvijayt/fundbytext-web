@@ -471,7 +471,7 @@ export default async function HomePage() {
                 </div>
 
                 {/* ── Cards — desktop: exact 556×474 Figma blocks ── */}
-                <div className="max-w-[1632px] mx-auto px-4 sm:px-6 lg:px-[144px] mb-16 lg:mb-6">
+                <div className="max-w-[1632px] mx-auto px-4 sm:px-6 lg:px-[144px] mb-8 lg:mb-2">
                     <div className="flex flex-col lg:flex-row items-center lg:items-start justify-center gap-8 lg:gap-10">
 
                         {/* Organization Campaigns */}
@@ -598,8 +598,8 @@ export default async function HomePage() {
                 </div>
 
                 {/* ── How People Use FundbyText (real stories) ── */}
-                <div className="max-w-[1632px] mx-auto px-4 sm:px-6 lg:px-[144px] pt-4">
-                    <div className="flex flex-col items-center gap-5 mb-2 lg:mb-4">
+                <div className="max-w-[1632px] mx-auto px-4 sm:px-6 lg:px-[144px]">
+                    <div className="flex flex-col items-center gap-4 mb-1 lg:mb-2">
                         <SectionBadge label="real stories" />
                         <h2 className="font-black text-[26px] sm:text-[32px] lg:text-[40px] xl:text-[44px] leading-none tracking-[-1px] text-center bg-clip-text text-transparent"
                             style={{ backgroundImage: HEADLINE_GRADIENT }}>
@@ -610,12 +610,12 @@ export default async function HomePage() {
                 <StoriesCarousel stories={STORIES} />
 
                 {/* ── CTA — Ready to Inspire? ── */}
-                <div className="relative mt-4 lg:mt-8">
+                <div className="relative">
                     {/* Noise overlay */}
                     <div className="absolute inset-0 mix-blend-overlay opacity-20 pointer-events-none"
                         style={{ backgroundImage: NOISE_URI, backgroundRepeat: "repeat" }} />
                     <div className="max-w-[1632px] mx-auto px-4 sm:px-6 lg:px-[144px] relative z-10">
-                        <div className="flex flex-col items-center gap-6 lg:gap-8 py-12 lg:py-16">
+                        <div className="flex flex-col items-center gap-6 lg:gap-8 py-10 lg:py-12">
                             <div className="flex flex-col items-center gap-4 lg:gap-6 w-full">
                                 <h2 className="font-black text-[28px] sm:text-[34px] lg:text-[42px] xl:text-[46px] leading-none tracking-[-1px] text-center bg-clip-text text-transparent"
                                     style={{ backgroundImage: "linear-gradient(153deg,rgb(38,91,145) 30.5%,rgb(0,48,96) 69.5%)" }}>

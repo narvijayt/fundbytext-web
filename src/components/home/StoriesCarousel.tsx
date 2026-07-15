@@ -41,13 +41,16 @@ export default function StoriesCarousel({ stories, dotTone = "blue" }: {
     const scrollTo = useCallback((i: number) => emblaApi?.scrollTo(i), [emblaApi]);
 
     return (
-        <div className="w-full flex flex-col items-center gap-4 lg:gap-6">
+        <div className="w-full flex flex-col items-center gap-2 lg:gap-3">
             {/* Carousel — overflow hidden (no scrollbar), drag/swipe to browse */}
             <div className="overflow-hidden w-full" ref={emblaRef}>
                 {/* The featured card's drop-shadows are offset downward only, and the
                     embla wrapper clips, so the room they need is all on the BOTTOM —
-                    a matching top pad was just dead space under the section heading. */}
-                <div className="flex items-center gap-6 pt-3 pb-14">
+                    a matching top pad was just dead space under the section heading.
+                    pb-8 holds the tight 0/20/10 shadow; the diffuse 0/50/40 one is
+                    barely perceptible at 0.15 alpha over the blue wash, so letting the
+                    clip take it buys back ~24px of empty space under the cards. */}
+                <div className="flex items-center gap-6 pt-2 pb-8">
                     {stories.map((s, i) => {
                         const featured = i === selected;
                         return (
