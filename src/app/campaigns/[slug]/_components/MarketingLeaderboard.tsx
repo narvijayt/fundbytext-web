@@ -225,7 +225,7 @@ function AchieverPanel({
                 shows inside the card (its 196px natural size == the 300px medal minus
                 the 104px corner bleed), so it sits flush in the corner at native size —
                 offsetting it again would just clip the coin + star away. */}
-            <Image src={`${A}/leaderboard/${medal}.png`} alt="" width={196} height={196} className="absolute right-0 top-0 size-[132px] md:size-[196px] max-w-none pointer-events-none" />
+            <Image src={`${A}/leaderboard/${medal}.png`} alt="" width={196} height={196} className="absolute right-0 top-0 size-[104px] md:size-[156px] max-w-none pointer-events-none" />
             <div className="relative flex items-center justify-center py-[24px] md:py-[32px]">
                 <h3 className="font-black text-[22px] md:text-[28px] text-[#003060] tracking-[-0.25px] leading-none">{title}</h3>
             </div>
