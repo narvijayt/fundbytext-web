@@ -4,17 +4,28 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import UploadBox from "@/app/campaigns/[slug]/create/_components/UploadBox";
 import { downscaleImage, DOWNSCALE_PRESETS } from "@/app/campaigns/[slug]/create/_components/downscaleImage";
+import { useDismissGuard } from "@/components/useDismissGuard";
+
+/** The organizer's own details, passed only when they aren't yet a participant. */
+export type SelfPrefill = {
+    firstName: string;
+    lastName:  string;
+    email:     string;
+    phone:     string | null;
+    photoUrl:  string | null;
+};
 
 type Props = {
     campaignSlug: string;
     onClose:      () => void;
+    selfPrefill?: SelfPrefill | null;
 };
 
 const INPUT     = "w-full rounded-[12px] border border-[#d4dee7] bg-white px-4 py-2.5 text-[15px] text-[#003060] placeholder:text-[#9aa7b8] transition-colors focus:border-[#0268c0] focus:outline-none focus:ring-2 focus:ring-[#0268c0]/20";
 const INPUT_ERR = "w-full rounded-[12px] border border-red-300 bg-white px-4 py-2.5 text-[15px] text-[#003060] placeholder:text-[#9aa7b8] transition-colors focus:border-red-400 focus:outline-none focus:ring-2 focus:ring-red-400/25";
 const LABEL     = "mb-1.5 block text-[13px] font-semibold text-[#003060]";
 
-export default function AddParticipantModal({ campaignSlug, onClose }: Props) {
+export default function AddParticipantModal({ campaignSlug, onClose, selfPrefill }: Props) {
     const router = useRouter();
 
     const [firstName,      setFirstName]      = useState("");
@@ -27,14 +38,19 @@ export default function AddParticipantModal({ campaignSlug, onClose }: Props) {
     const [error,          setError]          = useState<string | null>(null);
     const [fieldErrors,    setFieldErrors]    = useState<Record<string, string>>({});
     const [shown,          setShown]          = useState(false);
+    const [emailRegistered, setEmailRegistered] = useState(false);
+    const [emailHasPhoto,   setEmailHasPhoto]   = useState(false);
 
     const firstRef = useRef<HTMLInputElement>(null);
+
+    const dirty = !!(firstName || lastName || email || phone || photoUrl) && !saving;
+    const { nudge, requestClose } = useDismissGuard(dirty, close);
 
     useEffect(() => {
         const raf = requestAnimationFrame(() => { setShown(true); firstRef.current?.focus(); });
         const prevOverflow = document.body.style.overflow;
         document.body.style.overflow = "hidden";
-        function onKey(e: KeyboardEvent) { if (e.key === "Escape") close(); }
+        function onKey(e: KeyboardEvent) { if (e.key === "Escape") requestClose(); }
         document.addEventListener("keydown", onKey);
         return () => {
             cancelAnimationFrame(raf);
@@ -48,6 +64,26 @@ export default function AddParticipantModal({ campaignSlug, onClose }: Props) {
         setShown(false);
         window.setTimeout(onClose, 170);
     }
+
+    // When the email belongs to a registered account that already has a profile
+    // photo, that account photo is authoritative on the campaign page — an upload
+    // here won't be shown. Check (debounced) so the photo section can say so.
+    useEffect(() => {
+        const value = email.trim().toLowerCase();
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) { setEmailRegistered(false); setEmailHasPhoto(false); return; }
+        let cancelled = false;
+        const t = setTimeout(async () => {
+            try {
+                const res  = await fetch(`/api/v1/campaigns/${campaignSlug}/members/check-email?email=${encodeURIComponent(value)}`);
+                const json = await res.json().catch(() => ({}));
+                const ok   = res.ok && json.registered === true;
+                if (!cancelled) { setEmailRegistered(ok); setEmailHasPhoto(ok && json.hasPhoto === true); }
+            } catch {
+                if (!cancelled) { setEmailRegistered(false); setEmailHasPhoto(false); }
+            }
+        }, 350);
+        return () => { cancelled = true; clearTimeout(t); };
+    }, [email, campaignSlug]);
 
     // Upload-on-select, matching the campaign wizard's visual uploader: downscale
     // client-side, POST to the shared profile-photo route, surface the busy key so
@@ -70,6 +106,20 @@ export default function AddParticipantModal({ campaignSlug, onClose }: Props) {
         } finally {
             setUploadingPhoto(null);
         }
+    }
+
+    // Prefill the form with the organizer's own details. Submitting with their
+    // email makes the members API add the participant role to their existing
+    // membership instead of creating a new one.
+    function fillSelf() {
+        if (!selfPrefill) return;
+        setFirstName(selfPrefill.firstName);
+        setLastName(selfPrefill.lastName);
+        setEmail(selfPrefill.email);
+        setPhone(selfPrefill.phone ?? "");
+        setPhotoUrl(selfPrefill.photoUrl);
+        setFieldErrors({});
+        setError(null);
     }
 
     function validate() {
@@ -117,14 +167,14 @@ export default function AddParticipantModal({ campaignSlug, onClose }: Props) {
     return (
         <div
             className={`fixed inset-0 z-[100] flex items-center justify-center bg-[#0f1d43]/45 p-4 backdrop-blur-sm transition-opacity duration-200 motion-reduce:transition-none ${shown ? "opacity-100" : "opacity-0"}`}
-            onClick={close}
+            onClick={requestClose}
         >
             <div
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="add-participant-title"
                 onClick={(e) => e.stopPropagation()}
-                className={`flex max-h-[calc(100dvh-2rem)] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-white shadow-[0px_16px_40px_-8px_rgba(15,29,67,0.3)] transition-transform duration-200 motion-reduce:transition-none ${shown ? "scale-100" : "scale-95"}`}
+                className={`flex max-h-[calc(100dvh-2rem)] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-white shadow-[0px_16px_40px_-8px_rgba(15,29,67,0.3)] transition-transform duration-200 motion-reduce:transition-none ${nudge ? "modal-nudge" : ""} ${shown ? "scale-100" : "scale-95"}`}
             >
                 {/* Header */}
                 <div className="flex shrink-0 items-center justify-between gap-3 bg-[#0268c0] px-5 py-4 text-white">
@@ -148,12 +198,25 @@ export default function AddParticipantModal({ campaignSlug, onClose }: Props) {
                     scrolls on smaller screens. */}
                 <form onSubmit={handleSubmit} className="flex flex-1 flex-col overflow-hidden">
                     <div className="modal-scroll grid flex-1 grid-cols-1 content-start gap-4 overflow-y-auto p-5 sm:grid-cols-2">
-                        {/* Invite info */}
-                        <div className="flex gap-2.5 rounded-xl border border-[#cfe0f3] bg-[#eef5fc] px-3.5 py-3 text-[12px] leading-snug text-[#0268c0] sm:col-span-2">
-                            <svg className="mt-0.5 h-4 w-4 shrink-0 text-[#0268c0]" fill="currentColor" viewBox="0 0 20 20">
+                        {/* Invite info — with the "Add Myself" prefill inline so it doesn't add a row */}
+                        <div className="flex flex-wrap items-center gap-2.5 rounded-xl border border-[#cfe0f3] bg-[#eef5fc] px-3.5 py-3 text-[12px] leading-snug text-[#0268c0] sm:col-span-2">
+                            <svg className="h-4 w-4 shrink-0 text-[#0268c0]" fill="currentColor" viewBox="0 0 20 20">
                                 <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
                             </svg>
-                            <span>This participant will be invited via email, SMS, or both. If they are new to the platform, they will also receive login credentials.</span>
+                            <span className="min-w-0 flex-1 basis-56">This participant will be invited via email, SMS, or both. If they are new to the platform, they will also receive login credentials.</span>
+                            {selfPrefill && (
+                                <button
+                                    type="button"
+                                    onClick={fillSelf}
+                                    title="Fill in your own details to join as a participant"
+                                    className="ml-auto inline-flex shrink-0 items-center gap-1.5 rounded-full border border-[#0268c0]/30 bg-white px-3 py-1.5 text-[12px] font-semibold text-[#0268c0] transition-colors hover:bg-[#dcecfa]"
+                                >
+                                    <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M19 8v6M22 11h-6" />
+                                    </svg>
+                                    Add Myself
+                                </button>
+                            )}
                         </div>
 
                         {/* Profile photo (optional) — same uploader, loader and behaviour as the
@@ -177,6 +240,14 @@ export default function AddParticipantModal({ campaignSlug, onClose }: Props) {
                                     <span className="text-[#9aa7b8]">JPG, PNG or WebP · up to 5MB</span>
                                 </p>
                             </div>
+                            {emailRegistered && emailHasPhoto && (
+                                <p className="mt-2.5 flex gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[12px] leading-snug text-amber-700">
+                                    <svg className="mt-0.5 h-3.5 w-3.5 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.72-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                                    </svg>
+                                    <span>This participant already has an account, so their own profile photo will be shown on the campaign page. A photo you upload here won&rsquo;t replace it.</span>
+                                </p>
+                            )}
                         </div>
 
                         <div>

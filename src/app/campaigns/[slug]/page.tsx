@@ -164,7 +164,11 @@ export default async function CampaignPublicPage({
             id:                m.id,
             first_name:        m.first_name,
             last_name:         m.last_name,
-            profile_photo_url: m.profile_photo_url,
+            // A linked account's own profile photo is authoritative (matches the
+            // dashboard) — an organizer can't override a registered participant's
+            // photo. The member photo is only a fallback for accounts without one
+            // (and for brand-new participants before their account is created).
+            profile_photo_url: m.user?.profile_photo_url ?? m.profile_photo_url,
             total_raised:      m.donations.reduce((s, d) => s + Number(d.amount), 0),
         }))
         .sort((a, b) => b.total_raised - a.total_raised);
@@ -233,7 +237,7 @@ export default async function CampaignPublicPage({
     const refTarget: ModalParticipant | null = defaultTargetMemberId
         ? (() => {
             const m = campaign.members.find((mm) => mm.id === defaultTargetMemberId);
-            return m ? { id: m.id, first_name: m.first_name, last_name: m.last_name, profile_photo_url: m.profile_photo_url } : null;
+            return m ? { id: m.id, first_name: m.first_name, last_name: m.last_name, profile_photo_url: m.user?.profile_photo_url ?? m.profile_photo_url } : null;
         })()
         : null;
     const showInlineRef = isParticipantRefLink && !isDraft && campaign.status !== "completed";

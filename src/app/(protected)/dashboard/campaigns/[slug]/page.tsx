@@ -783,6 +783,13 @@ export default async function CampaignDetailPage({
                                 myMemberId={myMembership.id}
                                 donorsPerParticipant={campaign.donors_per_participant}
                                 isCompleted={campaign.status === CampaignStatus.completed}
+                                selfPrefill={!isParticipant ? {
+                                    firstName: myMembership.first_name,
+                                    lastName:  myMembership.last_name,
+                                    email:     myMembership.email ?? user.email,
+                                    phone:     myMembership.phone ?? user.phone,
+                                    photoUrl:  myMembership.profile_photo_url ?? myMembership.user?.profile_photo_url ?? null,
+                                } : null}
                             />
                         </div>
                     )}

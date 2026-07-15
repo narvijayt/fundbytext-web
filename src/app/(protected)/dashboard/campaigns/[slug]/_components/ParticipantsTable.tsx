@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
-import AddParticipantModal from "./AddParticipantModal";
+import AddParticipantModal, { type SelfPrefill } from "./AddParticipantModal";
 import ParticipantDetailModal from "./ParticipantDetailModal";
 import EditParticipantModal from "./EditParticipantModal";
 import RemoveParticipantModal from "./RemoveParticipantModal";
@@ -71,6 +71,8 @@ type Props = {
     isCompleted?:          boolean;
     /** Hide all row actions (three-dots menu) — participant view shows the rankings read-only. */
     readOnly?:             boolean;
+    /** Organizer's own details for the "Add Myself" prefill — pass only while they aren't a participant yet. */
+    selfPrefill?:          SelfPrefill | null;
 };
 
 const PAGE_SIZES = [5, 10, 25, 50];
@@ -106,7 +108,7 @@ function SkeletonCard() {
     );
 }
 
-export default function ParticipantsTable({ participants: initialParticipants, initialTotal, initialMaxRaised, isOrganizer, campaignSlug, perParticipantGoal, myMemberId, donorsPerParticipant, isCompleted, readOnly }: Props) {
+export default function ParticipantsTable({ participants: initialParticipants, initialTotal, initialMaxRaised, isOrganizer, campaignSlug, perParticipantGoal, myMemberId, donorsPerParticipant, isCompleted, readOnly, selfPrefill }: Props) {
     const [rows,         setRows]         = useState<ParticipantRow[]>(initialParticipants);
     const [total,        setTotal]        = useState(initialTotal ?? initialParticipants.length);
     const [maxRaised,    setMaxRaised]    = useState(initialMaxRaised ?? Math.max(0, ...initialParticipants.map((p) => p.raised)));
@@ -445,7 +447,7 @@ export default function ParticipantsTable({ participants: initialParticipants, i
             )}
 
             {isOrganizer && addOpen && (
-                <AddParticipantModal campaignSlug={campaignSlug} onClose={() => { setAddOpen(false); refresh(); }} />
+                <AddParticipantModal campaignSlug={campaignSlug} selfPrefill={selfPrefill} onClose={() => { setAddOpen(false); refresh(); }} />
             )}
             {/* Row action menu — portalled so the table's overflow doesn't clip it */}
             {!readOnly && mounted && menuFor && (() => {
