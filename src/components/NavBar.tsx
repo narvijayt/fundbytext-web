@@ -8,10 +8,6 @@ const A_NAV_MENU   = "/figma/nav-menu.svg";
 const A_NAV_SEARCH = "/figma/nav-search.svg";
 const A_NAV_USER   = "/figma/nav-user.svg";
 const A_LOGO_MAIN  = "/logo-main.svg";
-// The nav lockup straight from the Figma nav-top node: 166×32. logo-main.svg is a
-// wider 234×32 cut of the mark, so at height:32 it rendered 68px too wide and
-// crowded the MENU pill on a 375 screen.
-const A_LOGO_NAV   = "/figma/logo-nav.svg";
 
 const NAV_ITEMS = [
     { href: "/",             label: "Home" },
@@ -48,7 +44,10 @@ export default function NavBar({ user }: { user: { id: string } | null }) {
                     no third action — sign-in and the CTA live inside the menu overlay. */}
                 <div className="flex md:hidden items-center justify-between px-6 py-5">
                     <Link href="/">
-                        <img alt="FundByText" src={A_LOGO_NAV} width={166} height={32} style={{ width: 166, height: 32, display: "block" }} />
+                        {/* Same mark as the desktop nav, at the Figma's mobile size:
+                            the cropped logo is 163×32, so height 32 lands on the
+                            166×32 box the design allots it. */}
+                        <img alt="FundByText" src={A_LOGO_MAIN} style={{ height: 32, width: "auto", display: "block" }} />
                     </Link>
 
                     <button
