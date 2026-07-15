@@ -9,7 +9,7 @@ import { ProgressBar, BottomNav, RocketIcon } from "./_components/WizardNav";
 import { PAGE_GRADIENT, VectorWallpaper, StepBanner, Loader, AlertDialog } from "./_components/ui";
 import StepDetails      from "./_components/StepDetails";
 import StepFundingGoal  from "./_components/StepFundingGoal";
-import StepVisual       from "./_components/StepVisual";
+import StepVisual, { extractColorsFromUrl, DEFAULT_COLORS } from "./_components/StepVisual";
 import StepParticipants from "./_components/StepParticipants";
 import StepThankYou     from "./_components/StepThankYou";
 import { downscaleImage, DOWNSCALE_PRESETS } from "./_components/downscaleImage";
@@ -153,10 +153,58 @@ export default function SetupWizard({
     const [extractedColors, setExtractedColors] = useState<[string, string, string] | null>(null);
     const appliedColors = colorMode === "logo" && extractedColors ? extractedColors : customColors;
     const [accentColor, secondaryColor, tertiaryColor] = appliedColors;
+    // Flipped true the moment the user touches the colour UI (picks a box or edits
+    // a swatch). The mount restore below reads it so a slow extraction can never
+    // land on top of a choice the user has already made.
+    const colorsTouched = useRef(false);
     function setCustomColor(i: number, hex: string) {
+        colorsTouched.current = true;
         setCustomColors((prev) => { const n = [...prev] as [string, string, string]; n[i] = hex; return n; });
     }
+    function selectColorMode(m: "logo" | "custom") {
+        colorsTouched.current = true;
+        setColorMode(m);
+    }
     const [uploadingPhoto, setUploadingPhoto]   = useState<string | null>(null);
+
+    // Only the APPLIED colours are persisted, not which box they came from — so
+    // on re-entry the logo box would sit blank (white swatches) and its colours
+    // would wrongly show as "Custom". Re-extract the logo's palette on mount to
+    // refill the logo box, and when it matches the saved colours the campaign was
+    // in logo mode — reselect it and return the custom box to its fresh defaults.
+    useEffect(() => {
+        if (!isOrg || !profileUrl) return;
+        let cancelled = false;
+        extractColorsFromUrl(profileUrl).then((cols) => {
+            if (cancelled) return;
+
+            // Refill the logo box — but never clobber a logo the user swapped in
+            // while this (slow) extraction of the original logo was in flight.
+            setExtractedColors((prev) => prev ?? cols);
+
+            // extractColorsFromUrl returns DEFAULT_COLORS as its failure sentinel,
+            // which also happens to be what an untouched campaign persists — so a
+            // failed extraction must NOT be read as a logo-colour match (that would
+            // wrongly flip the campaign into logo mode). Require a real palette.
+            const isSentinel = cols.every((c, i) => c.toLowerCase() === DEFAULT_COLORS[i].toLowerCase());
+            const saved = [campaign.accent_color, campaign.secondary_color, campaign.tertiary_color];
+            const savedFromLogo = !isSentinel && saved.every((c, i) => c && c.toLowerCase() === cols[i].toLowerCase());
+
+            // Only restore the mode if the user hasn't already made a colour choice
+            // (a fast editor could beat this async extraction). The restore leaves
+            // the APPLIED colours unchanged — logo mode now shows the same palette
+            // custom mode was showing — so the one autosave it schedules is a
+            // value-identical no-op.
+            if (savedFromLogo && !colorsTouched.current) {
+                setColorMode("logo");
+                setCustomColors(DEFAULT_COLORS);
+            }
+        });
+        return () => { cancelled = true; };
+        // Mount-only: restores the saved selection once — later logo changes go
+        // through StepVisual's own upload handler.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     // ── Step 4 — Participants / Donors
     const [members, setMembers]   = useState<Member[]>(campaign.members);
@@ -1043,7 +1091,7 @@ export default function SetupWizard({
                             customBgUrl={customBgUrl} setCustomBgUrl={setCustomBgUrl}
                             accentColor={accentColor} secondaryColor={secondaryColor}
                             customColors={customColors} setCustomColor={setCustomColor}
-                            colorMode={colorMode} setColorMode={setColorMode}
+                            colorMode={colorMode} setColorMode={selectColorMode}
                             extractedColors={extractedColors} setExtractedColors={setExtractedColors}
                             uploadingPhoto={uploadingPhoto} uploadPhoto={uploadPhoto}
                             fieldErrors={fieldErrors} clearFE={clearFE}

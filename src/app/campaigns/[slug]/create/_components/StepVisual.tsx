@@ -63,7 +63,7 @@ type Props = {
 const DEFAULT_ACCENT = "#0268C0";
 const DEFAULT_SECONDARY = "#003060";
 const DEFAULT_TERTIARY = "#FFFFFF";
-const DEFAULT_COLORS: [string, string, string] = [DEFAULT_ACCENT, DEFAULT_SECONDARY, DEFAULT_TERTIARY];
+export const DEFAULT_COLORS: [string, string, string] = [DEFAULT_ACCENT, DEFAULT_SECONDARY, DEFAULT_TERTIARY];
 
 /* Gallery is a fixed set of 4 independent slots. Normalising to a fixed-length
    array (empties as "") keeps each slot stable — uploading/removing one slot
@@ -125,7 +125,7 @@ function luminance(hex: string) {
     return (0.299 * r + 0.587 * g + 0.114 * b) / 255;
 }
 
-async function extractColorsFromUrl(url: string): Promise<[string, string, string]> {
+export async function extractColorsFromUrl(url: string): Promise<[string, string, string]> {
     return new Promise((resolve) => {
         const img = new window.Image();
         img.crossOrigin = "anonymous";
@@ -550,9 +550,12 @@ export default function StepVisual({
     }
 
     function resetColors() {
+        // Reset the Custom box to defaults and switch to it. Leave the logo box
+        // alone — its swatches are derived from the still-uploaded logo, so
+        // clearing them would blank the box; re-extract only if they're missing.
         DEFAULT_COLORS.forEach((c, i) => setCustomColor(i, c));
         setColorMode("custom");
-        setExtractedColors(null);
+        if (isOrg && profileUrl && !extractedColors) applyLogoColors(profileUrl);
         setPicking(null);
     }
 
