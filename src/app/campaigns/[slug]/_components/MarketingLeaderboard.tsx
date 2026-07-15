@@ -22,7 +22,9 @@ const TRACK_BG = "#f2f2f2";
 const hlSurfaces = (secondary: string) => ({
     card:  `linear-gradient(180deg, ${secondary} 0%, color-mix(in oklch, ${secondary} 68%, white) 100%)`,
     row:   `linear-gradient(172.92deg, ${secondary} 0%, color-mix(in srgb, ${secondary} 88%, #000) 52%, ${secondary} 100%)`,
-    rowA:  `linear-gradient(90deg, ${secondary} 0%, color-mix(in srgb, ${secondary} 80%, transparent) 100%)`,
+    // Layout A's selected row is a SOLID fill in the Figma (blue-80 #0278de on the
+    // default theme) — not a gradient, which read as a muddy wash.
+    rowA:  secondary,
     rank:  secondary,
 });
 // Full medal art WITH the sunburst rays (the Figma "shades"). Positioned so the
@@ -140,21 +142,24 @@ function Avatar({ name, url, className, ring }: { name: string; url: string | nu
     );
 }
 
-/* Green "$X Raised" pill (Layout A in-progress + highlighted rows). Organizers
-   additionally see the percentage of the per-participant goal ("· N%"). */
-function RaisedPill({ amount, pct, showPercent }: { amount: number; pct?: number; showPercent?: boolean }) {
+/* "You" badge — sits beside the logged-in participant's own name so they can spot
+   themselves on the public leaderboard. Themed to the campaign's (dark) secondary
+   on light cards; a translucent white on the dark, highlighted rows/cards. */
+function YouBadge({ onDark, secondary }: { onDark?: boolean; secondary: string }) {
     return (
-        <span className="relative shrink-0 overflow-hidden rounded-full px-[12px] py-[5px]" style={{ background: GREEN_STRIPES }}>
-            <span className="relative text-[11px] md:text-[12px] text-white whitespace-nowrap">
-                <span className="font-black">{fmt(amount)}</span>
-                <span className="font-medium"> Raised</span>
-                {showPercent && pct != null && <span className="font-semibold text-white/85"> · {Math.round(pct)}%</span>}
-            </span>
+        <span
+            className="shrink-0 rounded-full px-[8px] py-[3px] text-[10px] md:text-[11px] font-black uppercase tracking-[0.5px] leading-none"
+            style={onDark
+                ? { background: "rgba(255,255,255,0.25)", color: "#fff" }
+                : { background: `color-mix(in srgb, ${secondary} 14%, white)`, color: secondary }}
+        >
+            You
         </span>
     );
 }
 
-/* Green "raised" bar on a gray track (Layout B podium + table). Members see
+/* Green "raised" bar on a gray track (Layout B podium + table, and the Layout A
+   "Goal in Progress" rows — the Figma's 177×32 `goal-progress-bar`). Members see
    dollar amounts + the per-participant goal; the public sees "N% Raised" with no
    dollar figures (per the Figma "Organization view" leaderboard variant). */
 function Bar({ raised, pct, glow, showAmounts = true, showPercent = false, hasPct = true }: { raised: number; pct: number; glow?: boolean; showAmounts?: boolean; showPercent?: boolean; hasPct?: boolean }) {
@@ -194,7 +199,7 @@ function Bar({ raised, pct, glow, showAmounts = true, showPercent = false, hasPc
 
 // ── Layout A panel (Goal Achievers / Goal in Progress) ──────────────────────────
 function AchieverPanel({
-    title, medal, rows, mode, showAmounts, showPercent, pctOf, highlightMemberId, onDonate, hlRow,
+    title, medal, rows, mode, showAmounts, showPercent, pctOf, highlightMemberId, onDonate, hlRow, youMemberId, secondary,
 }: {
     title: string;
     medal: string;
@@ -206,48 +211,73 @@ function AchieverPanel({
     highlightMemberId: string | null;
     onDonate: ((id: string) => void) | null;
     hlRow: string;
+    /* The viewer's own participant member id (logged-in participant) → "You" badge. */
+    youMemberId: string | null;
+    secondary: string;
 }) {
+    // The list only scrolls once it outgrows the card, and the Figma's top/bottom
+    // fades exist to hint at that overflow — with a short list they'd just wash the
+    // rows out, so they're tied to the same condition.
+    const scrollable = rows.length > 5;
     return (
-        <div className="relative w-full xl:flex-1 overflow-hidden rounded-[20px] bg-white p-[24px] md:p-[32px]" style={{ boxShadow: "0px 20px 20px -14px rgba(0,0,0,0.15), 0px 30px 40px -16px rgba(0,0,0,0.1)" }}>
-            <Image src={`${A}/leaderboard/${medal}.png`} alt="" width={180} height={180} className="absolute right-[-44px] top-[-44px] size-[150px] max-w-none pointer-events-none" />
-            <h3 className="relative mb-[20px] font-black text-[20px] md:text-[24px] text-[#003060]" style={{ lineHeight: 1.15 }}>{title}</h3>
+        <div className="relative w-full xl:flex-1 overflow-hidden rounded-[20px] bg-[#f4f8f9]" style={{ boxShadow: "0px 30px 40px -8px rgba(0,91,172,0.7)" }}>
+            {/* Star medal — bleeds off the top-right corner; the card's overflow clips
+                both the bleed and the asset's stray corner pixel. */}
+            <Image src={`${A}/leaderboard/${medal}.png`} alt="" width={300} height={300} className="absolute right-[-70px] top-[-70px] size-[200px] md:right-[-104px] md:top-[-104px] md:size-[300px] max-w-none pointer-events-none" />
+            <div className="relative flex items-center justify-center py-[24px] md:py-[32px]">
+                <h3 className="font-black text-[22px] md:text-[28px] text-[#003060] tracking-[-0.25px] leading-none">{title}</h3>
+            </div>
             <div className="relative">
                 {rows.length === 0 ? (
-                    <p className="py-[40px] text-center text-[15px] text-[#aeb5bd]">
+                    <p className="px-[28px] pb-[40px] text-center text-[15px] text-[#7e8a96]">
                         {mode === "achievers" ? "No one has hit their goal yet — be the first!" : "Everyone reached their goal! 🎉"}
                     </p>
                 ) : (
-                    <div className="flex max-h-[392px] flex-col gap-[8px] overflow-y-auto pr-1">
-                        {rows.map((p) => {
-                            const hl = mode === "progress" && p.id === highlightMemberId;
-                            const clickable = !!onDonate;
-                            // On phones the pill wraps to its own line under the name
-                            // (per the mobile Figma); from md up everything sits inline.
-                            const inner = hl ? (
-                                <div className="flex flex-wrap items-center gap-x-[12px] gap-y-[8px] rounded-[24px] md:rounded-full py-[8px] pl-[8px] pr-[14px]" style={{ background: hlRow }}>
-                                    <Avatar name={p.first_name} url={p.profile_photo_url} className="size-[40px]" ring />
-                                    <span className="flex-1 min-w-0 truncate font-black text-[14px] md:text-[16px] text-white" style={{ lineHeight: 1.2 }}>{p.first_name} {p.last_name}</span>
-                                    <span className="flex basis-full md:basis-auto items-center gap-[10px] min-w-0">
-                                        {clickable && (
-                                            <svg className="size-[18px] shrink-0 text-white/90" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"><path d="M9 6l6 6-6 6" /></svg>
-                                        )}
-                                        {showAmounts && <RaisedPill amount={p.total_raised} pct={pctOf(p.total_raised)} showPercent={showPercent} />}
+                    <>
+                        <div className={`flex flex-col overflow-y-auto px-[16px] pb-[16px] md:px-[28px] md:pb-[28px] ${scrollable ? "max-h-[420px] md:max-h-[468px]" : ""}`}>
+                            {rows.map((p) => {
+                                const hl = mode === "progress" && p.id === highlightMemberId;
+                                const clickable = !!onDonate;
+                                // Phones: the bar wraps under the name; md+ sits inline (Figma desktop).
+                                const bar = mode === "progress" && showAmounts && (
+                                    <span className="flex basis-full md:basis-auto md:w-[177px] md:shrink-0 min-w-0">
+                                        <Bar raised={p.total_raised} pct={pctOf(p.total_raised)} showAmounts showPercent={showPercent} />
                                     </span>
-                                </div>
-                            ) : (
-                                <div className="flex flex-wrap items-center gap-x-[12px] gap-y-[8px] px-[8px] py-[6px]">
-                                    <Avatar name={p.first_name} url={p.profile_photo_url} className="size-[40px]" />
-                                    <span className="flex-1 min-w-0 truncate font-bold text-[14px] md:text-[16px] text-[#003060]" style={{ lineHeight: 1.2 }}>{p.first_name} {p.last_name}</span>
-                                    {mode === "progress" && showAmounts && <span className="flex basis-full md:basis-auto min-w-0"><RaisedPill amount={p.total_raised} pct={pctOf(p.total_raised)} showPercent={showPercent} /></span>}
-                                </div>
-                            );
-                            return clickable ? (
-                                <button key={p.id} type="button" onClick={() => onDonate!(p.id)} className="block w-full text-left transition-opacity hover:opacity-90">{inner}</button>
-                            ) : (
-                                <div key={p.id}>{inner}</div>
-                            );
-                        })}
-                    </div>
+                                );
+                                const inner = hl ? (
+                                    <div className="flex flex-wrap items-center gap-x-[12px] gap-y-[8px] md:gap-[16px] overflow-hidden rounded-[24px] md:rounded-[100px] py-[8px] pl-[8px] pr-[16px] md:py-[12px] md:pl-[12px] md:pr-[24px]" style={{ background: hlRow, boxShadow: "0px 20px 20px -14px rgba(2,104,192,0.2), 0px 20px 40px -16px rgba(2,104,192,0.2)" }}>
+                                        <Avatar name={p.first_name} url={p.profile_photo_url} className="size-[40px] md:size-[48px]" ring />
+                                        <span className="flex-1 min-w-0 truncate font-black text-[15px] md:text-[18px] text-white" style={{ lineHeight: 1.15 }}>{p.first_name} {p.last_name}</span>
+                                        {p.id === youMemberId && <YouBadge onDark secondary={secondary} />}
+                                        {clickable && (
+                                            <svg aria-hidden className="size-[24px] shrink-0 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"><path d="M9 6l6 6-6 6" /></svg>
+                                        )}
+                                        {bar}
+                                    </div>
+                                ) : (
+                                    <div className="flex flex-wrap items-center gap-x-[12px] gap-y-[8px] md:gap-[16px] p-[8px] md:p-[12px]">
+                                        <Avatar name={p.first_name} url={p.profile_photo_url} className="size-[40px] md:size-[48px]" />
+                                        <span className="flex-1 min-w-0 truncate font-bold text-[15px] md:text-[18px] text-[#7e8a96]" style={{ lineHeight: 1.15 }}>{p.first_name} {p.last_name}</span>
+                                        {p.id === youMemberId && <YouBadge secondary={secondary} />}
+                                        {bar}
+                                    </div>
+                                );
+                                return clickable ? (
+                                    <button key={p.id} type="button" onClick={() => onDonate!(p.id)} className="block w-full text-left transition-opacity hover:opacity-90">{inner}</button>
+                                ) : (
+                                    <div key={p.id}>{inner}</div>
+                                );
+                            })}
+                        </div>
+                        {/* Figma "overlay" fades — the card colour bleeding over the first
+                            and last rows so the list reads as scrollable. */}
+                        {scrollable && (
+                            <>
+                                <span aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-[64px] md:h-[100px] bg-gradient-to-b from-[#f4f8f9] to-transparent" />
+                                <span aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 h-[80px] md:h-[120px] bg-gradient-to-t from-[#f4f8f9] to-transparent" />
+                            </>
+                        )}
+                    </>
                 )}
             </div>
         </div>
@@ -257,7 +287,7 @@ function AchieverPanel({
 // ── Component ────────────────────────────────────────────────────────────────
 export default function MarketingLeaderboard({
     participants, goalAmount, perParticipantGoal, theme, canDonate,
-    isParticipantGoal, showAmounts, isOrganizer = false,
+    isParticipantGoal, showAmounts, isOrganizer = false, highlightMemberId: youMemberId,
 }: {
     participants: ParticipantRow[];
     goalAmount: number | null;
@@ -344,8 +374,8 @@ export default function MarketingLeaderboard({
                 {isParticipantGoal ? (
                     /* ── Layout A — Goal Achievers / Goal in Progress ── */
                     <div className="flex w-full max-w-[1152px] flex-col gap-[24px] xl:flex-row xl:items-start">
-                        <AchieverPanel title="Goal Achievers" medal="medal-gold" rows={achievers} mode="achievers" showAmounts={showAmounts} showPercent={isOrganizer} pctOf={barPct} highlightMemberId={activeId} onDonate={onSelect} hlRow={HL.rowA} />
-                        <AchieverPanel title="Goal in Progress" medal="medal-silver" rows={inProgress} mode="progress" showAmounts={showAmounts} showPercent={isOrganizer} pctOf={barPct} highlightMemberId={activeId} onDonate={onSelect} hlRow={HL.rowA} />
+                        <AchieverPanel title="Goal Achievers" medal="medal-star-gold" rows={achievers} mode="achievers" showAmounts={showAmounts} showPercent={isOrganizer} pctOf={barPct} highlightMemberId={activeId} onDonate={onSelect} hlRow={HL.rowA} youMemberId={youMemberId} secondary={secondary} />
+                        <AchieverPanel title="Goal in Progress" medal="medal-star-silver" rows={inProgress} mode="progress" showAmounts={showAmounts} showPercent={isOrganizer} pctOf={barPct} highlightMemberId={activeId} onDonate={onSelect} hlRow={HL.rowA} youMemberId={youMemberId} secondary={secondary} />
                     </div>
                 ) : (
                     /* ── Layout B — podium + Other Participants table ── */
@@ -374,6 +404,7 @@ export default function MarketingLeaderboard({
                                                 <span className="block font-black truncate" style={{ lineHeight: 1.25 }}>{p.first_name}</span>
                                                 <span className="block font-medium truncate" style={{ lineHeight: 1.15 }}>{p.last_name}</span>
                                             </p>
+                                            {p.id === youMemberId && <YouBadge onDark={hl} secondary={secondary} />}
                                         </div>
                                         <div className="relative z-10 flex w-full"><Bar raised={p.total_raised} pct={barPct(p.total_raised)} glow={i === 0} showAmounts={showAmounts} showPercent={isOrganizer} hasPct={hasGoalPct} /></div>
                                     </div>
@@ -426,7 +457,8 @@ export default function MarketingLeaderboard({
                                                         </span>
                                                         <div className="flex flex-1 gap-[12px] md:gap-[16px] xl:gap-[24px] items-center min-w-0">
                                                             <Avatar name={p.first_name} url={p.profile_photo_url} className="size-[40px] md:size-[48px]" />
-                                                            <p className={`text-[15px] md:text-[16px] xl:text-[18px] truncate flex-1 min-w-0 md:flex-none md:w-[200px] xl:w-[292px] ${hl ? "text-white font-black" : "text-[#003060] font-bold"}`} style={{ lineHeight: 1.15 }}>{p.first_name} {p.last_name}</p>
+                                                            <p className={`text-[15px] md:text-[16px] xl:text-[18px] truncate min-w-0 md:flex-none md:w-[200px] xl:w-[292px] ${hl ? "text-white font-black" : "text-[#003060] font-bold"}`} style={{ lineHeight: 1.15 }}>{p.first_name} {p.last_name}</p>
+                                                            {p.id === youMemberId && <YouBadge onDark={hl} secondary={secondary} />}
                                                         </div>
                                                         <div className="flex basis-full md:basis-auto md:flex-1 min-w-0">
                                                             {/* Org goal: no per-participant target — the shared campaign
