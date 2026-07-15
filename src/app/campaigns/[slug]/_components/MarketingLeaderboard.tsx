@@ -235,7 +235,7 @@ function AchieverPanel({
     }, []);
     useEffect(() => { syncFade(); }, [rows.length, syncFade]);
     return (
-        <div className="relative w-full xl:flex-1 overflow-hidden rounded-[20px] bg-[#f4f8f9]" style={{ boxShadow: "0px 30px 40px -8px rgba(0,91,172,0.7)" }}>
+        <div className="relative flex w-full flex-col xl:flex-1 overflow-hidden rounded-[20px] bg-[#f4f8f9]" style={{ boxShadow: "0px 30px 40px -8px rgba(0,91,172,0.7)" }}>
             {/* Star medal. Figma exports this node ALREADY clipped to the region that
                 shows inside the card (its 196px natural size == the 300px medal minus
                 the 104px corner bleed), so it sits flush in the corner at native size —
@@ -247,13 +247,18 @@ function AchieverPanel({
             <div className="relative z-10 flex items-center justify-center py-[24px] md:py-[32px]">
                 <h3 className="font-black text-[22px] md:text-[28px] text-[#003060] tracking-[-0.25px] leading-none">{title}</h3>
             </div>
-            <div className="relative z-10">
+            <div className="relative z-10 flex flex-1 flex-col">
                 {rows.length === 0 ? (
-                    <p className="px-[28px] pb-[40px] text-center text-[15px] text-[#7e8a96]">
-                        {mode === "achievers" ? "No one has hit their goal yet — be the first!" : "Everyone reached their goal! 🎉"}
+                    /* The panels are height-matched, so an empty list would otherwise
+                       strand this line at the top of a tall blank card — centre it in
+                       the leftover space so the card reads as intentional. */
+                    <p className="flex flex-1 items-center justify-center px-[28px] pb-[40px] text-center text-[15px] text-[#7e8a96]">
+                        {mode === "achievers" ? "No one has hit their goal yet — be the first!" : "Everyone reached their goal!"}
                     </p>
                 ) : (
-                    <>
+                    /* Own positioning context so the fades anchor to the LIST, not to the
+                       (height-matched) wrapper, which can be taller than a short list. */
+                    <div className="relative">
                         <div ref={listRef} onScroll={syncFade} className={`scrollbar-mobile-only flex flex-col overflow-y-auto px-[16px] pb-[16px] md:px-[28px] md:pb-[28px] ${PANEL_MAX}`}>
                             {rows.map((p) => {
                                 const hl = mode === "progress" && p.id === highlightMemberId;
@@ -301,7 +306,7 @@ function AchieverPanel({
                         {fade.bottom && (
                             <span aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 h-[80px] md:h-[120px] bg-gradient-to-t from-[#f4f8f9] to-transparent" />
                         )}
-                    </>
+                    </div>
                 )}
             </div>
         </div>
