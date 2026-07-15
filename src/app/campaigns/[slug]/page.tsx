@@ -309,6 +309,7 @@ export default async function CampaignPublicPage({
                 canDonate={canDonate}
                 isParticipantGoal={isPerParticipantGoal}
                 showAmounts={!!isMember}
+                isOrganizer={!!isOrganizer}
             />
 
             <MarketingFooter accent={accent} />

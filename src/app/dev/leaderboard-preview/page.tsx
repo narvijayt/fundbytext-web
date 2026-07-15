@@ -38,19 +38,21 @@ const participants: ParticipantRow[] = [
 const CASES: { title: string; props: Partial<React.ComponentProps<typeof MarketingLeaderboard>> }[] = [
     { title: "Org goal — PUBLIC view (percent labels, no highlight)",
       props: { showAmounts: false, highlightMemberId: null } },
-    { title: "Org goal — ORGANIZER view ($ amounts, no highlight)",
-      props: { showAmounts: true, highlightMemberId: null } },
+    { title: "Org goal — ORGANIZER view ($ amounts + % of goal)",
+      props: { showAmounts: true, isOrganizer: true, highlightMemberId: null } },
     { title: "Org goal — PARTICIPANT view, viewer is #1 (navy podium card)",
       props: { showAmounts: true, highlightMemberId: "1" } },
     { title: "Org goal — PARTICIPANT view, viewer in table (blue row)",
       props: { showAmounts: true, highlightMemberId: "4" } },
-    { title: "Participant goal — MEMBER view (pills)",
-      props: { showAmounts: true, highlightMemberId: "5", isParticipantGoal: true } },
+    { title: "Participant goal — ORGANIZER view (pills + % of goal)",
+      props: { showAmounts: true, isOrganizer: true, highlightMemberId: "5", isParticipantGoal: true } },
     { title: "Participant goal — PUBLIC view (no pills)",
       props: { showAmounts: false, highlightMemberId: null, isParticipantGoal: true } },
     { title: "THEMED (red accent) — banner/halo/highlights must recolor",
       props: { showAmounts: true, highlightMemberId: "1",
                theme: { ...theme, accent: "#b02a2a", secondary: "#4a0d0d", themeImage: "/assets/campaigns/tiles/theme-trophy-tile.png", themeSize: "12.9vw auto" } } },
+    { title: "SINGLE participant — full-width podium card",
+      props: { showAmounts: true, highlightMemberId: null, participants: [P("1", "Participant", "One", 500)] } },
 ];
 
 export default function LeaderboardPreview() {

@@ -24,11 +24,6 @@ const HL_ROW     = "linear-gradient(172.92deg, #0268c0 0%, #0268c0dd 52%, #0268c
 const HL_ROW_A   = "linear-gradient(90deg, #0268c0 0%, #0268c0cc 100%)";
 const BRAND_BLUE = "#0268c0";
 const MEDALS = ["medal-gold", "medal-silver", "medal-bronze"];
-const TINTS = [
-    "linear-gradient(225deg, #ffe5b2 16.667%, #ffffff 43.333%)",
-    "linear-gradient(225deg, #d4dee7 16.667%, #ffffff 43.333%)",
-    "linear-gradient(225deg, #ebd4b1 16.667%, #ffffff 43.333%)",
-];
 
 function fmt(n: number) {
     return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(n);
@@ -132,13 +127,15 @@ function Avatar({ name, url, className, ring }: { name: string; url: string | nu
     );
 }
 
-/* Green "$X Raised" pill (Layout A in-progress + highlighted rows). */
-function RaisedPill({ amount }: { amount: number }) {
+/* Green "$X Raised" pill (Layout A in-progress + highlighted rows). Organizers
+   additionally see the percentage of the per-participant goal ("· N%"). */
+function RaisedPill({ amount, pct, showPercent }: { amount: number; pct?: number; showPercent?: boolean }) {
     return (
         <span className="relative shrink-0 overflow-hidden rounded-full px-[12px] py-[5px]" style={{ background: GREEN_STRIPES }}>
-            <span className="relative text-[12px] text-white whitespace-nowrap">
+            <span className="relative text-[11px] md:text-[12px] text-white whitespace-nowrap">
                 <span className="font-black">{fmt(amount)}</span>
                 <span className="font-medium"> Raised</span>
+                {showPercent && pct != null && <span className="font-semibold text-white/85"> · {Math.round(pct)}%</span>}
             </span>
         </span>
     );
@@ -147,7 +144,7 @@ function RaisedPill({ amount }: { amount: number }) {
 /* Green "raised" bar on a gray track (Layout B podium + table). Members see
    dollar amounts + the per-participant goal; the public sees "N% Raised" with no
    dollar figures (per the Figma "Organization view" leaderboard variant). */
-function Bar({ raised, pct, goal, glow, showAmounts = true }: { raised: number; pct: number; goal?: number | null; glow?: boolean; showAmounts?: boolean }) {
+function Bar({ raised, pct, goal, glow, showAmounts = true, showPercent = false }: { raised: number; pct: number; goal?: number | null; glow?: boolean; showAmounts?: boolean; showPercent?: boolean }) {
     return (
         <div className="flex-1 h-[32px] min-w-0 relative rounded-full overflow-hidden" style={{ background: TRACK_BG }}>
             <style>{`@keyframes lb-shimmer{0%{transform:translateX(-120%)}100%{transform:translateX(400%)}}`}</style>
@@ -163,13 +160,15 @@ function Bar({ raised, pct, goal, glow, showAmounts = true }: { raised: number; 
                 />
             </div>
             {raised > 0 && (
-                <p className="absolute left-[12px] top-1/2 -translate-y-1/2 text-[14px] text-white whitespace-nowrap drop-shadow">
+                <p className="absolute left-[12px] top-1/2 -translate-y-1/2 text-[12px] md:text-[14px] text-white whitespace-nowrap drop-shadow">
                     <span className="font-black" style={{ lineHeight: 1.25 }}>{showAmounts ? fmt(raised) : `${Math.round(pct)}%`}</span>
                     <span className="font-medium leading-none"> Raised</span>
+                    {/* Organizers see the dollar amount AND the percentage of goal. */}
+                    {showAmounts && showPercent && <span className="font-semibold text-white/85"> · {Math.round(pct)}%</span>}
                 </p>
             )}
             {showAmounts && goal != null && (
-                <p className="absolute right-[16px] top-1/2 -translate-y-1/2 text-[14px] text-[#aeb5bd] text-right whitespace-nowrap">
+                <p className="absolute right-[16px] top-1/2 -translate-y-1/2 text-[12px] md:text-[14px] text-[#aeb5bd] text-right whitespace-nowrap">
                     <span className="font-black">{fmt(goal)} </span><span className="font-normal">Goal</span>
                 </p>
             )}
@@ -180,20 +179,22 @@ function Bar({ raised, pct, goal, glow, showAmounts = true }: { raised: number; 
 
 // ── Layout A panel (Goal Achievers / Goal in Progress) ──────────────────────────
 function AchieverPanel({
-    title, medal, rows, mode, showAmounts, highlightMemberId, onDonate,
+    title, medal, rows, mode, showAmounts, showPercent, pctOf, highlightMemberId, onDonate,
 }: {
     title: string;
     medal: string;
     rows: ParticipantRow[];
     mode: "achievers" | "progress";
     showAmounts: boolean;
+    showPercent: boolean;
+    pctOf: (raised: number) => number;
     highlightMemberId: string | null;
     onDonate: ((id: string) => void) | null;
 }) {
     return (
         <div className="relative w-full xl:flex-1 overflow-hidden rounded-[20px] bg-white p-[24px] md:p-[32px]" style={{ boxShadow: "0px 20px 20px -14px rgba(0,0,0,0.15), 0px 30px 40px -16px rgba(0,0,0,0.1)" }}>
             <Image src={`${A}/leaderboard/${medal}.png`} alt="" width={180} height={180} className="absolute right-[-44px] top-[-44px] size-[150px] max-w-none pointer-events-none" />
-            <h3 className="relative mb-[20px] font-black text-[24px] text-[#003060]" style={{ lineHeight: 1.15 }}>{title}</h3>
+            <h3 className="relative mb-[20px] font-black text-[20px] md:text-[24px] text-[#003060]" style={{ lineHeight: 1.15 }}>{title}</h3>
             <div className="relative">
                 {rows.length === 0 ? (
                     <p className="py-[40px] text-center text-[15px] text-[#aeb5bd]">
@@ -209,19 +210,19 @@ function AchieverPanel({
                             const inner = hl ? (
                                 <div className="flex flex-wrap items-center gap-x-[12px] gap-y-[8px] rounded-[24px] md:rounded-full py-[8px] pl-[8px] pr-[14px]" style={{ background: HL_ROW_A }}>
                                     <Avatar name={p.first_name} url={p.profile_photo_url} className="size-[40px]" ring />
-                                    <span className="flex-1 min-w-0 truncate font-black text-[16px] text-white" style={{ lineHeight: 1.2 }}>{p.first_name} {p.last_name}</span>
+                                    <span className="flex-1 min-w-0 truncate font-black text-[14px] md:text-[16px] text-white" style={{ lineHeight: 1.2 }}>{p.first_name} {p.last_name}</span>
                                     <span className="flex basis-full md:basis-auto items-center gap-[10px] min-w-0">
                                         {clickable && (
                                             <svg className="size-[18px] shrink-0 text-white/90" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"><path d="M9 6l6 6-6 6" /></svg>
                                         )}
-                                        {showAmounts && <RaisedPill amount={p.total_raised} />}
+                                        {showAmounts && <RaisedPill amount={p.total_raised} pct={pctOf(p.total_raised)} showPercent={showPercent} />}
                                     </span>
                                 </div>
                             ) : (
                                 <div className="flex flex-wrap items-center gap-x-[12px] gap-y-[8px] px-[8px] py-[6px]">
                                     <Avatar name={p.first_name} url={p.profile_photo_url} className="size-[40px]" />
-                                    <span className="flex-1 min-w-0 truncate font-bold text-[16px] text-[#003060]" style={{ lineHeight: 1.2 }}>{p.first_name} {p.last_name}</span>
-                                    {mode === "progress" && showAmounts && <span className="flex basis-full md:basis-auto min-w-0"><RaisedPill amount={p.total_raised} /></span>}
+                                    <span className="flex-1 min-w-0 truncate font-bold text-[14px] md:text-[16px] text-[#003060]" style={{ lineHeight: 1.2 }}>{p.first_name} {p.last_name}</span>
+                                    {mode === "progress" && showAmounts && <span className="flex basis-full md:basis-auto min-w-0"><RaisedPill amount={p.total_raised} pct={pctOf(p.total_raised)} showPercent={showPercent} /></span>}
                                 </div>
                             );
                             return clickable ? (
@@ -240,7 +241,7 @@ function AchieverPanel({
 // ── Component ────────────────────────────────────────────────────────────────
 export default function MarketingLeaderboard({
     participants, goalAmount, perParticipantGoal, theme, highlightMemberId, canDonate,
-    isParticipantGoal, showAmounts,
+    isParticipantGoal, showAmounts, isOrganizer = false,
 }: {
     participants: ParticipantRow[];
     goalAmount: number | null;
@@ -250,12 +251,19 @@ export default function MarketingLeaderboard({
     canDonate: boolean;
     isParticipantGoal: boolean;
     showAmounts: boolean;
+    isOrganizer?: boolean;
 }) {
+    // Clicking a participant "selects" them: their card/row takes the active
+    // treatment AND the donate modal opens targeted at them. A participant viewing
+    // their own page starts with their own card active (highlightMemberId); a click
+    // moves the active card. Organizers additionally see the % of goal on each bar.
+    const [selectedId, setSelectedId] = useState<string | null>(null);
     if (participants.length === 0) return null;
     const { accent } = theme;
-    const onDonate = canDonate ? dispatchDonate : null;
+    const activeId = selectedId ?? highlightMemberId;
+    const onSelect = canDonate ? (id: string) => { setSelectedId(id); dispatchDonate(id); } : null;
     const barPct = (raised: number) => perParticipantGoal && perParticipantGoal > 0 ? Math.min(100, (raised / perParticipantGoal) * 100) : (raised > 0 ? 100 : 0);
-    const clickProps = (id: string) => canDonate ? { onClick: () => dispatchDonate(id), className: "cursor-pointer" } : {};
+    const clickProps = (id: string) => onSelect ? { onClick: () => onSelect(id), className: "cursor-pointer" } : {};
 
     // Layout A (participant goal): split into achievers / in-progress by per-participant goal.
     const achievers  = perParticipantGoal != null ? participants.filter((p) => p.total_raised >= perParticipantGoal!) : [];
@@ -304,33 +312,35 @@ export default function MarketingLeaderboard({
                 {isParticipantGoal ? (
                     /* ── Layout A — Goal Achievers / Goal in Progress ── */
                     <div className="flex w-full max-w-[1152px] flex-col gap-[24px] xl:flex-row xl:items-start">
-                        <AchieverPanel title="Goal Achievers" medal="medal-gold" rows={achievers} mode="achievers" showAmounts={showAmounts} highlightMemberId={highlightMemberId} onDonate={onDonate} />
-                        <AchieverPanel title="Goal in Progress" medal="medal-silver" rows={inProgress} mode="progress" showAmounts={showAmounts} highlightMemberId={highlightMemberId} onDonate={onDonate} />
+                        <AchieverPanel title="Goal Achievers" medal="medal-gold" rows={achievers} mode="achievers" showAmounts={showAmounts} showPercent={isOrganizer} pctOf={barPct} highlightMemberId={activeId} onDonate={onSelect} />
+                        <AchieverPanel title="Goal in Progress" medal="medal-silver" rows={inProgress} mode="progress" showAmounts={showAmounts} showPercent={isOrganizer} pctOf={barPct} highlightMemberId={activeId} onDonate={onSelect} />
                     </div>
                 ) : (
                     /* ── Layout B — podium + Other Participants table ── */
                     <>
                         <div className="flex flex-col xl:flex-row gap-[24px] items-stretch w-full max-w-[1152px]">
                             {top3.map((p, i) => {
-                                /* The viewing participant's own podium card gets the navy
-                                   treatment (per the Figma "Participant View" variant):
-                                   secondary→accent-mix vertical gradient + white text. */
-                                const hl = p.id === highlightMemberId;
+                                /* Podium cards are plain white; only the ACTIVE card (the
+                                   viewer's own, or one they click) takes the navy highlight
+                                   (Figma "Participant View" variant) — the medal + its glow
+                                   supply the corner colour, so the card body stays white and
+                                   never picks up the campaign's selected colours. */
+                                const hl = p.id === activeId;
                                 return (
-                                    <div key={p.id} {...clickProps(p.id)} className={`flex w-full xl:flex-1 flex-col gap-[24px] items-start min-w-0 overflow-hidden p-[32px] relative rounded-[20px] ${canDonate ? "cursor-pointer transition-transform hover:-translate-y-1" : ""}`} style={{ backgroundImage: hl ? HL_CARD : TINTS[i], boxShadow: "0px 20px 20px -14px rgba(0,0,0,0.15), 0px 30px 40px -16px rgba(0,0,0,0.1)" }}>
+                                    <div key={p.id} {...clickProps(p.id)} className={`flex w-full xl:flex-1 flex-col gap-[24px] items-start min-w-0 overflow-hidden p-[32px] relative rounded-[20px] bg-white ${canDonate ? "cursor-pointer transition-transform hover:-translate-y-1" : ""}`} style={{ backgroundImage: hl ? HL_CARD : undefined, boxShadow: "0px 20px 20px -14px rgba(0,0,0,0.15), 0px 30px 40px -16px rgba(0,0,0,0.1)" }}>
                                         {/* The medal PNGs carry a baked light glow. Mask it to a soft radial
-                                            fade so the coin melts into ANY card behind it — the navy highlight
-                                            gradient, and wide cards (1–2 participants) where the tint gradient
-                                            shifts and the baked box otherwise shows as a pale seam. */}
+                                            fade so the coin melts into ANY card behind it — the white default
+                                            card (where the baked box would otherwise show as a pale seam) and
+                                            the navy highlight gradient alike. */}
                                         <Image src={`${A}/leaderboard/${MEDALS[i]}.png`} alt="" width={200} height={200} className="absolute right-[-54px] top-[-54px] size-[200px] max-w-none" style={{ WebkitMaskImage: "radial-gradient(circle at 50% 50%, black 48%, transparent 72%)", maskImage: "radial-gradient(circle at 50% 50%, black 48%, transparent 72%)" }} />
                                         <div className="flex gap-[16px] items-center px-[8px] w-full">
                                             <Avatar name={p.first_name} url={p.profile_photo_url} className="size-[64px]" ring={hl} />
-                                            <p className={`text-[20px] min-w-0 ${hl ? "text-white" : "text-[#003060]"}`}>
+                                            <p className={`text-[16px] md:text-[18px] xl:text-[20px] min-w-0 ${hl ? "text-white" : "text-[#003060]"}`}>
                                                 <span className="block font-black truncate" style={{ lineHeight: 1.25 }}>{p.first_name}</span>
                                                 <span className="block font-medium truncate" style={{ lineHeight: 1.15 }}>{p.last_name}</span>
                                             </p>
                                         </div>
-                                        <div className="flex w-full"><Bar raised={p.total_raised} pct={barPct(p.total_raised)} glow={i === 0} showAmounts={showAmounts} /></div>
+                                        <div className="flex w-full"><Bar raised={p.total_raised} pct={barPct(p.total_raised)} glow={i === 0} showAmounts={showAmounts} showPercent={isOrganizer} /></div>
                                     </div>
                                 );
                             })}
@@ -369,7 +379,7 @@ export default function MarketingLeaderboard({
                                         <div className="bg-white flex flex-col items-start w-full">
                                             {others.map((p, i) => {
                                                 const rank = i + 4;
-                                                const hl = p.id === highlightMemberId;
+                                                const hl = p.id === activeId;
                                                 return (
                                                     /* Phones: rank+avatar+name on one line, the bar wrapping to its
                                                        own full-width line below (mobile Figma); md+ single line. */
@@ -381,10 +391,10 @@ export default function MarketingLeaderboard({
                                                         </span>
                                                         <div className="flex flex-1 gap-[12px] md:gap-[16px] xl:gap-[24px] items-center min-w-0">
                                                             <Avatar name={p.first_name} url={p.profile_photo_url} className="size-[40px] md:size-[48px]" />
-                                                            <p className={`text-[16px] md:text-[18px] truncate flex-1 min-w-0 md:flex-none md:w-[200px] xl:w-[292px] ${hl ? "text-white font-black" : "text-[#003060] font-bold"}`} style={{ lineHeight: 1.15 }}>{p.first_name} {p.last_name}</p>
+                                                            <p className={`text-[15px] md:text-[16px] xl:text-[18px] truncate flex-1 min-w-0 md:flex-none md:w-[200px] xl:w-[292px] ${hl ? "text-white font-black" : "text-[#003060] font-bold"}`} style={{ lineHeight: 1.15 }}>{p.first_name} {p.last_name}</p>
                                                         </div>
                                                         <div className="flex basis-full md:basis-auto md:flex-1 min-w-0">
-                                                            <Bar raised={p.total_raised} pct={barPct(p.total_raised)} goal={perParticipantGoal} showAmounts={showAmounts} />
+                                                            <Bar raised={p.total_raised} pct={barPct(p.total_raised)} goal={perParticipantGoal} showAmounts={showAmounts} showPercent={isOrganizer} />
                                                         </div>
                                                     </div>
                                                 );
