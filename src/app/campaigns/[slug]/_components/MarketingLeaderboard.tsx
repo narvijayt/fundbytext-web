@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { DONATE_EVENT } from "./DonateNavButton";
 import type { ParticipantRow } from "../page";
 import type { MarketingTheme } from "./marketingTheme";
@@ -222,17 +222,25 @@ function AchieverPanel({
     youMemberId: string | null;
     secondary: string;
 }) {
-    // The list only scrolls once it outgrows the card, and the Figma's top/bottom
-    // fades exist to hint at that overflow — with a short list they'd just wash the
-    // rows out, so they're tied to the same condition.
-    const scrollable = rows.length > 5;
+    // The Figma's top/bottom fades hint that the list scrolls, so each one only shows
+    // while there is actually content hidden in that direction: at rest the first row
+    // isn't washed out, and once you reach the end neither is the last.
+    const listRef = useRef<HTMLDivElement>(null);
+    const [fade, setFade] = useState({ top: false, bottom: false });
+    const syncFade = useCallback(() => {
+        const el = listRef.current;
+        if (!el) return;
+        const max = el.scrollHeight - el.clientHeight;
+        setFade({ top: el.scrollTop > 4, bottom: max > 4 && el.scrollTop < max - 4 });
+    }, []);
+    useEffect(() => { syncFade(); }, [rows.length, syncFade]);
     return (
         <div className="relative w-full xl:flex-1 overflow-hidden rounded-[20px] bg-[#f4f8f9]" style={{ boxShadow: "0px 30px 40px -8px rgba(0,91,172,0.7)" }}>
             {/* Star medal. Figma exports this node ALREADY clipped to the region that
                 shows inside the card (its 196px natural size == the 300px medal minus
                 the 104px corner bleed), so it sits flush in the corner at native size —
                 offsetting it again would just clip the coin + star away. */}
-            <Image src={`${A}/leaderboard/${medal}.png`} alt="" width={196} height={196} className="absolute right-0 top-0 size-[104px] md:size-[156px] max-w-none pointer-events-none" />
+            <Image src={`${A}/leaderboard/${medal}.png`} alt="" width={196} height={196} className="absolute right-0 top-0 z-20 size-[104px] md:size-[156px] max-w-none pointer-events-none" />
             <div className="relative flex items-center justify-center py-[24px] md:py-[32px]">
                 <h3 className="font-black text-[22px] md:text-[28px] text-[#003060] tracking-[-0.25px] leading-none">{title}</h3>
             </div>
@@ -243,7 +251,7 @@ function AchieverPanel({
                     </p>
                 ) : (
                     <>
-                        <div className={`flex flex-col overflow-y-auto px-[16px] pb-[16px] md:px-[28px] md:pb-[28px] ${scrollable ? PANEL_MAX : ""}`}>
+                        <div ref={listRef} onScroll={syncFade} className={`flex flex-col overflow-y-auto px-[16px] pb-[16px] md:px-[28px] md:pb-[28px] ${PANEL_MAX}`}>
                             {rows.map((p) => {
                                 const hl = mode === "progress" && p.id === highlightMemberId;
                                 const clickable = !!onDonate;
@@ -281,13 +289,14 @@ function AchieverPanel({
                                 );
                             })}
                         </div>
-                        {/* Figma "overlay" fades — the card colour bleeding over the first
-                            and last rows so the list reads as scrollable. */}
-                        {scrollable && (
-                            <>
-                                <span aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-[64px] md:h-[100px] bg-gradient-to-b from-[#f4f8f9] to-transparent" />
-                                <span aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 h-[80px] md:h-[120px] bg-gradient-to-t from-[#f4f8f9] to-transparent" />
-                            </>
+                        {/* Figma "overlay" fades — the card colour bleeding over the rows so
+                            the list reads as scrollable. Each only appears while content is
+                            actually hidden that way, so nothing is washed out at rest. */}
+                        {fade.top && (
+                            <span aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-[64px] md:h-[100px] bg-gradient-to-b from-[#f4f8f9] to-transparent" />
+                        )}
+                        {fade.bottom && (
+                            <span aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 h-[80px] md:h-[120px] bg-gradient-to-t from-[#f4f8f9] to-transparent" />
                         )}
                     </>
                 )}
