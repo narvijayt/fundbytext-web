@@ -144,7 +144,11 @@ function RaisedPill({ amount, pct, showPercent }: { amount: number; pct?: number
 /* Green "raised" bar on a gray track (Layout B podium + table). Members see
    dollar amounts + the per-participant goal; the public sees "N% Raised" with no
    dollar figures (per the Figma "Organization view" leaderboard variant). */
-function Bar({ raised, pct, goal, glow, showAmounts = true, showPercent = false }: { raised: number; pct: number; goal?: number | null; glow?: boolean; showAmounts?: boolean; showPercent?: boolean }) {
+function Bar({ raised, pct, glow, showAmounts = true, showPercent = false, hasPct = true }: { raised: number; pct: number; glow?: boolean; showAmounts?: boolean; showPercent?: boolean; hasPct?: boolean }) {
+    // Members always get a "$X Raised" label; the public gets "N% Raised" only when a
+    // real goal exists to be a percentage of (hasPct). With no goal, the public bar is a
+    // bare relative ranking — no untruthful percentage.
+    const showLabel = raised > 0 && (showAmounts || hasPct);
     return (
         <div className="flex-1 h-[32px] min-w-0 relative rounded-full overflow-hidden" style={{ background: TRACK_BG }}>
             <style>{`@keyframes lb-shimmer{0%{transform:translateX(-120%)}100%{transform:translateX(400%)}}`}</style>
@@ -159,17 +163,12 @@ function Bar({ raised, pct, goal, glow, showAmounts = true, showPercent = false 
                     style={{ background: "linear-gradient(90deg,transparent,rgba(255,255,255,0.5) 50%,transparent)", animation: "lb-shimmer 2.2s ease-in-out infinite" }}
                 />
             </div>
-            {raised > 0 && (
+            {showLabel && (
                 <p className="absolute left-[12px] top-1/2 -translate-y-1/2 text-[12px] md:text-[14px] text-white whitespace-nowrap drop-shadow">
                     <span className="font-black" style={{ lineHeight: 1.25 }}>{showAmounts ? fmt(raised) : `${Math.round(pct)}%`}</span>
                     <span className="font-medium leading-none"> Raised</span>
                     {/* Organizers see the dollar amount AND the percentage of goal. */}
-                    {showAmounts && showPercent && <span className="font-semibold text-white/85"> · {Math.round(pct)}%</span>}
-                </p>
-            )}
-            {showAmounts && goal != null && (
-                <p className="absolute right-[16px] top-1/2 -translate-y-1/2 text-[12px] md:text-[14px] text-[#aeb5bd] text-right whitespace-nowrap">
-                    <span className="font-black">{fmt(goal)} </span><span className="font-normal">Goal</span>
+                    {showAmounts && showPercent && hasPct && <span className="font-semibold text-white/85"> · {Math.round(pct)}%</span>}
                 </p>
             )}
             <span aria-hidden className="absolute inset-0 pointer-events-none rounded-[inherit]" style={{ boxShadow: "inset 0px 2px 8px 0px rgba(0,48,96,0.08)" }} />
@@ -262,7 +261,22 @@ export default function MarketingLeaderboard({
     const { accent } = theme;
     const activeId = selectedId ?? highlightMemberId;
     const onSelect = canDonate ? (id: string) => { setSelectedId(id); dispatchDonate(id); } : null;
-    const barPct = (raised: number) => perParticipantGoal && perParticipantGoal > 0 ? Math.min(100, (raised / perParticipantGoal) * 100) : (raised > 0 ? 100 : 0);
+    // Progress denominator depends on the goal type:
+    //  • participant goal (Layout A) → each participant has their OWN target, so the
+    //    bar/percentage measures raised ÷ per-participant goal.
+    //  • organization goal (Layout B) → there is NO per-participant target; everyone
+    //    contributes to the SAME shared campaign goal, so a participant's bar/percentage
+    //    is their share of that one goal (raised ÷ campaign goal). Bars stay proportional
+    //    to the amount raised, so the leader still has the longest bar.
+    const goalDenom = isParticipantGoal ? perParticipantGoal : goalAmount;
+    const hasGoalPct = !!goalDenom && goalDenom > 0;
+    // Fallback for a goal-less org campaign (no shared target to be a % of): rank the
+    // bars relative to the current leader — same as the dashboard/admin tables — and
+    // suppress the (meaningless) percentage. Never all-or-nothing 100% bars.
+    const maxRaised = Math.max(1, ...participants.map((p) => p.total_raised));
+    const barPct = (raised: number) => hasGoalPct
+        ? Math.min(100, (raised / goalDenom!) * 100)
+        : Math.min(100, (raised / maxRaised) * 100);
     const clickProps = (id: string) => onSelect ? { onClick: () => onSelect(id), className: "cursor-pointer" } : {};
 
     // Layout A (participant goal): split into achievers / in-progress by per-participant goal.
@@ -340,7 +354,7 @@ export default function MarketingLeaderboard({
                                                 <span className="block font-medium truncate" style={{ lineHeight: 1.15 }}>{p.last_name}</span>
                                             </p>
                                         </div>
-                                        <div className="flex w-full"><Bar raised={p.total_raised} pct={barPct(p.total_raised)} glow={i === 0} showAmounts={showAmounts} showPercent={isOrganizer} /></div>
+                                        <div className="flex w-full"><Bar raised={p.total_raised} pct={barPct(p.total_raised)} glow={i === 0} showAmounts={showAmounts} showPercent={isOrganizer} hasPct={hasGoalPct} /></div>
                                     </div>
                                 );
                             })}
@@ -394,7 +408,9 @@ export default function MarketingLeaderboard({
                                                             <p className={`text-[15px] md:text-[16px] xl:text-[18px] truncate flex-1 min-w-0 md:flex-none md:w-[200px] xl:w-[292px] ${hl ? "text-white font-black" : "text-[#003060] font-bold"}`} style={{ lineHeight: 1.15 }}>{p.first_name} {p.last_name}</p>
                                                         </div>
                                                         <div className="flex basis-full md:basis-auto md:flex-1 min-w-0">
-                                                            <Bar raised={p.total_raised} pct={barPct(p.total_raised)} goal={perParticipantGoal} showAmounts={showAmounts} showPercent={isOrganizer} />
+                                                            {/* Org goal: no per-participant target — the shared campaign
+                                                                goal already sits in the header, so the bar shows none. */}
+                                                            <Bar raised={p.total_raised} pct={barPct(p.total_raised)} showAmounts={showAmounts} showPercent={isOrganizer} hasPct={hasGoalPct} />
                                                         </div>
                                                     </div>
                                                 );

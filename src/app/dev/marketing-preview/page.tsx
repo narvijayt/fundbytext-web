@@ -59,7 +59,7 @@ export default function MarketingPreview() {
             <MarketingLeaderboard
                 participants={participants}
                 goalAmount={participantGoal ? 40000 : 100000}
-                perParticipantGoal={participantGoal ? 5000 : 12500}
+                perParticipantGoal={participantGoal ? 5000 : null}
                 theme={theme}
                 highlightMemberId="p3"
                 canDonate

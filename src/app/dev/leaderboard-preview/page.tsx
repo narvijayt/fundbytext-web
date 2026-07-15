@@ -53,6 +53,12 @@ const CASES: { title: string; props: Partial<React.ComponentProps<typeof Marketi
                theme: { ...theme, accent: "#b02a2a", secondary: "#4a0d0d", themeImage: "/assets/campaigns/tiles/theme-trophy-tile.png", themeSize: "12.9vw auto" } } },
     { title: "SINGLE participant — full-width podium card",
       props: { showAmounts: true, highlightMemberId: null, participants: [P("1", "Participant", "One", 500)] } },
+    { title: "Org goal $10k — ORGANIZER (reported bug: % must be share of the $10k, no per-participant goal)",
+      props: { showAmounts: true, isOrganizer: true, highlightMemberId: "1", goalAmount: 10000, perParticipantGoal: null,
+               participants: [P("1", "Abhay", "Kumar", 3000), P("2", "Participant", "One", 500), P("3", "Participant", "Three", 0), P("4", "Participant", "Four", 0), P("5", "Participant", "Five", 0)] } },
+    { title: "Org goal $10k — PUBLIC (percent = share of the shared goal)",
+      props: { showAmounts: false, highlightMemberId: null, goalAmount: 10000, perParticipantGoal: null,
+               participants: [P("1", "Abhay", "Kumar", 3000), P("2", "Participant", "One", 500), P("3", "Participant", "Three", 0), P("4", "Participant", "Four", 0), P("5", "Participant", "Five", 0)] } },
 ];
 
 export default function LeaderboardPreview() {

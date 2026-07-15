@@ -178,9 +178,10 @@ export default async function CampaignPublicPage({
     // the initial goal and gold for everything raised beyond it.
     const initialGoalAmount = campaign.initial_goal_amount != null ? Number(campaign.initial_goal_amount) : null;
     const pct = goalAmount && goalAmount > 0 ? Math.min(100, (totalRaised / goalAmount) * 100) : 0;
-    const perParticipantGoal = isPerParticipantGoal
-        ? rawGoalAmount
-        : (goalAmount && participants.length > 0 ? Math.round(goalAmount / participants.length) : goalAmount);
+    // Only participant-goal campaigns have a real per-participant target. Org-goal
+    // campaigns share ONE goal — there is no per-participant amount to hit, so the
+    // leaderboard measures each participant's share of the shared goal instead.
+    const perParticipantGoal = isPerParticipantGoal ? rawGoalAmount : null;
 
     const recentDonations: RecentDonation[] = campaign.donations.map((d) => ({
         display_name: d.is_anonymous ? "Anonymous" : (d.donor_display_name ?? `${d.donor_first_name} ${d.donor_last_name}`),
