@@ -25,9 +25,10 @@ const hlSurfaces = (secondary: string) => ({
     rowA:  `linear-gradient(90deg, ${secondary} 0%, color-mix(in srgb, ${secondary} 80%, transparent) 100%)`,
     rank:  secondary,
 });
-// v2 = coins cleaned of their baked sunburst glow so they read on any card colour
-// (the glow-baked originals are still used by the static /campaign reference).
-const MEDALS = ["medal-gold-v2", "medal-silver-v2", "medal-bronze-v2"];
+// Full medal art WITH the sunburst rays (the Figma "shades"). Positioned so the
+// coin + number sit on the card while the medal's top-right corner (which carries a
+// stray blue export pixel) overflows off-card and is clipped by overflow-hidden.
+const MEDALS = ["medal-gold", "medal-silver", "medal-bronze"];
 
 function fmt(n: number) {
     return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(n);
@@ -332,8 +333,8 @@ export default function MarketingLeaderboard({
                 {isParticipantGoal ? (
                     /* ── Layout A — Goal Achievers / Goal in Progress ── */
                     <div className="flex w-full max-w-[1152px] flex-col gap-[24px] xl:flex-row xl:items-start">
-                        <AchieverPanel title="Goal Achievers" medal="medal-gold-v2" rows={achievers} mode="achievers" showAmounts={showAmounts} showPercent={isOrganizer} pctOf={barPct} highlightMemberId={activeId} onDonate={onSelect} hlRow={HL.rowA} />
-                        <AchieverPanel title="Goal in Progress" medal="medal-silver-v2" rows={inProgress} mode="progress" showAmounts={showAmounts} showPercent={isOrganizer} pctOf={barPct} highlightMemberId={activeId} onDonate={onSelect} hlRow={HL.rowA} />
+                        <AchieverPanel title="Goal Achievers" medal="medal-gold" rows={achievers} mode="achievers" showAmounts={showAmounts} showPercent={isOrganizer} pctOf={barPct} highlightMemberId={activeId} onDonate={onSelect} hlRow={HL.rowA} />
+                        <AchieverPanel title="Goal in Progress" medal="medal-silver" rows={inProgress} mode="progress" showAmounts={showAmounts} showPercent={isOrganizer} pctOf={barPct} highlightMemberId={activeId} onDonate={onSelect} hlRow={HL.rowA} />
                     </div>
                 ) : (
                     /* ── Layout B — podium + Other Participants table ── */
@@ -348,18 +349,21 @@ export default function MarketingLeaderboard({
                                 const hl = p.id === activeId;
                                 return (
                                     <div key={p.id} {...clickProps(p.id)} className={`flex w-full xl:flex-1 flex-col gap-[24px] items-start min-w-0 overflow-hidden p-[32px] relative rounded-[20px] bg-white ${canDonate ? "cursor-pointer transition-transform hover:-translate-y-1" : ""}`} style={{ backgroundImage: hl ? HL.card : undefined, boxShadow: "0px 20px 20px -14px rgba(0,0,0,0.15), 0px 30px 40px -16px rgba(0,0,0,0.1)" }}>
-                                        {/* Clean coin asset (the baked sunburst glow was cropped out of the
-                                            PNG) so the medal reads cleanly on ANY card — the white default
-                                            cards and the themed highlight card alike, with no stray halo. */}
-                                        <Image src={`${A}/leaderboard/${MEDALS[i]}.png`} alt="" width={200} height={200} className="absolute right-[-32px] top-[-18px] size-[200px] max-w-none" />
-                                        <div className="flex gap-[16px] items-center px-[8px] w-full">
+                                        {/* Full medal + sunburst rays (the Figma "shades"), sized large and
+                                            peeking from the top-right corner. The number stays on-card; the
+                                            corner blue pixel overflows off-card and is clipped. */}
+                                        <Image src={`${A}/leaderboard/${MEDALS[i]}.png`} alt="" width={240} height={240} className="absolute right-[-40px] top-[-24px] z-0 size-[240px] max-w-none" />
+                                        {/* Content sits ABOVE the medal (positioned art otherwise paints over
+                                            in-flow text) so the name reads over the rays; the number still shows
+                                            in the empty top-right corner where no content overlaps it. */}
+                                        <div className="relative z-10 flex gap-[16px] items-center px-[8px] w-full">
                                             <Avatar name={p.first_name} url={p.profile_photo_url} className="size-[64px]" ring={hl} />
                                             <p className={`text-[16px] md:text-[18px] xl:text-[20px] min-w-0 ${hl ? "text-white" : "text-[#003060]"}`}>
                                                 <span className="block font-black truncate" style={{ lineHeight: 1.25 }}>{p.first_name}</span>
                                                 <span className="block font-medium truncate" style={{ lineHeight: 1.15 }}>{p.last_name}</span>
                                             </p>
                                         </div>
-                                        <div className="flex w-full"><Bar raised={p.total_raised} pct={barPct(p.total_raised)} glow={i === 0} showAmounts={showAmounts} showPercent={isOrganizer} hasPct={hasGoalPct} /></div>
+                                        <div className="relative z-10 flex w-full"><Bar raised={p.total_raised} pct={barPct(p.total_raised)} glow={i === 0} showAmounts={showAmounts} showPercent={isOrganizer} hasPct={hasGoalPct} /></div>
                                     </div>
                                 );
                             })}
