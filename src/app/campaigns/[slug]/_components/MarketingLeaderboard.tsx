@@ -253,9 +253,6 @@ function AchieverPanel({
                                             <span className="min-w-0 truncate font-black text-[15px] md:text-[18px] text-white" style={{ lineHeight: 1.15 }}>{p.first_name} {p.last_name}</span>
                                             {p.id === youMemberId && <YouBadge onDark secondary={secondary} />}
                                         </span>
-                                        {clickable && (
-                                            <svg aria-hidden className="size-[24px] shrink-0 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"><path d="M9 6l6 6-6 6" /></svg>
-                                        )}
                                         {bar}
                                     </div>
                                 ) : (
