@@ -240,11 +240,14 @@ function AchieverPanel({
                 shows inside the card (its 196px natural size == the 300px medal minus
                 the 104px corner bleed), so it sits flush in the corner at native size —
                 offsetting it again would just clip the coin + star away. */}
-            <Image src={`${A}/leaderboard/${medal}.png`} alt="" width={196} height={196} className="absolute right-0 top-0 z-20 size-[104px] md:size-[156px] max-w-none pointer-events-none" />
-            <div className="relative flex items-center justify-center py-[24px] md:py-[32px]">
+            <Image src={`${A}/leaderboard/${medal}.png`} alt="" width={196} height={196} className="absolute right-0 top-0 z-0 size-[104px] md:size-[156px] max-w-none pointer-events-none" />
+            {/* Title + list sit ABOVE the medal so it never covers a participant; the
+                medal still reads crisply because the top fade (the only thing that would
+                wash it out) is now only rendered while the list is scrolled. */}
+            <div className="relative z-10 flex items-center justify-center py-[24px] md:py-[32px]">
                 <h3 className="font-black text-[22px] md:text-[28px] text-[#003060] tracking-[-0.25px] leading-none">{title}</h3>
             </div>
-            <div className="relative">
+            <div className="relative z-10">
                 {rows.length === 0 ? (
                     <p className="px-[28px] pb-[40px] text-center text-[15px] text-[#7e8a96]">
                         {mode === "achievers" ? "No one has hit their goal yet — be the first!" : "Everyone reached their goal! 🎉"}
@@ -509,3 +512,4 @@ export default function MarketingLeaderboard({
         </div>
     );
 }
+
