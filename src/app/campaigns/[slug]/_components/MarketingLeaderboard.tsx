@@ -36,7 +36,7 @@ const MEDALS = ["medal-gold", "medal-silver", "medal-bronze"];
 //  • COIN_MASK crops down to just the coin for the highlighted card, so the selected
 //    second colour fills the whole card instead of the rays washing out its right half.
 const RAY_MASK  = "radial-gradient(circle at 64% 40%, #000 40%, transparent 70%)";
-const COIN_MASK = "radial-gradient(circle 78px at 64% 38%, #000 82%, transparent 100%)";
+const COIN_MASK = "radial-gradient(circle 70px at 64% 38%, #000 82%, transparent 100%)";
 
 function fmt(n: number) {
     return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(n);
@@ -364,7 +364,7 @@ export default function MarketingLeaderboard({
                                             The number stays on-card; the corner blue pixel clips off-card. On the
                                             highlighted card the rays are masked to the coin so the selected colour
                                             fills the whole card instead of washing out its right half. */}
-                                        <Image src={`${A}/leaderboard/${MEDALS[i]}.png`} alt="" width={190} height={190} className="absolute right-[-32px] top-[-12px] z-0 size-[190px] max-w-none" style={{ WebkitMaskImage: hl ? COIN_MASK : RAY_MASK, maskImage: hl ? COIN_MASK : RAY_MASK }} />
+                                        <Image src={`${A}/leaderboard/${MEDALS[i]}.png`} alt="" width={170} height={170} className="absolute right-[-32px] top-[-12px] z-0 size-[170px] max-w-none" style={{ WebkitMaskImage: hl ? COIN_MASK : RAY_MASK, maskImage: hl ? COIN_MASK : RAY_MASK }} />
                                         {/* Content sits ABOVE the medal (positioned art otherwise paints over
                                             in-flow text) so the name reads over the rays; the number still shows
                                             in the empty top-right corner where no content overlaps it. */}
