@@ -346,7 +346,7 @@ export default function MarketingLeaderboard({
                                             fade so the coin melts into ANY card behind it — the white default
                                             card (where the baked box would otherwise show as a pale seam) and
                                             the navy highlight gradient alike. */}
-                                        <Image src={`${A}/leaderboard/${MEDALS[i]}.png`} alt="" width={200} height={200} className="absolute right-[-54px] top-[-54px] size-[200px] max-w-none" style={{ WebkitMaskImage: "radial-gradient(circle at 50% 50%, black 48%, transparent 72%)", maskImage: "radial-gradient(circle at 50% 50%, black 48%, transparent 72%)" }} />
+                                        <Image src={`${A}/leaderboard/${MEDALS[i]}.png`} alt="" width={200} height={200} className="absolute right-[-32px] top-[-18px] size-[200px] max-w-none" style={{ WebkitMaskImage: "radial-gradient(circle at 50% 50%, black 48%, transparent 72%)", maskImage: "radial-gradient(circle at 50% 50%, black 48%, transparent 72%)" }} />
                                         <div className="flex gap-[16px] items-center px-[8px] w-full">
                                             <Avatar name={p.first_name} url={p.profile_photo_url} className="size-[64px]" ring={hl} />
                                             <p className={`text-[16px] md:text-[18px] xl:text-[20px] min-w-0 ${hl ? "text-white" : "text-[#003060]"}`}>
