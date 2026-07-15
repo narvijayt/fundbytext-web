@@ -247,8 +247,12 @@ function AchieverPanel({
                                 const inner = hl ? (
                                     <div className="flex flex-wrap items-center gap-x-[12px] gap-y-[8px] md:gap-[16px] overflow-hidden rounded-[24px] md:rounded-[100px] py-[8px] pl-[8px] pr-[16px] md:py-[12px] md:pl-[12px] md:pr-[24px]" style={{ background: hlRow, boxShadow: "0px 20px 20px -14px rgba(2,104,192,0.2), 0px 20px 40px -16px rgba(2,104,192,0.2)" }}>
                                         <Avatar name={p.first_name} url={p.profile_photo_url} className="size-[40px] md:size-[48px]" ring />
-                                        <span className="flex-1 min-w-0 truncate font-black text-[15px] md:text-[18px] text-white" style={{ lineHeight: 1.15 }}>{p.first_name} {p.last_name}</span>
-                                        {p.id === youMemberId && <YouBadge onDark secondary={secondary} />}
+                                        {/* name + badge share the flex-1 slot so the badge sits right
+                                            after the name instead of being pushed to the far edge */}
+                                        <span className="flex flex-1 min-w-0 items-center gap-[8px]">
+                                            <span className="min-w-0 truncate font-black text-[15px] md:text-[18px] text-white" style={{ lineHeight: 1.15 }}>{p.first_name} {p.last_name}</span>
+                                            {p.id === youMemberId && <YouBadge onDark secondary={secondary} />}
+                                        </span>
                                         {clickable && (
                                             <svg aria-hidden className="size-[24px] shrink-0 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"><path d="M9 6l6 6-6 6" /></svg>
                                         )}
@@ -257,8 +261,10 @@ function AchieverPanel({
                                 ) : (
                                     <div className="flex flex-wrap items-center gap-x-[12px] gap-y-[8px] md:gap-[16px] p-[8px] md:p-[12px]">
                                         <Avatar name={p.first_name} url={p.profile_photo_url} className="size-[40px] md:size-[48px]" />
-                                        <span className="flex-1 min-w-0 truncate font-bold text-[15px] md:text-[18px] text-[#7e8a96]" style={{ lineHeight: 1.15 }}>{p.first_name} {p.last_name}</span>
-                                        {p.id === youMemberId && <YouBadge secondary={secondary} />}
+                                        <span className="flex flex-1 min-w-0 items-center gap-[8px]">
+                                            <span className="min-w-0 truncate font-bold text-[15px] md:text-[18px] text-[#7e8a96]" style={{ lineHeight: 1.15 }}>{p.first_name} {p.last_name}</span>
+                                            {p.id === youMemberId && <YouBadge secondary={secondary} />}
+                                        </span>
                                         {bar}
                                     </div>
                                 );
@@ -457,8 +463,12 @@ export default function MarketingLeaderboard({
                                                         </span>
                                                         <div className="flex flex-1 gap-[12px] md:gap-[16px] xl:gap-[24px] items-center min-w-0">
                                                             <Avatar name={p.first_name} url={p.profile_photo_url} className="size-[40px] md:size-[48px]" />
-                                                            <p className={`text-[15px] md:text-[16px] xl:text-[18px] truncate min-w-0 md:flex-none md:w-[200px] xl:w-[292px] ${hl ? "text-white font-black" : "text-[#003060] font-bold"}`} style={{ lineHeight: 1.15 }}>{p.first_name} {p.last_name}</p>
-                                                            {p.id === youMemberId && <YouBadge onDark={hl} secondary={secondary} />}
+                                                            {/* badge lives inside the name column so it sits right
+                                                                after the name rather than after the whole column */}
+                                                            <span className="flex flex-1 min-w-0 items-center gap-[8px] md:flex-none md:w-[200px] xl:w-[292px]">
+                                                                <p className={`text-[15px] md:text-[16px] xl:text-[18px] truncate min-w-0 ${hl ? "text-white font-black" : "text-[#003060] font-bold"}`} style={{ lineHeight: 1.15 }}>{p.first_name} {p.last_name}</p>
+                                                                {p.id === youMemberId && <YouBadge onDark={hl} secondary={secondary} />}
+                                                            </span>
                                                         </div>
                                                         <div className="flex basis-full md:basis-auto md:flex-1 min-w-0">
                                                             {/* Org goal: no per-participant target — the shared campaign
