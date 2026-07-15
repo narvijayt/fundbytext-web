@@ -37,6 +37,12 @@ const MEDALS = ["medal-gold", "medal-silver", "medal-bronze"];
 //    square, so white cards get the Figma rays with no boundary.
 //  • COIN_MASK crops down to just the coin for the highlighted card, so the selected
 //    second colour fills the whole card instead of the rays washing out its right half.
+// Both layouts surface 10 participants before asking for more: org goal = 3 podium
+// + 7 table rows; participant goal = 10 rows per panel. Each "more" click reveals
+// another PAGE inside the existing scroll area rather than growing the card.
+const OTHERS_PAGE = 7;   // org-goal table (alongside the 3 podium cards)
+const PANEL_PAGE  = 10;  // participant-goal panels
+const MORE_STEP   = 10;
 const RAY_MASK  = "radial-gradient(circle at 64% 40%, #000 40%, transparent 70%)";
 const COIN_MASK = "radial-gradient(circle 63px at 64% 38%, #000 82%, transparent 100%)";
 
@@ -215,10 +221,14 @@ function AchieverPanel({
     youMemberId: string | null;
     secondary: string;
 }) {
+    // Show 10 up front; "Show more" reveals the next batch inside the existing
+    // fixed-height scroll area rather than growing the card.
+    const [shown, setShown] = useState(PANEL_PAGE);
+    const visible = rows.slice(0, shown);
     // The list only scrolls once it outgrows the card, and the Figma's top/bottom
     // fades exist to hint at that overflow — with a short list they'd just wash the
     // rows out, so they're tied to the same condition.
-    const scrollable = rows.length > 5;
+    const scrollable = visible.length > 5;
     return (
         <div className="relative w-full xl:flex-1 overflow-hidden rounded-[20px] bg-[#f4f8f9]" style={{ boxShadow: "0px 30px 40px -8px rgba(0,91,172,0.7)" }}>
             {/* Star medal. Figma exports this node ALREADY clipped to the region that
@@ -237,7 +247,7 @@ function AchieverPanel({
                 ) : (
                     <>
                         <div className={`flex flex-col overflow-y-auto px-[16px] pb-[16px] md:px-[28px] md:pb-[28px] ${scrollable ? "max-h-[420px] md:max-h-[468px]" : ""}`}>
-                            {rows.map((p) => {
+                            {visible.map((p) => {
                                 const hl = mode === "progress" && p.id === highlightMemberId;
                                 const clickable = !!onDonate;
                                 // Phones: the bar wraps under the name; md+ sits inline (Figma desktop).
@@ -285,6 +295,19 @@ function AchieverPanel({
                     </>
                 )}
             </div>
+            {rows.length > shown && (
+                /* Sits below the scroll area (clear of the bottom fade) so it stays
+                   reachable without scrolling; the list height is unchanged. */
+                <div className="relative z-10 flex justify-center px-[16px] pb-[20px] md:px-[28px] md:pb-[24px]">
+                    <button
+                        type="button"
+                        onClick={() => setShown((n) => n + MORE_STEP)}
+                        className="rounded-full border border-[#d4dee7] bg-white px-[22px] py-[9px] text-[13px] md:text-[14px] font-bold text-[#0268c0] transition-colors hover:bg-[#eef4f9]"
+                    >
+                        Show more ({rows.length - shown} more)
+                    </button>
+                </div>
+            )}
         </div>
     );
 }
@@ -309,6 +332,10 @@ export default function MarketingLeaderboard({
     // treatment once the viewer clicks it, which also opens the donate modal targeted
     // at that participant. Organizers additionally see the % of goal on each bar.
     const [selectedId, setSelectedId] = useState<string | null>(null);
+    // Org goal shows 10 participants up front: ranks 1–3 on the podium + 7 in the
+    // table. "Load more" pulls the next batch INTO the table's fixed-height scroll
+    // area — the card itself never grows.
+    const [othersShown, setOthersShown] = useState(OTHERS_PAGE);
     if (participants.length === 0) return null;
     const { accent, secondary } = theme;
     const HL = hlSurfaces(secondary);
@@ -339,6 +366,7 @@ export default function MarketingLeaderboard({
     // Layout B (org goal): rank by amount → podium + table.
     const top3   = participants.slice(0, 3);
     const others = participants.slice(3);
+    const visibleOthers = others.slice(0, othersShown);
 
     return (
         <div className="relative overflow-hidden pt-[32px] md:pt-[52px] xl:pt-[72px] pb-[32px] md:pb-[52px] xl:pb-[72px]" style={{ background: accent }}>
@@ -449,8 +477,10 @@ export default function MarketingLeaderboard({
                                             <span className="flex-1 min-w-0">Participant Name</span>
                                             <span className="flex-1 min-w-0">Amount Raised</span>
                                         </div>
-                                        <div className="bg-white flex flex-col items-start w-full">
-                                            {others.map((p, i) => {
+                                        {/* Fixed-height scroll area: "Load more" adds rows in here,
+                                            so the card never expands. */}
+                                        <div className="bg-white flex flex-col items-start w-full max-h-[560px] overflow-y-auto">
+                                            {visibleOthers.map((p, i) => {
                                                 const rank = i + 4;
                                                 const hl = p.id === activeId;
                                                 return (
@@ -482,6 +512,17 @@ export default function MarketingLeaderboard({
                                         </div>
                                     </div>
                                 </div>
+                                {others.length > othersShown && (
+                                    <div className="flex w-full justify-center">
+                                        <button
+                                            type="button"
+                                            onClick={() => setOthersShown((n) => n + MORE_STEP)}
+                                            className="rounded-full border border-[#d4dee7] bg-white px-[22px] py-[9px] text-[13px] md:text-[14px] font-bold text-[#0268c0] transition-colors hover:bg-[#f4f8f9]"
+                                        >
+                                            Load more ({others.length - othersShown} more)
+                                        </button>
+                                    </div>
+                                )}
                             </div>
                         )}
                     </>

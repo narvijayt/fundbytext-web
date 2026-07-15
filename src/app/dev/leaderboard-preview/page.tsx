@@ -33,6 +33,17 @@ const participants: ParticipantRow[] = [
     P("6", "Johnny", "Mayer", 3500),
     P("7", "Samuel", "Smith", 3000),
     P("8", "Andrea", "Joe", 2500),
+    // >10 so the "Load more" / "Show more" paging is exercised in the sandbox.
+    P("9", "Priya", "Nair", 2400),
+    P("10", "Marcus", "Bell", 2300),
+    P("11", "Elena", "Ortiz", 2200),
+    P("12", "Tom", "Baker", 2100),
+    P("13", "Aisha", "Khan", 2000),
+    P("14", "Leo", "Fischer", 1900),
+    P("15", "Nina", "Patel", 1800),
+    P("16", "Owen", "Clark", 1700),
+    P("17", "Zara", "Hughes", 1600),
+    P("18", "Kai", "Nakamura", 1500),
 ];
 
 const CASES: { title: string; props: Partial<React.ComponentProps<typeof MarketingLeaderboard>> }[] = [
