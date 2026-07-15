@@ -1,9 +1,9 @@
 import Link from "next/link";
-import CurrentYear from "@/components/CurrentYear";
 import { prisma } from "@/lib/prisma";
 import { getAuthUser } from "@/lib/session";
 import { getDefaultCampaignVideo, getDefaultCampaignVideoThumbnail } from "@/lib/settings";
 import NavBar from "@/components/NavBar";
+import MarketingFooter from "@/components/MarketingFooter";
 import HeroCampaignsCarousel, { type HeroCard } from "@/components/home/HeroCampaignsCarousel";
 import StoriesCarousel, { type Story } from "@/components/home/StoriesCarousel";
 import HowItWorksVideo from "@/components/home/HowItWorksVideo";
@@ -60,15 +60,6 @@ const A_CARD_MINISTRY  = `${F}/card-ministry.png`;
 
 // CTA + Footer
 const A_CTA_OVERLAY    = `${F}/cta-overlay.svg`;
-const A_FOOTER_LOGO    = `${F}/footer-logo.svg`;
-const A_FOOTER_TG      = `${F}/footer-tg.svg`;
-const A_FOOTER_WA      = `${F}/footer-wa.svg`;
-const A_F_WATERMARK    = `${F}/f-watermark-tile.png`;
-const A_PAY_VISA       = `${F}/pay-visa.svg`;
-const A_PAY_MC         = `${F}/pay-mastercard.svg`;
-const A_PAY_PAYPAL     = `${F}/pay-paypal.svg`;
-const A_PAY_JCB        = `${F}/pay-jcb.svg`;
-const A_PAY_SWIFT      = `${F}/pay-swift.svg`;
 
 // ── Custom textures (coded, not raster images) ─────────────────────────────────
 // Procedural film-grain noise via SVG feTurbulence — matches the Figma noise overlay.
@@ -607,7 +598,7 @@ export default async function HomePage() {
                 </div>
 
                 {/* ── How People Use FundbyText (real stories) ── */}
-                <div className="max-w-[1632px] mx-auto px-4 sm:px-6 lg:px-[144px] pt-10">
+                <div className="max-w-[1632px] mx-auto px-4 sm:px-6 lg:px-[144px] pt-4">
                     <div className="flex flex-col items-center gap-5 mb-2 lg:mb-4">
                         <SectionBadge label="real stories" />
                         <h2 className="font-black text-[26px] sm:text-[32px] lg:text-[40px] xl:text-[44px] leading-none tracking-[-1px] text-center bg-clip-text text-transparent"
@@ -624,7 +615,7 @@ export default async function HomePage() {
                     <div className="absolute inset-0 mix-blend-overlay opacity-20 pointer-events-none"
                         style={{ backgroundImage: NOISE_URI, backgroundRepeat: "repeat" }} />
                     <div className="max-w-[1632px] mx-auto px-4 sm:px-6 lg:px-[144px] relative z-10">
-                        <div className="flex flex-col items-center gap-6 lg:gap-8 py-20 lg:py-28">
+                        <div className="flex flex-col items-center gap-6 lg:gap-8 py-12 lg:py-16">
                             <div className="flex flex-col items-center gap-4 lg:gap-6 w-full">
                                 <h2 className="font-black text-[28px] sm:text-[34px] lg:text-[42px] xl:text-[46px] leading-none tracking-[-1px] text-center bg-clip-text text-transparent"
                                     style={{ backgroundImage: "linear-gradient(153deg,rgb(38,91,145) 30.5%,rgb(0,48,96) 69.5%)" }}>
@@ -640,116 +631,7 @@ export default async function HomePage() {
                 </div>
             </section>
 
-            {/* ═══════════════════════════════════════════════════════════
-                FOOTER (Figma 5814:11914 — bg #003060, 800px white card +
-                328px blue card, 24px gap, bottom bar)
-            ═══════════════════════════════════════════════════════════ */}
-            <footer style={{ background: "#003060" }} className="px-4 sm:px-6 pt-14 lg:pt-28 pb-8 lg:pb-10">
-                <div className="max-w-[1152px] mx-auto flex flex-col lg:flex-row lg:items-stretch justify-center gap-6">
-
-                    {/* Column 1 — white card (800px) */}
-                    <div className="bg-white rounded-[24px] p-7 sm:p-10 flex flex-col gap-12 lg:gap-16 w-full lg:w-[800px] lg:flex-none">
-                        {/* row 1: logo / navigate / payment methods */}
-                        <div className="flex flex-col sm:flex-row gap-10 sm:gap-4 w-full">
-                            <div className="sm:w-[300px] shrink-0">
-                                <Link href="/" className="inline-block">
-                                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                                    <img alt="FundbyText" src={A_FOOTER_LOGO} style={{ width: 180, height: 67, display: "block" }} />
-                                </Link>
-                            </div>
-                            <div className="flex-1 flex flex-col gap-6">
-                                <p className="font-black text-[#aeb5bd] text-xs tracking-[1px] uppercase leading-none">navigate</p>
-                                <ul className="flex flex-col gap-3">
-                                    {[
-                                        { label: "Browse Campaigns", href: "/campaigns" },
-                                        { label: "How It Works", href: "/how-it-works" },
-                                        { label: "FAQs", href: "/how-it-works#faqs" },
-                                        { label: "Resources", href: "/about" },
-                                        { label: "About Us", href: "/about" },
-                                        { label: "Help & Support", href: "/contact" },
-                                    ].map((l) => (
-                                        <li key={l.label}>
-                                            <Link href={l.href} className="font-normal text-[#003060] text-base leading-[1.4] hover:text-[#0268c0] transition-colors">{l.label}</Link>
-                                        </li>
-                                    ))}
-                                </ul>
-                            </div>
-                            <div className="flex-1 flex flex-col gap-6">
-                                <p className="font-black text-[#aeb5bd] text-xs tracking-[1px] uppercase leading-none">Payment methods</p>
-                                <div className="flex flex-col gap-3">
-                                    <div className="flex items-center gap-4">
-                                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                                        <img alt="Visa" src={A_PAY_VISA} className="size-8" />
-                                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                                        <img alt="Mastercard" src={A_PAY_MC} className="size-8" />
-                                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                                        <img alt="PayPal" src={A_PAY_PAYPAL} className="size-8 object-contain" />
-                                    </div>
-                                    <div className="flex items-center gap-4">
-                                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                                        <img alt="JCB" src={A_PAY_JCB} className="size-8" />
-                                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                                        <img alt="Swift" src={A_PAY_SWIFT} className="size-8" />
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        {/* row 2: social / address */}
-                        <div className="flex flex-col sm:flex-row sm:items-center gap-6 sm:gap-4 w-full">
-                            <div className="flex items-center gap-2 sm:w-[300px] shrink-0">
-                                <a href="#" aria-label="Telegram" className="block size-10 transition hover:brightness-110">
-                                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                                    <img alt="" src={A_FOOTER_TG} className="size-10" />
-                                </a>
-                                <a href="#" aria-label="WhatsApp" className="block size-10 transition hover:brightness-110">
-                                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                                    <img alt="" src={A_FOOTER_WA} className="size-10" />
-                                </a>
-                            </div>
-                            <p className="font-medium text-[#8f98a3] text-sm leading-[1.25]">
-                                1901 Thornridge Cir. Shiloh,<br />Hawaii 81063
-                            </p>
-                        </div>
-                    </div>
-
-                    {/* Column 2 — blue CTA card (328px, stretches to match) */}
-                    <div className="relative overflow-hidden rounded-[24px] p-8 sm:p-10 flex flex-col gap-8 w-full lg:w-[328px] lg:flex-none bg-[#0268c0]">
-                        {/* F-pattern watermark (Figma export) drifting + fading linear overlay.
-                            Transform drift (GPU-composited) so it keeps running on mobile; the
-                            layer is one tile wider than the card and the card clips the overflow. */}
-                        <div className="footer-drift [--fd:-328px] pointer-events-none absolute inset-y-0 left-0 right-[-328px]"
-                            style={{ backgroundImage: `url(${A_F_WATERMARK})`, backgroundRepeat: "repeat", backgroundSize: "328px 412px", backgroundPosition: "center" }} />
-                        <div className="absolute inset-0 pointer-events-none"
-                            style={{ background: "linear-gradient(to bottom,#0268c0 0%,rgba(2,104,192,0) 100%)" }} />
-                        <div className="relative z-10 flex-1 flex flex-col gap-4">
-                            <h3 className="font-black text-[28px] sm:text-[32px] lg:text-[38px] xl:text-[44px] leading-[1.1] tracking-[-1px] bg-clip-text text-transparent w-full"
-                                style={{ backgroundImage: "linear-gradient(to right,#ffffff,rgba(255,255,255,0.8))" }}>
-                                Ready to Inspire?
-                            </h3>
-                            <p className="font-normal text-white/80 text-lg leading-[1.4] w-full">Start Your FundbyText Campaign Today.</p>
-                        </div>
-                        <div className="relative z-10 flex flex-col gap-3 w-full">
-                            <Link href="/campaigns/create"
-                                className="flex items-center justify-center w-full px-6 py-5 rounded-[12px] bg-[#f47435] text-white font-black text-xs tracking-[1px] uppercase leading-none shadow-[0_20px_20px_0_rgba(234,103,37,0.2),0_20px_40px_0_rgba(244,116,53,0.2)] transition hover:brightness-105">
-                                Get Started for Free
-                            </Link>
-                            <Link href="/how-it-works"
-                                className="flex items-center justify-center w-full px-6 py-5 rounded-[12px] border border-white/20 text-white font-black text-xs tracking-[1px] uppercase leading-none hover:border-white/50 transition-colors">
-                                See how it works
-                            </Link>
-                        </div>
-                    </div>
-                </div>
-
-                {/* bottom bar */}
-                <div className="max-w-[1152px] mx-auto mt-10 lg:mt-16 flex flex-col sm:flex-row items-center justify-between gap-3">
-                    <p className="text-white/60 text-sm">© FundbyText <CurrentYear /> — All Rights Reserved.</p>
-                    <div className="flex items-center gap-1.5">
-                        <Link href="/privacy" className="text-white/60 text-sm hover:text-white transition-colors">Privacy.</Link>
-                        <Link href="/terms" className="text-white/60 text-sm hover:text-white transition-colors">Terms &amp; Conditions.</Link>
-                    </div>
-                </div>
-            </footer>
+            <MarketingFooter />
         </div>
     );
 }

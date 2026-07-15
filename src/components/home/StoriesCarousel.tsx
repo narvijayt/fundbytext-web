@@ -16,7 +16,12 @@ export type Story = {
  * the centered card carries the big blue drop shadow, and the pagination
  * dots below are 8px #0268c0 @15% with a 24px full-opacity active pill.
  */
-export default function StoriesCarousel({ stories }: { stories: Story[] }) {
+export default function StoriesCarousel({ stories, dotTone = "blue" }: {
+    stories: Story[];
+    /** Pagination pill colour. "white" for the About page, where the dots sit on
+     *  the blue wash; "blue" (default) for the home page's white backdrop. */
+    dotTone?: "blue" | "white";
+}) {
     const [emblaRef, emblaApi] = useEmblaCarousel({
         align: "center",
         startIndex: 1,
@@ -36,10 +41,13 @@ export default function StoriesCarousel({ stories }: { stories: Story[] }) {
     const scrollTo = useCallback((i: number) => emblaApi?.scrollTo(i), [emblaApi]);
 
     return (
-        <div className="w-full flex flex-col items-center gap-10 lg:gap-16">
+        <div className="w-full flex flex-col items-center gap-4 lg:gap-6">
             {/* Carousel — overflow hidden (no scrollbar), drag/swipe to browse */}
             <div className="overflow-hidden w-full" ref={emblaRef}>
-                <div className="flex items-center gap-6 py-14">
+                {/* The featured card's drop-shadows are offset downward only, and the
+                    embla wrapper clips, so the room they need is all on the BOTTOM —
+                    a matching top pad was just dead space under the section heading. */}
+                <div className="flex items-center gap-6 pt-3 pb-14">
                     {stories.map((s, i) => {
                         const featured = i === selected;
                         return (
@@ -72,8 +80,14 @@ export default function StoriesCarousel({ stories }: { stories: Story[] }) {
                 {stories.map((s, i) => (
                     <button key={s.title} aria-label={`Go to story ${i + 1}`}
                         onClick={() => scrollTo(i)}
-                        className="h-2 rounded-full bg-[#0268c0] transition-all duration-300 cursor-pointer"
-                        style={{ width: i === selected ? 24 : 8, opacity: i === selected ? 1 : 0.15 }} />
+                        className="h-2 rounded-full transition-all duration-300 cursor-pointer"
+                        style={{
+                            width: i === selected ? 24 : 8,
+                            background: dotTone === "white" ? "#ffffff" : "#0268c0",
+                            // White dots sit on the blue wash, so the resting state needs
+                            // more presence than the blue-on-white variant's 15%.
+                            opacity: i === selected ? 1 : (dotTone === "white" ? 0.45 : 0.15),
+                        }} />
                 ))}
             </div>
         </div>
