@@ -59,7 +59,6 @@ We have to implement this static page design in the current working page with fu
 
 Also on preview we show the same page. Make sure photos, colors, background or things we selected in campaign creation should work correctly.
 
-
 ### **#6**
 
 About us page:
@@ -70,9 +69,7 @@ Tablet: https://www.figma.com/design/awsd81IPxENRyNt05aAqdS/FundbyText-UI--Ready
 
 Mobile: https://www.figma.com/design/awsd81IPxENRyNt05aAqdS/FundbyText-UI--Ready-for-Client-Review---Copy-?node-id=5430-84801&t=DwGWU03VBmjSgFDS-0
 
-if you see any lorem ipsum make sure to add content based on you intelligence about that page.	
-
-
+if you see any lorem ipsum make sure to add content based on you intelligence about that page.
 
 ### **#7**
 
@@ -85,3 +82,45 @@ Tablet: https://www.figma.com/design/awsd81IPxENRyNt05aAqdS/FundbyText-UI--Ready
 Mobile: https://www.figma.com/design/awsd81IPxENRyNt05aAqdS/FundbyText-UI--Ready-for-Client-Review---Copy-?node-id=5430-109360&t=DwGWU03VBmjSgFDS-0
 
 if you see any lorem ipsum make sure to add content based on you intelligence about that page.
+
+#8
+
+Need an honest opinion: See the public campaign page "Spread the world section" : [www.figma.com/design/awsd81IPxENRyNt05aAqdS/FundbyText-UI--Ready-for-Client-Review---Copy-?node-id=5394-37623&amp;t=ywcRe3BErlBjx7nE-0](https://www.figma.com/design/awsd81IPxENRyNt05aAqdS/FundbyText-UI--Ready-for-Client-Review---Copy-?node-id=5394-37623&t=ywcRe3BErlBjx7nE-0)
+
+In this public campaign design, [www.figma.com/design/awsd81IPxENRyNt05aAqdS/FundbyText-UI--Ready-for-Client-Review---Copy-?node-id=4858-29530&amp;t=ywcRe3BErlBjx7nE-0](https://www.figma.com/design/awsd81IPxENRyNt05aAqdS/FundbyText-UI--Ready-for-Client-Review---Copy-?node-id=4858-29530&t=ywcRe3BErlBjx7nE-0) , you might there is progress bar which is for individual campaign open ended goal, which auto increases by 20%. so in public page we have to show green as initial amount which is covered and yellow which is covering after scaling. so do those changes as you can see image attached screenshot as well
+
+---
+
+1.) Fix Leader board for both goals
+
+2.) Add a note if a participant account is already registered and organizer is trying to upload photo. Photo can not be updated if participant account already exists
+
+3.) ~~Add "Add Myself" option to prefill details for add participants in campaign organizer view.~~
+
+4.) Choose your colors issue in organizational campaign with Your logo colors.
+
+---
+
+1. Leaderboard section and organization/participant goal.
+2. Marketing Pages + Browse all campaigns + Other pages which are not added but mentioned in footer. (Include or Exclude).
+3. Performance and Loaders + UI fixes.
+4. Production Testing.
+5. 
+6. 
+
+---
+
+
+
+How it works Page:
+
+Browser: [www.figma.com/design/awsd81IPxENRyNt05aAqdS/FundbyText-UI--Ready-for-Client-Review---Copy-?node-id=6030-2423&amp;t=1WUwhodkWZl2ZugE-0](https://www.figma.com/design/awsd81IPxENRyNt05aAqdS/FundbyText-UI--Ready-for-Client-Review---Copy-?node-id=6030-2423&t=1WUwhodkWZl2ZugE-0)
+
+Tablet:[www.figma.com/design/awsd81IPxENRyNt05aAqdS/FundbyText-UI--Ready-for-Client-Review---Copy-?node-id=5430-121114&amp;t=1WUwhodkWZl2ZugE-0](https://www.figma.com/design/awsd81IPxENRyNt05aAqdS/FundbyText-UI--Ready-for-Client-Review---Copy-?node-id=5430-121114&t=1WUwhodkWZl2ZugE-0)
+
+
+Mobile: [www.figma.com/design/awsd81IPxENRyNt05aAqdS/FundbyText-UI--Ready-for-Client-Review---Copy-?node-id=5430-109360&amp;t=1WUwhodkWZl2ZugE-0](https://www.figma.com/design/awsd81IPxENRyNt05aAqdS/FundbyText-UI--Ready-for-Client-Review---Copy-?node-id=5430-109360&t=1WUwhodkWZl2ZugE-0)
+
+1.) This is the how it works page which is alreafy made but you have to match the exact figma design. and every single details and also keep in mind that you have to adjust the font size as figma design is made on larger screens. Also the footer section in public marketing page is perfect and you can use that here but make sure if things are differenbt you can use. Use animation of vector icon like marketing page, also the carousel should not have scrollbar and  do good UIUX
+
+2.) From wherever the how it works page is opened as its a next js application so page does not load show i think we should show the logo like that page is loading like we showing for start a campaign button is clicked from home page.
