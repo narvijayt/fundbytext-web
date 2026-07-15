@@ -1,8 +1,10 @@
 import Link from "next/link";
-import CurrentYear from "@/components/CurrentYear";
 import { getAuthUser } from "@/lib/session";
+import { getDefaultCampaignVideo } from "@/lib/settings";
 import NavBar from "@/components/NavBar";
-import FundByTextLogo from "@/components/FundByTextLogo";
+import MarketingFooter from "@/components/MarketingFooter";
+import StoriesCarousel, { type Story } from "@/components/home/StoriesCarousel";
+import HowItWorksVideo from "@/components/home/HowItWorksVideo";
 
 // ── Asset paths ───────────────────────────────────────────────────────────────
 const F = "/figma";
@@ -10,9 +12,15 @@ const AB = "/figma/about";
 
 const A_HERO_BLUR  = `${F}/hero-blur.svg`;
 const A_FLAG_PIN   = `${F}/flag-pin.svg`;
-const A_VID_PLAY   = `${F}/vid-play.svg`;
-const A_BAR_TEXTURE = `${F}/bar-texture.svg`;
-const PAY          = "/assets/marketing/footer";
+
+// Streamline Flex glyphs exported from the Figma "What We Aim To Solve" cards —
+// filled paths with the design's white→white-70% vertical shading (NOT strokes).
+const A_SOLVE_ICON: Record<string, { src: string; size: number }> = {
+    pouch: { src: `${AB}/solve-pouch.svg`, size: 24 },
+    clock: { src: `${AB}/solve-clock.svg`, size: 28 },
+    eye:   { src: `${AB}/solve-eye.svg`,   size: 24 },
+    share: { src: `${AB}/solve-share.svg`, size: 24 },
+};
 
 const A_STAT_CAMPAIGNS = `${F}/stat-campaigns.png`;
 const A_STAT_GOALS     = `${F}/stat-goals.png`;
@@ -28,24 +36,9 @@ const A_STORY_CAR  = `${AB}/story-car.jpg`;
 const A_STORY_BALL = `${AB}/story-softball.jpg`;
 const A_STORY_CHAIR = `${AB}/story-chair.jpg`;
 
-// ── Custom textures (coded, not raster) ────────────────────────────────────────
-const F_GLYPH = "M9.21961 0C4.12776 0 0 4.189 0 9.35639V21.9925H6.80123V13.1382C6.80123 11.9286 7.76713 10.9483 8.95907 10.9483H23.0981V14.5017H10.8428V18.7607H21.7073V22.0008H10.8691L3.75375 39H15.5243L27.3901 21.9934V0H9.21961Z";
-
-const NOISE_URI = `url("data:image/svg+xml,${encodeURIComponent(
-    "<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>",
-)}")`;
-
-function fWatermarkUri(alpha: number) {
-    const svg =
-        `<svg xmlns='http://www.w3.org/2000/svg' width='150' height='150' viewBox='0 0 150 150'>` +
-        `<g fill='rgba(255,255,255,${alpha})'>` +
-        `<g transform='translate(14,16) rotate(-12) scale(1.25)'><path d='${F_GLYPH}'/></g>` +
-        `<g transform='translate(96,86) rotate(14) scale(0.95)'><path d='${F_GLYPH}'/></g>` +
-        `</g></svg>`;
-    return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
-}
-
-const DOT_TEXTURE = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20'%3E%3Crect width='2' height='2' fill='rgba(33%2C150%2C253%2C0.35)'/%3E%3C/svg%3E")`;
+// Figma's hero dot grid: small GREY squares on a 20px grid, run over the blue
+// field and the white arch alike (they stay visible on both).
+const DOT_TEXTURE = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20'%3E%3Crect width='2' height='2' fill='rgba(87%2C114%2C141%2C0.3)'/%3E%3C/svg%3E")`;
 
 // ── Data ──────────────────────────────────────────────────────────────────────
 
@@ -64,61 +57,57 @@ const SOLVE_CARDS = [
     { icon: "share",   tone: "orange", title: "If I would have known about it, I would have donated!", body: "You can now reach your entire network by texting and emailing them directly, while sharing your campaign on social media with all of your followers." },
 ];
 
-const STORIES = [
-    { img: A_STORY_CAR,   tag: "Individual",         title: "Fund to Fix My Car After Hit and Run", body: "A hit-and-run left my only car undriveable. Friends are texting to chip in so I can get back to work.",            offset: 0  },
-    { img: A_STORY_BALL,  tag: "Sports",             title: "Colorado Sparkler Softball Trip",       body: "Help our girls' team travel to the Colorado tournament — a few taps covers jerseys, lodging, and field fees.",     offset: 15 },
-    { img: A_STORY_CHAIR, tag: "Medical and Health", title: "Raising Funds for a New Chair",         body: "My old wheelchair finally gave out. A quick text-to-give campaign is funding a custom replacement that fits.",     offset: 14 },
+const STORIES: Story[] = [
+    { img: A_STORY_CAR,   tag: "Individual",         title: "Fund to Fix My Car After Hit and Run", desc: "A hit-and-run left my only car undriveable. Friends are texting to chip in so I can get back to work." },
+    { img: A_STORY_BALL,  tag: "Sports",             title: "Colorado Sparkler Softball Trip",      desc: "Help our girls' team travel to the Colorado tournament — a few taps covers jerseys, lodging, and field fees." },
+    { img: A_STORY_CHAIR, tag: "Medical and Health", title: "Raising Funds for a New Chair",        desc: "My old wheelchair finally gave out. A quick text-to-give campaign is funding a custom replacement that fits." },
 ];
 
 // ── Sub-components ─────────────────────────────────────────────────────────────
 
-function SectionBadge({ label }: { label: string }) {
+// The blue flag-pin icon with its glow (glow extends past the box, Figma-exact
+// insets) — identical construction to the marketing home page.
+function FlagGlyph({ size }: { size: number }) {
     return (
-        <div className="flex justify-center w-full">
-            <div className="flex items-center gap-1.5 sm:gap-2 pl-2 sm:pl-2.5 pr-3 sm:pr-5 py-2 sm:py-2.5 rounded-full border border-[#d4dee7] shadow-[0_12px_20px_-8px_rgba(0,91,172,0.2)] w-auto bg-white">
-                <div className="relative w-6 h-6 sm:w-8 sm:h-8 shrink-0 overflow-hidden">
-                    <img alt="" src={A_FLAG_PIN} className="absolute max-w-none"
-                        style={{ width: 92, height: 92, top: -14, left: -24 }} />
-                </div>
-                <span className="font-bold text-[#57728d] text-[9px] sm:text-xs tracking-[0.5px] sm:tracking-[1px] uppercase whitespace-nowrap">{label}</span>
+        <div className="relative shrink-0" style={{ width: size, height: size }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img alt="" src={A_FLAG_PIN} className="absolute max-w-none"
+                style={{
+                    width: size * 2.875, height: size * 2.875,
+                    top: -size * 0.5625, left: -size * 0.9375,
+                }} />
+        </div>
+    );
+}
+
+// Figma "Subheader" pill (261×52): white, #d4dee7 border, blue drop shadow,
+// 32px flag glyph + 12px bold uppercase #57728d label. `justify` takes raw
+// utilities so callers can flip alignment per breakpoint (the Figma centres this
+// pill on mobile/tablet but left-aligns it in the desktop two-column layout).
+function SectionBadge({ label, justify = "justify-center" }: { label: string; justify?: string }) {
+    return (
+        <div className={`flex w-full ${justify}`}>
+            <div className="flex items-center gap-2.5 pl-2.5 pr-5 py-2.5 rounded-full bg-white border border-[#d4dee7] shadow-[0_12px_20px_0_rgba(0,91,172,0.2)] w-auto">
+                <FlagGlyph size={32} />
+                <span className="font-bold text-[#57728d] text-xs tracking-[1px] uppercase leading-none whitespace-nowrap">{label}</span>
             </div>
         </div>
     );
 }
 
 function SolveIcon({ name }: { name: string }) {
-    const common = { width: 26, height: 26, viewBox: "0 0 24 24", fill: "none", stroke: "white", strokeWidth: 1.7, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
-    if (name === "pouch") return (
-        <svg {...common}>
-            <path d="M5 9c0-1 1-2 2.5-2.5C9 6 9.5 4.5 12 4.5s3 1.5 4.5 2C18 7 19 8 19 9c1.5 2 2 4 2 6a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4c0-2 .5-4 2-6Z" />
-            <path d="M9 6.5 8 3.5M15 6.5l1-3M9.5 13h5" />
-        </svg>
-    );
-    if (name === "clock") return (
-        <svg {...common}>
-            <rect x="3.5" y="3.5" width="17" height="17" rx="5" />
-            <path d="M12 8v4l2.5 2" />
-        </svg>
-    );
-    if (name === "eye") return (
-        <svg {...common}>
-            <path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z" />
-            <circle cx="12" cy="12" r="2.8" />
-        </svg>
-    );
-    // share / network
-    return (
-        <svg {...common}>
-            <circle cx="6" cy="12" r="2.6" /><circle cx="17.5" cy="6" r="2.6" /><circle cx="17.5" cy="18" r="2.6" />
-            <path d="M8.3 10.8 15.2 7.2M8.3 13.2l6.9 3.6" />
-        </svg>
-    );
+    const icon = A_SOLVE_ICON[name] ?? A_SOLVE_ICON.pouch;
+    // eslint-disable-next-line @next/next/no-img-element
+    return <img alt="" src={icon.src} style={{ width: icon.size, height: icon.size }} className="shrink-0" />;
 }
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default async function AboutPage() {
-    const user = await getAuthUser();
+    const [user, defaultVideo] = await Promise.all([
+        getAuthUser(),
+        getDefaultCampaignVideo().catch(() => null),
+    ]);
 
     const STATS = [
         { img: A_STAT_CAMPAIGNS, imgH: 96, imgW: 80,  smH: 60, smW: 50, value: "200+",   label: "Campaigns Launched" },
@@ -133,8 +122,13 @@ export default async function AboutPage() {
             {/* ═══════════════════════════════════════════════════════════
                 HERO
             ═══════════════════════════════════════════════════════════ */}
-            <section className="relative overflow-hidden">
-                {/* Background: coded layers (reused from the home hero) */}
+            {/* No overflow-clip here: the video card's drop shadow has to spill onto
+                the white section below, exactly as it does in the Figma. */}
+            <section className="relative">
+                {/* Background — the Figma bakes the whole hero fill into one image
+                    (gradient → white arch → dot grid → grain). Rebuilt as coded
+                    layers so it scales at every breakpoint. Order matters: the arch
+                    sits ON the blue, and the dots + grain run over BOTH. */}
                 <div className="absolute inset-0 pointer-events-none overflow-hidden">
                     <div className="absolute inset-0" style={{
                         background: "linear-gradient(160deg,rgba(0,56,140,1) 0%,rgba(10,100,210,1) 22%,rgba(33,150,253,1) 48%,rgba(150,215,255,1) 72%,rgba(255,255,255,1) 100%)",
@@ -142,78 +136,79 @@ export default async function AboutPage() {
                     <div className="absolute inset-0" style={{
                         background: "radial-gradient(ellipse 88% 64% at 50% 30%,rgba(255,255,255,1) 0%,rgba(255,255,255,0.97) 24%,rgba(190,228,255,0.55) 46%,rgba(33,150,253,0.08) 68%,transparent 84%)",
                     }} />
-                    <div className="absolute inset-0" style={{ backgroundImage: DOT_TEXTURE, backgroundRepeat: "repeat" }} />
-                    <div className="absolute inset-0 mix-blend-overlay opacity-[0.15]"
-                        style={{ backgroundImage: NOISE_URI, backgroundRepeat: "repeat" }} />
                     <img alt="" src={A_HERO_BLUR}
                         className="absolute left-1/2 -translate-x-1/2 pointer-events-none"
                         style={{ width: 1500, height: 1450, top: -480, opacity: 0.9 }} />
+
+                    {/* White arch. In the Figma it peaks at ~65.5% of the hero in the
+                        centre and drops to ~74% at the edges — so it passes through the
+                        video card about a third of the way down, and is only visible to
+                        the card's left and right. The card (z-10) straddles it. */}
+                    <svg className="absolute inset-x-0 bottom-0 w-full" viewBox="0 0 1920 320"
+                        preserveAspectRatio="none" style={{ height: "34.5%" }} aria-hidden="true">
+                        <path d="M0,79 Q960,-79 1920,79 L1920,320 L0,320 Z" fill="white" />
+                    </svg>
+
+                    {/* Grey square dot grid — runs over the blue AND the white arch. */}
+                    <div className="absolute inset-0" style={{ backgroundImage: DOT_TEXTURE, backgroundRepeat: "repeat" }} />
+                    {/* Grain — the same tile (and soft-light treatment) as the dashboard sidebar. */}
+                    <div className="absolute inset-0 opacity-50 mix-blend-soft-light"
+                        style={{ backgroundImage: "url(/assets/dashboard/sidebar-noise.png)", backgroundRepeat: "repeat" }} />
                 </div>
 
                 <NavBar user={user} />
 
-                {/* Hero content */}
-                <div className="relative z-10 flex flex-col items-center gap-8 lg:gap-[56px] pt-6 lg:pt-10 px-4 sm:px-6 lg:px-36 w-full">
+                {/* Hero content. The 62px gaps + the video card as the last child put
+                    the card's bottom edge on the section boundary (Figma: 428→928). */}
+                {/* Figma insets the hero video 32px (mobile) / 38px (tablet); the
+                    1152 cap takes over from lg up. */}
+                <div className="relative z-10 flex flex-col items-center gap-8 lg:gap-[62px] pt-8 lg:pt-[62px] px-8 md:px-[38px] lg:px-10 w-full">
                     <div className="flex flex-col items-center gap-4 lg:gap-6 w-full max-w-[654px]">
                         <SectionBadge label="About FundByText" />
-                        <h1 className="font-black text-[32px] md:text-[46px] lg:text-[64px] leading-[1.1] tracking-[-1px] text-center bg-clip-text text-transparent w-full"
+                        {/* Figma is drawn at 1920 (64px) — scaled down so a laptop isn't shouted at. */}
+                        <h1 className="font-black text-[28px] sm:text-[34px] md:text-[40px] lg:text-[46px] xl:text-[54px] 2xl:text-[64px] leading-[1.1] tracking-[-1px] text-center bg-clip-text text-transparent w-full"
                             style={{ backgroundImage: "linear-gradient(139deg,rgb(38,91,145) 30.5%,rgb(0,48,96) 69.5%)" }}>
                             Fundraising without the friction.
                         </h1>
                     </div>
 
-                    {/* Video / photo card */}
-                    <div className="relative w-full max-w-[1152px] h-[249px] md:h-[300px] lg:h-[500px] rounded-[12px] md:rounded-[14px] lg:rounded-[24px] overflow-hidden shadow-[0_20px_20px_-14px_rgba(2,104,192,0.2),0_40px_40px_-16px_rgba(2,104,192,0.2)]"
-                        style={{ background: "#f2f2f2" }}>
-                        <img alt="A team celebrating a fundraising win" src={A_HERO_VIDEO}
-                            className="absolute inset-0 w-full h-full object-cover" />
-                        <div className="absolute inset-0 flex items-center justify-center">
-                            <button className="relative flex items-center justify-center cursor-pointer hover:scale-105 transition-transform"
-                                style={{ width: "clamp(47px,7vw,94px)", height: "clamp(47px,7vw,94px)" }}>
-                                <img alt="Play" src={A_VID_PLAY} className="w-full h-full" />
-                            </button>
-                        </div>
-                    </div>
+                    {/* Plays the app-settings default campaign video, same as the
+                        campaign pages / home "See How It Works" player. */}
+                    <HowItWorksVideo videoUrl={defaultVideo} poster={A_HERO_VIDEO} />
                 </div>
-
-                {/* White arch base — fades the blue hero into the white section below */}
-                <svg className="block w-full" viewBox="0 0 1440 120" preserveAspectRatio="none"
-                    style={{ height: "clamp(44px,7vw,110px)", display: "block", marginTop: -1, marginBottom: -2 }} aria-hidden="true">
-                    <path d="M0,72 Q720,2 1440,72 L1440,120 L0,120 Z" fill="white" />
-                </svg>
             </section>
 
             {/* ═══════════════════════════════════════════════════════════
                 WHAT MAKES US DIFFERENT
             ═══════════════════════════════════════════════════════════ */}
-            <section className="bg-white pt-6 lg:pt-12 pb-12 lg:pb-20 px-4 sm:px-6 lg:px-36">
+            <section className="bg-white pt-6 lg:pt-12 pb-12 lg:pb-20 px-4 md:px-6 lg:px-10">
                 <div className="flex flex-col items-center gap-10 lg:gap-16 max-w-[1200px] mx-auto">
                     <div className="flex flex-col items-center gap-5 lg:gap-6 max-w-[900px]">
                         <SectionBadge label="What Makes Us Different" />
-                        <p className="text-center text-[#2f3a45] text-base sm:text-lg lg:text-[28px] font-normal leading-[1.4]">
+                        <p className="text-center text-[#2f3a45] text-base sm:text-lg lg:text-[20px] xl:text-[22px] 2xl:text-[28px] font-normal leading-[1.4]">
                             At FundByText, we believe fundraising should be effortless, transparent, and impactful. We take the complexity out of traditional fundraising by integrating mobile-first, text-driven, and AI-enhanced solutions, helping you connect with donors quickly and securely.
                         </p>
                     </div>
 
                     {/* Cards */}
-                    <div className="flex flex-col lg:flex-row items-stretch lg:items-center gap-6 w-full justify-center">
+                    <div className="flex flex-col lg:flex-row items-center lg:items-stretch gap-6 w-full justify-center">
                         {DIFF_CARDS.map((c) => (
                             <div key={c.title}
-                                className={`bg-white border border-[#eaeef3] rounded-[24px] p-6 flex flex-col gap-6 lg:gap-10 w-full lg:w-[368px] flex-none ${c.elevated ? "lg:flex-col-reverse lg:shadow-[0_20px_20px_-12px_rgba(2,120,222,0.3),0_50px_80px_-16px_rgba(2,120,222,0.3)]" : ""}`}>
+                                className={`bg-white border border-[#eaeef3] rounded-[24px] p-6 flex flex-col gap-6 lg:gap-10 w-full md:w-[550px] lg:w-[368px] flex-none ${c.elevated ? "lg:flex-col-reverse lg:shadow-[0_20px_20px_-12px_rgba(2,120,222,0.3),0_50px_80px_-16px_rgba(2,120,222,0.3)]" : ""}`}>
                                 <div className="w-full h-[250px] overflow-hidden flex-none"
                                     style={{ background: c.imgBg, borderRadius: c.imgRadius }}>
                                     <img alt="" src={c.img} className="w-full h-full object-cover" />
                                 </div>
                                 <div className="flex flex-col gap-2 w-full">
-                                    <p className="font-black text-[#0268c0] text-[22px] leading-[1.25]">{c.title}</p>
-                                    <p className="font-normal text-[#2f3a45] text-[18px] leading-[1.4]">{c.body}</p>
+                                    <p className="font-black text-[#0268c0] text-[18px] lg:text-[20px] 2xl:text-[22px] leading-[1.25]">{c.title}</p>
+                                    <p className="font-normal text-[#2f3a45] text-[15px] lg:text-base 2xl:text-[18px] leading-[1.4]">{c.body}</p>
                                 </div>
                             </div>
                         ))}
                     </div>
 
                     {/* Buttons */}
-                    <div className="flex items-center gap-4 sm:gap-6 justify-center">
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-6 justify-center w-full sm:w-auto">
                         <Link href="/how-it-works"
                             className="flex items-center justify-center px-6 sm:px-7 py-[18px] sm:py-[22px] rounded-[20px] text-white font-black text-xs sm:text-sm tracking-[1px] uppercase shadow-[0_8px_15px_-8px_#ea6725,0_12px_60px_-12px_rgba(255,140,83,0.4)] transition-transform hover:scale-105 relative overflow-hidden whitespace-nowrap lg:min-w-[218px]"
                             style={{ background: "linear-gradient(to bottom,#ea6725,#ff8c53)" }}>
@@ -233,7 +228,7 @@ export default async function AboutPage() {
             {/* ═══════════════════════════════════════════════════════════
                 STATS
             ═══════════════════════════════════════════════════════════ */}
-            <section className="bg-white pb-8 lg:pb-10 px-4 sm:px-6 lg:px-36">
+            <section className="bg-white pb-8 lg:pb-10 px-4 md:px-6 lg:px-10">
                 <div className="grid grid-cols-2 md:flex md:items-center md:justify-center max-w-[1200px] mx-auto">
                     {STATS.map((s) => (
                         <div key={s.label} className="flex items-center gap-3 md:gap-3 lg:gap-5 px-4 md:px-3 lg:px-8 py-3 lg:py-4 lg:min-w-[230px] xl:min-w-[260px]">
@@ -242,7 +237,7 @@ export default async function AboutPage() {
                                 <img alt="" src={s.img} className="object-contain hidden lg:block" style={{ width: s.imgW, height: s.imgH }} />
                             </div>
                             <div className="flex flex-col gap-1 lg:gap-2 min-w-0">
-                                <p className="font-black text-[#0268c0] text-[22px] lg:text-[28px] leading-snug truncate">{s.value}</p>
+                                <p className="font-black text-[#0268c0] text-[20px] lg:text-[22px] xl:text-[24px] 2xl:text-[28px] leading-snug truncate">{s.value}</p>
                                 <p className="font-black text-[#aeb5bd] text-[8px] lg:text-xs tracking-[1px] uppercase leading-tight">{s.label}</p>
                             </div>
                         </div>
@@ -253,20 +248,21 @@ export default async function AboutPage() {
             {/* ═══════════════════════════════════════════════════════════
                 WHAT WE AIM TO SOLVE
             ═══════════════════════════════════════════════════════════ */}
-            <section className="bg-white py-12 lg:py-20 px-4 sm:px-6 lg:px-36">
-                <div className="flex flex-col lg:flex-row items-start lg:items-center gap-10 lg:gap-20 max-w-[1152px] mx-auto">
+            <section className="bg-white py-12 lg:py-20 px-4 md:px-6 lg:px-10">
+                <div className="flex flex-col lg:flex-row items-center gap-10 lg:gap-20 max-w-[1152px] mx-auto">
 
                     {/* Left column */}
-                    <div className="w-full lg:w-[450px] flex-none flex flex-col gap-5 items-start">
-                        <SectionBadge label="Increasing generosity" />
-                        <h2 className="font-black text-[34px] lg:text-[56px] leading-none tracking-[-1px] bg-clip-text text-transparent"
+                    <div className="w-full lg:w-[450px] flex-none flex flex-col gap-5 items-center lg:items-start text-center lg:text-left">
+                        <SectionBadge label="Increasing generosity" justify="justify-center lg:justify-start" />
+                        <h2 className="font-black text-[28px] sm:text-[32px] lg:text-[38px] xl:text-[44px] 2xl:text-[56px] leading-none tracking-[-1px] bg-clip-text text-transparent"
                             style={{ backgroundImage: "linear-gradient(134deg,rgb(38,91,145) 30.5%,rgb(0,48,96) 69.5%)" }}>
                             What we aim to solve
                         </h2>
-                        <p className="text-[#003060] text-base lg:text-xl font-normal leading-[1.4]">
+                        {/* Tablet centres this at 556px (Figma); desktop lets it fill the 450 column. */}
+                        <p className="text-[#003060] text-base lg:text-[17px] 2xl:text-xl font-normal leading-[1.4] max-w-[556px] lg:max-w-none">
                             The world is full of generosity, but too often, it&apos;s slowed down by complicated systems. We saw the challenges—donors dropping off, fundraisers struggling, impact delayed. So, we set out to change that.
                         </p>
-                        <div className="relative w-full rounded-[16px] overflow-hidden mt-1" style={{ aspectRatio: "450 / 259" }}>
+                        <div className="relative w-full rounded-[16px] overflow-hidden" style={{ aspectRatio: "450 / 259" }}>
                             <img alt="A supporter giving from their phone" src={A_SOLVE_PHONE}
                                 className="absolute inset-0 w-full h-full object-cover" />
                         </div>
@@ -298,8 +294,8 @@ export default async function AboutPage() {
                                         <SolveIcon name={c.icon} />
                                     </div>
                                     <div className="relative z-10 flex flex-col gap-2">
-                                        <p className="font-black text-[#003060] text-[22px] leading-[1.25]">{c.title}</p>
-                                        <p className="font-normal text-[#2f3a45] text-[18px] leading-[1.4]">{c.body}</p>
+                                        <p className="font-black text-[#003060] text-[18px] lg:text-[20px] 2xl:text-[22px] leading-[1.25]">{c.title}</p>
+                                        <p className="font-normal text-[#2f3a45] text-[15px] lg:text-base 2xl:text-[18px] leading-[1.4]">{c.body}</p>
                                     </div>
                                 </div>
                             );
@@ -311,137 +307,34 @@ export default async function AboutPage() {
             {/* ═══════════════════════════════════════════════════════════
                 REAL STORIES — How people use FundbyText
             ═══════════════════════════════════════════════════════════ */}
-            <section className="relative overflow-hidden bg-white pt-12 lg:pt-20 pb-16 lg:pb-28 px-4 sm:px-6 lg:px-36">
-                {/* Decorative blue wash + grain at the bottom */}
-                <div className="absolute left-1/2 -translate-x-1/2 bottom-[-120px] w-[1500px] h-[520px] rounded-[50%] pointer-events-none"
-                    style={{ background: "radial-gradient(ellipse at 50% 50%,rgba(33,150,253,0.16) 0%,transparent 65%)" }} />
-                <div className="absolute inset-0 mix-blend-overlay opacity-10 pointer-events-none"
-                    style={{ backgroundImage: NOISE_URI, backgroundRepeat: "repeat" }} />
+            <section className="relative overflow-hidden bg-white pt-12 lg:pt-20 pb-16 lg:pb-28 px-4 md:px-6 lg:px-10">
+                {/* Blue wash. The Figma builds it from two huge blurred #0081F1
+                    ellipses tucked under the section's bottom edge; exported, they
+                    flatten to a plain vertical white→blue gradient, so it's coded
+                    here — it scales to any section height and needs no raster. */}
+                <div className="absolute inset-0 pointer-events-none" style={{
+                    background: "linear-gradient(180deg,rgba(0,129,241,0) 32%,rgba(0,129,241,0.18) 52%,rgba(0,129,241,0.55) 74%,rgba(0,129,241,0.9) 92%,#0081f1 100%)",
+                }} />
+                {/* Grain over the wash — the same tile as the hero / dashboard sidebar. */}
+                <div className="absolute inset-0 pointer-events-none opacity-50 mix-blend-soft-light"
+                    style={{ backgroundImage: "url(/assets/dashboard/sidebar-noise.png)", backgroundRepeat: "repeat" }} />
 
                 <div className="relative z-10 max-w-[1200px] mx-auto">
                     <div className="flex flex-col items-center gap-4 mb-10 lg:mb-16">
                         <SectionBadge label="real stories" />
-                        <h2 className="font-black text-[#003060] text-3xl sm:text-4xl lg:text-[56px] lg:tracking-[-1px] leading-[1.1] text-center">
+                        <h2 className="font-black text-[#003060] text-[28px] sm:text-[32px] lg:text-[38px] xl:text-[44px] 2xl:text-[56px] lg:tracking-[-1px] leading-[1.1] text-center">
                             How people use FundbyText
                         </h2>
                     </div>
 
-                    <div className="flex flex-col sm:flex-row gap-6 items-stretch sm:items-end justify-center">
-                        {STORIES.map((card) => (
-                            <div key={card.title}
-                                className="bg-white rounded-2xl border border-[#eaeef3] shadow-sm hover:shadow-md transition-shadow flex-none w-full sm:w-[368px]"
-                                style={{ marginBottom: card.offset }}>
-                                <div className="relative h-[220px] rounded-t-2xl overflow-hidden">
-                                    <img alt={card.title} src={card.img} className="absolute inset-0 w-full h-full object-cover" />
-                                </div>
-                                <div className="p-5 lg:p-6">
-                                    <div className="inline-flex bg-[#feece4] px-1.5 py-1 rounded-[6px] mb-3">
-                                        <span className="font-black text-[#f47435] text-[10px] tracking-[1px] uppercase">{card.tag}</span>
-                                    </div>
-                                    <p className="font-black text-[#003060] text-lg lg:text-xl leading-snug mb-2">{card.title}</p>
-                                    <p className="text-[#7e8a96] text-sm leading-relaxed">{card.body}</p>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-
-                    {/* Pagination — active wide pill in 2nd position */}
-                    <div className="flex items-center justify-center gap-4 mt-8">
-                        <div className="w-2 h-2 rounded-full bg-[#eaeef3]" />
-                        <div className="w-6 h-2 rounded-full bg-[#003060]" />
-                        <div className="w-2 h-2 rounded-full bg-[#eaeef3]" />
-                        <div className="w-2 h-2 rounded-full bg-[#eaeef3]" />
-                        <div className="w-2 h-2 rounded-full bg-[#eaeef3]" />
-                    </div>
+                    {/* Embla carousel — overflow-hidden (never a scrollbar), drag/swipe
+                        to browse, clickable pagination. White pills: they sit on the
+                        blue wash here, unlike the home page's white backdrop. */}
+                    <StoriesCarousel stories={STORIES} dotTone="white" />
                 </div>
             </section>
 
-            {/* ═══════════════════════════════════════════════════════════
-                FOOTER
-            ═══════════════════════════════════════════════════════════ */}
-            <footer style={{ background: "#003060" }} className="px-4 sm:px-6 lg:px-10 pt-14 lg:pt-24 pb-8">
-                <div className="max-w-[1280px] mx-auto flex flex-col-reverse lg:flex-row gap-5">
-
-                    {/* Left — white card */}
-                    <div className="flex-1 bg-white rounded-[24px] p-7 sm:p-10 lg:p-12">
-                        <div className="flex flex-col sm:flex-row gap-10 sm:gap-12 lg:gap-16">
-                            <div className="flex flex-col justify-between gap-10 sm:w-[210px]">
-                                <Link href="/" className="self-start"><FundByTextLogo size="md" /></Link>
-                                <div className="flex items-center gap-3">
-                                    <a href="#" aria-label="Telegram" className="flex size-10 items-center justify-center rounded-full bg-[#0268c0] text-white transition hover:brightness-110">
-                                        <svg className="size-5" viewBox="0 0 24 24" fill="currentColor"><path d="M21.94 4.5L2.9 11.84c-1.3.52-1.29 1.26-.23 1.58l4.86 1.52 1.88 5.78c.23.63.4.88.84.88.33 0 .5-.15.7-.33l2.36-2.3 4.9 3.62c.9.5 1.55.24 1.78-.84l3.2-15.1c.33-1.32-.5-1.92-1.35-1.65z"/></svg>
-                                    </a>
-                                    <a href="#" aria-label="WhatsApp" className="flex size-10 items-center justify-center rounded-full bg-[#0268c0] text-white transition hover:brightness-110">
-                                        <svg className="size-5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12c0 1.99.58 3.84 1.59 5.4L2 22l4.77-1.56A9.94 9.94 0 0012 22c5.52 0 10-4.48 10-10S17.52 2 12 2zm5.47 14.38c-.23.64-1.34 1.23-1.84 1.28-.49.05-.95.23-3.2-.67-2.7-1.06-4.4-3.84-4.53-4.02-.13-.18-1.08-1.43-1.08-2.73s.68-1.94.92-2.2c.24-.27.53-.33.7-.33.18 0 .35 0 .5.01.16.01.38-.06.59.45.23.55.77 1.9.84 2.04.07.13.11.29.02.47-.09.18-.13.29-.27.45-.13.16-.28.35-.4.47-.13.13-.27.28-.12.54.16.27.7 1.15 1.5 1.86 1.03.92 1.9 1.2 2.17 1.34.27.13.42.11.58-.07.16-.18.66-.77.84-1.04.18-.27.35-.22.59-.13.24.09 1.52.72 1.78.85.27.13.44.2.5.31.07.11.07.62-.16 1.26z"/></svg>
-                                    </a>
-                                </div>
-                            </div>
-                            <div className="flex-1">
-                                <p className="text-[#aeb5bd] text-xs font-black uppercase tracking-[1px] mb-6">Navigate</p>
-                                <ul className="space-y-[18px]">
-                                    {[
-                                        { label: "Browse Campaigns", href: "#" },
-                                        { label: "How It Works", href: "/how-it-works" },
-                                        { label: "FAQs", href: "#" },
-                                        { label: "Resources", href: "#" },
-                                        { label: "About Us", href: "/about" },
-                                        { label: "Help & Support", href: "/contact" },
-                                    ].map((l) => (
-                                        <li key={l.label}>
-                                            <Link href={l.href} className="text-[#2f3a45] text-sm hover:text-[#0268c0] transition-colors">{l.label}</Link>
-                                        </li>
-                                    ))}
-                                </ul>
-                            </div>
-                            <div className="sm:w-[180px] flex flex-col">
-                                <p className="text-[#aeb5bd] text-xs font-black uppercase tracking-[1px] mb-6">Payment Methods</p>
-                                <div className="flex flex-col gap-3">
-                                    <div className="flex items-center gap-2.5">
-                                        <img alt="Visa" src={`${PAY}/visa.svg`} className="size-8" />
-                                        <img alt="Mastercard" src={`${PAY}/mastercard.svg`} className="size-8" />
-                                        <img alt="PayPal" src={`${PAY}/paypal.svg`} className="h-8 w-[27px]" />
-                                    </div>
-                                    <div className="flex items-center gap-2.5">
-                                        <img alt="JCB" src={`${PAY}/jcb.svg`} className="size-8" />
-                                        <img alt="Swift" src={`${PAY}/swift.svg`} className="size-8" />
-                                    </div>
-                                </div>
-                                <p className="text-[#7e8a96] text-sm leading-relaxed mt-auto pt-10">1901 Thornridge Cir. Shiloh,<br />Hawaii 81063</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Right — blue CTA card */}
-                    <div className="relative overflow-hidden rounded-[24px] p-8 lg:p-10 flex flex-col shrink-0 w-full lg:w-[340px]"
-                        style={{ background: "#0268c0" }}>
-                        <div className="absolute inset-0 pointer-events-none"
-                            style={{ backgroundImage: fWatermarkUri(0.07), backgroundRepeat: "repeat", backgroundSize: "200px 200px" }} />
-                        <div className="relative z-10 flex flex-col h-full">
-                            <h3 className="font-black text-white text-4xl lg:text-5xl leading-[1.05] mb-4">Ready to<br />Inspire?</h3>
-                            <p className="text-white/80 text-base lg:text-lg leading-relaxed mb-8">Start Your FundbyText Campaign Today.</p>
-                            <div className="mt-auto space-y-3">
-                                <Link href="/campaigns/create"
-                                    className="flex items-center justify-center w-full py-3.5 rounded-[14px] text-white font-black text-xs tracking-[1px] uppercase transition hover:brightness-105"
-                                    style={{ background: "#f47435" }}>
-                                    Get Started for Free
-                                </Link>
-                                <Link href="/how-it-works"
-                                    className="flex items-center justify-center w-full py-3.5 rounded-[14px] text-white font-black text-xs tracking-[1px] uppercase border border-white/30 hover:border-white/60 transition-colors">
-                                    See How It Works
-                                </Link>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="max-w-[1280px] mx-auto mt-8 flex flex-col sm:flex-row items-center justify-between gap-3">
-                    <p className="text-white/50 text-xs">© FundbyText <CurrentYear /> — All Rights Reserved.</p>
-                    <div className="flex items-center gap-1.5">
-                        <Link href="/privacy" className="text-white/50 text-xs hover:text-white transition-colors">Privacy.</Link>
-                        <Link href="/terms" className="text-white/50 text-xs hover:text-white transition-colors">Terms &amp; Conditions.</Link>
-                    </div>
-                </div>
-            </footer>
+            <MarketingFooter />
         </div>
     );
 }
