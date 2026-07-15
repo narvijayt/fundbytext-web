@@ -29,6 +29,10 @@ const hlSurfaces = (secondary: string) => ({
 // coin + number sit on the card while the medal's top-right corner (which carries a
 // stray blue export pixel) overflows off-card and is clipped by overflow-hidden.
 const MEDALS = ["medal-gold", "medal-silver", "medal-bronze"];
+// On the highlighted (coloured) card the sunburst fades to white and would wash out
+// half the selected colour, so THERE we mask the medal down to just the coin — the
+// second colour then shows across the whole card. White cards keep the full rays.
+const COIN_MASK = "radial-gradient(circle 78px at 64% 38%, #000 82%, transparent 100%)";
 
 function fmt(n: number) {
     return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(n);
@@ -349,10 +353,11 @@ export default function MarketingLeaderboard({
                                 const hl = p.id === activeId;
                                 return (
                                     <div key={p.id} {...clickProps(p.id)} className={`flex w-full xl:flex-1 flex-col gap-[24px] items-start min-w-0 overflow-hidden p-[32px] relative rounded-[20px] bg-white ${canDonate ? "cursor-pointer transition-transform hover:-translate-y-1" : ""}`} style={{ backgroundImage: hl ? HL.card : undefined, boxShadow: "0px 20px 20px -14px rgba(0,0,0,0.15), 0px 30px 40px -16px rgba(0,0,0,0.1)" }}>
-                                        {/* Full medal + sunburst rays (the Figma "shades"), sized large and
-                                            peeking from the top-right corner. The number stays on-card; the
-                                            corner blue pixel overflows off-card and is clipped. */}
-                                        <Image src={`${A}/leaderboard/${MEDALS[i]}.png`} alt="" width={240} height={240} className="absolute right-[-40px] top-[-24px] z-0 size-[240px] max-w-none" />
+                                        {/* Medal + sunburst rays (the Figma "shades") peeking from the corner.
+                                            The number stays on-card; the corner blue pixel clips off-card. On the
+                                            highlighted card the rays are masked to the coin so the selected colour
+                                            fills the whole card instead of washing out its right half. */}
+                                        <Image src={`${A}/leaderboard/${MEDALS[i]}.png`} alt="" width={190} height={190} className="absolute right-[-32px] top-[-12px] z-0 size-[190px] max-w-none" style={hl ? { WebkitMaskImage: COIN_MASK, maskImage: COIN_MASK } : undefined} />
                                         {/* Content sits ABOVE the medal (positioned art otherwise paints over
                                             in-flow text) so the name reads over the rays; the number still shows
                                             in the empty top-right corner where no content overlaps it. */}
