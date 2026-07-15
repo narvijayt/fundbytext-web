@@ -160,8 +160,11 @@ function RaisedPill({ amount, pct, showPercent }: { amount: number; pct?: number
 function Bar({ raised, pct, glow, showAmounts = true, showPercent = false, hasPct = true }: { raised: number; pct: number; glow?: boolean; showAmounts?: boolean; showPercent?: boolean; hasPct?: boolean }) {
     // Members always get a "$X Raised" label; the public gets "N% Raised" only when a
     // real goal exists to be a percentage of (hasPct). With no goal, the public bar is a
-    // bare relative ranking — no untruthful percentage.
-    const showLabel = raised > 0 && (showAmounts || hasPct);
+    // bare relative ranking — no untruthful percentage. A $0 participant still gets a
+    // label ("$0 Raised" / "0% Raised") so the bar is never blank; with no green fill
+    // behind it the text drops to a readable muted grey on the track.
+    const filled = raised > 0;
+    const showLabel = showAmounts || hasPct;
     return (
         <div className="flex-1 h-[32px] min-w-0 relative rounded-full overflow-hidden" style={{ background: TRACK_BG }}>
             <style>{`@keyframes lb-shimmer{0%{transform:translateX(-120%)}100%{transform:translateX(400%)}}`}</style>
@@ -177,11 +180,11 @@ function Bar({ raised, pct, glow, showAmounts = true, showPercent = false, hasPc
                 />
             </div>
             {showLabel && (
-                <p className="absolute left-[12px] top-1/2 -translate-y-1/2 text-[12px] md:text-[14px] text-white whitespace-nowrap drop-shadow">
+                <p className={`absolute left-[12px] top-1/2 -translate-y-1/2 text-[12px] md:text-[14px] whitespace-nowrap ${filled ? "text-white drop-shadow" : "text-[#6b7684]"}`}>
                     <span className="font-black" style={{ lineHeight: 1.25 }}>{showAmounts ? fmt(raised) : `${Math.round(pct)}%`}</span>
                     <span className="font-medium leading-none"> Raised</span>
                     {/* Organizers see the dollar amount AND the percentage of goal. */}
-                    {showAmounts && showPercent && hasPct && <span className="font-semibold text-white/85"> · {Math.round(pct)}%</span>}
+                    {showAmounts && showPercent && hasPct && filled && <span className="font-semibold text-white/85"> · {Math.round(pct)}%</span>}
                 </p>
             )}
             <span aria-hidden className="absolute inset-0 pointer-events-none rounded-[inherit]" style={{ boxShadow: "inset 0px 2px 8px 0px rgba(0,48,96,0.08)" }} />
