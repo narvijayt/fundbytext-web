@@ -221,9 +221,11 @@ function AchieverPanel({
     const scrollable = rows.length > 5;
     return (
         <div className="relative w-full xl:flex-1 overflow-hidden rounded-[20px] bg-[#f4f8f9]" style={{ boxShadow: "0px 30px 40px -8px rgba(0,91,172,0.7)" }}>
-            {/* Star medal — bleeds off the top-right corner; the card's overflow clips
-                both the bleed and the asset's stray corner pixel. */}
-            <Image src={`${A}/leaderboard/${medal}.png`} alt="" width={300} height={300} className="absolute right-[-70px] top-[-70px] size-[200px] md:right-[-104px] md:top-[-104px] md:size-[300px] max-w-none pointer-events-none" />
+            {/* Star medal. Figma exports this node ALREADY clipped to the region that
+                shows inside the card (its 196px natural size == the 300px medal minus
+                the 104px corner bleed), so it sits flush in the corner at native size —
+                offsetting it again would just clip the coin + star away. */}
+            <Image src={`${A}/leaderboard/${medal}.png`} alt="" width={196} height={196} className="absolute right-0 top-0 size-[132px] md:size-[196px] max-w-none pointer-events-none" />
             <div className="relative flex items-center justify-center py-[24px] md:py-[32px]">
                 <h3 className="font-black text-[22px] md:text-[28px] text-[#003060] tracking-[-0.25px] leading-none">{title}</h3>
             </div>
@@ -375,8 +377,10 @@ export default function MarketingLeaderboard({
                 </div>
 
                 {isParticipantGoal ? (
-                    /* ── Layout A — Goal Achievers / Goal in Progress ── */
-                    <div className="flex w-full max-w-[1152px] flex-col gap-[24px] xl:flex-row xl:items-start">
+                    /* ── Layout A — Goal Achievers / Goal in Progress ──
+                       items-stretch keeps the two cards the same height side-by-side (as in
+                       the Figma) instead of each sizing to its own row count. */
+                    <div className="flex w-full max-w-[1152px] flex-col gap-[24px] xl:flex-row xl:items-stretch">
                         <AchieverPanel title="Goal Achievers" medal="medal-star-gold" rows={achievers} mode="achievers" showAmounts={showAmounts} showPercent={isOrganizer} pctOf={barPct} highlightMemberId={activeId} onDonate={onSelect} hlRow={HL.rowA} youMemberId={youMemberId} secondary={secondary} />
                         <AchieverPanel title="Goal in Progress" medal="medal-star-silver" rows={inProgress} mode="progress" showAmounts={showAmounts} showPercent={isOrganizer} pctOf={barPct} highlightMemberId={activeId} onDonate={onSelect} hlRow={HL.rowA} youMemberId={youMemberId} secondary={secondary} />
                     </div>
