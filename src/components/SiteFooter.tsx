@@ -101,6 +101,7 @@ export default function SiteFooter() {
                 <div className="flex items-center gap-1.5">
                     <Link href="/privacy" className="text-white/50 text-xs hover:text-white transition-colors">Privacy.</Link>
                     <Link href="/terms" className="text-white/50 text-xs hover:text-white transition-colors">Terms &amp; Conditions.</Link>
+                    <Link href="/cookies" className="text-white/50 text-xs hover:text-white transition-colors">Cookies.</Link>
                 </div>
             </div>
         </footer>

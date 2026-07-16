@@ -145,6 +145,7 @@ export default function MarketingFooter() {
                 <div className="flex items-center gap-1.5">
                     <Link href="/privacy" className="text-white/60 text-sm hover:text-white transition-colors">Privacy.</Link>
                     <Link href="/terms" className="text-white/60 text-sm hover:text-white transition-colors">Terms &amp; Conditions.</Link>
+                    <Link href="/cookies" className="text-white/60 text-sm hover:text-white transition-colors">Cookies.</Link>
                 </div>
             </div>
         </footer>
