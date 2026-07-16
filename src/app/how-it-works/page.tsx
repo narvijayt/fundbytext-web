@@ -156,8 +156,11 @@ export default async function HowItWorksPage() {
                                 /* The middle card is permanently elevated (Figma), and every
                                    card also lifts on hover — same big blue shadow, so hovering
                                    the outer cards matches the centre one. */
-                                className={`bg-white border border-[#eaeef3] rounded-[24px] p-6 flex flex-col gap-6 lg:gap-10 w-full md:w-[550px] lg:w-[368px] flex-none transition-shadow duration-300 hover:shadow-[0_20px_20px_-12px_rgba(2,120,222,0.3),0_50px_80px_-16px_rgba(2,120,222,0.3)] ${c.elevated ? "lg:shadow-[0_20px_20px_-12px_rgba(2,120,222,0.3),0_50px_80px_-16px_rgba(2,120,222,0.3)]" : ""}`}>
-                                <div className="relative w-full aspect-[320/250] lg:h-[250px] lg:aspect-auto rounded-[14px] overflow-hidden bg-[#f2f2f2] flex-none">
+                                className={`bg-white border border-[#eaeef3] rounded-[24px] p-6 flex flex-col gap-4 lg:gap-5 w-full md:w-[550px] lg:w-[368px] flex-none transition-shadow duration-300 hover:shadow-[0_20px_20px_-12px_rgba(2,120,222,0.3),0_50px_80px_-16px_rgba(2,120,222,0.3)] ${c.elevated ? "lg:shadow-[0_20px_20px_-12px_rgba(2,120,222,0.3),0_50px_80px_-16px_rgba(2,120,222,0.3)]" : ""}`}>
+                                {/* Keep the PNG's own 320/250 (640×500) aspect at every
+                                    width — the blue frame is baked into the image, so forcing
+                                    a taller box cropped it top and bottom. */}
+                                <div className="relative w-full aspect-[320/250] rounded-[14px] overflow-hidden bg-[#f2f2f2] flex-none">
                                     <CardVideo videoUrl={defaultVideo} poster={c.img} />
                                 </div>
                                 <div className="flex flex-col gap-2 w-full">
