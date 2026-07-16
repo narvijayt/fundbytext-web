@@ -64,11 +64,20 @@ export default async function MarketingDocShell({ badge, title, intro, children,
             <section className="relative bg-white">
                 <div className="relative">
                     <div className="pointer-events-none absolute inset-0 overflow-hidden">
+                        {/* Flat bright sky blue + a per-breakpoint white halo — the SAME
+                            treatment as HeroBackdrop (home / about / how-it-works). The
+                            old single-ellipse halo lit a hard centre ringed by blue that
+                            read as a "sun"; each breakpoint now gets its own falloff. */}
                         <div className="absolute inset-0" style={{
-                            background: "linear-gradient(160deg,rgba(0,56,140,1) 0%,rgba(10,100,210,1) 22%,rgba(33,150,253,1) 48%,rgba(150,215,255,1) 72%,rgba(255,255,255,1) 100%)",
+                            background: "linear-gradient(176deg,rgba(37,144,242,1) 0%,rgba(63,158,245,1) 26%,rgba(69,161,245,1) 52%,rgba(74,164,245,1) 76%,rgba(54,153,243,1) 100%)",
                         }} />
-                        <div className="absolute inset-0" style={{
-                            background: "radial-gradient(ellipse 88% 64% at 50% 30%,rgba(255,255,255,1) 0%,rgba(255,255,255,0.97) 24%,rgba(190,228,255,0.55) 46%,rgba(33,150,253,0.08) 68%,transparent 84%)",
+                        {/* Mobile: broad, flat wash that stays lit to the edges. */}
+                        <div className="absolute inset-0 md:hidden" style={{
+                            background: "radial-gradient(ellipse 88% 54% at 50% 26%,rgba(255,255,255,1) 0%,rgba(255,255,255,0.96) 32%,rgba(255,255,255,0.82) 50%,rgba(255,255,255,0.58) 68%,rgba(255,255,255,0.3) 86%,rgba(255,255,255,0.12) 100%)",
+                        }} />
+                        {/* md+: tighter glow that fades into the blue before the edges. */}
+                        <div className="absolute inset-0 hidden md:block" style={{
+                            background: "radial-gradient(ellipse 84% 62% at 50% 28%,rgba(255,255,255,0.96) 0%,rgba(255,255,255,0.82) 26%,rgba(198,231,255,0.44) 48%,rgba(37,144,242,0.10) 72%,transparent 90%)",
                         }} />
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img alt="" src={A_HERO_BLUR} className="absolute left-1/2 -translate-x-1/2 pointer-events-none"

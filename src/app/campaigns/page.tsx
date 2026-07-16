@@ -138,11 +138,21 @@ export default async function CampaignsPage({
             ═══════════════════════════════════════════════════════════ */}
             <section className="relative">
                 <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                    {/* Base blue — flat, bright sky blue (the same as the How-It-Works /
+                        About / home hero via HeroBackdrop), NOT the dark navy diagonal
+                        the legal-doc shell uses. The white arch below carries it to white. */}
                     <div className="absolute inset-0" style={{
-                        background: "linear-gradient(160deg,rgba(0,56,140,1) 0%,rgba(10,100,210,1) 22%,rgba(33,150,253,1) 48%,rgba(150,215,255,1) 72%,rgba(255,255,255,1) 100%)",
+                        background: "linear-gradient(176deg,rgba(37,144,242,1) 0%,rgba(63,158,245,1) 26%,rgba(69,161,245,1) 52%,rgba(74,164,245,1) 76%,rgba(54,153,243,1) 100%)",
                     }} />
-                    <div className="absolute inset-0" style={{
-                        background: "radial-gradient(ellipse 88% 64% at 50% 30%,rgba(255,255,255,1) 0%,rgba(255,255,255,0.97) 24%,rgba(190,228,255,0.55) 46%,rgba(33,150,253,0.08) 68%,transparent 84%)",
+                    {/* White halo — per-breakpoint falloff (same as HeroBackdrop), so it
+                        reads as a wash rather than a concentrated "sun". A single md+
+                        ellipse fell to transparent before the mobile edges, ringing the
+                        bright centre with blue. */}
+                    <div className="absolute inset-0 md:hidden" style={{
+                        background: "radial-gradient(ellipse 88% 54% at 50% 26%,rgba(255,255,255,1) 0%,rgba(255,255,255,0.96) 32%,rgba(255,255,255,0.82) 50%,rgba(255,255,255,0.58) 68%,rgba(255,255,255,0.3) 86%,rgba(255,255,255,0.12) 100%)",
+                    }} />
+                    <div className="absolute inset-0 hidden md:block" style={{
+                        background: "radial-gradient(ellipse 84% 62% at 50% 28%,rgba(255,255,255,0.96) 0%,rgba(255,255,255,0.82) 26%,rgba(198,231,255,0.44) 48%,rgba(37,144,242,0.10) 72%,transparent 90%)",
                     }} />
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img alt="" src={A_HERO_BLUR}
