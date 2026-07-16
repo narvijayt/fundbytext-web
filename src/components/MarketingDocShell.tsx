@@ -101,8 +101,11 @@ export default async function MarketingDocShell({ badge, title, intro, children,
                     </div>
                 </div>
 
-                {/* Content card. The negative pull is what overlaps it onto the blue. */}
-                <div className="relative z-10 -mt-48 lg:-mt-[340px] px-4 md:px-6 lg:px-10 pb-16 lg:pb-24">
+                {/* Content card. The negative pull overlaps it onto the blue; the gap
+                    above the card is (headline pb − this pull), so on mobile the pull
+                    must stay SMALLER than the pb-48 above — at -mt-48 they cancelled and
+                    the card sat right on the intro text. */}
+                <div className="relative z-10 -mt-32 lg:-mt-[340px] px-4 md:px-6 lg:px-10 pb-16 lg:pb-24">
                     {card ? (
                         <div className="mx-auto flex w-full max-w-[1152px] flex-col items-start gap-6 lg:gap-8 rounded-[24px] border border-[#e7e9eb] bg-white px-5 sm:px-8 lg:px-14 py-10 lg:py-20 shadow-[0px_12px_12px_0px_rgba(0,48,96,0.04),0px_32px_40px_0px_rgba(2,104,192,0.16)]">
                             {children}
