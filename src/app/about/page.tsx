@@ -140,13 +140,21 @@ export default async function AboutPage() {
                     <div className="absolute inset-0" style={{
                         background: "linear-gradient(176deg,rgba(37,144,242,1) 0%,rgba(63,158,245,1) 26%,rgba(69,161,245,1) 52%,rgba(74,164,245,1) 76%,rgba(54,153,243,1) 100%)",
                     }} />
-                    {/* White halo. Sampled against the Figma this was reading too hard: it
-                        held ~full white out to 24% and then fell away quickly, giving a
-                        defined blob rather than the design's soft, diffuse glow (ours
-                        #FFFFFF vs Figma #EAEEF3 at the centre, #FEFEFF vs #F5FAFF at
-                        x=800). Ease the centre off pure white and stretch the falloff so
-                        it blends into the blue instead of edging against it. */}
-                    <div className="absolute inset-0" style={{
+                    {/* White halo — one ellipse can't serve both frames, because the design
+                        spreads it differently: on mobile it washes all the way to the edges
+                        (#9ACDF8 at x=0) while on desktop it deliberately stops short and
+                        leaves them saturated (#258FF2 at x=0). Sharing the desktop curve on
+                        a 375 viewport left a bright centre ringed by blue — reading as a
+                        "sun" rather than a wash. Each breakpoint gets its own falloff,
+                        traced from the matching frame. */}
+                    {/* Mobile: broad, flat wash that stays lit to the edges. Alphas run
+                        above the raw values traced off the frame because the dot grid and
+                        the soft-light grain sit over this and eat some of the white. */}
+                    <div className="absolute inset-0 md:hidden" style={{
+                        background: "radial-gradient(ellipse 88% 54% at 50% 26%,rgba(255,255,255,1) 0%,rgba(255,255,255,0.96) 32%,rgba(255,255,255,0.82) 50%,rgba(255,255,255,0.58) 68%,rgba(255,255,255,0.3) 86%,rgba(255,255,255,0.12) 100%)",
+                    }} />
+                    {/* md+: tighter glow that fades into the blue well before the edges. */}
+                    <div className="absolute inset-0 hidden md:block" style={{
                         background: "radial-gradient(ellipse 84% 62% at 50% 28%,rgba(255,255,255,0.96) 0%,rgba(255,255,255,0.82) 26%,rgba(198,231,255,0.44) 48%,rgba(37,144,242,0.10) 72%,transparent 90%)",
                     }} />
                     <img alt="" src={A_HERO_BLUR}
