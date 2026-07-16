@@ -2,16 +2,21 @@
 
 import { useState } from "react";
 
+const A_VID_PLAY_GLOW = "/figma/vid-play-glow.svg";
+
 /**
  * Small in-card video player: fills its parent, shows the poster with a play
  * button, and on click swaps in the real <video> playing the same default
  * campaign video the hero player uses. A card-sized sibling of HowItWorksVideo —
  * no fixed aspect of its own, so it takes the shape of the slot it's dropped in.
  *
- * The button is drawn in CSS (white circle + the Figma's #0278DE triangle + a
- * soft shadow) rather than the hero's glow PNG: that glow is a 94px button inside
- * a 254px blurred box, and scaling it down to card size shrank the blur into a
- * hard second ring — the "doubled circle" look.
+ * Uses the SAME glowing play button as the hero (vid-play-glow.svg): the Figma
+ * "made easy" cards carry that button too. It's rendered exactly as the hero does
+ * it — a square span sized to the visible white circle, with the glow SVG at 270%
+ * / -85% so the halo spills beyond. Sizing the button off the container WIDTH
+ * (aspect-square) keeps it ~22% wide like the Figma's 72px-on-320px, and big
+ * enough to sit cleanly over card 1's busy illustration instead of leaving the
+ * runner poking out beside a too-small circle.
  */
 export default function CardVideo({ videoUrl, poster }: {
     videoUrl: string | null;
@@ -41,11 +46,12 @@ export default function CardVideo({ videoUrl, poster }: {
                 onClick={() => videoUrl && setPlaying(true)}
                 className={`group absolute inset-0 flex items-center justify-center ${videoUrl ? "cursor-pointer" : "cursor-default"}`}
             >
-                <span className="flex items-center justify-center rounded-full bg-white/90 shadow-[0_10px_26px_-6px_rgba(0,48,96,0.45)] backdrop-blur-[2px] transition-transform duration-200 group-hover:scale-105"
-                    style={{ width: "clamp(46px,18%,64px)", height: "clamp(46px,18%,64px)" }}>
-                    <svg viewBox="0 0 24 24" fill="#0278DE" className="h-[38%] w-[38%] translate-x-[8%]" aria-hidden>
-                        <path d="M8 5.14v13.72a1 1 0 0 0 1.52.86l11.14-6.86a1 1 0 0 0 0-1.72L9.52 4.28A1 1 0 0 0 8 5.14z" />
-                    </svg>
+                <span className="relative flex aspect-square items-center justify-center transition-transform duration-200 group-hover:scale-105"
+                    style={{ width: "clamp(56px,22%,78px)" }}>
+                    {/* Glow extends far beyond the button (Figma: inset -85%). */}
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img alt="" src={A_VID_PLAY_GLOW} className="absolute max-w-none"
+                        style={{ width: "270%", height: "270%", left: "-85%", top: "-85%" }} />
                 </span>
             </button>
         </>
