@@ -1,5 +1,6 @@
 import Link from "next/link";
 import CurrentYear from "@/components/CurrentYear";
+import FooterSocialShare from "@/components/FooterSocialShare";
 
 /* ── Shared marketing footer ────────────────────────────────────────────────
    Figma 5814:11914 / About 5724:16709 — bg #003060, an 800px white card and a
@@ -11,8 +12,6 @@ import CurrentYear from "@/components/CurrentYear";
 
 const F = "/figma";
 const A_FOOTER_LOGO = `${F}/footer-logo.svg`;
-const A_FOOTER_TG   = `${F}/footer-tg.svg`;
-const A_FOOTER_WA   = `${F}/footer-wa.svg`;
 
 // The same drifting "F" texture the public campaign footer uses (ported from
 // campaigns/[slug]/_components/MarketingFooter, itself the creation steps'
@@ -94,16 +93,7 @@ export default function MarketingFooter() {
                     </div>
                     {/* row 2: social / address */}
                     <div className="flex flex-col sm:flex-row sm:items-center gap-6 sm:gap-4 w-full">
-                        <div className="flex items-center gap-2 sm:w-[300px] shrink-0">
-                            <a href="#" aria-label="Telegram" className="block size-10 transition hover:brightness-110">
-                                {/* eslint-disable-next-line @next/next/no-img-element */}
-                                <img alt="" src={A_FOOTER_TG} className="size-10" />
-                            </a>
-                            <a href="#" aria-label="WhatsApp" className="block size-10 transition hover:brightness-110">
-                                {/* eslint-disable-next-line @next/next/no-img-element */}
-                                <img alt="" src={A_FOOTER_WA} className="size-10" />
-                            </a>
-                        </div>
+                        <FooterSocialShare />
                         <p className="font-medium text-[#8f98a3] text-sm leading-[1.25]">
                             1901 Thornridge Cir. Shiloh,<br />Hawaii 81063
                         </p>
