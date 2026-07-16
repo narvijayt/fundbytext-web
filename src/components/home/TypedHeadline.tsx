@@ -22,8 +22,13 @@ const GRADIENT = "linear-gradient(131deg,rgb(38,91,145) 30.5%,rgb(0,48,96) 69.5%
 // behind them, and "Made Simple" would silently vanish while "Fundraising"
 // rendered fine. Inking each line independently sidesteps that entirely.
 function Ink({ children }: { children: React.ReactNode }) {
+    // pb extends the gradient box past the baseline so descenders ("g" in
+    // Fundraising, "p" in Simple) still get painted — background-clip:text only
+    // inks glyphs inside the box, and the box is otherwise the line height, which
+    // cut the tails off. -mb cancels the pad's layout so line spacing is still the
+    // h1's leading alone.
     return (
-        <span className="inline-block bg-clip-text text-transparent" style={{ backgroundImage: GRADIENT }}>
+        <span className="inline-block bg-clip-text text-transparent pb-[0.2em] -mb-[0.2em]" style={{ backgroundImage: GRADIENT }}>
             {children}
         </span>
     );
