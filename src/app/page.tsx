@@ -5,6 +5,7 @@ import { getDefaultCampaignVideo, getDefaultCampaignVideoThumbnail } from "@/lib
 import NavBar from "@/components/NavBar";
 import MarketingFooter from "@/components/MarketingFooter";
 import HeroCampaignsCarousel, { type HeroCard } from "@/components/home/HeroCampaignsCarousel";
+import HeroRotatingHeadline from "@/components/home/HeroRotatingHeadline";
 import StoriesCarousel, { type Story } from "@/components/home/StoriesCarousel";
 import HowItWorksVideo from "@/components/home/HowItWorksVideo";
 
@@ -13,7 +14,6 @@ const F = "/figma";
 
 const A_HERO_BLUR      = `${F}/hero-blur.svg`;
 const A_FLAG_PIN       = `${F}/flag-pin.svg`;
-const A_UNDERLINE      = `${F}/underline.svg`;
 const A_ARROW_RIGHT    = `${F}/arrow-right.svg`;
 
 const A_STAT_CAMPAIGNS = `${F}/stat-campaigns.png`;
@@ -70,6 +70,11 @@ const NOISE_URI = `url("data:image/svg+xml,${encodeURIComponent(
 // The Figma "Headline Gradient" (rgb(38,91,145) → rgb(0,48,96)).
 const HEADLINE_GRADIENT = "linear-gradient(166deg,rgb(38,91,145) 30.5%,rgb(0,48,96) 69.5%)";
 
+// Grey 2×2 square dot grid on a 20px tile — the same texture the About /
+// How-It-Works hero uses (rgba(87,114,141,0.3)), replacing the old brighter-blue
+// dots so the home hero reads identically.
+const GRAY_DOTS = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20'%3E%3Crect width='2' height='2' fill='rgba(87%2C114%2C141%2C0.3)'/%3E%3C/svg%3E")`;
+
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 const STEPS = [
@@ -86,6 +91,18 @@ const STORIES: Story[] = [
     { img: A_CARD_DOG,       tag: "Animal Welfare",     title: "Help Charlie with Vet Bills",            desc: "Charlie's surgery was fully funded by neighbors who followed his recovery day by day." },
     { img: A_CARD_BASEBALL,  tag: "Sports",             title: "Spring Fundraiser for Cowboys Baseball", desc: "New helmets and uniforms for the season, raised one text at a time by the parents." },
     { img: A_CARD_MINISTRY,  tag: "Ministry",           title: "Summer Mission Trip Abroad",             desc: "The youth group shared one campaign and sent twelve students on their first mission." },
+];
+
+// Curated showcase for the hero row, mirroring the Figma's five cards. Used only
+// when there aren't enough live campaigns to fill the staggered row; they link to
+// Browse Campaigns, not a fake slug. Order matters — the middle card (index 2) is
+// the featured one, so the strongest card sits there.
+const HERO_SHOWCASE: HeroCard[] = [
+    { img: A_CARD_DOG,       tag: "Animal Welfare", name: "Help Charlie with Vet Bills",           goal: "$3,000",  slug: "/campaigns", status: "active", endDate: null },
+    { img: A_STORY_SOFTBALL, tag: "Sports",         name: "Colorado Sparkler Softball Trip",       goal: "$3,000",  slug: "/campaigns", status: "active", endDate: null },
+    { img: A_CARD_BASEBALL,  tag: "Sports",         name: "Spring Fundraiser for Cowboys Baseball", goal: "$10,000", slug: "/campaigns", status: "active", endDate: null },
+    { img: A_STORY_CHAIR,    tag: "Community",      name: "Help Fund Travel to Nationals",         goal: "$6,000",  slug: "/campaigns", status: "active", endDate: null },
+    { img: A_CARD_MINISTRY,  tag: "Ministry",       name: "Summer Mission Trip Abroad",            goal: "$5,000",  slug: "/campaigns", status: "active", endDate: null },
 ];
 
 // ── Data ──────────────────────────────────────────────────────────────────────
@@ -170,16 +187,24 @@ export default async function HomePage() {
             ? `$${Math.round(totalRaisedRaw / 1000)}K+`
             : `$${totalRaisedRaw.toLocaleString()}`;
 
-    // Real campaigns only — no dummy filler cards.
-    const heroCards: HeroCard[] = liveCampaigns.map((c) => ({
+    const realCards: HeroCard[] = liveCampaigns.map((c) => ({
         img: c.media[0]?.url ?? null,
-        tag: c.campaign_type ?? "Campaign",
+        // Tag shows the campaign's category. There's no category column yet, so fall
+        // back to a friendly label rather than the raw "ORGANIZATION"/"INDIVIDUAL"
+        // enum (which read as an odd category pill).
+        tag: c.campaign_type === "organization" ? "Organization" : c.campaign_type === "individual" ? "Individual" : "Campaign",
         name: c.name ?? "Untitled",
         goal: c.goal_amount ? `$${Number(c.goal_amount).toLocaleString()}` : null,
         status: c.status ?? "active",
         slug: `/campaigns/${c.slug}`,
         endDate: c.end_date ? new Date(c.end_date).toISOString() : null,
     }));
+
+    // The hero shows a full staggered 5-card row like the Figma. Real campaigns
+    // drive it once there are enough to fill the row; below that (e.g. a fresh
+    // install) we fall back to a curated showcase so the hero never looks sparse.
+    // The showcase cards link to Browse Campaigns rather than a specific slug.
+    const heroCards: HeroCard[] = realCards.length >= 3 ? realCards.slice(0, 5) : HERO_SHOWCASE;
 
     return (
         <div className="font-sans text-gray-900 overflow-x-hidden">
@@ -188,34 +213,30 @@ export default async function HomePage() {
                 HERO
             ═══════════════════════════════════════════════════════════ */}
             <section className="relative overflow-hidden">
-                {/* ── Hero Background: coded layers (Figma exact) ── */}
+                {/* ── Hero background — the same treatment as the About / How-It-Works
+                    hero (HeroBackdrop): flat bright-blue base, a broad white halo, the
+                    hero-blur glow, GREY square dots and the soft-light grain. The dots
+                    live on the blue only — the stats sit below on an opaque white arch
+                    that covers them, so the numbers read on clean white. ── */}
                 <div className="absolute inset-0 pointer-events-none overflow-hidden">
-
-                    {/* L1 — Base: Figma blue rgba(33,150,253) with darker navy at top-corners */}
+                    {/* Base blue — flat, bright, reads the same on both edges. */}
                     <div className="absolute inset-0" style={{
-                        background: "linear-gradient(160deg,rgba(0,56,140,1) 0%,rgba(10,100,210,1) 25%,rgba(33,150,253,1) 55%,rgba(100,195,255,1) 80%,rgba(200,235,255,1) 100%)",
+                        background: "linear-gradient(176deg,rgba(37,144,242,1) 0%,rgba(63,158,245,1) 26%,rgba(69,161,245,1) 52%,rgba(74,164,245,1) 76%,rgba(54,153,243,1) 100%)",
                     }} />
-
-                    {/* L2 — Figma white → blue radial: very bright white center, Figma blue at edges */}
+                    {/* White halo behind the headline + cards. */}
                     <div className="absolute inset-0" style={{
-                        background: "radial-gradient(ellipse 90% 72% at 50% 32%,rgba(255,255,255,1) 0%,rgba(255,255,255,0.97) 22%,rgba(190,228,255,0.60) 45%,rgba(33,150,253,0.10) 68%,transparent 85%)",
+                        background: "radial-gradient(ellipse 86% 58% at 50% 24%,rgba(255,255,255,1) 0%,rgba(255,255,255,0.95) 26%,rgba(198,231,255,0.5) 48%,rgba(37,144,242,0.10) 72%,transparent 90%)",
                     }} />
-
-                    {/* L3 — Tiny 2×2px square dots every 20px */}
-                    <div className="absolute inset-0" style={{
-                        backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20'%3E%3Crect width='2' height='2' fill='rgba(33%2C150%2C253%2C0.35)'/%3E%3C/svg%3E")`,
-                        backgroundRepeat: "repeat",
-                    }} />
-
-                    {/* L4 — Noise grain (Figma noise overlay) */}
-                    <div className="absolute inset-0 mix-blend-overlay opacity-20 pointer-events-none"
-                        style={{ backgroundImage: NOISE_URI, backgroundRepeat: "repeat" }} />
-
-                    {/* L5 — Layer Blur: large white ellipse with Gaussian blur behind headline + cards */}
+                    {/* Glow. */}
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img alt="" src={A_HERO_BLUR}
                         className="absolute left-1/2 -translate-x-1/2 pointer-events-none"
-                        style={{ width: 1600, height: 1546, top: -430, opacity: 0.92 }} />
+                        style={{ width: 1600, height: 1546, top: -430, opacity: 0.9 }} />
+                    {/* Grey square dot grid — same tile/colour as How-It-Works. */}
+                    <div className="absolute inset-0" style={{ backgroundImage: GRAY_DOTS, backgroundRepeat: "repeat" }} />
+                    {/* Grain — the dashboard-sidebar noise, soft-light. */}
+                    <div className="absolute inset-0 opacity-50 mix-blend-soft-light"
+                        style={{ backgroundImage: "url(/assets/dashboard/sidebar-noise.png)", backgroundRepeat: "repeat" }} />
                 </div>
 
                 {/* Navigation */}
@@ -235,20 +256,7 @@ export default async function HomePage() {
                                 </span>
                             </div>
 
-                            <div className="relative flex flex-col items-center justify-center w-full">
-                                {/* Underline beneath "Sports Teams" — hidden on very small screens */}
-                                <div className="hidden sm:block absolute bottom-[-14px] right-[54px] w-[440px] h-[16px] rotate-[1.5deg] pointer-events-none overflow-hidden">
-                                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                                    <img alt="" src={A_UNDERLINE} width={440} height={16} style={{ display: "block" }} />
-                                </div>
-                                <h1 className="font-black text-[30px] sm:text-[36px] md:text-[42px] lg:text-[48px] xl:text-[56px] 2xl:text-[64px] leading-[1.1] pb-[0.08em] tracking-[-1px] text-center bg-clip-text text-transparent w-full"
-                                    style={{
-                                        backgroundImage: "linear-gradient(138deg,rgb(38,91,145) 30.5%,rgb(0,48,96) 69.5%)",
-                                    }}>
-                                    Effortless Fundraising for Sports Teams
-                                    <span className="font-light text-[#f47435]">|</span>
-                                </h1>
-                            </div>
+                            <HeroRotatingHeadline />
                         </div>
 
                         {/* CTA buttons */}
@@ -279,12 +287,9 @@ export default async function HomePage() {
                         <path d="M0,70 Q720,0 1440,70 L1440,120 L0,120 Z" fill="white" />
                     </svg>
 
-                    {/* Stats content — white bg with matching tiny square dots */}
-                    <div style={{
-                        background: "white",
-                        backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20'%3E%3Crect width='2' height='2' fill='rgba(33%2C150%2C253%2C0.14)'/%3E%3C/svg%3E")`,
-                        backgroundRepeat: "repeat",
-                    }}>
+                    {/* Stats content — clean white curved area. The dot texture belongs
+                        to the blue hero only, so the numbers read on plain white here. */}
+                    <div style={{ background: "white" }}>
                         <div className="grid grid-cols-2 lg:flex lg:items-center lg:justify-center divide-x divide-y lg:divide-y-0 divide-[#eaeef3]/60">
                             {[
                                 { img: A_STAT_CAMPAIGNS, imgH: 96, imgW: 80,  smH: 60, smW: 50, value: "200+",             label: "Campaigns Launched" },

@@ -50,12 +50,15 @@ export default function HeroCampaignsCarousel({ cards }: { cards: HeroCard[] }) 
                         const dist       = Math.abs(i - mid);
                         const isFeatured = dist === 0 && cards.length >= 3;
                         const isEdge     = dist >= 2;
-                        const cardH      = isEdge ? 370 : 400;
-                        const cardW      = isEdge ? 280 : 303;
-                        const topOffset  = isFeatured ? -30 : isEdge ? 30 : 0;
+                        // The centre card is the hero of the row — notably wider and
+                        // taller than its neighbours, which step down toward the edges.
+                        const cardW      = isFeatured ? 340 : isEdge ? 280 : 300;
+                        const cardH      = isFeatured ? 436 : isEdge ? 366 : 396;
+                        const imgH       = isFeatured ? 216 : isEdge ? 182 : 196;
+                        const topOffset  = isFeatured ? -24 : isEdge ? 34 : 8;
                         return (
                             <Link key={c.slug + i} href={c.slug} className="flex-none">
-                                <Card c={c} w={cardW} h={cardH} imgH={isEdge ? 185 : 200} featured={isFeatured} offset={topOffset} />
+                                <Card c={c} w={cardW} h={cardH} imgH={imgH} featured={isFeatured} offset={topOffset} />
                             </Link>
                         );
                     })}
