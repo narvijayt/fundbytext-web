@@ -348,6 +348,21 @@ input[type=number] {
     .underline-draw { animation: none; }
 }
 
+/* ── Home "trusted by" logo marquee ────────────────────────────────────────
+   Two identical logo rows sit side by side and the track slides left by exactly
+   half its width (one full row), so the loop is seamless no matter how many
+   logos there are. Hover pauses it. */
+@keyframes logoMarquee {
+    to { transform: translate3d(-50%, 0, 0); }
+}
+.logo-marquee {
+    animation: logoMarquee 30s linear infinite;
+    will-change: transform;
+}
+@media (prefers-reduced-motion: reduce) {
+    .logo-marquee { animation: none; }
+}
+
 @keyframes loaderSpin {
     to { transform: rotate(1turn); }
 }

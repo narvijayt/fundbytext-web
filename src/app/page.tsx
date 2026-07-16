@@ -59,7 +59,6 @@ const A_CARD_BASEBALL  = `${F}/card-baseball.png`;
 const A_CARD_MINISTRY  = `${F}/card-ministry.png`;
 
 // CTA + Footer
-const A_CTA_OVERLAY    = `${F}/cta-overlay.svg`;
 
 // ── Custom textures (coded, not raster images) ─────────────────────────────────
 // Procedural film-grain noise via SVG feTurbulence — matches the Figma noise overlay.
@@ -177,6 +176,32 @@ function OrangeCta({ href, label, big }: { href: string; label: string; big?: bo
             <span className="relative z-10 leading-none">{label}</span>
             <div className="absolute inset-0 rounded-[inherit] shadow-[inset_0_-4px_3px_-2px_#ea6725,inset_0_3px_2px_-1px_#fbcab1] pointer-events-none" />
         </Link>
+    );
+}
+
+// One row of the logo marquee. The left/right padding is half the inter-logo gap,
+// so where two rows meet the spacing matches — the loop is seamless. Rendered
+// twice inside the .logo-marquee track.
+function LogoRow() {
+    return (
+        <div className="flex items-center gap-[36px] sm:gap-[52px] lg:gap-[80px] px-[18px] sm:px-[26px] lg:px-[40px] shrink-0">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img alt="Netflix" src={A_LB_NETFLIX} width={97}  height={26} style={{ display: "block" }} />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img alt="Buffer"  src={A_LB_BUFFER}  width={109} height={27} style={{ display: "block" }} />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img alt="Stripe"  src={A_LB_STRIPE}  width={70}  height={29} style={{ display: "block" }} />
+            <div className="flex items-center gap-2 shrink-0">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img alt="" src={A_LB_FRAMER_ICO} width={19} height={28} style={{ display: "block" }} />
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img alt="Framer" src={A_LB_FRAMER_TXT} width={89} height={19} style={{ display: "block" }} />
+            </div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img alt="HubSpot" src={A_LB_HUBSPOT} width={98}  height={28} style={{ display: "block" }} />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img alt="Dropbox" src={A_LB_DROPBOX} width={132} height={26} style={{ display: "block" }} />
+        </div>
     );
 }
 
@@ -317,8 +342,8 @@ export default async function HomePage() {
                                             style={{ width: s.imgW, height: s.imgH }} />
                                     </div>
                                     <div className="flex flex-col gap-1 lg:gap-2 min-w-0">
-                                        <p className="font-black text-[#0268c0] text-[20px] lg:text-[24px] leading-snug truncate">{s.value}</p>
-                                        <p className="font-black text-[#aeb5bd] text-[8px] lg:text-xs tracking-[1px] uppercase leading-tight">{s.label}</p>
+                                        <p className="font-black text-[#0268c0] text-[26px] lg:text-[28px] leading-none truncate">{s.value}</p>
+                                        <p className="font-black text-[#aeb5bd] text-[9px] lg:text-xs tracking-[1px] uppercase leading-tight mt-1">{s.label}</p>
                                     </div>
                                 </div>
                             ))}
@@ -366,7 +391,7 @@ export default async function HomePage() {
                                     </div>
                                     <div className="flex-1 flex flex-col gap-8 min-w-0">
                                         <div className="flex flex-col gap-2">
-                                            <p className="font-black text-[#0268c0] text-xl lg:text-2xl leading-[1.25]">Create a campaign</p>
+                                            <p className="font-black text-[#0268c0] text-lg lg:text-xl leading-[1.25]">Create a campaign</p>
                                             <p className="font-normal text-[#2f3a45] text-base lg:text-lg leading-[1.4]">
                                                 Simply fill in the campaign details to tell us about yourself or your organization. Setup takes only minutes.
                                             </p>
@@ -385,7 +410,7 @@ export default async function HomePage() {
                                             {/* eslint-disable-next-line @next/next/no-img-element */}
                                             <img alt="" src={s.icon} style={{ width: s.iconSize, height: s.iconSize, display: "block" }} />
                                         </div>
-                                        <p className="font-bold text-[#003060] text-xl lg:text-2xl leading-[1.25]">{s.title}</p>
+                                        <p className="font-bold text-[#003060] text-lg lg:text-xl leading-[1.25]">{s.title}</p>
                                     </div>
                                 ))}
                             </div>
@@ -399,37 +424,20 @@ export default async function HomePage() {
             </section>
 
             {/* ═══════════════════════════════════════════════════════════
-                LOGO BAR
+                LOGO BAR — auto-scrolling marquee (two identical rows)
             ═══════════════════════════════════════════════════════════ */}
             <section className="bg-white pb-16 lg:pb-28 px-4 sm:px-6 lg:px-[144px]">
-                <div className="relative rounded-[40px] sm:rounded-[60px] lg:rounded-[100px] overflow-hidden py-8 lg:py-11 shadow-[0_12px_24px_-12px_rgba(0,48,96,0.6),0_30px_60px_-12px_rgba(0,48,96,0.2)]"
+                <div className="group relative rounded-[40px] sm:rounded-[60px] lg:rounded-[100px] overflow-hidden py-8 lg:py-11 shadow-[0_12px_24px_-12px_rgba(0,48,96,0.6),0_30px_60px_-12px_rgba(0,48,96,0.2)]"
                     style={{ background: "#003060" }}>
-                    {/* Fade edges — desktop only */}
-                    <div className="hidden lg:block absolute left-0 top-0 bottom-0 w-[160px] pointer-events-none z-10"
+                    {/* Fade edges — now on every size, since it always scrolls */}
+                    <div className="absolute left-0 top-0 bottom-0 w-[48px] sm:w-[120px] pointer-events-none z-10"
                         style={{ background: "linear-gradient(to right,#003060,transparent)" }} />
-                    <div className="hidden lg:block absolute right-0 top-0 bottom-0 w-[160px] pointer-events-none z-10"
+                    <div className="absolute right-0 top-0 bottom-0 w-[48px] sm:w-[120px] pointer-events-none z-10"
                         style={{ background: "linear-gradient(to left,#003060,transparent)" }} />
-                    <div className="overflow-x-auto lg:overflow-visible px-6 sm:px-12 lg:px-20"
-                        style={{ WebkitOverflowScrolling: "touch" }}>
-                        <div className="flex items-center justify-start lg:justify-center gap-[36px] sm:gap-[52px] lg:gap-[80px]"
-                            style={{ minWidth: "max-content" }}>
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img alt="Netflix" src={A_LB_NETFLIX} width={97}  height={26} style={{ display: "block" }} />
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img alt="Buffer"  src={A_LB_BUFFER}  width={109} height={27} style={{ display: "block" }} />
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img alt="Stripe"  src={A_LB_STRIPE}  width={70}  height={29} style={{ display: "block" }} />
-                            <div className="flex items-center gap-2 shrink-0">
-                                {/* eslint-disable-next-line @next/next/no-img-element */}
-                                <img alt="" src={A_LB_FRAMER_ICO} width={19} height={28} style={{ display: "block" }} />
-                                {/* eslint-disable-next-line @next/next/no-img-element */}
-                                <img alt="Framer" src={A_LB_FRAMER_TXT} width={89} height={19} style={{ display: "block" }} />
-                            </div>
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img alt="HubSpot" src={A_LB_HUBSPOT} width={98}  height={28} style={{ display: "block" }} />
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img alt="Dropbox" src={A_LB_DROPBOX} width={132} height={26} style={{ display: "block" }} />
-                        </div>
+                    {/* Two identical rows scroll left forever; hovering the bar pauses it. */}
+                    <div className="flex w-max logo-marquee group-hover:[animation-play-state:paused]">
+                        <LogoRow />
+                        <LogoRow />
                     </div>
                 </div>
             </section>
@@ -465,12 +473,17 @@ export default async function HomePage() {
             ═══════════════════════════════════════════════════════════ */}
             <section className="relative isolate bg-white pt-10 overflow-hidden">
 
-                {/* Figma Overlay — two huge blurred #0081F1 ellipses hugging the section
-                    bottom (design: 6134×1609 image, bottom −951px), fading up naturally */}
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img alt="" src={A_CTA_OVERLAY}
-                    className="absolute -z-10 left-1/2 max-w-none pointer-events-none"
-                    style={{ width: 6134, height: 1609, bottom: -951, transform: "translateX(-50%)" }} />
+                {/* Blue wash rising from the bottom — the SAME treatment as the
+                    How-It-Works "See It In Action" section: a plain vertical white→blue
+                    gradient plus the soft-light grain, flowing into the footer. The
+                    "Organization vs Individual" cards up top stay on white (the gradient
+                    is transparent until ~45%); the stories carousel + "Ready to Inspire"
+                    below ride the blue. (Replaces the old cta-overlay ellipse export.) */}
+                <div className="absolute inset-0 -z-10 pointer-events-none" style={{
+                    background: "linear-gradient(180deg,rgba(0,129,241,0) 44%,rgba(0,129,241,0.12) 60%,rgba(0,129,241,0.42) 78%,rgba(0,129,241,0.85) 92%,#0081f1 100%)",
+                }} />
+                <div className="absolute inset-0 -z-10 pointer-events-none opacity-50 mix-blend-soft-light"
+                    style={{ backgroundImage: "url(/assets/dashboard/sidebar-noise.png)", backgroundRepeat: "repeat" }} />
 
                 {/* Headline */}
                 <div className="max-w-[1632px] mx-auto px-4 sm:px-6 lg:px-[144px] mb-10 lg:mb-16">
@@ -605,8 +618,8 @@ export default async function HomePage() {
                             <div className="lg:absolute lg:left-1/2 lg:-translate-x-1/2 lg:top-[321px] w-full flex flex-col lg:items-end gap-3 p-6">
                                 <p className="font-black text-[#0268c0] text-xl lg:text-2xl leading-[1.25] w-full lg:w-[412px]">Individual Campaigns</p>
                                 <p className="font-normal text-[#2f3a45] text-base lg:text-lg leading-[1.4] w-full lg:w-[412px]">
-                                    Each participant has a individual goal. Supports<br className="hidden lg:block" />
-                                    friendly competition with leaderboards.
+                                    One personal goal for a single fundraiser — share<br className="hidden lg:block" />
+                                    your link and track every donation as it comes in.
                                 </p>
                             </div>
                         </div>
@@ -623,13 +636,11 @@ export default async function HomePage() {
                         </h2>
                     </div>
                 </div>
-                <StoriesCarousel stories={STORIES} />
+                {/* White dots — the carousel now sits on the blue wash. */}
+                <StoriesCarousel stories={STORIES} dotTone="white" />
 
-                {/* ── CTA — Ready to Inspire? ── */}
+                {/* ── CTA — Ready to Inspire? (rides the blue wash → footer) ── */}
                 <div className="relative">
-                    {/* Noise overlay */}
-                    <div className="absolute inset-0 mix-blend-overlay opacity-20 pointer-events-none"
-                        style={{ backgroundImage: NOISE_URI, backgroundRepeat: "repeat" }} />
                     <div className="max-w-[1632px] mx-auto px-4 sm:px-6 lg:px-[144px] relative z-10">
                         <div className="flex flex-col items-center gap-6 lg:gap-8 py-10 lg:py-12">
                             <div className="flex flex-col items-center gap-4 lg:gap-6 w-full">
