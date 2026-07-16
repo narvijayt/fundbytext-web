@@ -1,22 +1,49 @@
 import { getAuthUser } from "@/lib/session";
 import NavBar from "@/components/NavBar";
-import SiteFooter from "@/components/SiteFooter";
+import MarketingFooter from "@/components/MarketingFooter";
 
-const A_FLAG_PIN = "/figma/flag-pin.svg";
-const DOT_TEXTURE = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20'%3E%3Crect width='2' height='2' fill='rgba(255%2C255%2C255%2C0.22)'/%3E%3C/svg%3E")`;
+/* ── Shared legal page (privacy / terms / cookies) ──────────────────────────
+   Figma 5430:134333. Each policy is the marketing hero (badge + title + intro)
+   over a white content card, then the shared footer — the same shell as the
+   about page. The Figma is drawn at 1920, so every size steps down and only
+   reaches its Figma value at 2xl. */
+
+const A_FLAG_PIN  = "/figma/flag-pin.svg";
+const A_HERO_BLUR = "/figma/hero-blur.svg";
+
+// Grey 20px dot grid — the same one the about / campaigns heroes use.
+const DOT_TEXTURE = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20'%3E%3Crect width='2' height='2' fill='rgba(87%2C114%2C141%2C0.3)'/%3E%3C/svg%3E")`;
+
+// Figma "Headline Gradient", used on the section titles.
+const HEADLINE_GRADIENT = "linear-gradient(172.74deg,rgb(38,91,145) 30.542%,rgb(0,48,96) 69.458%)";
 
 // Section = { title, lead?, bullets?, body? }. Bullets render as a disc list;
 // a "Label: text" bullet bolds the label.
 export type Section = { title: string; lead?: string; bullets?: string[]; body?: string };
 
+// The blue flag-pin with its glow (Figma-exact insets), as on the marketing pages.
+function FlagGlyph({ size }: { size: number }) {
+    return (
+        <div className="relative shrink-0" style={{ width: size, height: size }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img alt="" src={A_FLAG_PIN} className="absolute max-w-none"
+                style={{ width: size * 2.875, height: size * 2.875, top: -size * 0.5625, left: -size * 0.9375 }} />
+        </div>
+    );
+}
+
+/* The legal badge differs from the marketing SectionBadge: a white→blue-10
+   gradient fill, and a 16px sentence-case navy label rather than the 12px
+   uppercase tracked one. */
 function PolicyBadge({ label }: { label: string }) {
     return (
-        <div className="flex justify-center w-full">
-            <div className="flex items-center gap-2 pl-2.5 pr-5 py-2.5 rounded-full border border-[#d4dee7] bg-white shadow-[0_12px_20px_-8px_rgba(0,91,172,0.2)] w-auto">
-                <div className="relative w-7 h-7 shrink-0 overflow-hidden">
-                    <img alt="" src={A_FLAG_PIN} className="absolute max-w-none" style={{ width: 80, height: 80, top: -12, left: -21 }} />
-                </div>
-                <span className="font-bold text-[#003060] text-xs sm:text-sm whitespace-nowrap">{label}</span>
+        <div className="flex w-full justify-center">
+            <div className="flex w-auto items-center gap-2.5 rounded-full border border-[#eaeef3] pl-2.5 pr-5 py-2.5 shadow-[0_12px_20px_-8px_rgba(0,91,172,0.2)]"
+                style={{ backgroundImage: "linear-gradient(-90deg,#ffffff 0%,#eff5f5 100%)" }}>
+                <FlagGlyph size={32} />
+                <span className="whitespace-nowrap text-center font-bold leading-[1.1] text-[13px] lg:text-[14px] 2xl:text-[16px] text-[#003060]">
+                    {label}
+                </span>
             </div>
         </div>
     );
@@ -26,25 +53,33 @@ function Bullet({ text }: { text: string }) {
     const i = text.indexOf(":");
     if (i > 0 && i < 24) {
         return (
-            <li>
+            <li className="ms-[18px] lg:ms-[26px] 2xl:ms-[42px]">
                 <span className="font-bold text-[#003060]">{text.slice(0, i + 1)}</span>{text.slice(i + 1)}
             </li>
         );
     }
-    return <li>{text}</li>;
+    return <li className="ms-[18px] lg:ms-[26px] 2xl:ms-[42px]">{text}</li>;
 }
 
+/* Figma "Title + Body Text": a 32px gradient title over 28px charcoal body,
+   32px apart. */
 function PolicyBlock({ s }: { s: Section }) {
+    const bodyCls = "font-normal leading-[1.4] text-[#2f3a45] text-[15px] lg:text-[17px] xl:text-[20px] 2xl:text-[28px]";
     return (
-        <div className="flex flex-col gap-3">
-            <h2 className="font-black text-[#0268c0] text-xl lg:text-2xl">{s.title}</h2>
-            {s.lead && <p className="text-[#2f3a45] text-base lg:text-lg leading-relaxed">{s.lead}</p>}
+        <div className="flex w-full flex-col items-start gap-4 lg:gap-6 2xl:gap-8">
+            {/* bg-clip-text sizes the gradient to the padding box, so the pad keeps
+                it off the descenders. */}
+            <h2 className="w-full bg-clip-text font-black leading-none tracking-[-1px] text-transparent pb-[0.12em] text-[20px] lg:text-[24px] xl:text-[28px] 2xl:text-[32px]"
+                style={{ backgroundImage: HEADLINE_GRADIENT }}>
+                {s.title}
+            </h2>
+            {s.lead && <p className={bodyCls}>{s.lead}</p>}
             {s.bullets && (
-                <ul className="list-disc pl-6 space-y-2 text-[#2f3a45] text-base lg:text-lg leading-relaxed marker:text-[#0268c0]">
+                <ul className={`block w-full list-disc space-y-1.5 lg:space-y-2 ${bodyCls}`}>
                     {s.bullets.map((b, i) => <Bullet key={i} text={b} />)}
                 </ul>
             )}
-            {s.body && <p className="text-[#2f3a45] text-base lg:text-lg leading-relaxed">{s.body}</p>}
+            {s.body && <p className={bodyCls}>{s.body}</p>}
         </div>
     );
 }
@@ -56,47 +91,55 @@ export default async function LegalPage({
 
     return (
         <div className="font-sans text-gray-900 overflow-x-hidden">
-            <section className="relative overflow-hidden">
-                {/* Coded blue gradient background */}
+
+            {/* ── Hero — same construction as the about / campaigns heroes ── */}
+            <section className="relative">
                 <div className="absolute inset-0 pointer-events-none overflow-hidden">
                     <div className="absolute inset-0" style={{
-                        background: "linear-gradient(180deg,#1f8bf5 0%,#2196fd 30%,#52aafe 70%,#9fd2ff 100%)",
+                        background: "linear-gradient(160deg,rgba(0,56,140,1) 0%,rgba(10,100,210,1) 22%,rgba(33,150,253,1) 48%,rgba(150,215,255,1) 72%,rgba(255,255,255,1) 100%)",
                     }} />
                     <div className="absolute inset-0" style={{
-                        background: "radial-gradient(ellipse 78% 42% at 50% 16%,rgba(255,255,255,0.85) 0%,rgba(255,255,255,0.35) 38%,transparent 64%)",
+                        background: "radial-gradient(ellipse 88% 64% at 50% 30%,rgba(255,255,255,1) 0%,rgba(255,255,255,0.97) 24%,rgba(190,228,255,0.55) 46%,rgba(33,150,253,0.08) 68%,transparent 84%)",
                     }} />
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img alt="" src={A_HERO_BLUR} className="absolute left-1/2 -translate-x-1/2 pointer-events-none"
+                        style={{ width: 1500, height: 1450, top: -480, opacity: 0.9 }} />
+
+                    {/* White arch carrying the hero into the card section. */}
+                    <svg className="absolute inset-x-0 bottom-0 w-full" viewBox="0 0 1440 160"
+                        preserveAspectRatio="none" style={{ height: "clamp(60px,11vw,170px)" }} aria-hidden="true">
+                        <path d="M0,130 Q720,-130 1440,130 L1440,160 L0,160 Z" fill="white" />
+                    </svg>
+
                     <div className="absolute inset-0" style={{ backgroundImage: DOT_TEXTURE, backgroundRepeat: "repeat" }} />
+                    <div className="absolute inset-0 opacity-50 mix-blend-soft-light"
+                        style={{ backgroundImage: "url(/assets/dashboard/sidebar-noise.png)", backgroundRepeat: "repeat" }} />
                 </div>
 
                 <NavBar user={user} />
 
-                <div className="relative z-10 px-4 sm:px-6 lg:px-36 pt-8 lg:pt-12 pb-16 lg:pb-24">
-                    {/* Header */}
-                    <div className="flex flex-col items-center gap-5 lg:gap-6 max-w-[916px] mx-auto text-center">
-                        <PolicyBadge label={badge} />
-                        <h1 className="font-black text-4xl sm:text-5xl lg:text-[64px] leading-[1.05] tracking-[-1px] bg-clip-text text-transparent"
-                            style={{ backgroundImage: "linear-gradient(150deg,rgb(38,91,145) 30.5%,rgb(0,48,96) 69.5%)" }}>
-                            {title}
-                        </h1>
-                        <p className="text-[#1b3a5c] text-base lg:text-lg leading-relaxed max-w-[820px]">{intro}</p>
-                    </div>
-
-                    {/* White card with sections */}
-                    <div className="mt-10 lg:mt-14 mx-auto max-w-[1152px] bg-white rounded-[24px] lg:rounded-[32px] shadow-[0_30px_60px_-20px_rgba(0,48,96,0.35)] p-6 sm:p-10 lg:p-14">
-                        <div className="flex flex-col gap-8 lg:gap-10">
-                            {sections.map((s) => <PolicyBlock key={s.title} s={s} />)}
-                        </div>
-                    </div>
+                {/* Figma "Headline": 914px wide, 24px gaps, centred. */}
+                <div className="relative z-10 mx-auto flex w-full max-w-[914px] flex-col items-center gap-4 lg:gap-6 px-4 md:px-6 pt-8 lg:pt-14 pb-28 lg:pb-44">
+                    <PolicyBadge label={badge} />
+                    {/* Solid midnight blue in the Figma — the gradient is on the section
+                        titles, not on this one. */}
+                    <h1 className="text-center font-black leading-[1.1] tracking-[-1px] text-[#003060] text-[28px] sm:text-[34px] md:text-[40px] lg:text-[46px] xl:text-[54px] 2xl:text-[64px]">
+                        {title}
+                    </h1>
+                    <p className="text-center font-medium leading-[1.4] text-[#003060] text-[15px] lg:text-base 2xl:text-lg">
+                        {intro}
+                    </p>
                 </div>
-
-                {/* White arch base → footer */}
-                <svg className="block w-full" viewBox="0 0 1440 120" preserveAspectRatio="none"
-                    style={{ height: "clamp(40px,6vw,90px)", display: "block", marginTop: -1, marginBottom: -2 }} aria-hidden="true">
-                    <path d="M0,72 Q720,4 1440,72 L1440,120 L0,120 Z" fill="white" />
-                </svg>
             </section>
 
-            <SiteFooter />
+            {/* ── Content card (Figma 1152 wide, 56/80 padding, 32px blocks) ── */}
+            <section className="bg-white pb-16 lg:pb-24 px-4 md:px-6 lg:px-10">
+                <div className="mx-auto flex w-full max-w-[1152px] flex-col items-start gap-6 lg:gap-8 rounded-[24px] border border-[#e7e9eb] bg-white px-5 sm:px-8 lg:px-14 py-10 lg:py-20 shadow-[0px_12px_12px_0px_rgba(0,48,96,0.04),0px_32px_40px_0px_rgba(2,104,192,0.16)]">
+                    {sections.map((s) => <PolicyBlock key={s.title} s={s} />)}
+                </div>
+            </section>
+
+            <MarketingFooter />
         </div>
     );
 }
