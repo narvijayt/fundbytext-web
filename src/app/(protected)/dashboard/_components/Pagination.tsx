@@ -12,9 +12,15 @@ function pageList(current: number, total: number): (number | "…")[] {
     return out;
 }
 
-export default function Pagination({ page, totalPages, params }: { page: number; totalPages: number; params: string }) {
+export default function Pagination({ page, totalPages, params, basePath = "/dashboard" }: {
+    page: number;
+    totalPages: number;
+    params: string;
+    /** Route the page links point at — the public browse page reuses this. */
+    basePath?: string;
+}) {
     if (totalPages <= 1) return null;
-    const href = (p: number) => `/dashboard?${[params, `page=${p}`].filter(Boolean).join("&")}`;
+    const href = (p: number) => `${basePath}?${[params, `page=${p}`].filter(Boolean).join("&")}`;
     const arrowCls = "flex h-10 w-10 items-center justify-center text-[#003060]";
 
     function Arrow({ dir }: { dir: "prev" | "next" }) {

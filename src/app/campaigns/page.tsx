@@ -5,6 +5,7 @@ import { CampaignStatus } from "@/generated/prisma/enums";
 import NavBar from "@/components/NavBar";
 import MarketingFooter from "@/components/MarketingFooter";
 import CampaignCard from "@/app/(protected)/dashboard/_components/CampaignCard";
+import Pagination from "@/app/(protected)/dashboard/_components/Pagination";
 
 // ── Asset paths ───────────────────────────────────────────────────────────────
 const F = "/figma";
@@ -16,6 +17,9 @@ const A_FLAG_PIN  = `${F}/flag-pin.svg`;
 const DOT_TEXTURE = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20'%3E%3Crect width='2' height='2' fill='rgba(87%2C114%2C141%2C0.3)'/%3E%3C/svg%3E")`;
 
 // ── Types ────────────────────────────────────────────────────────────────────
+
+// Six per page, matching the dashboard grid.
+const PAGE_SIZE = 6;
 
 type FilterKey = "all" | "active" | "upcoming" | "completed";
 
@@ -90,8 +94,6 @@ async function getCampaigns(filter: FilterKey, q: string) {
             end_date:            true,
             created_at:          true,
             timezone:            true,
-            org_display_name:    true,
-            organization:        { select: { name: true } },
             payout:              { select: { city: true, state: true } },
             media:               { select: { media_type: true, url: true } },
             _count:              { select: { members: true, donors: true, donations: true } },
@@ -100,7 +102,6 @@ async function getCampaigns(filter: FilterKey, q: string) {
 
     return rows.map((c) => ({
         ...c,
-        org: c.org_display_name ?? c.organization?.name ?? null,
         // Public browse has no "me" — the card's public variant ignores both.
         myRoles: [] as string[],
         myDonorCount: 0,
@@ -112,15 +113,22 @@ async function getCampaigns(filter: FilterKey, q: string) {
 export default async function CampaignsPage({
     searchParams,
 }: {
-    searchParams: Promise<{ filter?: string; q?: string }>;
+    searchParams: Promise<{ filter?: string; q?: string; page?: string }>;
 }) {
-    const { filter: rawFilter, q = "" } = await searchParams;
+    const { filter: rawFilter, q = "", page: rawPage } = await searchParams;
     const filter = (FILTERS.some((f) => f.key === rawFilter) ? rawFilter : "all") as FilterKey;
 
     const [user, campaigns] = await Promise.all([
         getAuthUser(),
         getCampaigns(filter, q.trim()),
     ]);
+
+    // Page the list the same way the dashboard does: clamp the requested page so a
+    // stale ?page= (or one left over after filtering) still lands on real results.
+    const totalPages = Math.max(1, Math.ceil(campaigns.length / PAGE_SIZE));
+    const current    = Math.min(Math.max(1, parseInt(rawPage ?? "1", 10) || 1), totalPages);
+    const pageItems  = campaigns.slice((current - 1) * PAGE_SIZE, current * PAGE_SIZE);
+    const linkParams = [filter !== "all" ? `filter=${filter}` : "", q ? `q=${encodeURIComponent(q)}` : ""].filter(Boolean).join("&");
 
     return (
         <div className="font-sans text-gray-900 overflow-x-hidden">
@@ -194,7 +202,7 @@ export default async function CampaignsPage({
             {/* ═══════════════════════════════════════════════════════════
                 TABS + GRID
             ═══════════════════════════════════════════════════════════ */}
-            <section className="bg-white pb-16 lg:pb-24 px-4 md:px-6 lg:px-10">
+            <section className="bg-white pt-10 lg:pt-16 pb-16 lg:pb-24 px-4 md:px-6 lg:px-10">
                 <div className="max-w-[1152px] mx-auto">
 
                     {/* Filter tabs — the dashboard's underline treatment (StatusTabs),
@@ -241,16 +249,18 @@ export default async function CampaignsPage({
                             </Link>
                         </div>
                     ) : (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {campaigns.map((c) => (
-                                <div key={c.slug} className="flex flex-col gap-2">
-                                    {c.org && (
-                                        <p className="truncate px-1 text-[11px] font-black uppercase tracking-[1px] text-[#aeb5bd]">{c.org}</p>
-                                    )}
-                                    <CampaignCard campaign={c} variant="public" />
+                        <>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                                {pageItems.map((c) => (
+                                    <CampaignCard key={c.slug} campaign={c} variant="public" />
+                                ))}
+                            </div>
+                            {totalPages > 1 && (
+                                <div className="mt-10">
+                                    <Pagination page={current} totalPages={totalPages} params={linkParams} basePath="/campaigns" />
                                 </div>
-                            ))}
-                        </div>
+                            )}
+                        </>
                     )}
                 </div>
             </section>
