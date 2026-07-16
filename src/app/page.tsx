@@ -74,13 +74,16 @@ const HEADLINE_GRADIENT = "linear-gradient(166deg,rgb(38,91,145) 30.5%,rgb(0,48,
 // dots so the home hero reads identically.
 const GRAY_DOTS = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20'%3E%3Crect width='2' height='2' fill='rgba(87%2C114%2C141%2C0.3)'/%3E%3C/svg%3E")`;
 
-// Arch mask for the stats' white curved area: opaque (visible) below the sweeping
-// curve, transparent above it. Applied to a dotted-white layer, it gives the stats
-// a curved top and lets the grey dots continue from the blue hero onto the white —
-// the way How-It-Works runs its dots over both the blue and the white arch.
-const ARCH_MASK = `url("data:image/svg+xml,${encodeURIComponent(
-    "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 200' preserveAspectRatio='none'><path d='M0,90 Q720,0 1440,90 L1440,200 L0,200 Z' fill='white'/></svg>",
+// The top sweep of the stats' white curved area: transparent above the curve,
+// opaque below. It's applied at a FIXED pixel height (--curve-h) at the very top,
+// paired with a second solid mask covering everything below — so the flat white
+// body is independent of how tall the stats block is. That's what keeps all four
+// numbers on the white even on mobile, where the 2×2 grid is tall: the old
+// height-proportional mask let the curve's edges dip down into the top row.
+const ARCH_CURVE = `url("data:image/svg+xml,${encodeURIComponent(
+    "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 100' preserveAspectRatio='none'><path d='M0,86 Q720,0 1440,86 L1440,100 L0,100 Z' fill='white'/></svg>",
 )}")`;
+const ARCH_SOLID = "linear-gradient(#000,#000)";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -98,18 +101,6 @@ const STORIES: Story[] = [
     { img: A_CARD_DOG,       tag: "Animal Welfare",     title: "Help Charlie with Vet Bills",            desc: "Charlie's surgery was fully funded by neighbors who followed his recovery day by day." },
     { img: A_CARD_BASEBALL,  tag: "Sports",             title: "Spring Fundraiser for Cowboys Baseball", desc: "New helmets and uniforms for the season, raised one text at a time by the parents." },
     { img: A_CARD_MINISTRY,  tag: "Ministry",           title: "Summer Mission Trip Abroad",             desc: "The youth group shared one campaign and sent twelve students on their first mission." },
-];
-
-// Curated showcase for the hero row, mirroring the Figma's five cards. Used only
-// when there aren't enough live campaigns to fill the staggered row; they link to
-// Browse Campaigns, not a fake slug. Order matters — the middle card (index 2) is
-// the featured one, so the strongest card sits there.
-const HERO_SHOWCASE: HeroCard[] = [
-    { img: A_CARD_DOG,       tag: "Animal Welfare", name: "Help Charlie with Vet Bills",           goal: "$3,000",  slug: "/campaigns", status: "active", endDate: null },
-    { img: A_STORY_SOFTBALL, tag: "Sports",         name: "Colorado Sparkler Softball Trip",       goal: "$3,000",  slug: "/campaigns", status: "active", endDate: null },
-    { img: A_CARD_BASEBALL,  tag: "Sports",         name: "Spring Fundraiser for Cowboys Baseball", goal: "$10,000", slug: "/campaigns", status: "active", endDate: null },
-    { img: A_STORY_CHAIR,    tag: "Community",      name: "Help Fund Travel to Nationals",         goal: "$6,000",  slug: "/campaigns", status: "active", endDate: null },
-    { img: A_CARD_MINISTRY,  tag: "Ministry",       name: "Summer Mission Trip Abroad",            goal: "$5,000",  slug: "/campaigns", status: "active", endDate: null },
 ];
 
 // ── Data ──────────────────────────────────────────────────────────────────────
@@ -235,11 +226,11 @@ export default async function HomePage() {
         endDate: c.end_date ? new Date(c.end_date).toISOString() : null,
     }));
 
-    // The hero shows a full staggered 5-card row like the Figma. Real campaigns
-    // drive it once there are enough to fill the row; below that (e.g. a fresh
-    // install) we fall back to a curated showcase so the hero never looks sparse.
-    // The showcase cards link to Browse Campaigns rather than a specific slug.
-    const heroCards: HeroCard[] = realCards.length >= 3 ? realCards.slice(0, 5) : HERO_SHOWCASE;
+    // The hero carousel is driven ONLY by real, live campaigns — the latest active
+    // ones from the database, each linking to its own campaign page. No showcase
+    // padding: if there are no active campaigns the row simply doesn't render (the
+    // carousel returns null on an empty list).
+    const heroCards: HeroCard[] = realCards;
 
     return (
         <div className="font-sans text-gray-900 overflow-x-hidden">
@@ -310,16 +301,21 @@ export default async function HomePage() {
                     <HeroCampaignsCarousel cards={heroCards} />
                 </div>
 
-                {/* ── Stats — the hero's white curved area. A dotted-white layer,
-                    masked to the arch curve, carries the grey dots straight off the
-                    blue (like How-It-Works). The top padding is the curve's headroom so
-                    the numbers land on the full-width white below it. ── */}
-                <div className="relative z-10 pt-[clamp(48px,7vw,104px)]">
+                {/* ── Stats — the hero's white curved area. A dotted-white layer carries
+                    the grey dots straight off the blue (like How-It-Works). Its top is a
+                    FIXED-height curve (--curve-h) with a solid mask below, so the flat
+                    white body — and all four numbers — is independent of the block's
+                    height; the top padding matches the curve so the grid lands on the
+                    full-width white beneath it. On mobile the 2×2 is tall, so both the
+                    curve and the headroom grow a touch to keep every number on white. ── */}
+                <div className="relative z-10 [--curve-h:64px] lg:[--curve-h:104px] pt-[80px] lg:pt-[120px]">
                     <div className="absolute inset-0 pointer-events-none" style={{
                         background: `${GRAY_DOTS} 0 0 / 20px 20px repeat, white`,
-                        WebkitMaskImage: ARCH_MASK, maskImage: ARCH_MASK,
-                        WebkitMaskSize: "100% 100%", maskSize: "100% 100%",
-                        WebkitMaskRepeat: "no-repeat", maskRepeat: "no-repeat",
+                        WebkitMaskImage: `${ARCH_CURVE}, ${ARCH_SOLID}`, maskImage: `${ARCH_CURVE}, ${ARCH_SOLID}`,
+                        WebkitMaskSize: "100% var(--curve-h), 100% calc(100% - var(--curve-h) + 1px)",
+                        maskSize: "100% var(--curve-h), 100% calc(100% - var(--curve-h) + 1px)",
+                        WebkitMaskPosition: "top, bottom", maskPosition: "top, bottom",
+                        WebkitMaskRepeat: "no-repeat, no-repeat", maskRepeat: "no-repeat, no-repeat",
                     }} />
                     <div className="relative">
                         {/* No dividers — the Figma (esp. the mobile 2×2) sets the stats
