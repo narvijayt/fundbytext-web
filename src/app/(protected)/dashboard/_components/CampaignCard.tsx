@@ -111,9 +111,20 @@ function ViewButton({ href }: { href: string }) {
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
-export default function CampaignCard({ campaign }: { campaign: CampaignCardData }) {
+/**
+ * `variant`:
+ *  - "dashboard" (default) — links into /dashboard, offers Edit on drafts, and
+ *    phrases stats for the person who owns the campaign ("You raised …").
+ *  - "public" — the same card on the public browse page: links to the public
+ *    campaign page, no Edit, and no organizer-only counts. Drafts never reach it.
+ */
+export default function CampaignCard({ campaign, variant = "dashboard" }: {
+    campaign: CampaignCardData;
+    variant?: "dashboard" | "public";
+}) {
     const status = campaign.status as CampaignStatus;
-    const isOrganizer = campaign.myRoles.includes(MemberRole.organizer);
+    const isPublic = variant === "public";
+    const isOrganizer = !isPublic && campaign.myRoles.includes(MemberRole.organizer);
     const heroUrl = campaign.media.find((m) => m.media_type === "hero")?.url ?? null;
     const location = campaign.payout
         ? [campaign.payout.city, campaign.payout.state].map((s) => (s ?? "").trim()).filter(Boolean).join(", ")
@@ -135,11 +146,13 @@ export default function CampaignCard({ campaign }: { campaign: CampaignCardData 
 
     const detailHref = `/dashboard/campaigns/${campaign.slug}`;
     const wizardHref = `/campaigns/${campaign.slug}/create`;
-    const viewHref = status === CampaignStatus.draft ? wizardHref : detailHref;
+    const viewHref = isPublic ? `/campaigns/${campaign.slug}` : (status === CampaignStatus.draft ? wizardHref : detailHref);
     const draftStep = status === CampaignStatus.draft ? currentDraftStep(campaign) : null;
 
     const participants = campaign._count.members;
-    const donorsCount = isOrganizer ? campaign._count.donors : campaign.myDonorCount;
+    // Public browse shows the campaign's real donor total; inside the dashboard a
+    // participant only ever sees their own donors, and an organizer sees all.
+    const donorsCount = isPublic || isOrganizer ? campaign._count.donors : campaign.myDonorCount;
 
     return (
         <div className="flex flex-col overflow-hidden rounded-2xl border border-[#e7e9eb] bg-white shadow-[0px_12px_12px_-8px_rgba(0,48,96,0.04),0px_32px_40px_-16px_rgba(2,104,192,0.16)]">
@@ -234,7 +247,7 @@ export default function CampaignCard({ campaign }: { campaign: CampaignCardData 
                         {goalAmt > 0 && (
                             <span>{campaign.goal_type === "participant_goal" ? "Per Participant Goal" : "Campaign Goal"} : <span className="font-bold text-[#003060]">{fmt(campaign.goal_type === "open_ended" && initialGoalAmt ? initialGoalAmt : goalAmt)}</span></span>
                         )}
-                        {campaign.campaign_type === "organization" && (
+                        {!isPublic && campaign.campaign_type === "organization" && (
                             <span>Donors added: <span className="font-bold text-[#003060]">{donorsCount}</span></span>
                         )}
                         {campaign.campaign_type === "organization" && isOrganizer && (
@@ -256,7 +269,7 @@ export default function CampaignCard({ campaign }: { campaign: CampaignCardData 
 
             {status === CampaignStatus.completed && (
                 <div className="bg-gradient-to-r from-[#28c45d] to-[#34d56a] px-4 py-4 text-center text-[13px] font-bold leading-snug text-white">
-                    You raised {fmt(raisedAmt)} through {campaign.campaign_type === "organization" && participants > 0 ? `${participants} participant${participants !== 1 ? "s" : ""} and ` : ""}{donorsCount} donor{donorsCount !== 1 ? "s" : ""}!
+                    {isPublic ? "Raised" : "You raised"} {fmt(raisedAmt)} through {campaign.campaign_type === "organization" && participants > 0 ? `${participants} participant${participants !== 1 ? "s" : ""} and ` : ""}{donorsCount} donor{donorsCount !== 1 ? "s" : ""}!
                 </div>
             )}
 

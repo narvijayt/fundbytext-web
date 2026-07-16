@@ -1,10 +1,10 @@
 import Link from "next/link";
-import Image from "next/image";
 import { prisma } from "@/lib/prisma";
 import { getAuthUser } from "@/lib/session";
 import { CampaignStatus } from "@/generated/prisma/enums";
 import NavBar from "@/components/NavBar";
 import MarketingFooter from "@/components/MarketingFooter";
+import CampaignCard from "@/app/(protected)/dashboard/_components/CampaignCard";
 
 // ── Asset paths ───────────────────────────────────────────────────────────────
 const F = "/figma";
@@ -25,19 +25,6 @@ const FILTERS: { key: FilterKey; label: string }[] = [
     { key: "upcoming",  label: "Upcoming"       },
     { key: "completed", label: "Completed"      },
 ];
-
-// Status pill tones, matched to the dashboard's badges.
-const STATUS_STYLE: Record<string, { label: string; bg: string; fg: string }> = {
-    active:    { label: "Active",    bg: "#dcfce7", fg: "#15803d" },
-    upcoming:  { label: "Upcoming",  bg: "#dbeafe", fg: "#1d4ed8" },
-    completed: { label: "Completed", bg: "#ede9fe", fg: "#6d28d9" },
-};
-
-function fmt(n: unknown) {
-    const num = Number(n);
-    if (!n || isNaN(num)) return null;
-    return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(num);
-}
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 
@@ -89,45 +76,35 @@ async function getCampaigns(filter: FilterKey, q: string) {
         },
         orderBy: [{ status: "asc" }, { created_at: "desc" }],
         select: {
-            slug:            true,
-            name:            true,
-            story:           true,
-            status:          true,
-            campaign_type:   true,
-            goal_amount:     true,
-            end_date:        true,
-            org_display_name: true,
-            organization:    { select: { name: true } },
-            _count:          { select: { donors: true, members: true } },
-            donations:       { select: { amount: true } },
-            media:           { where: { media_type: "hero" }, take: 1, select: { url: true } },
+            id:                  true,
+            slug:                true,
+            name:                true,
+            status:              true,
+            campaign_type:       true,
+            current_step:        true,
+            goal_type:           true,
+            goal_amount:         true,
+            initial_goal_amount: true,
+            total_raised:        true,
+            start_date:          true,
+            end_date:            true,
+            created_at:          true,
+            timezone:            true,
+            org_display_name:    true,
+            organization:        { select: { name: true } },
+            payout:              { select: { city: true, state: true } },
+            media:               { select: { media_type: true, url: true } },
+            _count:              { select: { members: true, donors: true, donations: true } },
         },
     });
 
-    // One timestamp for the whole request, read out here rather than per-card
-    // during render: every "days left" is measured from the same instant.
-    const nowMs = Date.now();
-
-    return rows.map((c) => {
-        const raised  = c.donations.reduce((sum, d) => sum + Number(d.amount), 0);
-        const goal    = Number(c.goal_amount ?? 0);
-        const isOrg   = c.campaign_type === "organization";
-        const endMs   = c.end_date ? new Date(c.end_date).getTime() : null;
-        return {
-            slug:     c.slug,
-            name:     c.name ?? "Untitled campaign",
-            story:    c.story,
-            status:   c.status,
-            isOrg,
-            org:      c.org_display_name ?? c.organization?.name ?? null,
-            heroUrl:  c.media[0]?.url ?? null,
-            raised,
-            goal,
-            pct:      goal > 0 ? Math.min(100, Math.round((raised / goal) * 100)) : null,
-            daysLeft: endMs !== null ? Math.max(0, Math.ceil((endMs - nowMs) / 86_400_000)) : null,
-            people:   isOrg ? c._count.members : c._count.donors,
-        };
-    });
+    return rows.map((c) => ({
+        ...c,
+        org: c.org_display_name ?? c.organization?.name ?? null,
+        // Public browse has no "me" — the card's public variant ignores both.
+        myRoles: [] as string[],
+        myDonorCount: 0,
+    }));
 }
 
 // ── Page ─────────────────────────────────────────────────────────────────────
@@ -180,7 +157,7 @@ export default async function CampaignsPage({
 
                 <div className="relative z-10 flex flex-col items-center gap-5 lg:gap-6 pt-8 lg:pt-14 pb-20 lg:pb-32 px-4 md:px-6 lg:px-10">
                     <SectionBadge label="Browse Campaigns" />
-                    <h1 className="font-black text-[28px] sm:text-[34px] md:text-[40px] lg:text-[46px] xl:text-[54px] leading-[1.1] tracking-[-1px] text-center bg-clip-text text-transparent max-w-[720px]"
+                    <h1 className="font-black text-[28px] sm:text-[34px] md:text-[40px] lg:text-[46px] xl:text-[54px] leading-[1.1] tracking-[-1px] text-center bg-clip-text text-transparent pb-[0.12em] max-w-[720px]"
                         style={{ backgroundImage: "linear-gradient(139deg,rgb(38,91,145) 30.5%,rgb(0,48,96) 69.5%)" }}>
                         Find a campaign to support
                     </h1>
@@ -265,81 +242,14 @@ export default async function CampaignsPage({
                         </div>
                     ) : (
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {campaigns.map((c) => {
-                                const { heroUrl, raised, goal, pct, isOrg, org, daysLeft, people } = c;
-                                const style = STATUS_STYLE[c.status] ?? STATUS_STYLE.active;
-
-                                return (
-                                    <Link
-                                        key={c.slug}
-                                        href={`/campaigns/${c.slug}`}
-                                        className="group flex flex-col overflow-hidden rounded-[16px] border border-[#eaeef3] bg-white p-4 shadow-[0_1px_4px_0_rgba(25,33,61,0.08)] transition-shadow hover:shadow-[0_20px_20px_-14px_rgba(2,104,192,0.2),0_40px_40px_-16px_rgba(2,104,192,0.2)]"
-                                    >
-                                        {/* Hero image */}
-                                        <div className="relative h-[180px] shrink-0 overflow-hidden rounded-[12px] bg-[#f2f2f2]">
-                                            {heroUrl ? (
-                                                <Image src={heroUrl} alt={c.name} fill className="object-cover transition-transform duration-300 group-hover:scale-105" />
-                                            ) : (
-                                                <div className="absolute inset-0 flex items-center justify-center">
-                                                    <FlagGlyph size={40} />
-                                                </div>
-                                            )}
-                                            <span className="absolute left-2.5 top-2.5 rounded-md px-2 py-1 text-[10px] font-black uppercase tracking-[0.5px]"
-                                                style={{ background: style.bg, color: style.fg }}>
-                                                {style.label}
-                                            </span>
-                                            <span className="absolute right-2.5 top-2.5 rounded-md bg-[#003060]/55 px-2 py-1 text-[10px] font-black uppercase tracking-[0.5px] text-white backdrop-blur-sm">
-                                                {isOrg ? "Organization" : "Individual"}
-                                            </span>
-                                            {daysLeft !== null && c.status === "active" && (
-                                                <span className="absolute bottom-2.5 left-2.5 rounded-md bg-[#003060]/55 px-2 py-1 text-[10px] font-black uppercase tracking-[0.5px] text-white backdrop-blur-sm">
-                                                    {daysLeft === 0 ? "Last day!" : `${daysLeft} day${daysLeft !== 1 ? "s" : ""} left`}
-                                                </span>
-                                            )}
-                                        </div>
-
-                                        {/* Body */}
-                                        <div className="flex flex-1 flex-col gap-2 pt-4">
-                                            {org && (
-                                                <p className="truncate text-[11px] font-black uppercase tracking-[1px] text-[#aeb5bd]">{org}</p>
-                                            )}
-                                            <h3 className="line-clamp-2 font-black text-[#003060] text-[18px] lg:text-[20px] leading-[1.25] transition-colors group-hover:text-[#0268c0]">
-                                                {c.name}
-                                            </h3>
-                                            {c.story && (
-                                                <p className="line-clamp-2 text-[15px] leading-[1.4] text-[#7e8a96]">{c.story}</p>
-                                            )}
-
-                                            {/* Progress */}
-                                            {goal > 0 && (
-                                                <div className="mt-1 space-y-1.5">
-                                                    <div className="h-1.5 overflow-hidden rounded-full bg-[#eef1f4]">
-                                                        <div className="h-full rounded-full"
-                                                            style={{ width: `${pct ?? 0}%`, background: c.status === "completed" ? "#8b5cf6" : "#28c45d" }} />
-                                                    </div>
-                                                    <div className="flex items-center justify-between text-[12px]">
-                                                        <span className="font-black text-[#003060]">{fmt(raised) ?? "$0"} raised</span>
-                                                        <span className="font-medium text-[#9aa7b8]">of {fmt(goal)}</span>
-                                                    </div>
-                                                </div>
-                                            )}
-
-                                            {/* Footer */}
-                                            <div className="mt-auto flex items-center justify-between border-t border-[#eef1f4] pt-3 text-[12px]">
-                                                <span className="font-medium text-[#9aa7b8]">
-                                                    {isOrg
-                                                        ? `${people} participant${people !== 1 ? "s" : ""}`
-                                                        : `${people} donor${people !== 1 ? "s" : ""}`}
-                                                </span>
-                                                <span className="flex items-center gap-1 font-black uppercase tracking-[0.5px] text-[#0268c0] transition-all group-hover:gap-2">
-                                                    View
-                                                    <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"><path d="M9 6l6 6-6 6" /></svg>
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </Link>
-                                );
-                            })}
+                            {campaigns.map((c) => (
+                                <div key={c.slug} className="flex flex-col gap-2">
+                                    {c.org && (
+                                        <p className="truncate px-1 text-[11px] font-black uppercase tracking-[1px] text-[#aeb5bd]">{c.org}</p>
+                                    )}
+                                    <CampaignCard campaign={c} variant="public" />
+                                </div>
+                            ))}
                         </div>
                     )}
                 </div>

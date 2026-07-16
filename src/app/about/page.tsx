@@ -187,7 +187,7 @@ export default async function AboutPage() {
                     <div className="flex flex-col items-center gap-4 lg:gap-6 w-full max-w-[654px]">
                         <SectionBadge label="About FundByText" />
                         {/* Figma is drawn at 1920 (64px) — scaled down so a laptop isn't shouted at. */}
-                        <h1 className="font-black text-[28px] sm:text-[34px] md:text-[40px] lg:text-[46px] xl:text-[54px] 2xl:text-[64px] leading-[1.1] tracking-[-1px] text-center bg-clip-text text-transparent w-full"
+                        <h1 className="font-black text-[28px] sm:text-[34px] md:text-[40px] lg:text-[46px] xl:text-[54px] 2xl:text-[64px] leading-[1.1] tracking-[-1px] text-center bg-clip-text text-transparent pb-[0.12em] w-full"
                             style={{ backgroundImage: "linear-gradient(139deg,rgb(38,91,145) 30.5%,rgb(0,48,96) 69.5%)" }}>
                             Fundraising without the friction.
                         </h1>
@@ -275,7 +275,7 @@ export default async function AboutPage() {
                     {/* Left column */}
                     <div className="w-full lg:w-[450px] flex-none flex flex-col gap-5 items-center lg:items-start text-center lg:text-left">
                         <SectionBadge label="Increasing generosity" justify="justify-center lg:justify-start" />
-                        <h2 className="font-black text-[28px] sm:text-[32px] lg:text-[38px] xl:text-[44px] 2xl:text-[56px] leading-none tracking-[-1px] bg-clip-text text-transparent"
+                        <h2 className="font-black text-[28px] sm:text-[32px] lg:text-[38px] xl:text-[44px] 2xl:text-[56px] leading-none tracking-[-1px] bg-clip-text text-transparent pb-[0.12em]"
                             style={{ backgroundImage: "linear-gradient(134deg,rgb(38,91,145) 30.5%,rgb(0,48,96) 69.5%)" }}>
                             What we aim to solve
                         </h2>
