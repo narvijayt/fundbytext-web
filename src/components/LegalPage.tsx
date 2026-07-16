@@ -126,7 +126,7 @@ export default async function LegalPage({
 
                     {/* Figma "Headline": 914px wide, 24px gaps, centred. The bottom pad
                         leaves blue below it for the card to ride into. */}
-                    <div className="relative z-10 mx-auto flex w-full max-w-[914px] flex-col items-center gap-4 lg:gap-6 px-4 md:px-6 pt-8 lg:pt-14 pb-40 lg:pb-72">
+                    <div className="relative z-10 mx-auto flex w-full max-w-[914px] flex-col items-center gap-4 lg:gap-6 px-4 md:px-6 pt-8 lg:pt-14 pb-48 lg:pb-[420px]">
                         <PolicyBadge label={badge} />
                         {/* Solid midnight blue in the Figma — the gradient is on the
                             section titles, not on this one. */}
@@ -141,7 +141,7 @@ export default async function LegalPage({
 
                 {/* Content card (Figma 1152 wide, 56/80 padding, 32px blocks). The
                     negative pull is what overlaps it onto the blue. */}
-                <div className="relative z-10 -mt-24 lg:-mt-28 px-4 md:px-6 lg:px-10 pb-16 lg:pb-24">
+                <div className="relative z-10 -mt-24 lg:-mt-32 px-4 md:px-6 lg:px-10 pb-16 lg:pb-24">
                     <div className="mx-auto flex w-full max-w-[1152px] flex-col items-start gap-6 lg:gap-8 rounded-[24px] border border-[#e7e9eb] bg-white px-5 sm:px-8 lg:px-14 py-10 lg:py-20 shadow-[0px_12px_12px_0px_rgba(0,48,96,0.04),0px_32px_40px_0px_rgba(2,104,192,0.16)]">
                         {sections.map((s) => <PolicyBlock key={s.title} s={s} />)}
                     </div>
