@@ -326,6 +326,28 @@ input[type=number] {
     will-change: transform;
 }
 
+/* ── How It Works hero headline ────────────────────────────────────────────
+   The Figma parks an orange caret after "Fundraising Made Simple" and puts a
+   green marker stroke under the second line, so the headline types itself out
+   and then draws the stroke left-to-right like a pen. clip-path (rather than
+   scaleX) keeps the stroke's hand-drawn taper from being squashed as it grows. */
+@keyframes caretBlink {
+    0%, 49%   { opacity: 1; }
+    50%, 100% { opacity: 0; }
+}
+.caret-blink { animation: caretBlink 1s step-end infinite; }
+
+@keyframes underlineDraw {
+    from { clip-path: inset(0 100% 0 0); }
+    to   { clip-path: inset(0 0 0 0); }
+}
+.underline-draw { animation: underlineDraw 0.45s ease-out both; }
+
+@media (prefers-reduced-motion: reduce) {
+    .caret-blink    { animation: none; }
+    .underline-draw { animation: none; }
+}
+
 @keyframes loaderSpin {
     to { transform: rotate(1turn); }
 }

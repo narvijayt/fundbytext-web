@@ -46,7 +46,11 @@ const NAV_LINKS = [
 export default function MarketingFooter() {
     return (
         <footer style={{ background: "#003060" }} className="px-4 sm:px-6 pt-14 lg:pt-28 pb-8 lg:pb-10">
-            <div className="max-w-[1152px] mx-auto flex flex-col lg:flex-row lg:items-stretch justify-center gap-6">
+            {/* col-reverse on mobile: the desktop frames run white-card → CTA left to
+                right, but both the /about and /how-it-works mobile frames put the
+                "Ready to Inspire?" CTA ABOVE the white card, so the source order (which
+                desktop needs) has to be flipped rather than followed. */}
+            <div className="max-w-[1152px] mx-auto flex flex-col-reverse lg:flex-row lg:items-stretch justify-center gap-6">
 
                 {/* Column 1 — white card (800px) */}
                 <div className="bg-white rounded-[24px] p-7 sm:p-10 flex flex-col gap-12 lg:gap-16 w-full lg:w-[800px] lg:flex-none">
