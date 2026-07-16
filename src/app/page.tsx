@@ -241,7 +241,7 @@ export default async function HomePage() {
                                     {/* eslint-disable-next-line @next/next/no-img-element */}
                                     <img alt="" src={A_UNDERLINE} width={440} height={16} style={{ display: "block" }} />
                                 </div>
-                                <h1 className="font-black text-[30px] sm:text-[36px] md:text-[42px] lg:text-[48px] xl:text-[54px] leading-[1.1] tracking-[-1px] text-center bg-clip-text text-transparent w-full"
+                                <h1 className="font-black text-[30px] sm:text-[36px] md:text-[42px] lg:text-[48px] xl:text-[56px] 2xl:text-[64px] leading-[1.1] pb-[0.08em] tracking-[-1px] text-center bg-clip-text text-transparent w-full"
                                     style={{
                                         backgroundImage: "linear-gradient(138deg,rgb(38,91,145) 30.5%,rgb(0,48,96) 69.5%)",
                                     }}>
@@ -321,17 +321,19 @@ export default async function HomePage() {
                     {/* Header + Subheader */}
                     <div className="flex flex-col items-center gap-5 mb-12 lg:mb-20">
                         <SectionBadge label="HOW it works" />
-                        <h2 className="font-black text-[26px] sm:text-[32px] lg:text-[40px] xl:text-[44px] leading-none tracking-[-1px] text-center bg-clip-text text-transparent"
+                        <h2 className="font-black text-[28px] sm:text-[32px] md:text-[38px] lg:text-[42px] xl:text-[48px] 2xl:text-[56px] leading-[1.1] pb-[0.1em] tracking-[-1px] text-center bg-clip-text text-transparent"
                             style={{ backgroundImage: HEADLINE_GRADIENT }}>
                             Fundraising made easy
                         </h2>
                     </div>
 
-                    {/* Steps: phone panel (536×623) + steps content, 80px apart */}
-                    <div className="flex flex-col lg:flex-row items-center lg:items-stretch gap-10 lg:gap-20">
+                    {/* Steps: phone panel + steps content. Side-by-side from md — the
+                        Figma tablet keeps the phone left / steps right rather than
+                        stacking, so the phone shrinks at md and grows to its 536px at lg. */}
+                    <div className="flex flex-col md:flex-row items-center md:items-stretch gap-10 md:gap-8 lg:gap-20">
 
                         {/* Phone mockup panel — exact Figma composition (blue dotted panel + iPhone) */}
-                        <div className="w-full min-w-0 max-w-[420px] lg:max-w-none lg:w-[536px] lg:flex-none self-center lg:self-auto">
+                        <div className="w-full min-w-0 max-w-[420px] md:max-w-none md:w-[280px] lg:w-[536px] md:flex-none self-center md:self-auto">
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img alt="Creating a campaign on FundByText" src={A_HIW_PHONE}
                                 className="w-full max-w-full h-auto block" />
@@ -433,7 +435,7 @@ export default async function HomePage() {
                 {/* Noise overlay */}
                 <div className="absolute inset-0 mix-blend-overlay opacity-20 pointer-events-none"
                     style={{ backgroundImage: NOISE_URI, backgroundRepeat: "repeat" }} />
-                <h2 className="relative z-10 font-black text-[26px] sm:text-[32px] lg:text-[40px] xl:text-[44px] leading-none tracking-[-1px] text-center bg-clip-text text-transparent w-full"
+                <h2 className="relative z-10 font-black text-[28px] sm:text-[32px] md:text-[38px] lg:text-[42px] xl:text-[48px] 2xl:text-[56px] leading-[1.1] pb-[0.1em] tracking-[-1px] text-center bg-clip-text text-transparent w-full"
                     style={{ backgroundImage: "linear-gradient(172deg,rgb(38,91,145) 30.5%,rgb(0,48,96) 69.5%)" }}>
                     See How It Works
                 </h2>
@@ -460,7 +462,7 @@ export default async function HomePage() {
                 <div className="max-w-[1632px] mx-auto px-4 sm:px-6 lg:px-[144px] mb-10 lg:mb-16">
                     <div className="flex flex-col items-center gap-5">
                         <SectionBadge label="what's the difference?" />
-                        <h2 className="font-black text-[26px] sm:text-[32px] lg:text-[40px] xl:text-[44px] leading-none tracking-[-1px] text-center bg-clip-text text-transparent"
+                        <h2 className="font-black text-[28px] sm:text-[32px] md:text-[38px] lg:text-[42px] xl:text-[48px] 2xl:text-[56px] leading-[1.1] pb-[0.1em] tracking-[-1px] text-center bg-clip-text text-transparent"
                             style={{ backgroundImage: HEADLINE_GRADIENT }}>
                             Organization vs. Individual
                         </h2>
@@ -601,7 +603,7 @@ export default async function HomePage() {
                 <div className="max-w-[1632px] mx-auto px-4 sm:px-6 lg:px-[144px]">
                     <div className="flex flex-col items-center gap-4 mb-1 lg:mb-2">
                         <SectionBadge label="real stories" />
-                        <h2 className="font-black text-[26px] sm:text-[32px] lg:text-[40px] xl:text-[44px] leading-none tracking-[-1px] text-center bg-clip-text text-transparent"
+                        <h2 className="font-black text-[28px] sm:text-[32px] md:text-[38px] lg:text-[42px] xl:text-[48px] 2xl:text-[56px] leading-[1.1] pb-[0.1em] tracking-[-1px] text-center bg-clip-text text-transparent"
                             style={{ backgroundImage: HEADLINE_GRADIENT }}>
                             How people use FundbyText
                         </h2>
@@ -617,7 +619,7 @@ export default async function HomePage() {
                     <div className="max-w-[1632px] mx-auto px-4 sm:px-6 lg:px-[144px] relative z-10">
                         <div className="flex flex-col items-center gap-6 lg:gap-8 py-10 lg:py-12">
                             <div className="flex flex-col items-center gap-4 lg:gap-6 w-full">
-                                <h2 className="font-black text-[28px] sm:text-[34px] lg:text-[42px] xl:text-[46px] leading-none tracking-[-1px] text-center bg-clip-text text-transparent"
+                                <h2 className="font-black text-[28px] sm:text-[32px] md:text-[38px] lg:text-[42px] xl:text-[48px] 2xl:text-[56px] leading-[1.1] pb-[0.1em] tracking-[-1px] text-center bg-clip-text text-transparent"
                                     style={{ backgroundImage: "linear-gradient(153deg,rgb(38,91,145) 30.5%,rgb(0,48,96) 69.5%)" }}>
                                     Ready to Inspire?
                                 </h2>
