@@ -24,10 +24,14 @@ const A_HERO_VIDEO = `${AB}/hero-video.jpg`;
 
 // ── Data ──────────────────────────────────────────────────────────────────────
 
+// card-1 is a full illustration that fills its frame; cards 2 & 3 are photos that
+// ship letterboxed inside a thick blue frame in the PNG, so they're zoomed to crop
+// that frame off and let the photo fill (card-2 is boxed harder, hence more zoom).
+// transformOrigin nudges the crop toward the photo when the blue is uneven.
 const MADE_EASY_CARDS = [
-    { img: `${HW}/card-1.png`, title: "How to Start a Campaign",                        body: "Pick a campaign type, set your goal, and our AI helps you launch in minutes—no setup fees, no friction.",          elevated: false },
-    { img: `${HW}/card-2.png`, title: "How Participants do their part",                  body: "Participants share a simple text link with their network, inviting friends and family to give in just a few taps.", elevated: true  },
-    { img: `${HW}/card-3.png`, title: "Donations and Completing a Campaign and Payment", body: "Donors give securely by text, we deduct a flat 15% fee, and your check is mailed within 10 business days.",        elevated: false },
+    { img: `${HW}/card-1.png`, title: "How to Start a Campaign",                        body: "Pick a campaign type, set your goal, and our AI helps you launch in minutes—no setup fees, no friction.",          elevated: false, posterStyle: undefined },
+    { img: `${HW}/card-2.png`, title: "How Participants do their part",                  body: "Participants share a simple text link with their network, inviting friends and family to give in just a few taps.", elevated: true,  posterStyle: { transform: "scale(1.42)", transformOrigin: "50% 56%" } },
+    { img: `${HW}/card-3.png`, title: "Donations and Completing a Campaign and Payment", body: "Donors give securely by text, we deduct a flat 15% fee, and your check is mailed within 10 business days.",        elevated: false, posterStyle: { transform: "scale(1.22)", transformOrigin: "50% 50%" } },
 ];
 
 // Cards 4 & 5 were "Lorem Ipsum Dolor" placeholders in the Figma — filled in with
@@ -161,7 +165,7 @@ export default async function HowItWorksPage() {
                                     width — the blue frame is baked into the image, so forcing
                                     a taller box cropped it top and bottom. */}
                                 <div className="relative w-full aspect-[320/250] rounded-[14px] overflow-hidden bg-[#f2f2f2] flex-none">
-                                    <CardVideo videoUrl={defaultVideo} poster={c.img} />
+                                    <CardVideo videoUrl={defaultVideo} poster={c.img} posterStyle={c.posterStyle} />
                                 </div>
                                 <div className="flex flex-col gap-2 w-full">
                                     <p className="font-black text-[#0268c0] text-[18px] lg:text-[20px] 2xl:text-[22px] leading-[1.25]">{c.title}</p>
