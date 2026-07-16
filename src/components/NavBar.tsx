@@ -13,7 +13,7 @@ const NAV_ITEMS = [
     { href: "/",             label: "Home" },
     { href: "/how-it-works", label: "How It Works" },
     { href: "#",             label: "Browse Campaigns" },
-    { href: "#",             label: "FAQs" },
+    { href: "/faq",          label: "FAQs" },
     { href: "#",             label: "Resources" },
     { href: "/about",        label: "About Us" },
     { href: "#",             label: "Help & Support" },

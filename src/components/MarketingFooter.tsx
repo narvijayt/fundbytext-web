@@ -37,7 +37,7 @@ const A_PAY_SWIFT   = `${F}/pay-swift.svg`;
 const NAV_LINKS = [
     { label: "Browse Campaigns", href: "/campaigns" },
     { label: "How It Works", href: "/how-it-works" },
-    { label: "FAQs", href: "/how-it-works#faqs" },
+    { label: "FAQs", href: "/faq" },
     { label: "Resources", href: "/about" },
     { label: "About Us", href: "/about" },
     { label: "Help & Support", href: "/contact" },
