@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import NavSearch from "@/components/NavSearch";
 
 
@@ -24,15 +25,28 @@ export default function NavBar({ user }: { user: { id: string } | null }) {
     // Slide/fade the drawer the same way the public campaign page's menu does:
     // mount first, then flip `menuShown` on the next frame so the transition runs.
     const [menuShown, setMenuShown] = useState(false);
+    // The drawer is portalled to <body> (below), so it escapes the page root's
+    // `overflow-x-hidden` — which, with one axis hidden, computes the other to a
+    // scroll container and was clipping/shrinking the fixed drawer as the page
+    // scrolled. Safe on the server: menuOpen starts false, so createPortal never
+    // runs during SSR.
     function closeMenu() { setMenuShown(false); window.setTimeout(() => setMenuOpen(false), 200); }
     useEffect(() => {
         if (!menuOpen) return;
         const raf = requestAnimationFrame(() => setMenuShown(true));
-        const prev = document.body.style.overflow;
+        // Lock both, since the scroll container is the page root, not always <body>.
+        const prevBody = document.body.style.overflow;
+        const prevHtml = document.documentElement.style.overflow;
         document.body.style.overflow = "hidden";
+        document.documentElement.style.overflow = "hidden";
         function onKey(e: KeyboardEvent) { if (e.key === "Escape") closeMenu(); }
         window.addEventListener("keydown", onKey);
-        return () => { cancelAnimationFrame(raf); document.body.style.overflow = prev; window.removeEventListener("keydown", onKey); };
+        return () => {
+            cancelAnimationFrame(raf);
+            document.body.style.overflow = prevBody;
+            document.documentElement.style.overflow = prevHtml;
+            window.removeEventListener("keydown", onKey);
+        };
     }, [menuOpen]);
 
     return (
@@ -117,11 +131,12 @@ export default function NavBar({ user }: { user: { id: string } | null }) {
             </nav>
 
             {/* ── Menu drawer (all sizes) ──
-                Same construction as the public campaign page's menu (MarketingHero):
-                a dimmed backdrop plus a 300px white panel sliding in from the right.
-                The options are unchanged — only the presentation matches. */}
-            {menuOpen && (
-                <div className="fixed inset-0 z-[100]">
+                Portalled to <body> so it's viewport-fixed regardless of the page's
+                overflow/transform ancestors, and h-[100dvh] so it covers the whole
+                mobile viewport (100vh would use the toolbar-hidden height and leave
+                a gap the page showed through). */}
+            {menuOpen && createPortal(
+                <div className="fixed inset-x-0 top-0 h-[100dvh] z-[100]">
                     <div
                         className={`absolute inset-0 bg-[#0f1d43]/45 backdrop-blur-sm transition-opacity duration-150 ease-out motion-reduce:transition-none ${menuShown ? "opacity-100" : "opacity-0"}`}
                         onClick={closeMenu}
@@ -201,7 +216,8 @@ export default function NavBar({ user }: { user: { id: string } | null }) {
                             )}
                         </div>
                     </aside>
-                </div>
+                </div>,
+                document.body,
             )}
         </>
     );
