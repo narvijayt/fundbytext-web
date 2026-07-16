@@ -93,11 +93,13 @@ export default async function ResourcesPage() {
                 HERO — shared marketing backdrop, no video (short band)
             ═══════════════════════════════════════════════════════════ */}
             <section className="relative">
-                <HeroBackdrop />
+                {/* Shallower arch than About/HIW — this hero has no video to fill the
+                    white, so the default 34.5% left a large empty band under the copy. */}
+                <HeroBackdrop archHeight="20%" />
 
                 <NavBar user={user} />
 
-                <div className="relative z-10 flex flex-col items-center gap-6 pt-8 pb-16 lg:pt-[62px] lg:pb-28 px-8 md:px-[38px] lg:px-10 w-full">
+                <div className="relative z-10 flex flex-col items-center gap-6 pt-8 pb-8 lg:pt-[62px] lg:pb-12 px-8 md:px-[38px] lg:px-10 w-full">
                     <div className="flex flex-col items-center gap-6 w-full max-w-[760px]">
                         <SectionBadge label="Resources" />
                         <h1 className="font-black text-[32px] sm:text-[38px] md:text-[46px] lg:text-[50px] xl:text-[56px] 2xl:text-[64px] leading-[1.1] tracking-[-1px] text-center bg-clip-text text-transparent pb-[0.12em] w-full"
@@ -114,7 +116,7 @@ export default async function ResourcesPage() {
             {/* ═══════════════════════════════════════════════════════════
                 GUIDES
             ═══════════════════════════════════════════════════════════ */}
-            <section className="bg-white pt-4 lg:pt-8 pb-16 lg:pb-24 px-4 md:px-6 lg:px-10">
+            <section className="bg-white pt-2 lg:pt-4 pb-16 lg:pb-24 px-4 md:px-6 lg:px-10">
                 <div className="flex flex-col gap-14 lg:gap-20 max-w-[1200px] mx-auto">
                     {GROUPS.map((group, gi) => (
                         <div key={group.heading} className="flex flex-col gap-6 lg:gap-8">

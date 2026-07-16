@@ -20,7 +20,13 @@ const DOT_TEXTURE = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/200
 
 const A_HERO_BLUR = "/figma/hero-blur.svg";
 
-export default function HeroBackdrop() {
+export default function HeroBackdrop({ archHeight = "34.5%" }: {
+    // How tall the white bottom arch is, as a share of the hero. The default suits
+    // the tall About / How-It-Works hero, where a video card straddles the arch and
+    // fills the white. On a short hero with no video (e.g. /resources) that same
+    // 34.5% leaves a big empty white band, so those pages pass a smaller value.
+    archHeight?: string;
+}) {
     return (
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
             {/* Base blue. Sampled off the Figma frame, the band is a FLAT, bright
@@ -60,7 +66,7 @@ export default function HeroBackdrop() {
                 video card about a third of the way down, and is only visible to
                 the card's left and right. The card (z-10) straddles it. */}
             <svg className="absolute inset-x-0 bottom-0 w-full" viewBox="0 0 1920 320"
-                preserveAspectRatio="none" style={{ height: "34.5%" }} aria-hidden="true">
+                preserveAspectRatio="none" style={{ height: archHeight }} aria-hidden="true">
                 <path d="M0,79 Q960,-79 1920,79 L1920,320 L0,320 Z" fill="white" />
             </svg>
 
