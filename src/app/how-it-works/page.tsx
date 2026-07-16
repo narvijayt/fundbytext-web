@@ -29,9 +29,9 @@ const A_HERO_VIDEO = `${AB}/hero-video.jpg`;
 // that frame off and let the photo fill (card-2 is boxed harder, hence more zoom).
 // transformOrigin nudges the crop toward the photo when the blue is uneven.
 const MADE_EASY_CARDS = [
-    { img: `${HW}/card-1.png`, title: "How to Start a Campaign",                        body: "Pick a campaign type, set your goal, and our AI helps you launch in minutes—no setup fees, no friction.",          elevated: false, posterStyle: undefined },
-    { img: `${HW}/card-2.png`, title: "How Participants do their part",                  body: "Participants share a simple text link with their network, inviting friends and family to give in just a few taps.", elevated: true,  posterStyle: { transform: "scale(1.42)", transformOrigin: "50% 56%" } },
-    { img: `${HW}/card-3.png`, title: "Donations and Completing a Campaign and Payment", body: "Donors give securely by text, we deduct a flat 15% fee, and your check is mailed within 10 business days.",        elevated: false, posterStyle: { transform: "scale(1.22)", transformOrigin: "50% 50%" } },
+    { img: `${HW}/card-1.png`, title: "How to Start a Campaign",                        body: "Pick a campaign type, set your goal, and our AI helps you launch in minutes—no setup fees, no friction.",          posterStyle: undefined },
+    { img: `${HW}/card-2.png`, title: "How Participants do their part",                  body: "Participants share a simple text link with their network, inviting friends and family to give in just a few taps.", posterStyle: { transform: "scale(1.42)", transformOrigin: "50% 56%" } },
+    { img: `${HW}/card-3.png`, title: "Donations and Completing a Campaign and Payment", body: "Donors give securely by text, we deduct a flat 15% fee, and your check is mailed within 10 business days.",        posterStyle: { transform: "scale(1.22)", transformOrigin: "50% 50%" } },
 ];
 
 // Cards 4 & 5 were "Lorem Ipsum Dolor" placeholders in the Figma — filled in with
@@ -157,10 +157,9 @@ export default async function HowItWorksPage() {
                     <div className="flex flex-col items-center lg:flex-row lg:items-stretch gap-6 w-full justify-center">
                         {MADE_EASY_CARDS.map((c) => (
                             <div key={c.title}
-                                /* The middle card is permanently elevated (Figma), and every
-                                   card also lifts on hover — same big blue shadow, so hovering
-                                   the outer cards matches the centre one. */
-                                className={`bg-white border border-[#eaeef3] rounded-[24px] p-6 flex flex-col gap-4 lg:gap-5 w-full md:w-[550px] lg:w-[368px] flex-none transition-shadow duration-300 hover:shadow-[0_20px_20px_-12px_rgba(2,120,222,0.3),0_50px_80px_-16px_rgba(2,120,222,0.3)] ${c.elevated ? "lg:shadow-[0_20px_20px_-12px_rgba(2,120,222,0.3),0_50px_80px_-16px_rgba(2,120,222,0.3)]" : ""}`}>
+                                /* No card is elevated at rest — the blue shadow only appears
+                                   on the card the pointer is over. */
+                                className="bg-white border border-[#eaeef3] rounded-[24px] p-6 flex flex-col gap-4 lg:gap-5 w-full md:w-[550px] lg:w-[368px] flex-none transition-shadow duration-300 hover:shadow-[0_20px_20px_-12px_rgba(2,120,222,0.3),0_50px_80px_-16px_rgba(2,120,222,0.3)]">
                                 {/* Keep the PNG's own 320/250 (640×500) aspect at every
                                     width — the blue frame is baked into the image, so forcing
                                     a taller box cropped it top and bottom. */}
