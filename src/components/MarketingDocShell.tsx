@@ -41,11 +41,16 @@ function DocBadge({ label }: { label: string }) {
     );
 }
 
-export default async function MarketingDocShell({ badge, title, intro, children }: {
-    badge: string;
-    title: string;
+export default async function MarketingDocShell({ badge, title, intro, children, card = true }: {
+    /** Optional pill above the title. The contact hero has none. */
+    badge?: string;
+    title: ReactNode;
     intro: string;
     children: ReactNode;
+    /** true (default) wraps children in the standard white content card; false
+     *  drops the wrapper so a caller can supply its own card (e.g. the contact
+     *  form, which is already a card). The blue overlap is applied either way. */
+    card?: boolean;
 }) {
     const user = await getAuthUser();
 
@@ -86,7 +91,7 @@ export default async function MarketingDocShell({ badge, title, intro, children 
                     {/* Headline: 914px wide, centred. The bottom pad sets how much blue
                         sits below it for the card to ride into. */}
                     <div className="relative z-10 mx-auto flex w-full max-w-[914px] flex-col items-center gap-4 lg:gap-6 px-4 md:px-6 pt-8 lg:pt-14 pb-48 lg:pb-[420px]">
-                        <DocBadge label={badge} />
+                        {badge && <DocBadge label={badge} />}
                         <h1 className="text-center font-black leading-[1.1] tracking-[-1px] text-[#003060] text-[28px] sm:text-[34px] md:text-[40px] lg:text-[46px] xl:text-[54px] 2xl:text-[64px]">
                             {title}
                         </h1>
@@ -98,9 +103,13 @@ export default async function MarketingDocShell({ badge, title, intro, children 
 
                 {/* Content card. The negative pull is what overlaps it onto the blue. */}
                 <div className="relative z-10 -mt-48 lg:-mt-[340px] px-4 md:px-6 lg:px-10 pb-16 lg:pb-24">
-                    <div className="mx-auto flex w-full max-w-[1152px] flex-col items-start gap-6 lg:gap-8 rounded-[24px] border border-[#e7e9eb] bg-white px-5 sm:px-8 lg:px-14 py-10 lg:py-20 shadow-[0px_12px_12px_0px_rgba(0,48,96,0.04),0px_32px_40px_0px_rgba(2,104,192,0.16)]">
-                        {children}
-                    </div>
+                    {card ? (
+                        <div className="mx-auto flex w-full max-w-[1152px] flex-col items-start gap-6 lg:gap-8 rounded-[24px] border border-[#e7e9eb] bg-white px-5 sm:px-8 lg:px-14 py-10 lg:py-20 shadow-[0px_12px_12px_0px_rgba(0,48,96,0.04),0px_32px_40px_0px_rgba(2,104,192,0.16)]">
+                            {children}
+                        </div>
+                    ) : (
+                        children
+                    )}
                 </div>
             </section>
 

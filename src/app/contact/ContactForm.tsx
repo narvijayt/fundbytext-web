@@ -66,7 +66,7 @@ export default function ContactForm() {
     }
 
     return (
-        <div className="w-full max-w-[698px] bg-white border border-[#eaeef3] rounded-[24px] p-6 sm:p-10 lg:p-14 shadow-[0_12px_12px_0_rgba(0,48,96,0.04),0_32px_40px_0_rgba(2,104,192,0.16)] flex flex-col gap-10">
+        <div className="mx-auto w-full max-w-[698px] bg-white border border-[#eaeef3] rounded-[24px] p-6 sm:p-10 lg:p-14 shadow-[0_12px_12px_0_rgba(0,48,96,0.04),0_32px_40px_0_rgba(2,104,192,0.16)] flex flex-col gap-10">
 
             {submitted ? (
                 <div className="flex flex-col items-center text-center gap-4 py-6">
