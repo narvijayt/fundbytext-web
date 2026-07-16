@@ -60,7 +60,10 @@ export default function StoriesCarousel({ stories, dotTone = "blue" }: {
                     pb-8 holds the tight 0/20/10 shadow; the diffuse 0/50/40 one is
                     barely perceptible at 0.15 alpha over the blue wash, so letting the
                     clip take it buys back ~24px of empty space under the cards. */}
-                <div className="flex items-center gap-6 pt-2 pb-8">
+                {/* items-stretch: every card takes the tallest card's height so the row
+                    is even regardless of how long each story's copy is (content stays
+                    top-aligned; shorter cards just carry a little whitespace below). */}
+                <div className="flex items-stretch gap-6 pt-2 pb-8">
                     {stories.map((s, i) => {
                         const featured = i === selected;
                         return (
