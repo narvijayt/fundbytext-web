@@ -20,7 +20,7 @@ const NAV_LINKS = [
     { label: "Browse Campaigns", href: "#" },
     { label: "How It Works", href: "/how-it-works" },
     { label: "FAQs", href: "/faq" },
-    { label: "Resources", href: "#" },
+    { label: "Resources", href: "/resources" },
     { label: "About Us", href: "/about" },
     { label: "Help & Support", href: "/contact" },
 ];

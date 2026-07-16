@@ -14,7 +14,7 @@ const NAV_ITEMS = [
     { href: "/how-it-works", label: "How It Works" },
     { href: "#",             label: "Browse Campaigns" },
     { href: "/faq",          label: "FAQs" },
-    { href: "#",             label: "Resources" },
+    { href: "/resources",   label: "Resources" },
     { href: "/about",        label: "About Us" },
     { href: "#",             label: "Help & Support" },
 ];

@@ -38,7 +38,7 @@ const NAV_LINKS = [
     { label: "Browse Campaigns", href: "/campaigns" },
     { label: "How It Works", href: "/how-it-works" },
     { label: "FAQs", href: "/faq" },
-    { label: "Resources", href: "/about" },
+    { label: "Resources", href: "/resources" },
     { label: "About Us", href: "/about" },
     { label: "Help & Support", href: "/contact" },
 ];
