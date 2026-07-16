@@ -93,9 +93,11 @@ export default async function ResourcesPage() {
                 HERO — shared marketing backdrop, no video (short band)
             ═══════════════════════════════════════════════════════════ */}
             <section className="relative">
-                {/* Shallower arch than About/HIW — this hero has no video to fill the
-                    white, so the default 34.5% left a large empty band under the copy. */}
-                <HeroBackdrop archHeight="20%" />
+                {/* Same deep arch as the FAQ / doc pages (MarketingDocShell): its
+                    M0,130 Q720,-130 1440,130 at clamp(60px,11vw,170px) normalises to
+                    archDrop 260 in this 0–320 viewBox, so the blue sweeps down hard at
+                    the edges and the boundary reads as one clean deep curve. */}
+                <HeroBackdrop archHeight="clamp(60px,11vw,170px)" archDrop={260} />
 
                 <NavBar user={user} />
 

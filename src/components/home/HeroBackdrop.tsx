@@ -20,12 +20,18 @@ const DOT_TEXTURE = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/200
 
 const A_HERO_BLUR = "/figma/hero-blur.svg";
 
-export default function HeroBackdrop({ archHeight = "34.5%" }: {
+export default function HeroBackdrop({ archHeight = "34.5%", archDrop = 79 }: {
     // How tall the white bottom arch is, as a share of the hero. The default suits
     // the tall About / How-It-Works hero, where a video card straddles the arch and
     // fills the white. On a short hero with no video (e.g. /resources) that same
     // 34.5% leaves a big empty white band, so those pages pass a smaller value.
     archHeight?: string;
+    // How far (in the 0–320 viewBox) the blue sweeps DOWN at the left/right edges
+    // relative to the centre — the amplitude of the wave. 79 is the gentle default;
+    // a larger value gives a more pronounced curve with deeper blue "wings" at the
+    // edges, which is what the short heroes want so the arch reads as a wave rather
+    // than a near-flat line.
+    archDrop?: number;
 }) {
     return (
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
@@ -67,7 +73,9 @@ export default function HeroBackdrop({ archHeight = "34.5%" }: {
                 the card's left and right. The card (z-10) straddles it. */}
             <svg className="absolute inset-x-0 bottom-0 w-full" viewBox="0 0 1920 320"
                 preserveAspectRatio="none" style={{ height: archHeight }} aria-hidden="true">
-                <path d="M0,79 Q960,-79 1920,79 L1920,320 L0,320 Z" fill="white" />
+                {/* Edges sit `archDrop` below the top; the control point mirrors it above
+                    so the centre peaks at y=0. Larger archDrop ⇒ deeper wave. */}
+                <path d={`M0,${archDrop} Q960,${-archDrop} 1920,${archDrop} L1920,320 L0,320 Z`} fill="white" />
             </svg>
 
             {/* Grey square dot grid — runs over the blue AND the white arch. */}
