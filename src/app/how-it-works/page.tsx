@@ -173,7 +173,7 @@ export default async function HowItWorksPage() {
             {/* ═══════════════════════════════════════════════════════════
                 STATS
             ═══════════════════════════════════════════════════════════ */}
-            <section className="bg-white pb-8 lg:pb-12 px-4 md:px-6 lg:px-10">
+            <section className="bg-white pb-4 lg:pb-6 px-4 md:px-6 lg:px-10">
                 <div className="grid grid-cols-2 md:flex md:items-center md:justify-center max-w-[1200px] mx-auto">
                     {STATS.map((s) => (
                         <div key={s.label} className="flex items-center gap-3 lg:gap-5 px-4 md:px-3 lg:px-8 py-3 lg:py-4 lg:min-w-[230px] xl:min-w-[260px]">
@@ -195,7 +195,7 @@ export default async function HowItWorksPage() {
             {/* ═══════════════════════════════════════════════════════════
                 SEE IT IN ACTION  (What Sets Us Apart — 5-card carousel)
             ═══════════════════════════════════════════════════════════ */}
-            <section className="relative overflow-hidden bg-white pt-12 lg:pt-20 pb-16 lg:pb-28 px-4 md:px-6 lg:px-10">
+            <section className="relative overflow-hidden bg-white pt-6 lg:pt-10 pb-16 lg:pb-28 px-4 md:px-6 lg:px-10">
                 {/* Blue wash. The Figma builds it from two huge blurred ellipses tucked
                     under the section's bottom edge; exported they flatten to a plain
                     vertical gradient, so it's coded here — it scales to any section
