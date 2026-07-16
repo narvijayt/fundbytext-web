@@ -150,9 +150,9 @@ export default async function CampaignsPage({
                         style={{ width: 1500, height: 1450, top: -480, opacity: 0.9 }} />
 
                     {/* White arch fading the hero into the white grid below. */}
-                    <svg className="absolute inset-x-0 bottom-0 w-full" viewBox="0 0 1440 120"
-                        preserveAspectRatio="none" style={{ height: "clamp(44px,7vw,110px)" }} aria-hidden="true">
-                        <path d="M0,72 Q720,2 1440,72 L1440,120 L0,120 Z" fill="white" />
+                    <svg className="absolute inset-x-0 bottom-0 w-full" viewBox="0 0 1440 160"
+                        preserveAspectRatio="none" style={{ height: "clamp(60px,11vw,170px)" }} aria-hidden="true">
+                        <path d="M0,130 Q720,-130 1440,130 L1440,160 L0,160 Z" fill="white" />
                     </svg>
 
                     {/* Grey dot grid + the same grain tile as the dashboard sidebar. */}
@@ -163,7 +163,7 @@ export default async function CampaignsPage({
 
                 <NavBar user={user} />
 
-                <div className="relative z-10 flex flex-col items-center gap-5 lg:gap-6 pt-8 lg:pt-14 pb-20 lg:pb-32 px-4 md:px-6 lg:px-10">
+                <div className="relative z-10 flex flex-col items-center gap-5 lg:gap-6 pt-8 lg:pt-14 pb-28 lg:pb-44 px-4 md:px-6 lg:px-10">
                     <SectionBadge label="Browse Campaigns" />
                     <h1 className="font-black text-[28px] sm:text-[34px] md:text-[40px] lg:text-[46px] xl:text-[54px] leading-[1.1] tracking-[-1px] text-center bg-clip-text text-transparent pb-[0.12em] max-w-[720px]"
                         style={{ backgroundImage: "linear-gradient(139deg,rgb(38,91,145) 30.5%,rgb(0,48,96) 69.5%)" }}>
@@ -216,6 +216,7 @@ export default async function CampaignsPage({
                                     <Link
                                         key={key}
                                         href={params ? `/campaigns?${params}` : "/campaigns"}
+                                        scroll={false}
                                         className={`relative shrink-0 whitespace-nowrap border-b-2 py-3 text-[12px] font-black uppercase leading-none tracking-[1px] transition-colors ${
                                             isActive ? "border-[#0268c0] text-[#0268c0]" : "border-transparent text-[#7e8a96] hover:text-[#003060]"
                                         }`}
@@ -257,7 +258,7 @@ export default async function CampaignsPage({
                             </div>
                             {totalPages > 1 && (
                                 <div className="mt-10">
-                                    <Pagination page={current} totalPages={totalPages} params={linkParams} basePath="/campaigns" />
+                                    <Pagination page={current} totalPages={totalPages} params={linkParams} basePath="/campaigns" scroll={false} />
                                 </div>
                             )}
                         </>
