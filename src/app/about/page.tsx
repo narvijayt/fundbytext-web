@@ -130,11 +130,24 @@ export default async function AboutPage() {
                     layers so it scales at every breakpoint. Order matters: the arch
                     sits ON the blue, and the dots + grain run over BOTH. */}
                 <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                    {/* Base blue. Sampled off the Figma frame, the band is a FLAT, bright
+                        sky blue that reads the same on both edges (left #2B96F3→#45A1F5→
+                        #3699F3 top→bottom, right #3B9EF5→#53A9F5) — not a diagonal ramp.
+                        The old 160deg gradient started at #00388C, which pulled the
+                        top-left down to ~#012775 (near-navy) while the right edge stayed
+                        correct, so the band read far darker than the design. White at the
+                        bottom is the arch's job, so this stays blue all the way down. */}
                     <div className="absolute inset-0" style={{
-                        background: "linear-gradient(160deg,rgba(0,56,140,1) 0%,rgba(10,100,210,1) 22%,rgba(33,150,253,1) 48%,rgba(150,215,255,1) 72%,rgba(255,255,255,1) 100%)",
+                        background: "linear-gradient(176deg,rgba(37,144,242,1) 0%,rgba(63,158,245,1) 26%,rgba(69,161,245,1) 52%,rgba(74,164,245,1) 76%,rgba(54,153,243,1) 100%)",
                     }} />
+                    {/* White halo. Sampled against the Figma this was reading too hard: it
+                        held ~full white out to 24% and then fell away quickly, giving a
+                        defined blob rather than the design's soft, diffuse glow (ours
+                        #FFFFFF vs Figma #EAEEF3 at the centre, #FEFEFF vs #F5FAFF at
+                        x=800). Ease the centre off pure white and stretch the falloff so
+                        it blends into the blue instead of edging against it. */}
                     <div className="absolute inset-0" style={{
-                        background: "radial-gradient(ellipse 88% 64% at 50% 30%,rgba(255,255,255,1) 0%,rgba(255,255,255,0.97) 24%,rgba(190,228,255,0.55) 46%,rgba(33,150,253,0.08) 68%,transparent 84%)",
+                        background: "radial-gradient(ellipse 84% 62% at 50% 28%,rgba(255,255,255,0.96) 0%,rgba(255,255,255,0.82) 26%,rgba(198,231,255,0.44) 48%,rgba(37,144,242,0.10) 72%,transparent 90%)",
                     }} />
                     <img alt="" src={A_HERO_BLUR}
                         className="absolute left-1/2 -translate-x-1/2 pointer-events-none"
