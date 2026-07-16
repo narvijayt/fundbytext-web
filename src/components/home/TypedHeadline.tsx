@@ -75,7 +75,9 @@ export default function TypedHeadline() {
     const done = n >= TOTAL;
 
     return (
-        <h1 className="font-black text-[32px] sm:text-[38px] md:text-[46px] lg:text-[50px] xl:text-[56px] 2xl:text-[64px] leading-[1.1] tracking-[-1px] text-center pb-[0.12em] w-full">
+        {/* leading-[1.2], not the 1.1 the other headings use: line 1 ends in "g", so
+            at 1.1 its descender nearly touched "Made Simple" below it. */}
+        <h1 className="font-black text-[32px] sm:text-[38px] md:text-[46px] lg:text-[50px] xl:text-[56px] 2xl:text-[64px] leading-[1.2] tracking-[-1px] text-center pb-[0.12em] w-full">
             {/* The full string stays readable to screen readers and to search — the
                 per-character state is decoration. */}
             <span className="sr-only">{LINE_1} {LINE_2}</span>
