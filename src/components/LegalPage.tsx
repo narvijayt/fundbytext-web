@@ -92,50 +92,59 @@ export default async function LegalPage({
     return (
         <div className="font-sans text-gray-900 overflow-x-hidden">
 
-            {/* ── Hero — same construction as the about / campaigns heroes ── */}
-            <section className="relative">
-                <div className="absolute inset-0 pointer-events-none overflow-hidden">
-                    <div className="absolute inset-0" style={{
-                        background: "linear-gradient(160deg,rgba(0,56,140,1) 0%,rgba(10,100,210,1) 22%,rgba(33,150,253,1) 48%,rgba(150,215,255,1) 72%,rgba(255,255,255,1) 100%)",
-                    }} />
-                    <div className="absolute inset-0" style={{
-                        background: "radial-gradient(ellipse 88% 64% at 50% 30%,rgba(255,255,255,1) 0%,rgba(255,255,255,0.97) 24%,rgba(190,228,255,0.55) 46%,rgba(33,150,253,0.08) 68%,transparent 84%)",
-                    }} />
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img alt="" src={A_HERO_BLUR} className="absolute left-1/2 -translate-x-1/2 pointer-events-none"
-                        style={{ width: 1500, height: 1450, top: -480, opacity: 0.9 }} />
+            {/* Blue block wraps the nav + headline so its height FOLLOWS the content;
+                the card is then pulled up a fixed amount to overlap it (~15-20% at
+                every width). A viewport-height backdrop looked right at one width and
+                broke at others — it under-lapped entirely at 1024 and ran to 27% at
+                1920, because the blue tracked vw while the card's top tracked content. */}
+            <section className="relative bg-white">
+                <div className="relative">
+                    <div className="pointer-events-none absolute inset-0 overflow-hidden">
+                        <div className="absolute inset-0" style={{
+                            background: "linear-gradient(160deg,rgba(0,56,140,1) 0%,rgba(10,100,210,1) 22%,rgba(33,150,253,1) 48%,rgba(150,215,255,1) 72%,rgba(255,255,255,1) 100%)",
+                        }} />
+                        <div className="absolute inset-0" style={{
+                            background: "radial-gradient(ellipse 88% 64% at 50% 30%,rgba(255,255,255,1) 0%,rgba(255,255,255,0.97) 24%,rgba(190,228,255,0.55) 46%,rgba(33,150,253,0.08) 68%,transparent 84%)",
+                        }} />
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img alt="" src={A_HERO_BLUR} className="absolute left-1/2 -translate-x-1/2 pointer-events-none"
+                            style={{ width: 1500, height: 1450, top: -480, opacity: 0.9 }} />
 
-                    {/* White arch carrying the hero into the card section. */}
-                    <svg className="absolute inset-x-0 bottom-0 w-full" viewBox="0 0 1440 160"
-                        preserveAspectRatio="none" style={{ height: "clamp(60px,11vw,170px)" }} aria-hidden="true">
-                        <path d="M0,130 Q720,-130 1440,130 L1440,160 L0,160 Z" fill="white" />
-                    </svg>
+                        {/* Arch at the blue's bottom — it lands behind the card, so it
+                            reads only in the blue strips either side of it. */}
+                        <svg className="absolute inset-x-0 bottom-0 w-full" viewBox="0 0 1440 160"
+                            preserveAspectRatio="none" style={{ height: "clamp(60px,11vw,170px)" }} aria-hidden="true">
+                            <path d="M0,130 Q720,-130 1440,130 L1440,160 L0,160 Z" fill="white" />
+                        </svg>
 
-                    <div className="absolute inset-0" style={{ backgroundImage: DOT_TEXTURE, backgroundRepeat: "repeat" }} />
-                    <div className="absolute inset-0 opacity-50 mix-blend-soft-light"
-                        style={{ backgroundImage: "url(/assets/dashboard/sidebar-noise.png)", backgroundRepeat: "repeat" }} />
+                        <div className="absolute inset-0" style={{ backgroundImage: DOT_TEXTURE, backgroundRepeat: "repeat" }} />
+                        <div className="absolute inset-0 opacity-50 mix-blend-soft-light"
+                            style={{ backgroundImage: "url(/assets/dashboard/sidebar-noise.png)", backgroundRepeat: "repeat" }} />
+                    </div>
+
+                    <NavBar user={user} />
+
+                    {/* Figma "Headline": 914px wide, 24px gaps, centred. The bottom pad
+                        leaves blue below it for the card to ride into. */}
+                    <div className="relative z-10 mx-auto flex w-full max-w-[914px] flex-col items-center gap-4 lg:gap-6 px-4 md:px-6 pt-8 lg:pt-14 pb-32 lg:pb-52">
+                        <PolicyBadge label={badge} />
+                        {/* Solid midnight blue in the Figma — the gradient is on the
+                            section titles, not on this one. */}
+                        <h1 className="text-center font-black leading-[1.1] tracking-[-1px] text-[#003060] text-[28px] sm:text-[34px] md:text-[40px] lg:text-[46px] xl:text-[54px] 2xl:text-[64px]">
+                            {title}
+                        </h1>
+                        <p className="text-center font-medium leading-[1.4] text-[#003060] text-[15px] lg:text-base 2xl:text-lg">
+                            {intro}
+                        </p>
+                    </div>
                 </div>
 
-                <NavBar user={user} />
-
-                {/* Figma "Headline": 914px wide, 24px gaps, centred. */}
-                <div className="relative z-10 mx-auto flex w-full max-w-[914px] flex-col items-center gap-4 lg:gap-6 px-4 md:px-6 pt-8 lg:pt-14 pb-28 lg:pb-44">
-                    <PolicyBadge label={badge} />
-                    {/* Solid midnight blue in the Figma — the gradient is on the section
-                        titles, not on this one. */}
-                    <h1 className="text-center font-black leading-[1.1] tracking-[-1px] text-[#003060] text-[28px] sm:text-[34px] md:text-[40px] lg:text-[46px] xl:text-[54px] 2xl:text-[64px]">
-                        {title}
-                    </h1>
-                    <p className="text-center font-medium leading-[1.4] text-[#003060] text-[15px] lg:text-base 2xl:text-lg">
-                        {intro}
-                    </p>
-                </div>
-            </section>
-
-            {/* ── Content card (Figma 1152 wide, 56/80 padding, 32px blocks) ── */}
-            <section className="bg-white pb-16 lg:pb-24 px-4 md:px-6 lg:px-10">
-                <div className="mx-auto flex w-full max-w-[1152px] flex-col items-start gap-6 lg:gap-8 rounded-[24px] border border-[#e7e9eb] bg-white px-5 sm:px-8 lg:px-14 py-10 lg:py-20 shadow-[0px_12px_12px_0px_rgba(0,48,96,0.04),0px_32px_40px_0px_rgba(2,104,192,0.16)]">
-                    {sections.map((s) => <PolicyBlock key={s.title} s={s} />)}
+                {/* Content card (Figma 1152 wide, 56/80 padding, 32px blocks). The
+                    negative pull is what overlaps it onto the blue. */}
+                <div className="relative z-10 -mt-20 lg:-mt-32 px-4 md:px-6 lg:px-10 pb-16 lg:pb-24">
+                    <div className="mx-auto flex w-full max-w-[1152px] flex-col items-start gap-6 lg:gap-8 rounded-[24px] border border-[#e7e9eb] bg-white px-5 sm:px-8 lg:px-14 py-10 lg:py-20 shadow-[0px_12px_12px_0px_rgba(0,48,96,0.04),0px_32px_40px_0px_rgba(2,104,192,0.16)]">
+                        {sections.map((s) => <PolicyBlock key={s.title} s={s} />)}
+                    </div>
                 </div>
             </section>
 
