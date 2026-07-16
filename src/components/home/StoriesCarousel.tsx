@@ -42,8 +42,18 @@ export default function StoriesCarousel({ stories, dotTone = "blue" }: {
 
     return (
         <div className="w-full flex flex-col items-center gap-2 lg:gap-3">
-            {/* Carousel — overflow hidden (no scrollbar), drag/swipe to browse */}
-            <div className="overflow-hidden w-full" ref={emblaRef}>
+            {/* Carousel — drag/swipe to browse, never a scrollbar. Capped at the
+                Figma's Story Cards frame (1152 = three 368px cards + two 24px gaps), so
+                three cards fill it edge-to-edge at desktop and the rest clip against
+                that container rather than the window.
+
+                overflow-x-clip rather than overflow-hidden: the featured card's shadow
+                reaches ~90px below it, and clipping both axes sliced it off in a hard
+                line. hidden/visible can't be mixed — a visible axis computes to auto
+                beside a hidden one, which would add a scroll container — but `clip`
+                leaves the cross axis genuinely visible, so the shadow escapes downward
+                while the track still clips sideways. */}
+            <div className="overflow-x-clip overflow-y-visible w-full max-w-[1152px]" ref={emblaRef}>
                 {/* The featured card's drop-shadows are offset downward only, and the
                     embla wrapper clips, so the room they need is all on the BOTTOM —
                     a matching top pad was just dead space under the section heading.
@@ -55,10 +65,15 @@ export default function StoriesCarousel({ stories, dotTone = "blue" }: {
                         const featured = i === selected;
                         return (
                             <div key={s.title}
-                                className="bg-white border border-[#eaeef3] flex flex-col gap-6 items-center p-6 rounded-[16px] flex-none w-[300px] sm:w-[368px] transition-[filter,transform] duration-300"
+                                className="bg-white border border-[#eaeef3] flex flex-col gap-6 items-center p-6 rounded-[16px] flex-none w-[300px] sm:w-[368px] transition-shadow duration-300"
                                 style={{
-                                    filter: featured
-                                        ? "drop-shadow(0 20px 10px rgba(0,91,172,0.15)) drop-shadow(0 50px 40px rgba(0,91,172,0.15))"
+                                    // Figma draws this as a layer effect, but the card is
+                                    // an opaque rounded rect so box-shadow is identical to
+                                    // look at — and drop-shadow traced the whole subtree's
+                                    // alpha, picking up the inner image's own shadow and
+                                    // smearing a second one under the card.
+                                    boxShadow: featured
+                                        ? "0 20px 10px rgba(0,91,172,0.15), 0 50px 40px rgba(0,91,172,0.15)"
                                         : "none",
                                 }}>
                                 <div className="bg-white h-[180px] sm:h-[220px] overflow-hidden relative rounded-[14px] shadow-[0_20px_20px_-12px_rgba(2,120,222,0.15)] w-full">
