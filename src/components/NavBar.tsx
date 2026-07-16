@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import NavSearch from "@/components/NavSearch";
 
 
 const A_NAV_MENU   = "/figma/nav-menu.svg";
-const A_NAV_SEARCH = "/figma/nav-search.svg";
 const A_NAV_USER   = "/figma/nav-user.svg";
 const A_LOGO_MAIN  = "/logo-main.svg";
 
@@ -76,10 +76,7 @@ export default function NavBar({ user }: { user: { id: string } | null }) {
                             <img alt="" src={A_NAV_MENU} width={22} height={15} style={{ display: "block" }} />
                             <span className="font-black text-white text-xs tracking-[1px] uppercase">Menu</span>
                         </button>
-                        <button className="flex items-center gap-2 px-3 py-2.5 rounded-xl hover:bg-white/10 transition-colors shrink-0">
-                            <img alt="" src={A_NAV_SEARCH} width={16} height={16} style={{ display: "block" }} />
-                            <span className="font-black text-white text-xs tracking-[1px] uppercase">Search</span>
-                        </button>
+                        <NavSearch />
                     </div>
 
                     {/* Center: Logo */}

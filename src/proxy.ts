@@ -14,6 +14,7 @@ const PUBLIC_API_ROUTES = [
     "/api/v1/payments/record",      // public donors record completed payments
     "/api/v1/payments/webhook",     // Stripe webhook — no session
     "/api/v1/contact",              // public contact form
+    "/api/v1/campaigns/search",     // header campaign search — public + launched only
 ];
 
 // Pages that redirect logged-in users away to dashboard

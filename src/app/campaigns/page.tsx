@@ -35,8 +35,19 @@ async function getCampaigns(filter: FilterKey, q: string) {
 
     return prisma.campaign.findMany({
         where: {
+            // Private campaigns are members-only — the campaign page 403s them to
+            // everyone else, so they must never be listed or searchable here either.
+            visibility: "public",
             status: statusFilter,
-            ...(q ? { name: { contains: q, mode: "insensitive" as const } } : {}),
+            // Match name OR organisation: people search for "the softball one" and
+            // for their school/club by name. Mirrors /api/v1/campaigns/search.
+            ...(q ? {
+                OR: [
+                    { name:             { contains: q, mode: "insensitive" as const } },
+                    { org_display_name: { contains: q, mode: "insensitive" as const } },
+                    { organization:     { name: { contains: q, mode: "insensitive" as const } } },
+                ],
+            } : {}),
         },
         orderBy: [{ status: "asc" }, { created_at: "desc" }],
         select: {
