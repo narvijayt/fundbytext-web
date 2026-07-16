@@ -37,7 +37,14 @@ export default function NavBar({ user }: { user: { id: string } | null }) {
 
     return (
         <>
-            <nav className="sticky top-0 z-50 drop-shadow-[0_4px_15px_rgba(0,91,172,0.08)]">
+            {/* The Figma puts a container drop-shadow on Navigation, but a `filter` on
+                an ancestor makes it a Backdrop Root: it isolates `backdrop-filter` on
+                every descendant, so the Menu / Start A Campaign / My Dashboard pills
+                sampled an empty backdrop and their 10% white composited as a flat milky
+                tint with the grain showing through — a background colour instead of
+                glass. The same shadow rides on the pills themselves as a box-shadow,
+                which doesn't create a backdrop root. Don't reintroduce a filter here. */}
+            <nav className="sticky top-0 z-50">
                 {/* ── Mobile Nav (< md) ──
                     Figma "nav-top" (375×88): logo hard LEFT at 24px (166×32) and a
                     single 102×48 MENU pill hard RIGHT at 24px. There is deliberately
@@ -53,7 +60,7 @@ export default function NavBar({ user }: { user: { id: string } | null }) {
                     <button
                         onClick={() => setMenuOpen(true)}
                         aria-label="Open menu"
-                        className="flex h-12 items-center gap-2.5 px-3.5 rounded-xl backdrop-blur-[40px] bg-white/10 border border-white/20 active:bg-white/20"
+                        className="flex h-12 items-center gap-2.5 px-3.5 rounded-xl backdrop-blur-[40px] bg-white/10 border border-white/20 shadow-[0_4px_15px_rgba(0,91,172,0.08)] active:bg-white/20"
                     >
                         <img alt="" src={A_NAV_MENU} width={22} height={15} style={{ display: "block" }} />
                         <span className="font-black text-white text-xs tracking-[1px] uppercase">Menu</span>
@@ -71,7 +78,7 @@ export default function NavBar({ user }: { user: { id: string } | null }) {
                             onClick={() => setMenuOpen(true)}
                             aria-label="Open menu"
                             aria-expanded={menuOpen}
-                            className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl backdrop-blur-[40px] bg-white/10 border border-white/20 hover:bg-white/20 transition-colors shrink-0"
+                            className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl backdrop-blur-[40px] bg-white/10 border border-white/20 shadow-[0_4px_15px_rgba(0,91,172,0.08)] hover:bg-white/20 transition-colors shrink-0"
                         >
                             <img alt="" src={A_NAV_MENU} width={22} height={15} style={{ display: "block" }} />
                             <span className="font-black text-white text-xs tracking-[1px] uppercase">Menu</span>
@@ -88,7 +95,7 @@ export default function NavBar({ user }: { user: { id: string } | null }) {
                     <div className="flex items-center gap-2 flex-1 justify-end min-w-0">
                         {user ? (
                             <Link href="/dashboard"
-                                className="flex items-center gap-2 px-4 py-2.5 rounded-xl backdrop-blur-[40px] bg-white/10 border border-white/20 hover:bg-white/20 transition-colors shrink-0">
+                                className="flex items-center gap-2 px-4 py-2.5 rounded-xl backdrop-blur-[40px] bg-white/10 border border-white/20 shadow-[0_4px_15px_rgba(0,91,172,0.08)] hover:bg-white/20 transition-colors shrink-0">
                                 <img alt="" src={A_NAV_USER} width={16} height={16} style={{ display: "block" }} />
                                 <span className="font-black text-white text-xs tracking-[1px] uppercase whitespace-nowrap">My Dashboard</span>
                             </Link>
@@ -100,7 +107,7 @@ export default function NavBar({ user }: { user: { id: string } | null }) {
                                     <span className="font-black text-white text-xs tracking-[1px] uppercase whitespace-nowrap">Sign In</span>
                                 </Link>
                                 <Link href="/campaigns/create"
-                                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl backdrop-blur-[40px] bg-white/10 border border-white/20 hover:bg-white/20 transition-colors shrink-0">
+                                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl backdrop-blur-[40px] bg-white/10 border border-white/20 shadow-[0_4px_15px_rgba(0,91,172,0.08)] hover:bg-white/20 transition-colors shrink-0">
                                     <span className="font-black text-white text-xs tracking-[1px] uppercase whitespace-nowrap">Start A Campaign</span>
                                 </Link>
                             </>
