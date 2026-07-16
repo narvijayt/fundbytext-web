@@ -311,15 +311,11 @@ input[type=number] {
     to   { opacity: 1; transform: translateY(0); }
 }
 
-@keyframes driftLeft {
-    from { background-position-x: 0; }
-    to   { background-position-x: -170px; }
-}
-
-/* Footer "F" watermark drift. A transform (GPU-composited) animation instead of a
-   background-position one — mobile browsers throttle/skip non-composited paint
-   animations in production, which is why the footer vector drifted on desktop but
-   appeared frozen on phones. The layer is one tile wider than its card and the
+/* "F" vector drift — used by both marketing footers AND the campaign-creation
+   VectorWallpaper. A transform (GPU-composited) animation instead of a
+   background-position one — browsers throttle/skip non-composited paint
+   animations in production, which is why the vector drifted locally/on desktop but
+   appeared frozen once deployed. The layer is one tile wider than its card and the
    card clips the overflow, so translating left by exactly one tile (--fd) loops
    seamlessly. Set --fd to one negative tile width per footer. */
 @keyframes footerDrift {

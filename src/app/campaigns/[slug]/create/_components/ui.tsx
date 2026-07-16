@@ -20,24 +20,39 @@ const VECTOR_TEXTURE_URL =
 
 /* Drifting vector wallpaper — dense repeating texture over the gradient,
    stays behind cards, logo, header, progress bar & footer (render it as the
-   first child of a `relative isolate` wrapper, give chrome bars `relative z-40`). */
+   first child of a `relative isolate` wrapper, give chrome bars `relative z-40`).
+
+   The drift is a transform (GPU-composited) animation, NOT a background-position
+   one: browsers throttle/skip non-composited paint animations in production, so
+   the old `driftLeft` drifted locally but froze once deployed — the same bug the
+   footer watermark already hit. The inner layer is one tile wider than the outer
+   and translates left by exactly that tile, so the loop is seamless; the outer
+   clips it (the wizard shells are `relative isolate` with no overflow-hidden of
+   their own, so the clipping has to live here or the extra tile would spill and
+   add a horizontal scrollbar). */
+const VECTOR_MASK = "linear-gradient(180deg, #000 0%, #000 50%, transparent 95%)";
+
 export function VectorWallpaper() {
     return (
         <div
-            className="absolute inset-0 -z-10 opacity-[0.16] pointer-events-none"
-            style={{
-                backgroundImage: `url("${VECTOR_TEXTURE_URL}")`,
-                backgroundRepeat: "repeat",
-                backgroundSize: `${VECTOR_TILE_SIZE}px ${VECTOR_TILE_SIZE}px`,
-                animation: "driftLeft 18s linear infinite",
-                WebkitMaskImage: "linear-gradient(180deg, #000 0%, #000 50%, transparent 95%)",
-                maskImage: "linear-gradient(180deg, #000 0%, #000 50%, transparent 95%)",
-                // Promote to its own GPU layer so the drift/mask repaints stay
-                // isolated and don't repaint the cards above it while scrolling.
-                transform: "translateZ(0)",
-                backfaceVisibility: "hidden",
-            }}
-        />
+            className="absolute inset-0 -z-10 overflow-hidden opacity-[0.16] pointer-events-none"
+            style={{ WebkitMaskImage: VECTOR_MASK, maskImage: VECTOR_MASK }}
+        >
+            <div
+                className="footer-drift absolute inset-y-0 left-0"
+                /* --fd is set inline, not via an arbitrary Tailwind class: a class
+                   built from a template literal can't be statically detected, so it
+                   would be purged from the production CSS. */
+                style={{
+                    "--fd": `-${VECTOR_TILE_SIZE}px`,
+                    right: -VECTOR_TILE_SIZE,
+                    backgroundImage: `url("${VECTOR_TEXTURE_URL}")`,
+                    backgroundRepeat: "repeat",
+                    backgroundSize: `${VECTOR_TILE_SIZE}px ${VECTOR_TILE_SIZE}px`,
+                    backfaceVisibility: "hidden",
+                } as React.CSSProperties}
+            />
+        </div>
     );
 }
 
