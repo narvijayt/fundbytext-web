@@ -150,11 +150,11 @@ export default async function HowItWorksPage() {
                         </p>
                     </div>
 
-                    {/* The frames stack these at tablet (3 × 550-wide cards) and only go
-                        three-across at desktop. Heights stay content-driven and share a
-                        centre line, per the Figma (424 / 463.5 / 452, all centred on
-                        231.75) — the middle card is the elevated one. */}
-                    <div className="flex flex-col lg:flex-row items-center gap-6 w-full justify-center">
+                    {/* Stack at tablet (3 × 550-wide cards), three-across at desktop.
+                        items-stretch makes all three the same height (the titles/bodies
+                        vary in length, so content-driven heights differed); the shorter
+                        cards just carry a little space under their body. */}
+                    <div className="flex flex-col items-center lg:flex-row lg:items-stretch gap-6 w-full justify-center">
                         {MADE_EASY_CARDS.map((c) => (
                             <div key={c.title}
                                 /* The middle card is permanently elevated (Figma), and every
