@@ -75,6 +75,14 @@ const HEADLINE_GRADIENT = "linear-gradient(166deg,rgb(38,91,145) 30.5%,rgb(0,48,
 // dots so the home hero reads identically.
 const GRAY_DOTS = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20'%3E%3Crect width='2' height='2' fill='rgba(87%2C114%2C141%2C0.3)'/%3E%3C/svg%3E")`;
 
+// Arch mask for the stats' white curved area: opaque (visible) below the sweeping
+// curve, transparent above it. Applied to a dotted-white layer, it gives the stats
+// a curved top and lets the grey dots continue from the blue hero onto the white —
+// the way How-It-Works runs its dots over both the blue and the white arch.
+const ARCH_MASK = `url("data:image/svg+xml,${encodeURIComponent(
+    "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 200' preserveAspectRatio='none'><path d='M0,90 Q720,0 1440,90 L1440,200 L0,200 Z' fill='white'/></svg>",
+)}")`;
+
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 const STEPS = [
@@ -215,9 +223,9 @@ export default async function HomePage() {
             <section className="relative overflow-hidden">
                 {/* ── Hero background — the same treatment as the About / How-It-Works
                     hero (HeroBackdrop): flat bright-blue base, a broad white halo, the
-                    hero-blur glow, GREY square dots and the soft-light grain. The dots
-                    live on the blue only — the stats sit below on an opaque white arch
-                    that covers them, so the numbers read on clean white. ── */}
+                    hero-blur glow, GREY square dots and the soft-light grain. The stats
+                    below are part of the hero: their white curved area carries the same
+                    dots, so the pattern runs unbroken from the blue onto the white. ── */}
                 <div className="absolute inset-0 pointer-events-none overflow-hidden">
                     {/* Base blue — flat, bright, reads the same on both edges. */}
                     <div className="absolute inset-0" style={{
@@ -275,21 +283,18 @@ export default async function HomePage() {
                     <HeroCampaignsCarousel cards={heroCards} />
                 </div>
 
-                {/* ── Stats bar — SVG arch curve + white content ── */}
-                <div className="relative z-10">
-                    <svg
-                        className="block w-full"
-                        viewBox="0 0 1440 120"
-                        preserveAspectRatio="none"
-                        style={{ height: "clamp(60px,8vw,120px)", display: "block", marginBottom: -2 }}
-                        aria-hidden="true"
-                    >
-                        <path d="M0,70 Q720,0 1440,70 L1440,120 L0,120 Z" fill="white" />
-                    </svg>
-
-                    {/* Stats content — clean white curved area. The dot texture belongs
-                        to the blue hero only, so the numbers read on plain white here. */}
-                    <div style={{ background: "white" }}>
+                {/* ── Stats — the hero's white curved area. A dotted-white layer,
+                    masked to the arch curve, carries the grey dots straight off the
+                    blue (like How-It-Works). The top padding is the curve's headroom so
+                    the numbers land on the full-width white below it. ── */}
+                <div className="relative z-10 pt-[clamp(48px,7vw,104px)]">
+                    <div className="absolute inset-0 pointer-events-none" style={{
+                        background: `${GRAY_DOTS} 0 0 / 20px 20px repeat, white`,
+                        WebkitMaskImage: ARCH_MASK, maskImage: ARCH_MASK,
+                        WebkitMaskSize: "100% 100%", maskSize: "100% 100%",
+                        WebkitMaskRepeat: "no-repeat", maskRepeat: "no-repeat",
+                    }} />
+                    <div className="relative">
                         <div className="grid grid-cols-2 lg:flex lg:items-center lg:justify-center divide-x divide-y lg:divide-y-0 divide-[#eaeef3]/60">
                             {[
                                 { img: A_STAT_CAMPAIGNS, imgH: 96, imgW: 80,  smH: 60, smW: 50, value: "200+",             label: "Campaigns Launched" },

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import useEmblaCarousel from "embla-carousel-react";
 import CountdownBadge from "@/components/CountdownBadge";
 
@@ -26,12 +27,23 @@ export type HeroCard = {
  */
 export default function HeroCampaignsCarousel({ cards }: { cards: HeroCard[] }) {
     const mid = Math.floor(cards.length / 2);
-    const [emblaRef] = useEmblaCarousel({
+    const [emblaRef, emblaApi] = useEmblaCarousel({
         align: "center",
         startIndex: mid,
-        containScroll: "trimSnaps",
+        containScroll: false,
         skipSnaps: true,
     });
+
+    // Whichever card is centred is the featured one — it updates as you drag, so
+    // the popped-out card is always the one in the middle, not a fixed index.
+    const [selected, setSelected] = useState(mid);
+    useEffect(() => {
+        if (!emblaApi) return;
+        const onSelect = () => setSelected(emblaApi.selectedScrollSnap());
+        emblaApi.on("select", onSelect);
+        onSelect();
+        return () => { emblaApi.off("select", onSelect); };
+    }, [emblaApi]);
 
     if (cards.length === 0) return null;
 
@@ -42,24 +54,26 @@ export default function HeroCampaignsCarousel({ cards }: { cards: HeroCard[] }) 
                 <MobileRow cards={cards} />
             </div>
 
-            {/* Desktop — Figma staggered row inside Embla (no scrollbar) */}
-            <div className="hidden lg:block overflow-hidden pb-8 pt-2" ref={emblaRef}>
-                <div className="flex items-end gap-4 px-4"
+            {/* Desktop — Embla row (no scrollbar). One card size; the centred card
+                scales up + lifts so it reads as "pulled out", the rest sit back. A
+                transform (not a width/height change) keeps Embla's centring stable as
+                the featured card changes. */}
+            <div className="hidden lg:block overflow-hidden pb-10 pt-6" ref={emblaRef}>
+                <div className="flex items-center gap-5 px-4"
                     style={{ justifyContent: cards.length <= 5 ? "center" : "flex-start" }}>
                     {cards.map((c, i) => {
-                        const dist       = Math.abs(i - mid);
-                        const isFeatured = dist === 0 && cards.length >= 3;
-                        const isEdge     = dist >= 2;
-                        // The centre card is the hero of the row — notably wider and
-                        // taller than its neighbours, which step down toward the edges.
-                        const cardW      = isFeatured ? 340 : isEdge ? 280 : 300;
-                        const cardH      = isFeatured ? 436 : isEdge ? 366 : 396;
-                        const imgH       = isFeatured ? 216 : isEdge ? 182 : 196;
-                        const topOffset  = isFeatured ? -24 : isEdge ? 34 : 8;
+                        const isFeatured = i === selected && cards.length >= 3;
                         return (
-                            <Link key={c.slug + i} href={c.slug} className="flex-none">
-                                <Card c={c} w={cardW} h={cardH} imgH={imgH} featured={isFeatured} offset={topOffset} />
-                            </Link>
+                            <div key={c.slug + i}
+                                className="flex-none transition-[transform,filter] duration-300 ease-out"
+                                style={{
+                                    transform: isFeatured ? "scale(1.13) translateY(-6px)" : "scale(0.92)",
+                                    zIndex: isFeatured ? 10 : 1,
+                                }}>
+                                <Link href={c.slug} className="block">
+                                    <Card c={c} w={300} h={404} imgH={200} featured={isFeatured} offset={0} />
+                                </Link>
+                            </div>
                         );
                     })}
                 </div>
