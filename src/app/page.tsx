@@ -117,10 +117,12 @@ const HERO_SHOWCASE: HeroCard[] = [
 
 async function getFeaturedCampaigns() {
     try {
+        // Only ACTIVE, public campaigns are featured in the hero — the "Browse all"
+        // link at the end of the row is how people reach everything else.
         return await prisma.campaign.findMany({
-            where: { status: { in: ["active", "upcoming"] }, visibility: "public" },
+            where: { status: "active", visibility: "public" },
             take: 5,
-            orderBy: [{ status: "asc" }, { created_at: "desc" }],
+            orderBy: { created_at: "desc" },
             select: {
                 slug: true, name: true, status: true, campaign_type: true,
                 goal_amount: true, total_raised: true, start_date: true, end_date: true,
@@ -295,7 +297,9 @@ export default async function HomePage() {
                         WebkitMaskRepeat: "no-repeat", maskRepeat: "no-repeat",
                     }} />
                     <div className="relative">
-                        <div className="grid grid-cols-2 lg:flex lg:items-center lg:justify-center divide-x divide-y lg:divide-y-0 divide-[#eaeef3]/60">
+                        {/* No dividers — the Figma (esp. the mobile 2×2) sets the stats
+                            on plain cells with only whitespace between them. */}
+                        <div className="grid grid-cols-2 gap-y-6 lg:flex lg:items-center lg:justify-center">
                             {[
                                 { img: A_STAT_CAMPAIGNS, imgH: 96, imgW: 80,  smH: 60, smW: 50, value: "200+",             label: "Campaigns Launched" },
                                 { img: A_STAT_GOALS,     imgH: 70, imgW: 77,  smH: 44, smW: 48, value: "97%",              label: "Goals Met" },
@@ -303,7 +307,7 @@ export default async function HomePage() {
                                 { img: A_STAT_RAISED,    imgH: 88, imgW: 82,  smH: 55, smW: 52, value: totalRaisedDisplay, label: "Raised & Counting" },
                             ].map((s) => (
                                 <div key={s.label}
-                                    className="flex items-center gap-3 lg:gap-5 px-4 lg:px-8 py-3 lg:py-4 lg:min-w-[230px] xl:min-w-[260px]">
+                                    className="flex items-center gap-3 lg:gap-5 px-4 lg:px-8 py-2 lg:py-4 lg:min-w-[230px] xl:min-w-[260px]">
                                     <div className="shrink-0">
                                         {/* eslint-disable-next-line @next/next/no-img-element */}
                                         <img alt="" src={s.img} className="object-contain lg:hidden"
@@ -331,7 +335,7 @@ export default async function HomePage() {
                     {/* Header + Subheader */}
                     <div className="flex flex-col items-center gap-5 mb-12 lg:mb-20">
                         <SectionBadge label="HOW it works" />
-                        <h2 className="font-black text-[28px] sm:text-[32px] md:text-[38px] lg:text-[42px] xl:text-[48px] 2xl:text-[56px] leading-[1.1] pb-[0.1em] tracking-[-1px] text-center bg-clip-text text-transparent"
+                        <h2 className="font-black text-[26px] sm:text-[30px] md:text-[34px] lg:text-[38px] xl:text-[42px] 2xl:text-[48px] leading-[1.1] pb-[0.1em] tracking-[-1px] text-center bg-clip-text text-transparent"
                             style={{ backgroundImage: HEADLINE_GRADIENT }}>
                             Fundraising made easy
                         </h2>
@@ -445,7 +449,7 @@ export default async function HomePage() {
                 {/* Noise overlay */}
                 <div className="absolute inset-0 mix-blend-overlay opacity-20 pointer-events-none"
                     style={{ backgroundImage: NOISE_URI, backgroundRepeat: "repeat" }} />
-                <h2 className="relative z-10 font-black text-[28px] sm:text-[32px] md:text-[38px] lg:text-[42px] xl:text-[48px] 2xl:text-[56px] leading-[1.1] pb-[0.1em] tracking-[-1px] text-center bg-clip-text text-transparent w-full"
+                <h2 className="relative z-10 font-black text-[26px] sm:text-[30px] md:text-[34px] lg:text-[38px] xl:text-[42px] 2xl:text-[48px] leading-[1.1] pb-[0.1em] tracking-[-1px] text-center bg-clip-text text-transparent w-full"
                     style={{ backgroundImage: "linear-gradient(172deg,rgb(38,91,145) 30.5%,rgb(0,48,96) 69.5%)" }}>
                     See How It Works
                 </h2>
@@ -472,7 +476,7 @@ export default async function HomePage() {
                 <div className="max-w-[1632px] mx-auto px-4 sm:px-6 lg:px-[144px] mb-10 lg:mb-16">
                     <div className="flex flex-col items-center gap-5">
                         <SectionBadge label="what's the difference?" />
-                        <h2 className="font-black text-[28px] sm:text-[32px] md:text-[38px] lg:text-[42px] xl:text-[48px] 2xl:text-[56px] leading-[1.1] pb-[0.1em] tracking-[-1px] text-center bg-clip-text text-transparent"
+                        <h2 className="font-black text-[26px] sm:text-[30px] md:text-[34px] lg:text-[38px] xl:text-[42px] 2xl:text-[48px] leading-[1.1] pb-[0.1em] tracking-[-1px] text-center bg-clip-text text-transparent"
                             style={{ backgroundImage: HEADLINE_GRADIENT }}>
                             Organization vs. Individual
                         </h2>
@@ -613,7 +617,7 @@ export default async function HomePage() {
                 <div className="max-w-[1632px] mx-auto px-4 sm:px-6 lg:px-[144px]">
                     <div className="flex flex-col items-center gap-4 mb-1 lg:mb-2">
                         <SectionBadge label="real stories" />
-                        <h2 className="font-black text-[28px] sm:text-[32px] md:text-[38px] lg:text-[42px] xl:text-[48px] 2xl:text-[56px] leading-[1.1] pb-[0.1em] tracking-[-1px] text-center bg-clip-text text-transparent"
+                        <h2 className="font-black text-[26px] sm:text-[30px] md:text-[34px] lg:text-[38px] xl:text-[42px] 2xl:text-[48px] leading-[1.1] pb-[0.1em] tracking-[-1px] text-center bg-clip-text text-transparent"
                             style={{ backgroundImage: HEADLINE_GRADIENT }}>
                             How people use FundbyText
                         </h2>
@@ -629,7 +633,7 @@ export default async function HomePage() {
                     <div className="max-w-[1632px] mx-auto px-4 sm:px-6 lg:px-[144px] relative z-10">
                         <div className="flex flex-col items-center gap-6 lg:gap-8 py-10 lg:py-12">
                             <div className="flex flex-col items-center gap-4 lg:gap-6 w-full">
-                                <h2 className="font-black text-[28px] sm:text-[32px] md:text-[38px] lg:text-[42px] xl:text-[48px] 2xl:text-[56px] leading-[1.1] pb-[0.1em] tracking-[-1px] text-center bg-clip-text text-transparent"
+                                <h2 className="font-black text-[26px] sm:text-[30px] md:text-[34px] lg:text-[38px] xl:text-[42px] 2xl:text-[48px] leading-[1.1] pb-[0.1em] tracking-[-1px] text-center bg-clip-text text-transparent"
                                     style={{ backgroundImage: "linear-gradient(153deg,rgb(38,91,145) 30.5%,rgb(0,48,96) 69.5%)" }}>
                                     Ready to Inspire?
                                 </h2>
