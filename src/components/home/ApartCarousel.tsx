@@ -69,9 +69,11 @@ export default function ApartCarousel({ cards }: { cards: ApartCard[] }) {
                         onClick={() => scrollTo(i)}
                         className="h-2 rounded-full transition-all duration-300 cursor-pointer"
                         style={{
+                            // White — the dots sit on the section's blue wash. Higher
+                            // resting opacity than the blue-on-white variant so they read.
                             width: i === selected ? 24 : 8,
-                            background: "#0268c0",
-                            opacity: i === selected ? 1 : 0.15,
+                            background: "#ffffff",
+                            opacity: i === selected ? 1 : 0.45,
                         }} />
                 ))}
             </div>
