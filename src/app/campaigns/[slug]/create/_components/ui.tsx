@@ -71,8 +71,13 @@ function BannerDot({ className }: { className?: string }) {
 }
 
 export function StepBanner({ title, subtitle }: { title: string; subtitle: string }) {
+    const rootRef = useRef<HTMLDivElement>(null);
     const plaqueRef = useRef<HTMLDivElement>(null);
-    const subRef = useRef<HTMLParagraphElement>(null);
+    // A hidden, always-nowrap copy of the subtitle. The visible <p> is allowed to
+    // wrap (see below), so measuring IT would be circular — its width depends on
+    // the ribbon width we're deriving from it. This clone is out of flow, so its
+    // width is always the subtitle's natural single-line width.
+    const measureRef = useRef<HTMLSpanElement>(null);
     // The ribbon must always be wider than the plaque (its notched tips flare
     // out past the plaque's edges) AND wide enough to hold the subtitle. Both
     // the plaque (sized to the title) and the subtitle vary, so derive the
@@ -80,23 +85,33 @@ export function StepBanner({ title, subtitle }: { title: string; subtitle: strin
     const [ribbonW, setRibbonW] = useState<number | null>(null);
     useEffect(() => {
         function update() {
-            const pl = plaqueRef.current, sub = subRef.current;
-            if (!pl || !sub) return;
+            const root = rootRef.current, pl = plaqueRef.current, ms = measureRef.current;
+            if (!root || !pl || !ms) return;
             const isSm = window.matchMedia("(min-width: 640px)").matches;
             const flare = isSm ? 88 : 52;   // total width added beyond the plaque (both tips)
             const subPad = isSm ? 150 : 96;  // room for dots + gaps + notch + side padding
-            setRibbonW(Math.round(Math.max(pl.offsetWidth + flare, sub.offsetWidth + subPad)));
+            const desired = Math.max(pl.offsetWidth + flare, ms.offsetWidth + subPad);
+            // ...but never wider than the room the banner actually has. Step 4's
+            // "Add Donors" subtitle is a full sentence, and at 360px it drove the
+            // ribbon to 443px — its notched tips hung off BOTH edges of the screen.
+            // Clamped, the subtitle wraps inside the ribbon instead.
+            setRibbonW(Math.round(Math.min(desired, root.clientWidth)));
         }
         update();
         const ro = new ResizeObserver(update);
-        if (plaqueRef.current) ro.observe(plaqueRef.current);
-        if (subRef.current) ro.observe(subRef.current);
+        [rootRef, plaqueRef, measureRef].forEach((r) => { if (r.current) ro.observe(r.current); });
         window.addEventListener("resize", update);
         return () => { ro.disconnect(); window.removeEventListener("resize", update); };
     }, [title, subtitle]);
 
     return (
-        <div className="flex flex-col items-center select-none">
+        <div ref={rootRef} className="relative w-full flex flex-col items-center select-none">
+            {/* Off-flow measuring copy — never painted, never affects layout. */}
+            <span ref={measureRef} aria-hidden
+                className="pointer-events-none invisible absolute left-0 top-0 whitespace-nowrap font-bold text-[11px] sm:text-[14px]"
+                style={{ lineHeight: 1.25 }}>
+                {subtitle}
+            </span>
             {/* Plaque (outer frame + inner panel) */}
             <div
                 ref={plaqueRef}
@@ -126,8 +141,12 @@ export function StepBanner({ title, subtitle }: { title: string; subtitle: strin
 
             {/* Ribbon (notched banner via clip-path) — width derived from the
             plaque/subtitle so its tips always flare out beyond the plaque. */}
+            {/* min-h rather than a fixed h: when a long subtitle wraps on a narrow
+                screen the ribbon grows to hold it. The notch clip-path below is all
+                percentages, so it follows the new height. max-w-full is a belt-and-
+                braces guard in case the measured clamp hasn't landed yet. */}
             <div
-                className="relative -mt-px flex items-center justify-center h-[30px] w-[270px] sm:h-[50px] sm:w-[470px]"
+                className="relative -mt-px flex items-center justify-center min-h-[30px] w-[270px] max-w-full py-[5px] sm:min-h-[50px] sm:w-[470px] sm:py-0"
                 style={{ width: ribbonW ?? undefined }}
             >
                 <div
@@ -142,7 +161,10 @@ export function StepBanner({ title, subtitle }: { title: string; subtitle: strin
                 </div>
                 <div className="relative flex items-center justify-center gap-[8px] sm:gap-[12px] px-[32px]">
                     <BannerDot className="size-[6px] sm:size-[9px]" />
-                    <p ref={subRef} className="font-bold text-white text-center whitespace-nowrap text-[11px] sm:text-[14px]" style={{ lineHeight: 1.25 }}>
+                    {/* No whitespace-nowrap: it's what pushed a long subtitle (and the
+                        ribbon sized to it) past the screen edge. It wraps only when the
+                        clamp above bites — every short subtitle still sits on one line. */}
+                    <p className="font-bold text-white text-center text-[11px] sm:text-[14px]" style={{ lineHeight: 1.25 }}>
                         {subtitle}
                     </p>
                     <BannerDot className="size-[6px] sm:size-[9px]" />
