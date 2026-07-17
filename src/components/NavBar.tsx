@@ -10,14 +10,17 @@ const A_NAV_MENU   = "/figma/nav-menu.svg";
 const A_NAV_USER   = "/figma/nav-user.svg";
 const A_LOGO_MAIN  = "/logo-main.svg";
 
+// Every entry points at a real route — these are kept in step with the footer's
+// NAV_LINKS (see MarketingFooter/SiteFooter). "Browse Campaigns" and "Help & Support"
+// were left as dead "#" placeholders, so clicking them in the menu did nothing.
 const NAV_ITEMS = [
     { href: "/",             label: "Home" },
     { href: "/how-it-works", label: "How It Works" },
-    { href: "#",             label: "Browse Campaigns" },
+    { href: "/campaigns",    label: "Browse Campaigns" },
     { href: "/faq",          label: "FAQs" },
-    { href: "/resources",   label: "Resources" },
+    { href: "/resources",    label: "Resources" },
     { href: "/about",        label: "About Us" },
-    { href: "#",             label: "Help & Support" },
+    { href: "/contact",      label: "Help & Support" },
 ];
 
 export default function NavBar({ user }: { user: { id: string } | null }) {

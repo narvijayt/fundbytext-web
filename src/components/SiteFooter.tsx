@@ -17,7 +17,7 @@ function fWatermarkUri(alpha: number) {
 }
 
 const NAV_LINKS = [
-    { label: "Browse Campaigns", href: "#" },
+    { label: "Browse Campaigns", href: "/campaigns" },
     { label: "How It Works", href: "/how-it-works" },
     { label: "FAQs", href: "/faq" },
     { label: "Resources", href: "/resources" },
