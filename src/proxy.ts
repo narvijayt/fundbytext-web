@@ -15,6 +15,7 @@ const PUBLIC_API_ROUTES = [
     "/api/v1/payments/webhook",     // Stripe webhook — no session
     "/api/v1/contact",              // public contact form
     "/api/v1/campaigns/search",     // header campaign search — public + launched only
+    "/api/v1/campaigns/featured",   // active campaigns for the login / marketing card rows
 ];
 
 // Pages that redirect logged-in users away to dashboard
