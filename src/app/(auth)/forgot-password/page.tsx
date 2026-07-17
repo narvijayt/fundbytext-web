@@ -37,12 +37,15 @@ export default function ForgotPasswordPage() {
 
     return (
         <div className="w-full max-w-[502px] bg-white border border-[#eaeef3] rounded-[24px] p-7 sm:p-10 lg:p-14 flex flex-col gap-8 lg:gap-10 shadow-[0_30px_60px_-20px_rgba(0,48,96,0.25)]">
-            {/* Title */}
-            <div className="flex flex-col items-center gap-4 text-center">
-                <h1 className="text-[28px] sm:text-[32px] font-black text-[#003060] tracking-[-1px] leading-[1.15]">
+            {/* Title. The Figma is drawn at 1920, so its 32px H1 / 18px body only apply
+                from sm up — on a phone they're oversized for a ~300px-wide card and step
+                down, matching the login card. (The AuthField input stays at 16px at every
+                width: below that, iOS zooms the page in on focus.) */}
+            <div className="flex flex-col items-center gap-3 sm:gap-4 text-center">
+                <h1 className="text-[22px] sm:text-[32px] font-black text-[#003060] tracking-[-1px] leading-[1.15]">
                     Forgot your Password?
                 </h1>
-                <p className="text-[#003060] text-base sm:text-lg leading-[1.4]">
+                <p className="text-[#003060] text-[14px] sm:text-lg leading-[1.4]">
                     Enter your email address below and we&apos;ll send you a link to reset your password.
                 </p>
             </div>
@@ -60,7 +63,7 @@ export default function ForgotPasswordPage() {
                             <a href={devUrl} className="text-xs text-[#0268c0] break-all hover:underline">{devUrl}</a>
                         </div>
                     )}
-                    <Link href="/login" className="font-bold text-[#0268c0] hover:underline text-[16px]">Back to Login</Link>
+                    <Link href="/login" className="font-bold text-[#0268c0] hover:underline text-[14px] sm:text-[16px]">Back to Login</Link>
                 </div>
             ) : (
                 <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-8 lg:gap-10 w-full">
@@ -79,7 +82,7 @@ export default function ForgotPasswordPage() {
                         >
                             {isSubmitting ? "Sending…" : "Reset Password"}
                         </button>
-                        <p className="text-[16px] text-center">
+                        <p className="text-[14px] sm:text-[16px] text-center">
                             <span className="font-medium text-[#8f98a3]">Remember your password? </span>
                             <Link href="/login" className="font-bold text-[#0268c0] hover:underline">Log In</Link>
                         </p>
