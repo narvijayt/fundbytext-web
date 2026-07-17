@@ -1,11 +1,12 @@
+import { Suspense } from "react";
 import Link from "next/link";
-import { prisma } from "@/lib/prisma";
 import { getAuthUser } from "@/lib/session";
-import { CampaignStatus } from "@/generated/prisma/enums";
 import NavBar from "@/components/NavBar";
 import MarketingFooter from "@/components/MarketingFooter";
-import CampaignCard from "@/app/(protected)/dashboard/_components/CampaignCard";
-import Pagination from "@/app/(protected)/dashboard/_components/Pagination";
+import { FILTERS, type FilterKey } from "./_data";
+import CampaignSearch, { RESULTS_ID } from "./_components/CampaignSearch";
+import CampaignsResults, { CampaignCount } from "./_components/CampaignsResults";
+import CampaignsGridSkeleton from "./_components/CampaignsGridSkeleton";
 
 // ── Asset paths ───────────────────────────────────────────────────────────────
 const F = "/figma";
@@ -15,20 +16,6 @@ const A_FLAG_PIN  = `${F}/flag-pin.svg`;
 // Same grey 20px dot grid the About hero uses — it runs over the blue and the
 // white arch alike.
 const DOT_TEXTURE = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20'%3E%3Crect width='2' height='2' fill='rgba(87%2C114%2C141%2C0.3)'/%3E%3C/svg%3E")`;
-
-// ── Types ────────────────────────────────────────────────────────────────────
-
-// Six per page, matching the dashboard grid.
-const PAGE_SIZE = 6;
-
-type FilterKey = "all" | "active" | "upcoming" | "completed";
-
-const FILTERS: { key: FilterKey; label: string }[] = [
-    { key: "all",       label: "All Campaigns" },
-    { key: "active",    label: "Active"         },
-    { key: "upcoming",  label: "Upcoming"       },
-    { key: "completed", label: "Completed"      },
-];
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 
@@ -55,59 +42,6 @@ function SectionBadge({ label }: { label: string }) {
     );
 }
 
-// ── Data ─────────────────────────────────────────────────────────────────────
-
-async function getCampaigns(filter: FilterKey, q: string) {
-    const statusFilter = filter === "all"
-        ? { in: [CampaignStatus.active, CampaignStatus.upcoming, CampaignStatus.completed] as CampaignStatus[] }
-        : { equals: filter as CampaignStatus };
-
-    const rows = await prisma.campaign.findMany({
-        where: {
-            // Private campaigns are members-only — the campaign page 403s them to
-            // everyone else, so they must never be listed or searchable here either.
-            visibility: "public",
-            status: statusFilter,
-            // Match name OR organisation: people search for "the softball one" and
-            // for their school/club by name. Mirrors /api/v1/campaigns/search.
-            ...(q ? {
-                OR: [
-                    { name:             { contains: q, mode: "insensitive" as const } },
-                    { org_display_name: { contains: q, mode: "insensitive" as const } },
-                    { organization:     { name: { contains: q, mode: "insensitive" as const } } },
-                ],
-            } : {}),
-        },
-        orderBy: [{ status: "asc" }, { created_at: "desc" }],
-        select: {
-            id:                  true,
-            slug:                true,
-            name:                true,
-            status:              true,
-            campaign_type:       true,
-            current_step:        true,
-            goal_type:           true,
-            goal_amount:         true,
-            initial_goal_amount: true,
-            total_raised:        true,
-            start_date:          true,
-            end_date:            true,
-            created_at:          true,
-            timezone:            true,
-            payout:              { select: { city: true, state: true } },
-            media:               { select: { media_type: true, url: true } },
-            _count:              { select: { members: true, donors: true, donations: true } },
-        },
-    });
-
-    return rows.map((c) => ({
-        ...c,
-        // Public browse has no "me" — the card's public variant ignores both.
-        myRoles: [] as string[],
-        myDonorCount: 0,
-    }));
-}
-
 // ── Page ─────────────────────────────────────────────────────────────────────
 
 export const metadata = {
@@ -120,20 +54,20 @@ export default async function CampaignsPage({
 }: {
     searchParams: Promise<{ filter?: string; q?: string; page?: string }>;
 }) {
-    const { filter: rawFilter, q = "", page: rawPage } = await searchParams;
+    const { filter: rawFilter, q: rawQ = "", page: rawPage } = await searchParams;
     const filter = (FILTERS.some((f) => f.key === rawFilter) ? rawFilter : "all") as FilterKey;
+    const q = rawQ.trim();
 
-    const [user, campaigns] = await Promise.all([
-        getAuthUser(),
-        getCampaigns(filter, q.trim()),
-    ]);
+    // ONLY the session is awaited here. The campaign query used to be awaited at the
+    // top level too, which blocked the entire page — hero, search and tabs included —
+    // behind the database, so switching a tab meant a dead click and a full-page
+    // splash. It now lives in <CampaignsResults>, streamed in behind a skeleton, so
+    // the shell paints immediately and only the grid waits.
+    const user = await getAuthUser();
 
-    // Page the list the same way the dashboard does: clamp the requested page so a
-    // stale ?page= (or one left over after filtering) still lands on real results.
-    const totalPages = Math.max(1, Math.ceil(campaigns.length / PAGE_SIZE));
-    const current    = Math.min(Math.max(1, parseInt(rawPage ?? "1", 10) || 1), totalPages);
-    const pageItems  = campaigns.slice((current - 1) * PAGE_SIZE, current * PAGE_SIZE);
-    const linkParams = [filter !== "all" ? `filter=${filter}` : "", q ? `q=${encodeURIComponent(q)}` : ""].filter(Boolean).join("&");
+    // Re-key the boundaries on the query so they re-suspend (and show the skeleton)
+    // on every filter/search/page change, rather than holding the previous results.
+    const resultsKey = `${filter}|${q}|${rawPage ?? "1"}`;
 
     return (
         <div className="font-sans text-gray-900 overflow-x-hidden">
@@ -149,15 +83,13 @@ export default async function CampaignsPage({
                     <div className="absolute inset-0" style={{
                         background: "linear-gradient(176deg,rgba(37,144,242,1) 0%,rgba(63,158,245,1) 26%,rgba(69,161,245,1) 52%,rgba(74,164,245,1) 76%,rgba(54,153,243,1) 100%)",
                     }} />
-                    {/* White halo — per-breakpoint falloff (same as HeroBackdrop), so it
-                        reads as a wash rather than a concentrated "sun". A single md+
-                        ellipse fell to transparent before the mobile edges, ringing the
-                        bright centre with blue. */}
-                    <div className="absolute inset-0 md:hidden" style={{
-                        background: "radial-gradient(ellipse 88% 54% at 50% 26%,rgba(255,255,255,1) 0%,rgba(255,255,255,0.96) 32%,rgba(255,255,255,0.82) 50%,rgba(255,255,255,0.58) 68%,rgba(255,255,255,0.3) 86%,rgba(255,255,255,0.12) 100%)",
-                    }} />
-                    <div className="absolute inset-0 hidden md:block" style={{
-                        background: "radial-gradient(ellipse 84% 62% at 50% 28%,rgba(255,255,255,0.96) 0%,rgba(255,255,255,0.82) 26%,rgba(198,231,255,0.44) 48%,rgba(37,144,242,0.10) 72%,transparent 90%)",
+                    {/* White halo — byte-for-byte the marketing home hero's single wash.
+                        It must fade to TRANSPARENT (by 90%) at every width: the previous
+                        per-breakpoint version kept 12% white all the way to the mobile
+                        edges, which lit the whole hero and left the white MENU pill with
+                        no blue behind it to read against. */}
+                    <div className="absolute inset-0" style={{
+                        background: "radial-gradient(ellipse 86% 58% at 50% 24%,rgba(255,255,255,1) 0%,rgba(255,255,255,0.95) 26%,rgba(198,231,255,0.5) 48%,rgba(37,144,242,0.10) 72%,transparent 90%)",
                     }} />
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img alt="" src={A_HERO_BLUR}
@@ -188,29 +120,8 @@ export default async function CampaignsPage({
                         Discover fundraisers from individuals and organizations — and make a difference today.
                     </p>
 
-                    {/* Search — plain GET so it works without JS; the header overlay
-                        hands off here with ?q=. */}
-                    <form method="GET" className="w-full max-w-[560px]">
-                        {filter !== "all" && <input type="hidden" name="filter" value={filter} />}
-                        <div className="flex items-center gap-2 rounded-[16px] border border-[#d4dee7] bg-white p-2 pl-4 shadow-[0_12px_28px_-12px_rgba(0,91,172,0.4)] focus-within:border-[#0268c0]">
-                            <svg className="h-4 w-4 shrink-0 text-[#9aa7b8]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                <circle cx="11" cy="11" r="7" /><path strokeLinecap="round" d="M21 21l-4.3-4.3" />
-                            </svg>
-                            <input
-                                name="q"
-                                defaultValue={q}
-                                placeholder="Search campaigns or organizations…"
-                                aria-label="Search campaigns or organizations"
-                                className="min-w-0 flex-1 bg-transparent py-2 text-[15px] text-[#003060] placeholder:text-[#9aa7b8] focus:outline-none"
-                            />
-                            <button type="submit"
-                                className="relative shrink-0 overflow-hidden rounded-[12px] px-5 py-3 text-white font-black text-xs tracking-[1px] uppercase transition-transform hover:scale-105"
-                                style={{ background: "linear-gradient(to bottom,#ea6725,#ff8c53)" }}>
-                                <span className="relative z-10">Search</span>
-                                <span aria-hidden className="absolute inset-0 rounded-[inherit] shadow-[inset_0_-4px_3px_-2px_#ea6725,inset_0_3px_2px_-1px_#fbcab1] pointer-events-none" />
-                            </button>
-                        </div>
-                    </form>
+                    {/* Navigates client-side and scrolls the results into view. */}
+                    <CampaignSearch filter={filter} initialQ={q} />
                 </div>
             </section>
 
@@ -242,42 +153,19 @@ export default async function CampaignsPage({
                             })}
                         </div>
                         <p className="hidden sm:block shrink-0 py-3 text-[12px] font-black uppercase tracking-[1px] text-[#aeb5bd]">
-                            {campaigns.length} campaign{campaigns.length !== 1 ? "s" : ""}
+                            <Suspense key={resultsKey} fallback={<span className="opacity-0">0 campaigns</span>}>
+                                <CampaignCount filter={filter} q={q} />
+                            </Suspense>
                         </p>
                     </div>
 
-                    {campaigns.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center rounded-[16px] border border-[#eaeef3] bg-white py-20 text-center shadow-[0_1px_4px_0_rgba(25,33,61,0.08)]">
-                            <span className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#eef5fc]">
-                                <svg className="h-6 w-6 text-[#0268c0]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-                                    <circle cx="11" cy="11" r="7" /><path strokeLinecap="round" d="M21 21l-4.3-4.3" />
-                                </svg>
-                            </span>
-                            <p className="font-black text-[#003060] text-[20px] leading-[1.25]">No campaigns found</p>
-                            <p className="mt-2 max-w-[380px] text-[15px] leading-[1.4] text-[#7e8a96]">
-                                {q ? <>Nothing matches “<span className="font-semibold text-[#003060]">{q}</span>”. Try a different name or organization.</> : "There are no campaigns in this category yet."}
-                            </p>
-                            <Link href={q ? "/campaigns" : "/campaigns/create"}
-                                className="relative mt-6 overflow-hidden rounded-[16px] px-6 py-3.5 text-white font-black text-xs tracking-[1px] uppercase transition-transform hover:scale-105"
-                                style={{ background: "linear-gradient(to bottom,#ea6725,#ff8c53)" }}>
-                                <span className="relative z-10">{q ? "Clear search" : "Start the first one"}</span>
-                                <span aria-hidden className="absolute inset-0 rounded-[inherit] shadow-[inset_0_-4px_3px_-2px_#ea6725,inset_0_3px_2px_-1px_#fbcab1] pointer-events-none" />
-                            </Link>
-                        </div>
-                    ) : (
-                        <>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                                {pageItems.map((c) => (
-                                    <CampaignCard key={c.slug} campaign={c} variant="public" />
-                                ))}
-                            </div>
-                            {totalPages > 1 && (
-                                <div className="mt-10">
-                                    <Pagination page={current} totalPages={totalPages} params={linkParams} basePath="/campaigns" scroll={false} />
-                                </div>
-                            )}
-                        </>
-                    )}
+                    {/* scroll-mt clears the results of the sticky header when the search
+                        scrolls them into view. */}
+                    <div id={RESULTS_ID} className="scroll-mt-24">
+                        <Suspense key={resultsKey} fallback={<CampaignsGridSkeleton />}>
+                            <CampaignsResults filter={filter} q={q} rawPage={rawPage} />
+                        </Suspense>
+                    </div>
                 </div>
             </section>
 
