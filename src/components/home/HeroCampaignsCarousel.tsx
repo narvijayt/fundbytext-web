@@ -50,19 +50,20 @@ export default function HeroCampaignsCarousel({
 function Row({ cards, browseHref, compact }: {
     cards: HeroCard[]; browseHref: string; compact?: boolean;
 }) {
-    // Start on the middle card so the strongest campaign is the one popped out.
-    const mid = Math.floor(cards.length / 2);
+    // Centre the middle card so the strongest campaign is the one popped out. A 1–2
+    // card row has no real middle, so centre the FIRST instead of the 2nd.
+    const centerIndex = cards.length >= 3 ? Math.floor(cards.length / 2) : 0;
     const [emblaRef, emblaApi] = useEmblaCarousel({
         align: "center",
-        startIndex: compact ? 0 : mid,
-        // Desktop: containScroll off so EVERY card centres when selected — including
-        // the first and last (trimSnaps would pin those to the edges, which is why
-        // scrolling to card 1 left it stuck at the left instead of the middle).
-        // Compact stays trimSnaps: it's a plain start-aligned swipe strip.
-        containScroll: compact ? "trimSnaps" : false,
+        startIndex: centerIndex,
+        // containScroll off on BOTH so any selected card centres — including the
+        // first and last. compact used to be a start-aligned strip (trimSnaps),
+        // which on mobile left the first card flush-left and cut off; now the active
+        // card sits dead-centre with its neighbours peeking either side.
+        containScroll: false,
     });
 
-    const [selected, setSelected] = useState(compact ? -1 : mid);
+    const [selected, setSelected] = useState(compact ? -1 : centerIndex);
     useEffect(() => {
         if (!emblaApi) return;
         const onSelect = () => setSelected(emblaApi.selectedScrollSnap());

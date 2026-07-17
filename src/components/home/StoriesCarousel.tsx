@@ -22,13 +22,15 @@ export default function StoriesCarousel({ stories, dotTone = "blue" }: {
      *  the blue wash; "blue" (default) for the home page's white backdrop. */
     dotTone?: "blue" | "white";
 }) {
+    // Centre the middle card; a 1–2 card row has no real middle, so centre the first.
+    const centerIndex = stories.length >= 3 ? Math.floor(stories.length / 2) : 0;
     const [emblaRef, emblaApi] = useEmblaCarousel({
         align: "center",
-        startIndex: 1,
+        startIndex: centerIndex,
         containScroll: false,
         skipSnaps: true,
     });
-    const [selected, setSelected] = useState(1);
+    const [selected, setSelected] = useState(centerIndex);
 
     useEffect(() => {
         if (!emblaApi) return;
