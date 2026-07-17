@@ -162,8 +162,14 @@
     font-display: swap;
 }
 
-/* ─── Theme ────────────────────────────────────────────────── */
+/* ─── Theme ──────────────────────────────────────────────────
+   The whole product is designed light-only (no dark: variants, no theme
+   toggle). color-scheme: light keeps the browser canvas, scrollbars and form
+   controls light even when the OS is in dark mode — otherwise the near-black
+   canvas showed through anything transparent, e.g. the rounded top corners of
+   the "See How It Works" section. */
 :root {
+    color-scheme: light;
     --background: #ffffff;
     --foreground: #171717;
 }
@@ -175,12 +181,8 @@
     --font-display: "SF Pro Display", "SF Pro", Arial, sans-serif;
 }
 
-@media (prefers-color-scheme: dark) {
-    :root {
-        --background: #0a0a0a;
-        --foreground: #ededed;
-    }
-}
+/* No dark-mode override: the design is light-only, and darkening the body here
+   turned transparent areas (rounded section corners) black under OS dark mode. */
 
 /* ─── Campaign wizard shell ────────────────────────────────────
    The creation flow is built 1:1 with the Figma design, so spacing,
