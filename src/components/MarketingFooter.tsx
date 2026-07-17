@@ -57,8 +57,11 @@ export default function MarketingFooter() {
                     <div className="flex flex-col sm:flex-row gap-10 sm:gap-4 w-full">
                         <div className="sm:w-[300px] shrink-0">
                             <Link href="/" className="inline-block">
+                                {/* Scales down below sm, where the row stacks and a 180px mark
+                                    swallowed half a 360px screen. Same 180:67 ratio. */}
                                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                                <img alt="FundbyText" src={A_FOOTER_LOGO} style={{ width: 180, height: 67, display: "block" }} />
+                                <img alt="FundbyText" src={A_FOOTER_LOGO}
+                                    className="block w-[132px] h-[49px] sm:w-[180px] sm:h-[67px]" />
                             </Link>
                         </div>
                         <div className="flex-1 flex flex-col gap-6">
@@ -120,11 +123,14 @@ export default function MarketingFooter() {
                     <div className="absolute inset-0 pointer-events-none"
                         style={{ background: "linear-gradient(to bottom,#0268c0 0%,rgba(2,104,192,0) 100%)" }} />
                     <div className="relative z-10 flex-1 flex flex-col gap-4">
-                        <h3 className="font-black text-[28px] sm:text-[32px] lg:text-[38px] xl:text-[44px] leading-[1.1] tracking-[-1px] bg-clip-text text-transparent w-full"
+                        {/* Below sm the card goes full-width and stacks above the white
+                            card, where 28px/18px read oversized against the rest of the
+                            mobile page. sm and up keep the existing sizes. */}
+                        <h3 className="font-black text-[23px] sm:text-[32px] lg:text-[38px] xl:text-[44px] leading-[1.1] tracking-[-1px] bg-clip-text text-transparent w-full"
                             style={{ backgroundImage: "linear-gradient(to right,#ffffff,rgba(255,255,255,0.8))" }}>
                             Ready to Inspire?
                         </h3>
-                        <p className="font-normal text-white/80 text-lg leading-[1.4] w-full">Start Your FundbyText Campaign Today.</p>
+                        <p className="font-normal text-white/80 text-[15px] sm:text-lg leading-[1.4] w-full">Start Your FundbyText Campaign Today.</p>
                     </div>
                     <div className="relative z-10 flex flex-col gap-3 w-full">
                         <Link href="/campaigns/create"
