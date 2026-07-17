@@ -20,12 +20,25 @@ export type ApartCard = {
  * The image is pushed to the bottom so it still lines up across cards.
  */
 export default function ApartCarousel({ cards }: { cards: ApartCard[] }) {
+    // Which card opens centred. Mobile opens on the FIRST — a phone slider reads
+    // better starting at the start of the list than dropped into the middle of it,
+    // which is the rule across the public sliders. md+ keeps the second card, so the
+    // first still peeks in from the left and the row reads as a centred carousel.
+    //
+    // Read once at init. It only feeds Embla's startIndex and never the markup, so
+    // the server/client difference can't cause a hydration mismatch.
+    const [startIdx] = useState(() =>
+        typeof window !== "undefined" && window.matchMedia("(min-width: 768px)").matches ? 1 : 0,
+    );
     const [emblaRef, emblaApi] = useEmblaCarousel({
         align: "center",
-        startIndex: 1,
+        startIndex: startIdx,
         containScroll: false,
         skipSnaps: true,
     });
+    // A constant on both server and client (NOT startIdx, which varies by viewport)
+    // or the active dot would desync at hydration. Embla's "select" fires on mount
+    // and corrects it.
     const [selected, setSelected] = useState(1);
 
     useEffect(() => {
