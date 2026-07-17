@@ -104,9 +104,19 @@ export default function MarketingFooter() {
                 <div className="relative overflow-hidden rounded-[24px] p-8 sm:p-10 flex flex-col gap-8 w-full lg:w-[328px] lg:flex-none bg-[#0268c0]">
                     {/* F-pattern watermark (Figma export) drifting + fading linear overlay.
                         Transform drift (GPU-composited) so it keeps running on mobile; the
-                        layer is one tile wider than the card and the card clips the overflow. */}
-                    <div aria-hidden className="footer-drift [--fd:-170px] pointer-events-none absolute inset-y-0 left-0 right-[-170px]"
-                        style={{ backgroundImage: F_WATERMARK, backgroundRepeat: "repeat", backgroundSize: "170px 170px" }} />
+                        layer is one tile wider than the card and the card clips the overflow.
+                        --fd and right are set INLINE, not via Tailwind arbitrary classes:
+                        those got purged from the production CSS, so the drift ran locally but
+                        froze on Vercel — the same fix VectorWallpaper already carries. */}
+                    <div aria-hidden className="footer-drift pointer-events-none absolute inset-y-0 left-0"
+                        style={{
+                            "--fd": "-170px",
+                            right: -170,
+                            backgroundImage: F_WATERMARK,
+                            backgroundRepeat: "repeat",
+                            backgroundSize: "170px 170px",
+                            backfaceVisibility: "hidden",
+                        } as React.CSSProperties} />
                     <div className="absolute inset-0 pointer-events-none"
                         style={{ background: "linear-gradient(to bottom,#0268c0 0%,rgba(2,104,192,0) 100%)" }} />
                     <div className="relative z-10 flex-1 flex flex-col gap-4">
