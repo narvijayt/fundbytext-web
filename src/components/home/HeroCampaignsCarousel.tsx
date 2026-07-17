@@ -126,8 +126,13 @@ function Card({ c, featured, compact }: { c: HeroCard; featured: boolean; compac
     // The Figma cards are 300×404 on the 1920 board. Below 2xl they step down a
     // tier so the full five-card row fits a laptop (≈1440) without the outer cards
     // getting harshly clipped — the "made on larger screens" scaling caveat.
+    // A soft, foggy drop shadow rather than the bright-blue one it had — brand blue
+    // at 0.3 read as a hard colour-block, especially where the card overlaps the
+    // white curved area (the login page). A darker, desaturated navy at low opacity
+    // with a big blur diffuses instead, and reads as depth on both the blue hero and
+    // the white below it.
     const shadow = featured
-        ? "0 20px 20px -12px rgba(2,120,222,0.3),0 50px 80px -16px rgba(2,120,222,0.3)"
+        ? "0 22px 44px -14px rgba(0,54,110,0.18),0 46px 90px -30px rgba(0,54,110,0.16)"
         : undefined;
     // 264-wide up to a wide desktop, then the Figma's 300 once the viewport is big
     // enough to seat all five at that size (~1680+). The jump waits for the room so
