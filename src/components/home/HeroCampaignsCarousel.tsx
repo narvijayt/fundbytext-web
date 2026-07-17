@@ -97,8 +97,10 @@ function Row({ cards, browseHref, compact, fromStart }: {
                 row. containScroll:false already lets the SELECTED card settle where
                 `align` asks — over-scrolling into empty space when the row doesn't
                 fill the viewport — which is what a 1–2 card row needs.
-                The px-4 also gives the start-aligned first card (mobile) the ~8px it
-                needs to scale up without the overflow-hidden clipping its left edge. */}
+                This px-4 buys the start-aligned row NO room to scale into: Embla
+                translates the track to put the leading card flush with the viewport's
+                edge, which cancels the padding out. The featured card's scale headroom
+                comes from its transform-origin instead — see below. */}
             <div className={`flex items-center ${compact ? "gap-3 px-4" : "gap-5 px-4"}`}>
                 {cards.map((c, i) => {
                     // The SELECTED card is always the featured one — at EVERY width, so
@@ -114,6 +116,17 @@ function Row({ cards, browseHref, compact, fromStart }: {
                             className="flex-none transition-[transform] duration-300 ease-out"
                             style={{
                                 transform: isFeatured ? up : compact ? "scale(0.95)" : "scale(0.92)",
+                                // Start-aligned (mobile), the leading card's left edge sits
+                                // flush against the viewport's clip edge, so scaling it from
+                                // the CENTRE grows it ~8px INTO the clip and shaves its left
+                                // side — the badge and title lost their first letters. Growing
+                                // from the left edge instead keeps the card whole and leaves it
+                                // flush with the page's content margin. Centre-aligned rows are
+                                // nowhere near an edge, so they keep growing both ways.
+                                // Set for EVERY slide in the row, not just the featured one:
+                                // transform-origin doesn't tween, so switching it as the
+                                // selection moves would jump the cards mid-transition.
+                                transformOrigin: fromStart ? "left center" : undefined,
                                 zIndex: isFeatured ? 10 : 1,
                             }}>
                             <Link href={c.slug} className="block">
