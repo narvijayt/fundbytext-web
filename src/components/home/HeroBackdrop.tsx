@@ -45,27 +45,30 @@ export default function HeroBackdrop({ archHeight = "34.5%", archDrop = 79 }: {
             <div className="absolute inset-0" style={{
                 background: "linear-gradient(176deg,rgba(37,144,242,1) 0%,rgba(63,158,245,1) 26%,rgba(69,161,245,1) 52%,rgba(74,164,245,1) 76%,rgba(54,153,243,1) 100%)",
             }} />
-            {/* White halo — one ellipse can't serve both frames, because the design
-                spreads it differently: on mobile it washes all the way to the edges
-                (#9ACDF8 at x=0) while on desktop it deliberately stops short and
-                leaves them saturated (#258FF2 at x=0). Sharing the desktop curve on
-                a 375 viewport left a bright centre ringed by blue — reading as a
-                "sun" rather than a wash. Each breakpoint gets its own falloff,
-                traced from the matching frame. */}
-            {/* Mobile: broad, flat wash that stays lit to the edges. Alphas run
-                above the raw values traced off the frame because the dot grid and
-                the soft-light grain sit over this and eat some of the white. */}
-            <div className="absolute inset-0 md:hidden" style={{
-                background: "radial-gradient(ellipse 88% 54% at 50% 26%,rgba(255,255,255,1) 0%,rgba(255,255,255,0.96) 32%,rgba(255,255,255,0.82) 50%,rgba(255,255,255,0.58) 68%,rgba(255,255,255,0.3) 86%,rgba(255,255,255,0.12) 100%)",
-            }} />
-            {/* md+: tighter glow that fades into the blue well before the edges. */}
-            <div className="absolute inset-0 hidden md:block" style={{
-                background: "radial-gradient(ellipse 84% 62% at 50% 28%,rgba(255,255,255,0.96) 0%,rgba(255,255,255,0.82) 26%,rgba(198,231,255,0.44) 48%,rgba(37,144,242,0.10) 72%,transparent 90%)",
+            {/* White halo — the home page's, and the only one. It used to be a
+                breakpoint pair, on the theory that the mobile frame wants a wash lit
+                all the way to the edges. That mobile layer held white at 0.82 out to
+                half the width and bottomed out at 0.12, so nothing around it stayed
+                blue and the nav lost its backdrop: the Menu pill is white, and on a
+                near-white field it read as transparent. Home's single ramp reaches
+                `transparent` by 90%, so the blue survives around the glow — and
+                matching it is what keeps these pages looking like the home hero.
+
+                The VERTICAL geometry is stated in px rather than the % home uses,
+                because % resolves against the hero box and these heroes vary widely:
+                ~420px on mobile against home's ~1040, so the same percentages squash
+                the halo and drag its hot centre up onto the nav (26% of the radius vs
+                home's 34%). Home's % work out to ~250px centre / ~600px radius at
+                both its breakpoints, so saying that outright reproduces its spread at
+                any hero height. Horizontal stays a share of the width — every hero is
+                full-bleed, so that one already matches. */}
+            <div className="absolute inset-0" style={{
+                background: "radial-gradient(ellipse 86% 600px at 50% 250px,rgba(255,255,255,1) 0%,rgba(255,255,255,0.95) 26%,rgba(198,231,255,0.5) 48%,rgba(37,144,242,0.10) 72%,transparent 90%)",
             }} />
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img alt="" src={A_HERO_BLUR}
                 className="absolute left-1/2 -translate-x-1/2 pointer-events-none"
-                style={{ width: 1500, height: 1450, top: -480, opacity: 0.9 }} />
+                style={{ width: 1600, height: 1546, top: -430, opacity: 0.9 }} />
 
             {/* White arch. In the Figma it peaks at ~65.5% of the hero in the
                 centre and drops to ~74% at the edges — so it passes through the

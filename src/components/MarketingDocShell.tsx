@@ -71,17 +71,28 @@ export default async function MarketingDocShell({ badge, title, intro, children,
                         <div className="absolute inset-0" style={{
                             background: "linear-gradient(176deg,rgba(37,144,242,1) 0%,rgba(63,158,245,1) 26%,rgba(69,161,245,1) 52%,rgba(74,164,245,1) 76%,rgba(54,153,243,1) 100%)",
                         }} />
-                        {/* Mobile: broad, flat wash that stays lit to the edges. */}
-                        <div className="absolute inset-0 md:hidden" style={{
-                            background: "radial-gradient(ellipse 88% 54% at 50% 26%,rgba(255,255,255,1) 0%,rgba(255,255,255,0.96) 32%,rgba(255,255,255,0.82) 50%,rgba(255,255,255,0.58) 68%,rgba(255,255,255,0.3) 86%,rgba(255,255,255,0.12) 100%)",
-                        }} />
-                        {/* md+: tighter glow that fades into the blue before the edges. */}
-                        <div className="absolute inset-0 hidden md:block" style={{
-                            background: "radial-gradient(ellipse 84% 62% at 50% 28%,rgba(255,255,255,0.96) 0%,rgba(255,255,255,0.82) 26%,rgba(198,231,255,0.44) 48%,rgba(37,144,242,0.10) 72%,transparent 90%)",
+                        {/* One halo, the home page's — not a per-breakpoint pair. The old
+                            mobile layer held white at 0.82 out to half the width and never
+                            fell below 0.12, so it stayed lit to the edges and washed out
+                            the nav: the Menu pill is white, and on a near-white backdrop it
+                            read as transparent. Home's ramp reaches `transparent` by 90%,
+                            so the blue survives around it.
+
+                            The VERTICAL geometry is in px, not the % home uses, because %
+                            resolves against the hero box and this hero is roughly half the
+                            height of home's (no carousel under the headline). Home's own %
+                            work out to ~250px centre / ~600px radius at both its
+                            breakpoints; stating that outright reproduces its spread here
+                            instead of squashing the halo into a shorter box, which put the
+                            nav at 26% of the radius rather than home's 34% — deep in the
+                            hot centre. Horizontal stays 86% of the width, as both heroes
+                            are full-bleed. */}
+                        <div className="absolute inset-0" style={{
+                            background: "radial-gradient(ellipse 86% 600px at 50% 250px,rgba(255,255,255,1) 0%,rgba(255,255,255,0.95) 26%,rgba(198,231,255,0.5) 48%,rgba(37,144,242,0.10) 72%,transparent 90%)",
                         }} />
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img alt="" src={A_HERO_BLUR} className="absolute left-1/2 -translate-x-1/2 pointer-events-none"
-                            style={{ width: 1500, height: 1450, top: -480, opacity: 0.9 }} />
+                            style={{ width: 1600, height: 1546, top: -430, opacity: 0.9 }} />
 
                         {/* Arch at the blue's bottom — it lands behind the card, so it
                             reads only in the blue strips either side of it. */}
