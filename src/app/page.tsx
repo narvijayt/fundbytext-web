@@ -321,25 +321,34 @@ export default async function HomePage() {
                         {/* No dividers — the Figma (esp. the mobile 2×2) sets the stats
                             on plain cells with only whitespace between them. */}
                         <div className="grid grid-cols-2 gap-y-6 lg:flex lg:items-center lg:justify-center">
+                            {/* Three icon tiers. The 2-up grid runs all the way to lg, so on a
+                                narrow phone a cell is only ~180px — the icon plus padding left
+                                too little for the value and "$12.5M+" clipped. The base tier
+                                shrinks the icon and the number; sm restores the tablet sizes.
+                                Sizes ride on inline CSS vars so the Tailwind classes stay
+                                static literals (arbitrary classes built from template literals
+                                get purged from the prod CSS — see VectorWallpaper). */}
                             {[
-                                { img: A_STAT_CAMPAIGNS, imgH: 96, imgW: 80,  smH: 60, smW: 50, value: "200+",             label: "Campaigns Launched" },
-                                { img: A_STAT_GOALS,     imgH: 70, imgW: 77,  smH: 44, smW: 48, value: "97%",              label: "Goals Met" },
-                                { img: A_STAT_ORGS,      imgH: 96, imgW: 114, smH: 60, smW: 72, value: "34+",              label: "Organizations" },
-                                { img: A_STAT_RAISED,    imgH: 88, imgW: 82,  smH: 55, smW: 52, value: totalRaisedDisplay, label: "Raised & Counting" },
+                                { img: A_STAT_CAMPAIGNS, imgH: 96, imgW: 80,  smH: 60, smW: 50, xsH: 41, xsW: 34, value: "200+",             label: "Campaigns Launched" },
+                                { img: A_STAT_GOALS,     imgH: 70, imgW: 77,  smH: 44, smW: 48, xsH: 30, xsW: 33, value: "97%",              label: "Goals Met" },
+                                { img: A_STAT_ORGS,      imgH: 96, imgW: 114, smH: 60, smW: 72, xsH: 41, xsW: 49, value: "34+",              label: "Organizations" },
+                                { img: A_STAT_RAISED,    imgH: 88, imgW: 82,  smH: 55, smW: 52, xsH: 37, xsW: 35, value: totalRaisedDisplay, label: "Raised & Counting" },
                             ].map((s) => (
                                 <div key={s.label}
-                                    className="flex items-center gap-3 lg:gap-5 px-4 lg:px-8 py-2 lg:py-4 lg:min-w-[230px] xl:min-w-[260px]">
+                                    className="flex items-center gap-2 sm:gap-3 lg:gap-5 px-2.5 sm:px-4 lg:px-8 py-2 lg:py-4 lg:min-w-[230px] xl:min-w-[260px]">
                                     <div className="shrink-0">
                                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                                        <img alt="" src={s.img} className="object-contain lg:hidden"
-                                            style={{ width: s.smW, height: s.smH }} />
-                                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                                        <img alt="" src={s.img} className="object-contain hidden lg:block"
-                                            style={{ width: s.imgW, height: s.imgH }} />
+                                        <img alt="" src={s.img}
+                                            className="object-contain w-(--iw) h-(--ih) sm:w-(--iw-sm) sm:h-(--ih-sm) lg:w-(--iw-lg) lg:h-(--ih-lg)"
+                                            style={{
+                                                "--iw": `${s.xsW}px`,  "--ih": `${s.xsH}px`,
+                                                "--iw-sm": `${s.smW}px`,  "--ih-sm": `${s.smH}px`,
+                                                "--iw-lg": `${s.imgW}px`, "--ih-lg": `${s.imgH}px`,
+                                            } as React.CSSProperties} />
                                     </div>
                                     <div className="flex flex-col gap-1 lg:gap-2 min-w-0">
-                                        <p className="font-black text-[#0268c0] text-[26px] lg:text-[28px] leading-none truncate">{s.value}</p>
-                                        <p className="font-black text-[#aeb5bd] text-[9px] lg:text-xs tracking-[1px] uppercase leading-tight mt-1">{s.label}</p>
+                                        <p className="font-black text-[#0268c0] text-[20px] sm:text-[26px] lg:text-[28px] leading-none truncate">{s.value}</p>
+                                        <p className="font-black text-[#aeb5bd] text-[8px] sm:text-[9px] lg:text-xs tracking-[1px] uppercase leading-tight mt-1">{s.label}</p>
                                     </div>
                                 </div>
                             ))}
@@ -352,7 +361,10 @@ export default async function HomePage() {
                 HOW IT WORKS — "Fundraising made easy" (Figma 5814:10380)
             ═══════════════════════════════════════════════════════════ */}
             <section id="how-it-works" className="bg-white pt-16 pb-14 lg:pb-20">
-                <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-[144px]">
+                {/* The Figma's 144px gutter is a 1920-board value — applied from lg it ate
+                    28% of a 1024–1200 viewport and crushed the steps column, so it steps
+                    down through the range and only reaches 144px at 2xl. */}
+                <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-16 2xl:px-[144px]">
                     {/* Header + Subheader */}
                     <div className="flex flex-col items-center gap-5 mb-12 lg:mb-20">
                         <SectionBadge label="HOW it works" />
@@ -365,10 +377,14 @@ export default async function HomePage() {
                     {/* Steps: phone panel + steps content. Side-by-side from md — the
                         Figma tablet keeps the phone left / steps right rather than
                         stacking, so the phone shrinks at md and grows to its 536px at lg. */}
-                    <div className="flex flex-col md:flex-row items-center md:items-stretch gap-10 md:gap-8 lg:gap-20">
+                    <div className="flex flex-col md:flex-row items-center md:items-stretch gap-10 md:gap-8 lg:gap-10 xl:gap-14 2xl:gap-20">
 
                         {/* Phone mockup panel — exact Figma composition (blue dotted panel + iPhone) */}
-                        <div className="w-full min-w-0 max-w-[420px] md:max-w-none md:w-[280px] lg:w-[536px] md:flex-none self-center md:self-auto">
+                        {/* Fixed-width (flex-none) beside a flex-1 steps column, so its
+                            width directly sets how much room the steps get. It grows in
+                            steps rather than jumping straight to the Figma's 536px at lg —
+                            that jump is what starved the copy on a 1024–1200 screen. */}
+                        <div className="w-full min-w-0 max-w-[420px] md:max-w-none md:w-[280px] lg:w-[400px] xl:w-[480px] 2xl:w-[536px] md:flex-none self-center md:self-auto">
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img alt="Creating a campaign on FundByText" src={A_HIW_PHONE}
                                 className="w-full max-w-full h-auto block" />
