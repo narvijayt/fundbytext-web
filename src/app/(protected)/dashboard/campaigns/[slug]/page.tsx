@@ -20,6 +20,7 @@ import CampaignControls from "./_components/CampaignControls";
 import CopyUrlButton from "./_components/CopyUrlButton";
 import UpcomingBanner from "./_components/UpcomingBanner";
 import AblyDashboardUpdater from "./_components/AblyDashboardUpdater";
+import ScrollToHash from "@/app/(protected)/_components/ScrollToHash";
 
 const STATUS_BADGE: Record<CampaignStatus, { label: string; cls: string }> = {
     active:    { label: "Active",    cls: "bg-green-100 text-green-700"  },
@@ -322,6 +323,11 @@ export default async function CampaignDetailPage({
     return (
         <div className="space-y-6">
             <AblyDashboardUpdater campaignSlug={slug} />
+            {/* Sits inside the streamed content on purpose — see ScrollToHash. The
+                sidebar's section links land here with a #hash the browser has already
+                given up on, because this page streams behind loading.tsx. */}
+            <ScrollToHash />
+
 
             {/* ── Header ── */}
             <div className="flex items-start justify-between gap-3 sm:gap-4">
@@ -736,14 +742,20 @@ export default async function CampaignDetailPage({
                                         className="w-full aspect-[11/2] object-cover object-center sm:aspect-auto"
                                     />
                                 </div>
-                                <CampaignStatsBars
-                                    section="overall"
-                                    title="Final Campaign Statistics"
-                                    potentialDonors={donors.length}
-                                    donorEngagementPct={donors.length > 0 ? (donatedCount / donors.length) * 100 : 0}
-                                    avgDonation={donationCount > 0 ? raisedAmt / donationCount : 0}
-                                    avgPerDay={raisedAmt / daysElapsed}
-                                />
+                                {/* The sidebar offers Statistics on every campaign, so this
+                                    needs the anchor too — the completed organizer view was
+                                    the one branch of four without it, which left the link
+                                    dead once a campaign finished. */}
+                                <div id="statistics" className="scroll-mt-6">
+                                    <CampaignStatsBars
+                                        section="overall"
+                                        title="Final Campaign Statistics"
+                                        potentialDonors={donors.length}
+                                        donorEngagementPct={donors.length > 0 ? (donatedCount / donors.length) * 100 : 0}
+                                        avgDonation={donationCount > 0 ? raisedAmt / donationCount : 0}
+                                        avgPerDay={raisedAmt / daysElapsed}
+                                    />
+                                </div>
                             </>
                         );
                     })()}
