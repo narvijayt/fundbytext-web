@@ -48,16 +48,19 @@ export default function LoginPage() {
     return (
         <>
             <div className="w-full max-w-[502px] bg-white border border-[#eaeef3] rounded-[24px] p-7 sm:p-10 lg:p-14 flex flex-col gap-8 lg:gap-10 shadow-[0_30px_60px_-20px_rgba(0,48,96,0.25)]">
-            {/* Title */}
-            <div className="flex flex-col items-center gap-4">
-                <h1 className="text-[28px] sm:text-[32px] font-black text-[#003060] tracking-[-1px] text-center leading-[1.15]">
+            {/* Title. The Figma is drawn at 1920, so its 32px H1 / 18px body only apply
+                from sm up — on a phone they're oversized for a ~300px-wide card and step
+                down. (The field inputs stay at 16px regardless: below that, iOS zooms the
+                page in on focus.) */}
+            <div className="flex flex-col items-center gap-3 sm:gap-4">
+                <h1 className="text-[22px] sm:text-[32px] font-black text-[#003060] tracking-[-1px] text-center leading-[1.15]">
                     Login to your{" "}
                     <span className="relative inline-block">
                         account<span className="font-normal text-[#f47435]">!</span>
                         <img alt="" src="/figma/underline.svg" className="absolute left-0 -bottom-2.5 w-full h-auto pointer-events-none" />
                     </span>
                 </h1>
-                <p className="text-[#003060] text-base sm:text-lg text-center leading-[1.4]">
+                <p className="text-[#003060] text-[14px] sm:text-lg text-center leading-[1.4]">
                     Welcome back! Login to access your account.
                 </p>
             </div>
@@ -87,7 +90,7 @@ export default function LoginPage() {
 
                     <label className="flex items-center gap-1.5 cursor-pointer w-fit">
                         <input {...register("remember_me")} type="checkbox" className="w-4 h-4 rounded border-[#d4dee7] accent-[#0268c0]" />
-                        <span className="text-[16px] font-medium text-[#003060]">Remember me</span>
+                        <span className="text-[14px] sm:text-[16px] font-medium text-[#003060]">Remember me</span>
                     </label>
 
                     {serverError && <p className="text-sm text-red-500">{serverError}</p>}
@@ -101,9 +104,16 @@ export default function LoginPage() {
                     >
                         {isSubmitting ? "Logging in…" : "Log In"}
                     </button>
-                    <p className="text-[16px] text-center">
+                    {/* There is no public sign-up to send people to — an account is created
+                        for you as you build your first campaign, so "Sign Up" promised a
+                        page that doesn't exist. The link always pointed at /campaigns/create;
+                        the label now says so, matching the header's "Start a Campaign" CTA. */}
+                    <p className="text-[14px] sm:text-[16px] text-center leading-[1.4]">
                         <span className="font-medium text-[#8f98a3]">New to FundbyText? </span>
-                        <Link href="/campaigns/create" className="font-bold text-[#0268c0] hover:underline">Sign Up</Link>
+                        <Link href="/campaigns/create" className="font-bold text-[#0268c0] hover:underline">Start a Campaign</Link>
+                        <span className="block text-[12px] sm:text-[13px] font-medium text-[#aeb5bd] mt-1">
+                            We&apos;ll set up your account as you go — no separate sign-up.
+                        </span>
                     </p>
                 </div>
             </form>
