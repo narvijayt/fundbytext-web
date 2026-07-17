@@ -31,19 +31,43 @@ const CAMPAIGN_LINKS: { label: string; hash: string; icon: React.ReactNode; orga
 ];
 
 export default function SidebarCampaignsDropdown({ campaigns }: { campaigns: Campaign[] }) {
-    const [openSlugs, setOpenSlugs] = useState<Set<string>>(new Set());
     const pathname     = usePathname();
     const searchParams = useSearchParams();
     const isParticipantView = searchParams.get("view") === "participant";
 
+    // The campaign whose dashboard page is currently open (derived from the URL).
+    const activeCampaignSlug = (() => {
+        const match = pathname.match(/^\/dashboard\/campaigns\/([^/]+)/);
+        return match ? match[1] : null;
+    })();
+
+    // Start with the campaign you're viewing already expanded, so opening a campaign
+    // from the dashboard list lands on its page with its sidebar options already open.
+    const [openSlugs, setOpenSlugs] = useState<Set<string>>(
+        () => new Set(activeCampaignSlug ? [activeCampaignSlug] : []),
+    );
+
+    // Merge in the dropdowns the user had left open (persisted); the active campaign
+    // stays open regardless of what was saved.
     useEffect(() => {
         try {
             const saved: string[] = JSON.parse(localStorage.getItem(LS_KEY) ?? "[]");
-            setOpenSlugs(new Set(saved));
+            setOpenSlugs((prev) => new Set([...prev, ...saved]));
         } catch {
-            // default: all closed
+            // keep just the active campaign from the initial state
         }
     }, []);
+
+    // Re-open the active campaign whenever you navigate to a different one. The sidebar
+    // stays mounted across dashboard navigation, so we adjust state during render on the
+    // slug change (React's supported "store info from previous render" pattern) rather
+    // than in a derived-state effect.
+    const [prevActiveSlug, setPrevActiveSlug] = useState(activeCampaignSlug);
+    if (activeCampaignSlug !== prevActiveSlug) {
+        setPrevActiveSlug(activeCampaignSlug);
+        const slug = activeCampaignSlug;
+        if (slug) setOpenSlugs((prev) => (prev.has(slug) ? prev : new Set(prev).add(slug)));
+    }
 
     function toggle(slug: string) {
         setOpenSlugs((prev) => {
@@ -53,11 +77,6 @@ export default function SidebarCampaignsDropdown({ campaigns }: { campaigns: Cam
             return next;
         });
     }
-
-    const activeCampaignSlug = (() => {
-        const match = pathname.match(/^\/dashboard\/campaigns\/([^/]+)/);
-        return match ? match[1] : null;
-    })();
 
     if (campaigns.length === 0) return null;
 
