@@ -43,8 +43,14 @@ export default function HeroCampaignsCarousel({
     if (cards.length === 0) return null;
     return (
         <div className="w-full">
-            {/* Mobile / tablet — compact, one-size cards */}
-            <div className="lg:hidden pb-2">
+            {/* Mobile — compact, and opens on the FIRST card rather than the featured
+                centre one: on a phone viewport a slider reads better starting at the
+                start than dropped into the middle of the row. */}
+            <div className="md:hidden pb-2">
+                <Row cards={cards} browseHref={browseHref} compact fromStart />
+            </div>
+            {/* Tablet — compact, but featured-centre like the browser view */}
+            <div className="hidden md:block lg:hidden pb-2">
                 <Row cards={cards} browseHref={browseHref} compact />
             </div>
             {/* Desktop — featured-centre cards */}
@@ -55,23 +61,24 @@ export default function HeroCampaignsCarousel({
     );
 }
 
-function Row({ cards, browseHref, compact }: {
-    cards: HeroCard[]; browseHref: string; compact?: boolean;
+function Row({ cards, browseHref, compact, fromStart }: {
+    cards: HeroCard[]; browseHref: string; compact?: boolean; fromStart?: boolean;
 }) {
-    // Which card starts centred: 1→1st, 2→2nd, 3→2nd, 4→3rd, 5→3rd. That's exactly
-    // floor(n/2). Counted on the CARDS only — the "Browse all" slide never factors in.
-    const centerIndex = Math.floor(cards.length / 2);
+    // Which card is selected on load. fromStart (mobile) opens on the first card,
+    // left-aligned. Otherwise the featured centre card: 1→1st, 2→2nd, 3→2nd, 4→3rd,
+    // 5→3rd — floor(n/2). Counted on the CARDS only; "Browse all" never factors in.
+    const initialIndex = fromStart ? 0 : Math.floor(cards.length / 2);
     const [emblaRef, emblaApi] = useEmblaCarousel({
-        align: "center",
-        startIndex: centerIndex,
-        // containScroll off on BOTH so any selected card centres — including the
-        // first and last. compact used to be a start-aligned strip (trimSnaps),
-        // which on mobile left the first card flush-left and cut off; now the active
-        // card sits dead-centre with its neighbours peeking either side.
+        align: fromStart ? "start" : "center",
+        startIndex: initialIndex,
+        // containScroll stays off everywhere, and it's load-bearing twice over:
+        // any selected card can align (including the first and last), AND the snap
+        // list keeps mapping 1:1 to the slides, which `isFeatured` below depends on.
+        // "trimSnaps" slices Embla's slideRegistry, which desyncs that highlight.
         containScroll: false,
     });
 
-    const [selected, setSelected] = useState(centerIndex);
+    const [selected, setSelected] = useState(initialIndex);
     useEffect(() => {
         if (!emblaApi) return;
         const onSelect = () => setSelected(emblaApi.selectedScrollSnap());
@@ -87,15 +94,19 @@ function Row({ cards, browseHref, compact }: {
             {/* NO justify-content here. Embla positions the track with a transform;
                 justify-center centres the children as a GROUP (card + "Browse all"),
                 which fights that and left-shifted the card ~45px off centre on a short
-                row. containScroll:false + align:"center" already centres the SELECTED
-                card — over-scrolling into empty space when the row doesn't fill the
-                viewport — which is what a 1–2 card row needs. */}
+                row. containScroll:false already lets the SELECTED card settle where
+                `align` asks — over-scrolling into empty space when the row doesn't
+                fill the viewport — which is what a 1–2 card row needs.
+                The px-4 also gives the start-aligned first card (mobile) the ~8px it
+                needs to scale up without the overflow-hidden clipping its left edge. */}
             <div className={`flex items-center ${compact ? "gap-3 px-4" : "gap-5 px-4"}`}>
                 {cards.map((c, i) => {
-                    // The centred card is always the featured one — at EVERY width, not
-                    // just desktop, so tablet/mobile get the same raised, enlarged hero
-                    // card as the browser view. A slightly gentler scale on compact: the
-                    // card is already large next to a phone viewport.
+                    // The SELECTED card is always the featured one — at EVERY width, so
+                    // tablet/mobile get the same raised, enlarged hero card as the
+                    // browser view. That's the centred card everywhere except mobile,
+                    // where the row is start-aligned and it's the leading one. A
+                    // slightly gentler scale on compact: the card is already large next
+                    // to a phone viewport.
                     const isFeatured = i === selected;
                     const up = compact ? "scale(1.06) translateY(-4px)" : "scale(1.1) translateY(-6px)";
                     return (
