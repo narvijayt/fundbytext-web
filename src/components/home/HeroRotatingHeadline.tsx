@@ -86,7 +86,11 @@ export default function HeroRotatingHeadline() {
             {/* Rotating slot — sizer reserves the widest word so the line can't jump. */}
             <span className="relative inline-block align-bottom">
                 <span className="invisible whitespace-nowrap" aria-hidden>{LONGEST}</span>
-                <span className="absolute inset-0 flex items-end justify-center whitespace-nowrap">
+                {/* justify-start, not -center: the sizer reserves the widest word's
+                    width, and centring a shorter word in it opened a gap after "for"
+                    ("for      Churches"). Left-aligning keeps the word flush to "for";
+                    the reserved slack sits (invisibly) after the caret. */}
+                <span className="absolute inset-0 flex items-end justify-start whitespace-nowrap">
                     <span className="relative">
                         <Ink>{text || " "}</Ink>
                         {animate && (
