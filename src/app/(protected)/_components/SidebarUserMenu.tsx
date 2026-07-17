@@ -25,6 +25,7 @@ export default function SidebarUserMenu({
 }) {
     const [open, setOpen] = useState(false);
     const [imgError, setImgError] = useState(false);
+    const [loggingOut, setLoggingOut] = useState(false);
     const ref = useRef<HTMLDivElement>(null);
     const router = useRouter();
 
@@ -39,9 +40,21 @@ export default function SidebarUserMenu({
     }, []);
 
     async function handleLogout() {
-        await fetch("/api/v1/auth/logout", { method: "POST" });
+        if (loggingOut) return;   // the request is already in flight
+        setLoggingOut(true);
+        try {
+            await fetch("/api/v1/auth/logout", { method: "POST" });
+        } catch {
+            // The cookie may still be set, so don't pretend we're signed out —
+            // hand the button back so it can be tried again.
+            setLoggingOut(false);
+            return;
+        }
         router.push("/login");
         router.refresh();
+        // Deliberately NOT clearing loggingOut: the button has to keep reading
+        // "Signing out…" until the route actually changes, which is the whole
+        // point. This component unmounts with the dashboard.
     }
 
     const initial = firstName[0]?.toUpperCase() ?? "?";
@@ -119,11 +132,20 @@ export default function SidebarUserMenu({
                         </button>
                         <button
                             onClick={handleLogout}
-                            className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-[#005bac] hover:bg-gray-50 transition-colors"
+                            disabled={loggingOut}
+                            aria-busy={loggingOut}
+                            className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-[#005bac] hover:bg-gray-50 transition-colors disabled:cursor-default disabled:hover:bg-transparent"
                         >
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img src="/assets/dashboard/menu-logout.svg" alt="" className="h-5 w-5" />
-                            Log Out
+                            {loggingOut ? (
+                                <svg aria-hidden className="h-5 w-5 shrink-0 animate-spin" viewBox="0 0 24 24" fill="none">
+                                    <circle cx="12" cy="12" r="9" stroke="currentColor" strokeOpacity="0.25" strokeWidth="3" />
+                                    <path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+                                </svg>
+                            ) : (
+                                /* eslint-disable-next-line @next/next/no-img-element */
+                                <img src="/assets/dashboard/menu-logout.svg" alt="" className="h-5 w-5" />
+                            )}
+                            {loggingOut ? "Signing out…" : "Log Out"}
                         </button>
                     </div>
                 </div>
