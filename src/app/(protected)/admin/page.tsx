@@ -233,7 +233,7 @@ export default async function AdminOverviewPage() {
             </div>
 
             {/* ── 30-day chart ────────────────────────────────────────────────── */}
-            <div className="rounded-2xl border border-[#e7e9eb] bg-white p-6 shadow-[0px_4px_30px_0px_rgba(0,91,172,0.08)]">
+            <div className="rounded-2xl border border-[#e7e9eb] bg-white p-4 shadow-[0px_4px_30px_0px_rgba(0,91,172,0.08)] sm:p-6">
                 <div className="mb-5 flex items-center justify-between">
                     <div>
                         <h2 className="text-[15px] font-bold text-[#003060]">Daily Donations — Last 30 Days</h2>
@@ -243,8 +243,11 @@ export default async function AdminOverviewPage() {
                 <DailyDonationsChart data={chartData} />
             </div>
 
-            {/* ── Two-column section ───────────────────────────────────────────── */}
-            <div className="grid grid-cols-[1fr_320px] gap-6 items-start">
+            {/* ── Two-column section ─────────────────────────────────────────────
+                Stacks until xl. The 320px rail plus the gap left the campaigns
+                table under ~430px once the dashboard sidebar took its cut, and
+                below that the fixed grid simply overflowed the screen. ── */}
+            <div className="grid grid-cols-1 gap-6 items-start xl:grid-cols-[1fr_320px]">
 
                 {/* Top Campaigns */}
                 <div className="overflow-hidden rounded-2xl border border-[#e7e9eb] bg-white shadow-[0px_4px_30px_0px_rgba(0,91,172,0.08)]">
@@ -257,7 +260,11 @@ export default async function AdminOverviewPage() {
                     {topCampaigns.length === 0 ? (
                         <p className="px-5 py-10 text-center text-sm italic text-[#9aa7b8]">No campaigns yet.</p>
                     ) : (
-                        <table className="w-full text-sm">
+                        // Four columns can't crush into a phone, so the table keeps a
+                        // sane floor and scrolls inside its own box rather than pushing
+                        // the page sideways.
+                        <div className="overflow-x-auto">
+                        <table className="w-full min-w-[520px] text-sm">
                             <thead>
                                 <tr className="border-b border-[#e7e9eb] text-[11px] font-bold uppercase tracking-[0.5px] text-[#003060]">
                                     <th className="py-3 pl-5 pr-4 text-left">Campaign</th>
@@ -301,6 +308,7 @@ export default async function AdminOverviewPage() {
                                 })}
                             </tbody>
                         </table>
+                        </div>
                     )}
                 </div>
 
