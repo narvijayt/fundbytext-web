@@ -19,10 +19,12 @@ const F_WATERMARK = `url("data:image/svg+xml,${encodeURIComponent(
     `</g></svg>`,
 )}")`;
 
+// Kept in step with the shared marketing footer's links — Browse Campaigns and
+// FAQs were still dead "#" placeholders from the static reference design.
 const NAV_LINKS = [
-    { label: "Browse Campaigns", href: "#" },
+    { label: "Browse Campaigns", href: "/campaigns" },
     { label: "How It Works", href: "/how-it-works" },
-    { label: "FAQs", href: "#" },
+    { label: "FAQs", href: "/faq" },
     { label: "Resources", href: "/resources" },
     { label: "About Us", href: "/about" },
     { label: "Help & Support", href: "/contact" },
@@ -37,7 +39,10 @@ export default function MarketingFooter({ accent }: { accent: string }) {
                 <div className="bg-white flex flex-col gap-[40px] md:gap-[64px] items-start overflow-hidden p-[24px] md:p-[40px] rounded-[24px] w-full xl:w-[800px] xl:shrink-0">
                     <div className="flex flex-col md:flex-row gap-[40px] md:gap-[16px] items-start w-full">
                         <div className="flex flex-col items-start pr-[5px] shrink-0 w-full md:w-[235px] xl:w-[300px]">
-                            <Image src={`${A}/footer/logo.svg`} alt="FundbyText" width={180} height={67} className="w-[180px] h-[67.3px]" />
+                            {/* Scales down below sm, where this row stacks and a 180px mark
+                                swallowed most of a 360px screen. Same 180:67.3 ratio. */}
+                            <Image src={`${A}/footer/logo.svg`} alt="FundbyText" width={180} height={67}
+                                className="w-[132px] h-[49.3px] sm:w-[180px] sm:h-[67.3px]" />
                         </div>
                         <div className="flex w-full md:flex-1 flex-col gap-[24px] items-start min-w-0">
                             <p className="font-black text-[12px] text-[#aeb5bd] tracking-[1px] uppercase leading-none w-full">navigate</p>
@@ -76,8 +81,10 @@ export default function MarketingFooter({ accent }: { accent: string }) {
                     <div aria-hidden className="footer-drift [--fd:-170px] pointer-events-none absolute inset-y-0 left-0 right-[-170px]" style={{ backgroundImage: F_WATERMARK, backgroundRepeat: "repeat", backgroundSize: "170px 170px" }} />
                     <div aria-hidden className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0) 100%)" }} />
                     <div className="relative flex flex-col gap-[16px] items-start w-full xl:w-[248px] xl:flex-1 xl:min-h-0">
-                        <p className="font-black text-[32px] xl:text-[38px] 2xl:text-[46px] text-white tracking-[-1.5px] w-full" style={{ lineHeight: 1.1 }}>Ready to Fundraise?</p>
-                        <p className="font-normal text-[16px] xl:text-[18px] text-white w-full" style={{ lineHeight: 1.4 }}>Start Your FundbyText Campaign Today.</p>
+                        {/* Below sm the CTA card is full-width and stacked, where 32px/16px
+                            read oversized on a phone. sm and up keep the existing sizes. */}
+                        <p className="font-black text-[23px] sm:text-[32px] xl:text-[38px] 2xl:text-[46px] text-white tracking-[-1.5px] w-full" style={{ lineHeight: 1.1 }}>Ready to Fundraise?</p>
+                        <p className="font-normal text-[15px] sm:text-[16px] xl:text-[18px] text-white w-full" style={{ lineHeight: 1.4 }}>Start Your FundbyText Campaign Today.</p>
                     </div>
                     <div className="relative flex flex-col gap-[12px] items-start justify-center w-full xl:w-[248px]">
                         <Link href="/campaigns/create" className="bg-[#f47435] flex gap-[8px] items-center justify-center px-[24px] py-[20px] rounded-[12px] w-full transition-opacity hover:opacity-90" style={{ boxShadow: "0px 20px 20px 0px rgba(234,103,37,0.2), 0px 20px 40px 0px rgba(244,116,53,0.2)" }}>
