@@ -6,18 +6,26 @@ import useEmblaCarousel from "embla-carousel-react";
 import CountdownBadge from "@/components/CountdownBadge";
 
 const A_CARD_GRADIENT = "/figma/card-gradient.svg";
-const A_BAR_TEXTURE   = "/figma/bar-texture.svg";
-const A_TIMER_ICON    = "/figma/timer-icon.svg";
 
 export type HeroCard = {
     img: string | null;
     tag: string;
     name: string;
-    goal: string | null;
+    // Raw amounts, not pre-formatted strings — the card needs the numbers to work
+    // out the real progress share, and formats them itself.
+    raised: number;
+    goal: number | null;
     slug: string;
     status: string;
     endDate: string | null;
 };
+
+// Same bar language as the campaign page (ProgressPanel / MarketingLeaderboard):
+// diagonal green stripes on a light track, with a shine sweeping the fill.
+const GREEN_STRIPES = "repeating-linear-gradient(-45deg,#33cc6b,#33cc6b 7px,#23b257 7px,#23b257 14px)";
+const TRACK_BG = "#f2f2f2";
+
+const fmt = (n: number) => `$${Math.round(n).toLocaleString()}`;
 
 /**
  * The hero's campaign-card row, as a real Embla carousel: drag / swipe to move,
@@ -146,6 +154,10 @@ function Card({ c, featured, compact }: { c: HeroCard; featured: boolean; compac
     // the full row never clips right at the breakpoint.
     const sizeCls = compact ? "" : "w-[264px] h-[356px] min-[1680px]:w-[300px] min-[1680px]:h-[404px]";
     const imgCls  = compact ? "" : "h-[176px] min-[1680px]:h-[200px]";
+    // Real progress share. No goal ⇒ no honest percentage, so the bar stays a plain
+    // "$X raised" label with no fill.
+    const pct = c.goal && c.goal > 0 ? Math.min(100, (c.raised / c.goal) * 100) : 0;
+    const filled = c.raised > 0 && pct > 0;
     return (
         <div className={`bg-white rounded-[16px] overflow-hidden border border-[#eaeef3] flex flex-col flex-none ${sizeCls}`}
             style={compact ? { width: 252, height: 346, boxShadow: shadow } : { boxShadow: shadow }}>
@@ -156,18 +168,30 @@ function Card({ c, featured, compact }: { c: HeroCard; featured: boolean; compac
                 ) : (
                     <div className="absolute inset-0 bg-gradient-to-br from-blue-200 to-blue-400" />
                 )}
-                {c.status === "active" && c.endDate && (
-                    <div className={`absolute ${compact ? "bottom-3 left-3" : "bottom-4 left-4"} flex items-center gap-1.5`}>
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img alt="" src={A_TIMER_ICON} width={compact ? 14 : 16} height={compact ? 14 : 16} style={{ display: "block" }} />
-                        <CountdownBadge date={c.endDate} mode="left"
-                            className={`font-bold text-white ${compact ? "text-[10px]" : "text-xs"} tracking-[1px] uppercase`} />
-                    </div>
-                )}
+                {/* The darkening gradient sits BELOW the countdown, not above it. It used
+                    to render last and paint straight over the text, which is why the
+                    countdown always looked washed out on a bright photo. */}
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img alt="" src={A_CARD_GRADIENT}
                     className="absolute bottom-0 left-1/2 -translate-x-1/2 max-w-none scale-y-[-1] pointer-events-none"
                     style={{ width: 599, height: 200 }} />
+                {c.status === "active" && c.endDate && (
+                    /* Orange countdown. The icon is inlined rather than the timer-icon
+                       <img> so it strokes currentColor and tints with the text — the
+                       file hard-codes white via a CSS var an <img> can't reach. #ff8c53
+                       (the lighter brand orange) reads over the darkened photo. */
+                    <div className={`absolute ${compact ? "bottom-3 left-3" : "bottom-4 left-4"} flex items-center gap-1.5 text-[#ff8c53]`}>
+                        <svg width={compact ? 14 : 16} height={compact ? 14 : 16} viewBox="0 0 16 16" fill="none"
+                            stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round"
+                            className="block shrink-0" aria-hidden>
+                            <path d="M13.8333 8.83333C13.8333 12.0533 11.22 14.6667 8 14.6667C4.78 14.6667 2.16667 12.0533 2.16667 8.83333C2.16667 5.61333 4.78 3 8 3C11.22 3 13.8333 5.61333 13.8333 8.83333Z" />
+                            <path d="M8 5.33333V8.66667" />
+                            <path d="M6 1.33333H10" />
+                        </svg>
+                        <CountdownBadge date={c.endDate} mode="left"
+                            className={`font-bold ${compact ? "text-[10px]" : "text-xs"} tracking-[1px] uppercase drop-shadow`} />
+                    </div>
+                )}
             </div>
             <div className={`flex flex-col ${compact ? "gap-3 p-4" : "gap-5 p-5"} flex-1`}>
                 <div className={`flex flex-col ${compact ? "gap-2" : "gap-2.5"}`}>
@@ -176,16 +200,32 @@ function Card({ c, featured, compact }: { c: HeroCard; featured: boolean; compac
                     </div>
                     <p className={`font-black text-[#003060] ${compact ? "text-[15px] line-clamp-2" : "text-lg"} leading-snug`}>{c.name}</p>
                 </div>
-                {c.goal && (
-                    <div className={`relative ${compact ? "h-7 mt-auto" : "h-8 mt-auto"} rounded-[100px] overflow-hidden`}>
-                        <div className="absolute inset-0 bg-[#f2f2f2] rounded-[100px]" />
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img alt="" src={A_BAR_TEXTURE}
-                            className="absolute left-0 top-1/2 -translate-y-1/2 max-w-none"
-                            style={{ width: 120, height: 32 }} />
-                        <span className={`absolute left-3 top-1/2 -translate-y-1/2 text-white ${compact ? "text-xs" : "text-sm"} font-black whitespace-nowrap`}>
-                            {c.goal} <span className="font-medium">Goal</span>
-                        </span>
+                {(c.goal || c.raised > 0) && (
+                    /* Real progress, not a fixed-width decoration: the fill is the
+                       campaign's actual raised/goal share, striped + shine-swept like the
+                       campaign page's bars. A tiny raise still gets a 12% sliver so it
+                       reads, and the label drops to muted grey when there's no fill
+                       behind it to sit on. */
+                    <div className={`relative ${compact ? "h-7" : "h-8"} mt-auto rounded-full overflow-hidden`}
+                        style={{ background: TRACK_BG }}>
+                        <style>{`@keyframes hc-shimmer{0%{transform:translateX(-120%)}100%{transform:translateX(400%)}}`}</style>
+                        {filled && (
+                            <div className="absolute left-0 top-0 h-full overflow-hidden rounded-full"
+                                style={{ width: `${Math.max(pct, 12)}%`, background: GREEN_STRIPES }}>
+                                <span aria-hidden className="absolute inset-y-0 left-0 w-[35%]"
+                                    style={{
+                                        background: "linear-gradient(90deg,transparent,rgba(255,255,255,0.5) 50%,transparent)",
+                                        animation: "hc-shimmer 2.2s ease-in-out infinite",
+                                    }} />
+                            </div>
+                        )}
+                        {/* "$X Raised" — the campaign page's label, kept short on purpose
+                            so it sits ON the fill. A longer "$X of $Y" ran past the fill
+                            edge onto the light track, where white text vanishes. */}
+                        <p className={`absolute left-3 top-1/2 -translate-y-1/2 whitespace-nowrap ${compact ? "text-[11px]" : "text-xs"} ${filled ? "text-white drop-shadow" : "text-[#6b7684]"}`}>
+                            <span className="font-black">{fmt(c.raised)}</span>
+                            <span className="font-medium"> Raised</span>
+                        </p>
                         <div className="absolute inset-0 rounded-[inherit] shadow-[inset_0_2px_8px_0_rgba(0,48,96,0.08)] pointer-events-none" />
                     </div>
                 )}

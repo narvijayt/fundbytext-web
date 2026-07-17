@@ -220,7 +220,9 @@ export default async function HomePage() {
         // enum (which read as an odd category pill).
         tag: c.campaign_type === "organization" ? "Organization" : c.campaign_type === "individual" ? "Individual" : "Campaign",
         name: c.name ?? "Untitled",
-        goal: c.goal_amount ? `$${Number(c.goal_amount).toLocaleString()}` : null,
+        // Raw numbers — the card works out the progress share and formats them.
+        raised: Number(c.total_raised ?? 0),
+        goal: c.goal_amount ? Number(c.goal_amount) : null,
         status: c.status ?? "active",
         slug: `/campaigns/${c.slug}`,
         endDate: c.end_date ? new Date(c.end_date).toISOString() : null,
