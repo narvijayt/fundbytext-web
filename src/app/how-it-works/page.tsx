@@ -98,6 +98,11 @@ function SectionHeading({ children }: { children: React.ReactNode }) {
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 
+export const metadata = {
+    title: "How It Works",
+    description: "See how FundByText turns a text into a fundraiser — create a campaign, share your link, and let supporters give in a few taps.",
+};
+
 export default async function HowItWorksPage() {
     const [user, defaultVideo] = await Promise.all([
         getAuthUser(),

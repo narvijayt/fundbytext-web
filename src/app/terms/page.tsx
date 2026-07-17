@@ -10,7 +10,7 @@ const TERMS_SECTIONS: Section[] = [
     { title: "Contact Us", body: "For any questions or concerns regarding these Terms & Conditions, please contact our support team at support@fundbytext.com." },
 ];
 
-export const metadata = { title: "Terms & Conditions — FundByText" };
+export const metadata = { title: "Terms & Conditions", description: "The terms that govern your use of the FundByText fundraising service." };
 
 export default function TermsPage() {
     return (

@@ -53,7 +53,7 @@ const PRIVACY_SECTIONS: Section[] = [
     },
 ];
 
-export const metadata = { title: "Privacy Policy — FundByText" };
+export const metadata = { title: "Privacy Policy", description: "How FundByText collects, uses and protects your personal information." };
 
 export default function PrivacyPolicyPage() {
     return (

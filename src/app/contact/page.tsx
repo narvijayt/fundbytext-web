@@ -4,7 +4,7 @@ import TypingText from "@/components/TypingText";
 import ContactForm from "./ContactForm";
 
 export const metadata: Metadata = {
-    title: "Contact Us — FundByText",
+    title: "Contact Us",
     description: "Got a question or just want to say hi? Send the FundByText team a message.",
 };
 

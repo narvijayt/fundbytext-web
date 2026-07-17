@@ -99,6 +99,11 @@ function SolveIcon({ name }: { name: string }) {
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 
+export const metadata = {
+    title: "About Us",
+    description: "What makes FundByText different: effortless, transparent, text-driven fundraising for individuals and organizations.",
+};
+
 export default async function AboutPage() {
     const [user, defaultVideo] = await Promise.all([
         getAuthUser(),

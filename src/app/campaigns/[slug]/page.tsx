@@ -31,14 +31,14 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
         },
     });
     if (!c || c.visibility === "private" || c.status === "draft") {
-        return { title: "FundByText", description: "Fundraising made simple — start a campaign in minutes." };
+        return { title: { absolute: "FundByText — Text-Driven Fundraising Made Simple" }, description: "Fundraising made simple — start a campaign in minutes." };
     }
     const title       = c.name ?? "Campaign";
     const description = ((c.story ?? "").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim().slice(0, 200))
         || `Support ${title} on FundByText.`;
     const heroUrl = c.media[0]?.url ?? null;
     return {
-        title:       `${title} · FundByText`,
+        title:       title,
         description,
         openGraph: { title, description, type: "website", images: heroUrl ? [{ url: heroUrl }] : undefined },
         twitter:   { card: "summary_large_image", title, description, images: heroUrl ? [heroUrl] : undefined },

@@ -110,6 +110,11 @@ async function getCampaigns(filter: FilterKey, q: string) {
 
 // ── Page ─────────────────────────────────────────────────────────────────────
 
+export const metadata = {
+    title: "Browse Campaigns",
+    description: "Discover active fundraising campaigns on FundByText and support a cause with a few taps.",
+};
+
 export default async function CampaignsPage({
     searchParams,
 }: {

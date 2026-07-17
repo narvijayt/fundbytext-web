@@ -4,7 +4,7 @@ import MarketingDocShell from "@/components/MarketingDocShell";
 import FaqAccordion, { type Faq } from "./_components/FaqAccordion";
 
 export const metadata: Metadata = {
-    title: "FAQs — FundByText",
+    title: "FAQs",
     description: "Answers to common questions about creating campaigns, donating, payouts, and your account on FundByText.",
 };
 

@@ -10,7 +10,7 @@ const COOKIE_SECTIONS: Section[] = [
     { title: "Contact Us", body: "For any questions or concerns regarding this Cookie Policy, please contact our support team at support@fundbytext.com." },
 ];
 
-export const metadata = { title: "Cookie Policy — FundByText" };
+export const metadata = { title: "Cookie Policy", description: "How and why FundByText uses cookies and similar technologies." };
 
 export default function CookiePolicyPage() {
     return (

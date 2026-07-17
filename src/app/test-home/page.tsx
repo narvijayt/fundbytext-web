@@ -169,6 +169,12 @@ function StepIcon({ icon }: { icon: string }) {
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 
+// Scratch/preview route — keep it out of search results and the sitemap.
+export const metadata = {
+    title: "Home Preview",
+    robots: { index: false, follow: false },
+};
+
 export default async function HomePage() {
     const [liveCampaigns, user, totalRaisedRaw] = await Promise.all([
         getFeaturedCampaigns(),

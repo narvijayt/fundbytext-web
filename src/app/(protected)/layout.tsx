@@ -1,7 +1,15 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getAuthUser } from "@/lib/session";
 import Sidebar from "./_components/Sidebar";
 import ScrollToTop from "./_components/ScrollToTop";
+
+// Everything behind the sidebar is signed-in only — noindex the whole tree, and
+// give it a sensible default tab title. Child pages still override the title.
+export const metadata: Metadata = {
+    title: "Dashboard",
+    robots: { index: false, follow: false },
+};
 
 export default async function ProtectedLayout({
     children,

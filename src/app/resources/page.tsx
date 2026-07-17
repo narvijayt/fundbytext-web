@@ -75,6 +75,11 @@ function SectionBadge({ label }: { label: string }) {
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 
+export const metadata = {
+    title: "Resources",
+    description: "Guides and tips to help you plan, launch and grow a successful FundByText fundraising campaign.",
+};
+
 export default async function ResourcesPage() {
     const user = await getAuthUser();
 
