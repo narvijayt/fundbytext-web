@@ -50,9 +50,9 @@ export default function HeroCampaignsCarousel({
 function Row({ cards, browseHref, compact }: {
     cards: HeroCard[]; browseHref: string; compact?: boolean;
 }) {
-    // Centre the middle card so the strongest campaign is the one popped out. A 1–2
-    // card row has no real middle, so centre the FIRST instead of the 2nd.
-    const centerIndex = cards.length >= 3 ? Math.floor(cards.length / 2) : 0;
+    // Which card starts centred: 1→1st, 2→2nd, 3→2nd, 4→3rd, 5→3rd. That's exactly
+    // floor(n/2). Counted on the CARDS only — the "Browse all" slide never factors in.
+    const centerIndex = Math.floor(cards.length / 2);
     const [emblaRef, emblaApi] = useEmblaCarousel({
         align: "center",
         startIndex: centerIndex,
@@ -74,11 +74,13 @@ function Row({ cards, browseHref, compact }: {
 
     return (
         <div className={`overflow-hidden ${compact ? "" : "pb-10 pt-6"}`} ref={emblaRef}>
-            {/* justify-center only bites when the row DOESN'T overflow — i.e. one or
-                two campaigns — centring the card + "Browse all" instead of pinning
-                them left. With a full row it's inert (negative free space) and Embla
-                scrolls as normal, so the many-card case is unchanged. */}
-            <div className={`flex items-center justify-center ${compact ? "gap-3 px-4" : "gap-5 px-4"}`}>
+            {/* NO justify-content here. Embla positions the track with a transform;
+                justify-center centres the children as a GROUP (card + "Browse all"),
+                which fights that and left-shifted the card ~45px off centre on a short
+                row. containScroll:false + align:"center" already centres the SELECTED
+                card — over-scrolling into empty space when the row doesn't fill the
+                viewport — which is what a 1–2 card row needs. */}
+            <div className={`flex items-center ${compact ? "gap-3 px-4" : "gap-5 px-4"}`}>
                 {cards.map((c, i) => {
                     // The centred card is always the featured one — even with just a
                     // campaign or two, so a short row still gets the raised, enlarged

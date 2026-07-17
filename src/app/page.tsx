@@ -467,7 +467,11 @@ export default async function HomePage() {
             {/* ═══════════════════════════════════════════════════════════
                 WHAT'S THE DIFFERENCE — Org vs Individual + Stories + CTA
             ═══════════════════════════════════════════════════════════ */}
-            <section className="relative isolate bg-white pt-10 overflow-hidden">
+            {/* pb on mobile only: below lg the "Ready to Inspire?" block is hidden (the
+                footer carries its own), so the stories dots ended up flush against the
+                navy footer with no breathing room. Desktop keeps pb-0 — the CTA block
+                already provides the gap there. */}
+            <section className="relative isolate bg-white pt-10 pb-12 lg:pb-0 overflow-hidden">
 
                 {/* Blue wash rising from the bottom — the SAME treatment as the
                     How-It-Works "See It In Action" section: a plain vertical white→blue

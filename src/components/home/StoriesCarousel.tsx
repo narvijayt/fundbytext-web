@@ -22,8 +22,8 @@ export default function StoriesCarousel({ stories, dotTone = "blue" }: {
      *  the blue wash; "blue" (default) for the home page's white backdrop. */
     dotTone?: "blue" | "white";
 }) {
-    // Centre the middle card; a 1–2 card row has no real middle, so centre the first.
-    const centerIndex = stories.length >= 3 ? Math.floor(stories.length / 2) : 0;
+    // Which card starts centred: 1→1st, 2→2nd, 3→2nd, 4→3rd, 5→3rd — i.e. floor(n/2).
+    const centerIndex = Math.floor(stories.length / 2);
     const [emblaRef, emblaApi] = useEmblaCarousel({
         align: "center",
         startIndex: centerIndex,
