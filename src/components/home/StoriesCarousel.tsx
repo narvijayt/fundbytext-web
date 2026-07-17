@@ -22,15 +22,31 @@ export default function StoriesCarousel({ stories, dotTone = "blue" }: {
      *  the blue wash; "blue" (default) for the home page's white backdrop. */
     dotTone?: "blue" | "white";
 }) {
-    // Which card starts centred: 1→1st, 2→2nd, 3→2nd, 4→3rd, 5→3rd — i.e. floor(n/2).
-    const centerIndex = Math.floor(stories.length / 2);
+    // Open on the START of the list rather than the middle — it used to begin at
+    // floor(n/2), which scrolled straight past the first stories (with 6 they were off
+    // the left edge before you'd touched it).
+    //
+    // WHICH card to centre depends on how many fit. The frame is exactly three cards
+    // wide (1152 = 3×368 + 2×24), so once it's that wide, centring the SECOND card
+    // puts cards 1–3 in it edge-to-edge with no empty gutter — the "three up, second
+    // one centred" look. Narrower than that only one card fits, so the first is the one
+    // to centre (the next card peeks, as a centred carousel should at the list's start).
+    //
+    // Read once at init. It only feeds Embla's startIndex and never the markup, so the
+    // server/client difference can't cause a hydration mismatch.
+    const [startIdx] = useState(() =>
+        typeof window !== "undefined" && window.matchMedia("(min-width: 1152px)").matches ? 1 : 0,
+    );
     const [emblaRef, emblaApi] = useEmblaCarousel({
         align: "center",
-        startIndex: centerIndex,
+        startIndex: startIdx,
         containScroll: false,
         skipSnaps: true,
     });
-    const [selected, setSelected] = useState(centerIndex);
+    // Must be a constant on both server and client (NOT startIdx, which varies by
+    // viewport) or the featured shadow/active dot would desync at hydration. Embla's
+    // "select" fires on mount and corrects it.
+    const [selected, setSelected] = useState(0);
 
     useEffect(() => {
         if (!emblaApi) return;
