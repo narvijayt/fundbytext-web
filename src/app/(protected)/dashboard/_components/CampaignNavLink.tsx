@@ -13,6 +13,7 @@ export default function CampaignNavLink({
     label,
     className,
     children,
+    onClick,
 }: {
     href: string;
     label?: string;
@@ -20,9 +21,11 @@ export default function CampaignNavLink({
     overlayText?: string;
     className?: string;
     children?: React.ReactNode;
+    /** Fired on click — the sidebar uses it to close its mobile drawer. */
+    onClick?: () => void;
 }) {
     return (
-        <Link href={href} prefetch className={className}>
+        <Link href={href} prefetch className={className} onClick={onClick}>
             {children ?? label}
         </Link>
     );

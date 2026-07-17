@@ -30,7 +30,14 @@ const CAMPAIGN_LINKS: { label: string; hash: string; icon: React.ReactNode; orga
     { label: "Statistics",               hash: "statistics",                icon: <LinkIcon src="/assets/dashboard/sidebar-graph.svg" /> },
 ];
 
-export default function SidebarCampaignsDropdown({ campaigns }: { campaigns: Campaign[] }) {
+export default function SidebarCampaignsDropdown({ campaigns, onNavigate }: {
+    campaigns: Campaign[];
+    /* Closes the mobile/tablet drawer. Every other link in the sidebar already
+       gets this; without it the drawer stayed open over the page, so a section
+       link looked like it did nothing — the page had in fact jumped to the
+       anchor behind the overlay. Not passed on desktop, where nothing closes. */
+    onNavigate?: () => void;
+}) {
     const pathname     = usePathname();
     const searchParams = useSearchParams();
     const isParticipantView = searchParams.get("view") === "participant";
@@ -130,6 +137,7 @@ export default function SidebarCampaignsDropdown({ campaigns }: { campaigns: Cam
                                 <CampaignNavLink
                                     href={isActive ? "#" : `/dashboard/campaigns/${c.slug}`}
                                     overlayText="Loading…"
+                                    onClick={onNavigate}
                                     className="flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-[14px] font-medium text-[#0268c0] transition-colors hover:bg-[#0268c0]/8"
                                 >
                                     <LinkIcon src="/assets/dashboard/sidebar-overview.svg" />
@@ -144,6 +152,7 @@ export default function SidebarCampaignsDropdown({ campaigns }: { campaigns: Cam
                                     <a
                                         key={link.hash}
                                         href={isActive ? `#${link.hash}` : `/dashboard/campaigns/${c.slug}#${link.hash}`}
+                                        onClick={onNavigate}
                                         className="flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-[14px] font-medium text-[#0268c0] transition-colors hover:bg-[#0268c0]/8"
                                     >
                                         <span className="shrink-0">{link.icon}</span>
@@ -157,6 +166,7 @@ export default function SidebarCampaignsDropdown({ campaigns }: { campaigns: Cam
                                         <CampaignNavLink
                                             href={`/campaigns/${c.slug}/edit`}
                                             overlayText="Loading…"
+                                            onClick={onNavigate}
                                             className="flex items-center overflow-hidden rounded-[14px] bg-gradient-to-b from-[#ff8c53] to-[#f47435] pr-0.5 text-white transition-all duration-150 hover:brightness-105 active:scale-[0.97]"
                                         >
                                             <span className="flex-1 py-2.5 text-center text-[14px] font-medium leading-[1.4]">Edit Campaign</span>

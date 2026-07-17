@@ -131,7 +131,7 @@ function FullContent({ data, onNavigate, desktop, onEditProfile, onChangePasswor
                 {/* Divider before the campaigns list only when there are campaigns —
                     otherwise it would stack against the admin divider below. */}
                 {data.campaigns.length > 0 && <div className="border-t border-[#005bac]" />}
-                <SidebarCampaignsDropdown campaigns={data.campaigns} />
+                <SidebarCampaignsDropdown campaigns={data.campaigns} onNavigate={onNavigate} />
                 {data.isAdmin && (
                     <>
                         <div className="border-t border-[#005bac]" />
