@@ -43,11 +43,12 @@ export default function HeroCampaignsCarousel({
     if (cards.length === 0) return null;
     return (
         <div className="w-full">
-            {/* Mobile — compact, and opens on the FIRST card rather than the featured
-                centre one: on a phone viewport a slider reads better starting at the
-                start than dropped into the middle of the row. */}
+            {/* Mobile — compact, and features the FIRST card rather than the middle
+                one: on a phone viewport a slider reads better opening at the start of
+                the row than dropped into the middle of it. It's still CENTRED, same as
+                every other row — only WHICH card is featured changes. */}
             <div className="md:hidden pb-2">
-                <Row cards={cards} browseHref={browseHref} compact fromStart />
+                <Row cards={cards} browseHref={browseHref} compact openOnFirst />
             </div>
             {/* Tablet — compact, but featured-centre like the browser view */}
             <div className="hidden md:block lg:hidden pb-2">
@@ -61,15 +62,19 @@ export default function HeroCampaignsCarousel({
     );
 }
 
-function Row({ cards, browseHref, compact, fromStart }: {
-    cards: HeroCard[]; browseHref: string; compact?: boolean; fromStart?: boolean;
+function Row({ cards, browseHref, compact, openOnFirst }: {
+    cards: HeroCard[]; browseHref: string; compact?: boolean; openOnFirst?: boolean;
 }) {
-    // Which card is selected on load. fromStart (mobile) opens on the first card,
-    // left-aligned. Otherwise the featured centre card: 1→1st, 2→2nd, 3→2nd, 4→3rd,
-    // 5→3rd — floor(n/2). Counted on the CARDS only; "Browse all" never factors in.
-    const initialIndex = fromStart ? 0 : Math.floor(cards.length / 2);
+    // Which card is featured on load. openOnFirst (mobile) picks the first one;
+    // otherwise the middle: 1→1st, 2→2nd, 3→2nd, 4→3rd, 5→3rd — floor(n/2). Counted
+    // on the CARDS only; "Browse all" never factors in.
+    const initialIndex = openOnFirst ? 0 : Math.floor(cards.length / 2);
     const [emblaRef, emblaApi] = useEmblaCarousel({
-        align: fromStart ? "start" : "center",
+        // Centred on EVERY row, mobile included. openOnFirst only changes which card
+        // starts featured — it used to switch alignment to "start" as well, which
+        // pinned the card to the left edge with dead space to its right instead of
+        // sitting it centred with the next card peeking in.
+        align: "center",
         startIndex: initialIndex,
         // containScroll stays off everywhere, and it's load-bearing twice over:
         // any selected card can align (including the first and last), AND the snap
@@ -96,11 +101,8 @@ function Row({ cards, browseHref, compact, fromStart }: {
                 which fights that and left-shifted the card ~45px off centre on a short
                 row. containScroll:false already lets the SELECTED card settle where
                 `align` asks — over-scrolling into empty space when the row doesn't
-                fill the viewport — which is what a 1–2 card row needs.
-                This px-4 buys the start-aligned row NO room to scale into: Embla
-                translates the track to put the leading card flush with the viewport's
-                edge, which cancels the padding out. The featured card's scale headroom
-                comes from its transform-origin instead — see below. */}
+                fill the viewport — which is what a 1–2 card row needs, and what lets
+                the mobile row centre its FIRST card. */}
             <div className={`flex items-center ${compact ? "gap-3 px-4" : "gap-5 px-4"}`}>
                 {cards.map((c, i) => {
                     // The SELECTED card is always the featured one — at EVERY width, so
@@ -115,18 +117,13 @@ function Row({ cards, browseHref, compact, fromStart }: {
                         <div key={c.slug + i}
                             className="flex-none transition-[transform] duration-300 ease-out"
                             style={{
+                                // Grows from the centre, so the featured card stays centred as
+                                // it scales. (It briefly grew from `left center` on mobile —
+                                // needed only while that row was start-aligned and its left
+                                // edge sat flush against the clip edge, where a centre-origin
+                                // scale shaved ~8px off the card. Centred, it has room either
+                                // side and a left origin would just push it off-centre.)
                                 transform: isFeatured ? up : compact ? "scale(0.95)" : "scale(0.92)",
-                                // Start-aligned (mobile), the leading card's left edge sits
-                                // flush against the viewport's clip edge, so scaling it from
-                                // the CENTRE grows it ~8px INTO the clip and shaves its left
-                                // side — the badge and title lost their first letters. Growing
-                                // from the left edge instead keeps the card whole and leaves it
-                                // flush with the page's content margin. Centre-aligned rows are
-                                // nowhere near an edge, so they keep growing both ways.
-                                // Set for EVERY slide in the row, not just the featured one:
-                                // transform-origin doesn't tween, so switching it as the
-                                // selection moves would jump the cards mid-transition.
-                                transformOrigin: fromStart ? "left center" : undefined,
                                 zIndex: isFeatured ? 10 : 1,
                             }}>
                             <Link href={c.slug} className="block">
