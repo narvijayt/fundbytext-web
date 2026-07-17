@@ -1,18 +1,10 @@
 import { cache } from "react";
 import { prisma } from "@/lib/prisma";
 import { CampaignStatus } from "@/generated/prisma/enums";
+import type { FilterKey } from "./_filters";
 
-// Six per page, matching the dashboard grid.
-export const PAGE_SIZE = 6;
-
-export type FilterKey = "all" | "active" | "upcoming" | "completed";
-
-export const FILTERS: { key: FilterKey; label: string }[] = [
-    { key: "all",       label: "All Campaigns" },
-    { key: "active",    label: "Active"         },
-    { key: "upcoming",  label: "Upcoming"       },
-    { key: "completed", label: "Completed"      },
-];
+// SERVER ONLY. This module imports prisma, so client components must never import a
+// value from it — the tabs pull FILTERS from ./_filters for exactly that reason.
 
 /**
  * The browse list. Wrapped in React `cache` so the count in the tab bar and the

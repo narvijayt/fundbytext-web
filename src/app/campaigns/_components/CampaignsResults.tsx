@@ -1,7 +1,8 @@
 import Link from "next/link";
 import CampaignCard from "@/app/(protected)/dashboard/_components/CampaignCard";
 import Pagination from "@/app/(protected)/dashboard/_components/Pagination";
-import { getCampaigns, PAGE_SIZE, type FilterKey } from "../_data";
+import { getCampaigns } from "../_data";
+import { PAGE_SIZE, type FilterKey } from "../_filters";
 
 /**
  * The results half of the browse page: the campaign grid (or the empty state) plus

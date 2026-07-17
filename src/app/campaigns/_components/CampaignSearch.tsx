@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import type { FilterKey } from "../_data";
+import type { FilterKey } from "../_filters";
 
 /** The id the results are anchored to, so searching can bring them into view. */
 export const RESULTS_ID = "campaign-results";
