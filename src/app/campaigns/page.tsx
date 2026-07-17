@@ -1,10 +1,10 @@
 import { Suspense } from "react";
-import Link from "next/link";
 import { getAuthUser } from "@/lib/session";
 import NavBar from "@/components/NavBar";
 import MarketingFooter from "@/components/MarketingFooter";
-import { FILTERS, type FilterKey } from "./_data";
-import CampaignSearch, { RESULTS_ID } from "./_components/CampaignSearch";
+import { FILTERS, type FilterKey } from "./_filters";
+import CampaignSearch from "./_components/CampaignSearch";
+import BrowseTabs from "./_components/BrowseTabs";
 import CampaignsResults, { CampaignCount } from "./_components/CampaignsResults";
 import CampaignsGridSkeleton from "./_components/CampaignsGridSkeleton";
 
@@ -83,18 +83,20 @@ export default async function CampaignsPage({
                     <div className="absolute inset-0" style={{
                         background: "linear-gradient(176deg,rgba(37,144,242,1) 0%,rgba(63,158,245,1) 26%,rgba(69,161,245,1) 52%,rgba(74,164,245,1) 76%,rgba(54,153,243,1) 100%)",
                     }} />
-                    {/* White halo — byte-for-byte the marketing home hero's single wash.
-                        It must fade to TRANSPARENT (by 90%) at every width: the previous
-                        per-breakpoint version kept 12% white all the way to the mobile
-                        edges, which lit the whole hero and left the white MENU pill with
-                        no blue behind it to read against. */}
+                    {/* White halo — the same wash as HeroBackdrop (About / How-It-Works)
+                        and MarketingDocShell, and it has to be sized in PIXELS, not
+                        percentages. A percentage radius resolves against the section's
+                        height: the home hero is ~1100px tall so `58% at 24%` reads as a
+                        broad wash there, but this hero is only ~700px, which collapsed
+                        the same values into a small hotspot — a sun. Fixed px keep the
+                        glow the same physical size on every page regardless of height. */}
                     <div className="absolute inset-0" style={{
-                        background: "radial-gradient(ellipse 86% 58% at 50% 24%,rgba(255,255,255,1) 0%,rgba(255,255,255,0.95) 26%,rgba(198,231,255,0.5) 48%,rgba(37,144,242,0.10) 72%,transparent 90%)",
+                        background: "radial-gradient(ellipse 86% 600px at 50% 250px,rgba(255,255,255,1) 0%,rgba(255,255,255,0.95) 26%,rgba(198,231,255,0.5) 48%,rgba(37,144,242,0.10) 72%,transparent 90%)",
                     }} />
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img alt="" src={A_HERO_BLUR}
                         className="absolute left-1/2 -translate-x-1/2 pointer-events-none"
-                        style={{ width: 1500, height: 1450, top: -480, opacity: 0.9 }} />
+                        style={{ width: 1600, height: 1546, top: -430, opacity: 0.9 }} />
 
                     {/* White arch fading the hero into the white grid below. */}
                     <svg className="absolute inset-x-0 bottom-0 w-full" viewBox="0 0 1440 160"
@@ -131,41 +133,22 @@ export default async function CampaignsPage({
             <section className="bg-white pt-10 lg:pt-16 pb-16 lg:pb-24 px-4 md:px-6 lg:px-10">
                 <div className="max-w-[1152px] mx-auto">
 
-                    {/* Filter tabs — the dashboard's underline treatment (StatusTabs),
-                        minus Drafts, which are never public. */}
-                    <div className="mb-8 flex items-end justify-between gap-4 border-b border-[#e7e9eb]">
-                        <div className="flex gap-5 overflow-x-auto overflow-y-hidden -mx-1 px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                            {FILTERS.map(({ key, label }) => {
-                                const isActive = filter === key;
-                                const params = [key !== "all" ? `filter=${key}` : "", q ? `q=${encodeURIComponent(q)}` : ""].filter(Boolean).join("&");
-                                return (
-                                    <Link
-                                        key={key}
-                                        href={params ? `/campaigns?${params}` : "/campaigns"}
-                                        scroll={false}
-                                        className={`relative shrink-0 whitespace-nowrap border-b-2 py-3 text-[12px] font-black uppercase leading-none tracking-[1px] transition-colors ${
-                                            isActive ? "border-[#0268c0] text-[#0268c0]" : "border-transparent text-[#7e8a96] hover:text-[#003060]"
-                                        }`}
-                                    >
-                                        {label}
-                                    </Link>
-                                );
-                            })}
-                        </div>
-                        <p className="hidden sm:block shrink-0 py-3 text-[12px] font-black uppercase tracking-[1px] text-[#aeb5bd]">
+                    {/* The tabs put their own skeleton up the instant you click, without
+                        waiting for the server; the Suspense boundary below then covers the
+                        query itself. */}
+                    <BrowseTabs
+                        filter={filter}
+                        q={q}
+                        count={
                             <Suspense key={resultsKey} fallback={<span className="opacity-0">0 campaigns</span>}>
                                 <CampaignCount filter={filter} q={q} />
                             </Suspense>
-                        </p>
-                    </div>
-
-                    {/* scroll-mt clears the results of the sticky header when the search
-                        scrolls them into view. */}
-                    <div id={RESULTS_ID} className="scroll-mt-24">
+                        }
+                    >
                         <Suspense key={resultsKey} fallback={<CampaignsGridSkeleton />}>
                             <CampaignsResults filter={filter} q={q} rawPage={rawPage} />
                         </Suspense>
-                    </div>
+                    </BrowseTabs>
                 </div>
             </section>
 
