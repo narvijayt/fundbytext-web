@@ -110,11 +110,15 @@ export default async function AboutPage() {
         getDefaultCampaignVideo().catch(() => null),
     ]);
 
+    // xs* is the below-sm tier. This grid is 2-up until md and the section adds its
+    // own px-4, so a cell is only ~164px on a 360px phone — the icon plus padding
+    // left ~48px for the value and "$5.2M+" clipped. Below sm the icon drops to
+    // ~0.7x; sm restores these tablet sizes.
     const STATS = [
-        { img: A_STAT_CAMPAIGNS, imgH: 96, imgW: 80,  smH: 60, smW: 50, value: "200+",   label: "Campaigns Launched" },
-        { img: A_STAT_GOALS,     imgH: 70, imgW: 77,  smH: 44, smW: 48, value: "97%",    label: "Goals Met" },
-        { img: A_STAT_ORGS,      imgH: 96, imgW: 114, smH: 60, smW: 72, value: "34+",    label: "Organizations" },
-        { img: A_STAT_RAISED,    imgH: 88, imgW: 82,  smH: 55, smW: 52, value: "$5.2M+", label: "Raised & Counting" },
+        { img: A_STAT_CAMPAIGNS, imgH: 96, imgW: 80,  smH: 60, smW: 50, xsH: 41, xsW: 34, value: "200+",   label: "Campaigns Launched" },
+        { img: A_STAT_GOALS,     imgH: 70, imgW: 77,  smH: 44, smW: 48, xsH: 30, xsW: 33, value: "97%",    label: "Goals Met" },
+        { img: A_STAT_ORGS,      imgH: 96, imgW: 114, smH: 60, smW: 72, xsH: 41, xsW: 49, value: "34+",    label: "Organizations" },
+        { img: A_STAT_RAISED,    imgH: 88, imgW: 82,  smH: 55, smW: 52, xsH: 37, xsW: 35, value: "$5.2M+", label: "Raised & Counting" },
     ];
 
     return (
@@ -166,7 +170,12 @@ export default async function AboutPage() {
                     <div className="flex flex-col lg:flex-row items-center lg:items-stretch gap-6 w-full justify-center">
                         {DIFF_CARDS.map((c) => (
                             <div key={c.title}
-                                className={`bg-white border border-[#eaeef3] rounded-[24px] p-6 flex flex-col gap-6 lg:gap-10 w-full md:w-[550px] lg:w-[368px] flex-none ${c.elevated ? "lg:flex-col-reverse lg:shadow-[0_20px_20px_-12px_rgba(2,120,222,0.3),0_50px_80px_-16px_rgba(2,120,222,0.3)]" : ""}`}>
+                                // The lift is a hover affordance on EVERY card, not a permanent
+                                // badge on the middle one — the centre card used to carry the
+                                // shadow at rest, which read as "already selected". Same
+                                // treatment as the /how-it-works cards. `elevated` still flips
+                                // the middle card's stacking order, which IS a Figma layout.
+                                className={`bg-white border border-[#eaeef3] rounded-[24px] p-6 flex flex-col gap-6 lg:gap-10 w-full md:w-[550px] lg:w-[368px] flex-none transition-shadow duration-300 hover:shadow-[0_20px_20px_-12px_rgba(2,120,222,0.3),0_50px_80px_-16px_rgba(2,120,222,0.3)] ${c.elevated ? "lg:flex-col-reverse" : ""}`}>
                                 <div className="w-full h-[250px] overflow-hidden flex-none"
                                     style={{ background: c.imgBg, borderRadius: c.imgRadius }}>
                                     <img alt="" src={c.img} className="w-full h-full object-cover" />
@@ -203,13 +212,21 @@ export default async function AboutPage() {
             <section className="bg-white pb-8 lg:pb-10 px-4 md:px-6 lg:px-10">
                 <div className="grid grid-cols-2 md:flex md:items-center md:justify-center max-w-[1200px] mx-auto">
                     {STATS.map((s) => (
-                        <div key={s.label} className="flex items-center gap-3 md:gap-3 lg:gap-5 px-4 md:px-3 lg:px-8 py-3 lg:py-4 lg:min-w-[230px] xl:min-w-[260px]">
+                        <div key={s.label} className="flex items-center gap-2 sm:gap-3 lg:gap-5 px-2 sm:px-4 md:px-3 lg:px-8 py-3 lg:py-4 lg:min-w-[230px] xl:min-w-[260px]">
                             <div className="shrink-0">
-                                <img alt="" src={s.img} className="object-contain lg:hidden" style={{ width: s.smW, height: s.smH }} />
-                                <img alt="" src={s.img} className="object-contain hidden lg:block" style={{ width: s.imgW, height: s.imgH }} />
+                                {/* Sizes ride on inline CSS vars so the Tailwind classes stay
+                                    static literals — arbitrary classes built from template
+                                    literals get purged from the prod CSS (see VectorWallpaper). */}
+                                <img alt="" src={s.img}
+                                    className="object-contain w-(--iw) h-(--ih) sm:w-(--iw-sm) sm:h-(--ih-sm) lg:w-(--iw-lg) lg:h-(--ih-lg)"
+                                    style={{
+                                        "--iw": `${s.xsW}px`,     "--ih": `${s.xsH}px`,
+                                        "--iw-sm": `${s.smW}px`,  "--ih-sm": `${s.smH}px`,
+                                        "--iw-lg": `${s.imgW}px`, "--ih-lg": `${s.imgH}px`,
+                                    } as React.CSSProperties} />
                             </div>
                             <div className="flex flex-col gap-1 lg:gap-2 min-w-0">
-                                <p className="font-black text-[#0268c0] text-[20px] lg:text-[22px] xl:text-[24px] 2xl:text-[28px] leading-snug truncate">{s.value}</p>
+                                <p className="font-black text-[#0268c0] text-[18px] sm:text-[20px] lg:text-[22px] xl:text-[24px] 2xl:text-[28px] leading-snug truncate">{s.value}</p>
                                 <p className="font-black text-[#aeb5bd] text-[8px] lg:text-xs tracking-[1px] uppercase leading-tight">{s.label}</p>
                             </div>
                         </div>
