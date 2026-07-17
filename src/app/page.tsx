@@ -635,8 +635,10 @@ export default async function HomePage() {
                 {/* White dots — the carousel now sits on the blue wash. */}
                 <StoriesCarousel stories={STORIES} dotTone="white" />
 
-                {/* ── CTA — Ready to Inspire? (rides the blue wash → footer) ── */}
-                <div className="relative">
+                {/* ── CTA — Ready to Inspire? (rides the blue wash → footer) ──
+                    Desktop only: the footer carries its own "Ready to Inspire?" card,
+                    so on tablet/mobile this standalone one is a duplicate and is hidden. */}
+                <div className="relative hidden lg:block">
                     <div className="max-w-[1632px] mx-auto px-4 sm:px-6 lg:px-[144px] relative z-10">
                         <div className="flex flex-col items-center gap-6 lg:gap-8 py-10 lg:py-12">
                             <div className="flex flex-col items-center gap-4 lg:gap-6 w-full">
