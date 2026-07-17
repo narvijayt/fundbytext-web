@@ -46,15 +46,19 @@ const AuthField = forwardRef<HTMLInputElement, Props>(function AuthField(
     const isPassword = type === "password";
     const inputType = isPassword ? (show ? "text" : "password") : type;
 
+    // The Figma's field chrome is a 1920-board value — a 56px-tall box with 20px of
+    // padding is what makes the card read as oversized on a phone, so it steps down
+    // below sm. The INPUT itself deliberately stays at 16px at every width: iOS Safari
+    // zooms the page in on focus for anything smaller, which is worse than large text.
     return (
-        <div className="flex flex-col gap-3 w-full">
+        <div className="flex flex-col gap-2 sm:gap-3 w-full">
             <div className="flex items-center justify-between gap-3">
-                <label className="font-black text-[12px] text-[#003060] tracking-[1px] uppercase">
+                <label className="font-black text-[11px] sm:text-[12px] text-[#003060] tracking-[1px] uppercase">
                     {label}<span className="text-[#f47435]">*</span>
                 </label>
                 {rightSlot}
             </div>
-            <div className={`flex items-center gap-2 h-14 px-5 rounded-[12px] border bg-white transition-all ${error
+            <div className={`flex items-center gap-2 h-12 px-4 sm:h-14 sm:px-5 rounded-[12px] border bg-white transition-all ${error
                 ? "border-red-400 border-2"
                 : "border-[#d4dee7] focus-within:border-[#0278de] focus-within:border-2 focus-within:shadow-[0px_8px_16px_-4px_rgba(2,104,192,0.16)]"}`}>
                 <FieldIcon name={icon} />

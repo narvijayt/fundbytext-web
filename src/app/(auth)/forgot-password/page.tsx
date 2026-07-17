@@ -36,7 +36,7 @@ export default function ForgotPasswordPage() {
     }
 
     return (
-        <div className="w-full max-w-[502px] bg-white border border-[#eaeef3] rounded-[24px] p-7 sm:p-10 lg:p-14 flex flex-col gap-8 lg:gap-10 shadow-[0_30px_60px_-20px_rgba(0,48,96,0.25)]">
+        <div className="w-full max-w-[502px] bg-white border border-[#eaeef3] rounded-[24px] p-6 sm:p-10 lg:p-14 flex flex-col gap-6 sm:gap-8 lg:gap-10 shadow-[0_30px_60px_-20px_rgba(0,48,96,0.25)]">
             {/* Title. The Figma is drawn at 1920, so its 32px H1 / 18px body only apply
                 from sm up — on a phone they're oversized for a ~300px-wide card and step
                 down, matching the login card. (The AuthField input stays at 16px at every
@@ -66,7 +66,7 @@ export default function ForgotPasswordPage() {
                     <Link href="/login" className="font-bold text-[#0268c0] hover:underline text-[14px] sm:text-[16px]">Back to Login</Link>
                 </div>
             ) : (
-                <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-8 lg:gap-10 w-full">
+                <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-6 sm:gap-8 lg:gap-10 w-full">
                     <AuthField
                         label="Email" icon="mail" type="email" autoComplete="email"
                         placeholder="thea@creativenomads.com"
@@ -74,11 +74,11 @@ export default function ForgotPasswordPage() {
                         {...register("email")}
                     />
 
-                    <div className="flex flex-col items-center gap-6 w-full">
+                    <div className="flex flex-col items-center gap-4 sm:gap-6 w-full">
                         <button
                             type="submit"
                             disabled={isSubmitting}
-                            className="w-full h-14 rounded-[16px] bg-[#f47435] text-white font-black text-sm tracking-[1px] uppercase shadow-[0px_20px_20px_-14px_rgba(234,103,37,0.2),0px_20px_40px_-16px_rgba(244,116,53,0.2)] hover:brightness-105 disabled:opacity-60 transition"
+                            className="w-full h-12 sm:h-14 rounded-[16px] bg-[#f47435] text-white font-black text-[13px] sm:text-sm tracking-[1px] uppercase shadow-[0px_20px_20px_-14px_rgba(234,103,37,0.2),0px_20px_40px_-16px_rgba(244,116,53,0.2)] hover:brightness-105 disabled:opacity-60 transition"
                         >
                             {isSubmitting ? "Sending…" : "Reset Password"}
                         </button>
