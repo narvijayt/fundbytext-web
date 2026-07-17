@@ -92,10 +92,18 @@ function Row({ cards, browseHref, compact, openOnFirst }: {
         return () => { emblaApi.off("select", onSelect); };
     }, [emblaApi]);
 
-    // The padding is headroom for the featured card's scale-up + lift + shadow; the
-    // track clips, so without it the enlarged card would be cut off.
+    // The padding is headroom for the featured card's scale-up and lift.
+    //
+    // overflow-x-clip + overflow-y-visible, NOT overflow-hidden: the featured card's
+    // shadow reaches ~61px below it (the outer 0/46/90/-30 layer) but the track only
+    // had ~26px of room, so hidden sliced it off in a hard horizontal line — the
+    // shadow read as a solid block with a cut edge rather than a diffuse fog, most
+    // visibly on the login page where it falls on the white curve. `hidden` and
+    // `visible` can't be mixed (a visible axis computes to auto beside a hidden one,
+    // adding a scroll container), but `clip` leaves the cross axis genuinely visible:
+    // the shadow spills downward while the track still clips the row sideways.
     return (
-        <div className={`overflow-hidden ${compact ? "pb-8 pt-4" : "pb-10 pt-6"}`} ref={emblaRef}>
+        <div className={`overflow-x-clip overflow-y-visible ${compact ? "pb-8 pt-4" : "pb-10 pt-6"}`} ref={emblaRef}>
             {/* NO justify-content here. Embla positions the track with a transform;
                 justify-center centres the children as a GROUP (card + "Browse all"),
                 which fights that and left-shifted the card ~45px off centre on a short
