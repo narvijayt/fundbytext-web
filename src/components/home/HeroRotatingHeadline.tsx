@@ -42,6 +42,33 @@ export default function HeroRotatingHeadline() {
     const [text, setText] = useState(WORDS[0]);
     const [animate, setAnimate] = useState(false);
 
+    // Does the rotating word sit on a line of its own? The slot reserves the widest
+    // word, so a shorter word left-aligned in it lands off-centre once the headline
+    // wraps — but centring it while it's still inline would open a gap after "for".
+    // So: measure which case we're in and align accordingly.
+    const prefixRef = useRef<HTMLSpanElement>(null);
+    const slotRef = useRef<HTMLSpanElement>(null);
+    const [wrapped, setWrapped] = useState(false);
+
+    useEffect(() => {
+        const check = () => {
+            const p = prefixRef.current, s = slotRef.current;
+            if (!p || !s) return;
+            // Compare against the prefix's LAST line box — if the slot starts lower
+            // than that, the word has dropped onto its own line.
+            const rects = p.getClientRects();
+            if (!rects.length) return;
+            const prefixLastTop = rects[rects.length - 1].top;
+            setWrapped(s.getBoundingClientRect().top > prefixLastTop + 4);
+        };
+        // Deferred: a synchronous setState inside an effect cascades renders.
+        const raf = requestAnimationFrame(check);
+        const ro = new ResizeObserver(check);
+        const host = slotRef.current?.parentElement;
+        if (host) ro.observe(host);
+        return () => { cancelAnimationFrame(raf); ro.disconnect(); };
+    }, []);
+
     // Refs drive the loop so the interval callback never goes stale.
     const wordRef = useRef(0);
     const charRef = useRef(WORDS[0].length);
@@ -82,15 +109,16 @@ export default function HeroRotatingHeadline() {
 
     return (
         <h1 className="font-black text-[30px] sm:text-[36px] md:text-[42px] lg:text-[48px] xl:text-[56px] 2xl:text-[64px] leading-[1.15] tracking-[-1px] text-center pb-[0.08em] w-full">
-            <Ink>Effortless Fundraising for </Ink>
+            <span ref={prefixRef}><Ink>Effortless Fundraising for </Ink></span>
             {/* Rotating slot — sizer reserves the widest word so the line can't jump. */}
-            <span className="relative inline-block align-bottom">
+            <span ref={slotRef} className="relative inline-block align-bottom">
                 <span className="invisible whitespace-nowrap" aria-hidden>{LONGEST}</span>
-                {/* justify-start, not -center: the sizer reserves the widest word's
-                    width, and centring a shorter word in it opened a gap after "for"
-                    ("for      Churches"). Left-aligning keeps the word flush to "for";
-                    the reserved slack sits (invisibly) after the caret. */}
-                <span className="absolute inset-0 flex items-end justify-start whitespace-nowrap">
+                {/* Inline with "for" ⇒ justify-start, so a short word stays flush to it
+                    and the reserved slack sits (invisibly) after the caret — centring
+                    here would open a gap ("for      Churches"). Once the word wraps to
+                    its own line, the slot itself is centred by the h1's text-center, so
+                    the word must centre INSIDE the slot to actually look centred. */}
+                <span className={`absolute inset-0 flex items-end whitespace-nowrap ${wrapped ? "justify-center" : "justify-start"}`}>
                     <span className="relative">
                         <Ink>{text || " "}</Ink>
                         {animate && (
