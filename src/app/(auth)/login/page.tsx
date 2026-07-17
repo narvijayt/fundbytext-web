@@ -57,7 +57,14 @@ export default function LoginPage() {
                     Login to your{" "}
                     <span className="relative inline-block">
                         account<span className="font-normal text-[#f47435]">!</span>
-                        <img alt="" src="/figma/underline.svg" className="absolute left-0 -bottom-2.5 w-full h-auto pointer-events-none" />
+                        {/* width/height are the SVG's own 440x16. Without them the browser
+                            has no intrinsic size until the file loads, so `h-auto` computed
+                            to 0 and the underline was invisible, then snapped to full height
+                            the moment it arrived — a late pop under "account" that read as
+                            the word animating in. The attributes let it reserve the box (and
+                            the right aspect) up front, so it's just there. */}
+                        <img alt="" src="/figma/underline.svg" width={440} height={16}
+                            className="absolute left-0 -bottom-2.5 w-full h-auto pointer-events-none" />
                     </span>
                 </h1>
                 <p className="text-[#003060] text-[14px] sm:text-lg text-center leading-[1.4]">
