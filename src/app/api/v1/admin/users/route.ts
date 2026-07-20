@@ -92,8 +92,9 @@ export async function POST(req: NextRequest) {
             select: { id: true, first_name: true, last_name: true, email: true, role: true },
         });
 
-        // Send login credentials to the newly created user
-        sendParticipantCredentialsEmail({
+        // Send login credentials to the newly created user. Awaited before
+        // returning — an un-awaited send is lost under serverless teardown.
+        await sendParticipantCredentialsEmail({
             to:       email,
             firstName: first_name,
             password:  plainPassword,

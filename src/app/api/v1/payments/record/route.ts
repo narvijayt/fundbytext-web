@@ -229,7 +229,9 @@ export async function POST(req: NextRequest) {
 
                 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 
-                sendDonorThankYouEmail({
+                // Awaited before returning — an un-awaited send is lost under
+                // serverless teardown, so the donor never got their thank-you.
+                await sendDonorThankYouEmail({
                     to:              donorEmail,
                     donorFirstName:  m.donor_first_name || "there",
                     campaignName:    campaignFull.name ?? "the campaign",

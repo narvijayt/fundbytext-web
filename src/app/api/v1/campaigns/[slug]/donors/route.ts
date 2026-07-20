@@ -310,7 +310,11 @@ export async function POST(req: NextRequest, ctx: Ctx) {
             const refPart = assignedInviteToken
                 ? `?ref=${assignedInviteToken}&donor=${donorInviteToken}`
                 : `?donor=${donorInviteToken}`;
-            sendDonorInviteEmail({
+            // AWAITED, not fire-and-forget. A route handler can be frozen the instant
+            // it returns, so an un-awaited send is lost under serverless teardown —
+            // which is why invited donors never received their email in production.
+            // Wrapped so a mail hiccup logs instead of turning a good add into a 500.
+            await sendDonorInviteEmail({
                 to:           email,
                 firstName:    first_name,
                 campaignName: campaign.name ?? "a fundraising campaign",
