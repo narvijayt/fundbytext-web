@@ -108,7 +108,7 @@ function SkeletonCard() {
     );
 }
 
-export default function ParticipantsTable({ participants: initialParticipants, initialTotal, initialMaxRaised, isOrganizer, campaignSlug, perParticipantGoal, myMemberId, donorsPerParticipant, isCompleted, readOnly, selfPrefill }: Props) {
+export default function ParticipantsTable({ participants: initialParticipants, initialTotal, initialMaxRaised, isOrganizer, campaignSlug, goalAmount, perParticipantGoal, myMemberId, donorsPerParticipant, isCompleted, readOnly, selfPrefill }: Props) {
     const [rows,         setRows]         = useState<ParticipantRow[]>(initialParticipants);
     const [total,        setTotal]        = useState(initialTotal ?? initialParticipants.length);
     const [maxRaised,    setMaxRaised]    = useState(initialMaxRaised ?? Math.max(0, ...initialParticipants.map((p) => p.raised)));
@@ -184,9 +184,18 @@ export default function ParticipantsTable({ participants: initialParticipants, i
         : total - (pageClamped - 1) * pageSize - i;
     const donorBarPct   = (p: ParticipantRow) => { const t = donorsPerParticipant ?? p.targetDonors; return t > 0 ? Math.min(100, Math.round((p.donorsAdded / t) * 100)) : 0; };
     const targetOf      = (p: ParticipantRow) => donorsPerParticipant ?? p.targetDonors;
-    const raisedBarPct  = (p: ParticipantRow) => perParticipantGoal && perParticipantGoal > 0
-        ? Math.min(100, Math.round((p.raised / perParticipantGoal) * 100))
-        : Math.min(100, Math.round((p.raised / Math.max(1, maxRaised)) * 100));
+    // Fill each participant's bar against a real goal when there is one:
+    //  • participant_goal → their own per-participant target
+    //  • org_goal / individual → their share of the whole campaign goal
+    // Only when NO goal exists does it fall back to a relative bar (share of the
+    // top raiser). Previously the org_goal case hit that fallback, so the #1
+    // participant divided by their own amount and always read 100% full.
+    const raisedBarPct  = (p: ParticipantRow) =>
+        perParticipantGoal && perParticipantGoal > 0
+            ? Math.min(100, Math.round((p.raised / perParticipantGoal) * 100))
+            : goalAmount && goalAmount > 0
+                ? Math.min(100, Math.round((p.raised / goalAmount) * 100))
+                : Math.min(100, Math.round((p.raised / Math.max(1, maxRaised)) * 100));
 
     function goPage(n: number) {
         const target = Math.min(totalPages, Math.max(1, n));
