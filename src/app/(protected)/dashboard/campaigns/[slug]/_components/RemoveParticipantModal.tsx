@@ -9,7 +9,9 @@ type Props = {
     name:         string;
     raised:       number;   // blocks removal when > 0 (they've raised money)
     isSelf:       boolean;
-    onClose:      () => void;
+    /** `changed` is true only when a removal actually happened — cancel/dismiss passes
+     *  false, so the caller can skip refetching on a no-op close. */
+    onClose:      (changed?: boolean) => void;
 };
 
 function fmt(n: number) {
@@ -40,7 +42,7 @@ export default function RemoveParticipantModal({ memberId, campaignSlug, name, r
 
     function close() {
         setShown(false);
-        window.setTimeout(onClose, 170);
+        window.setTimeout(() => onClose(false), 170);
     }
 
     async function handleRemove() {
@@ -49,7 +51,7 @@ export default function RemoveParticipantModal({ memberId, campaignSlug, name, r
         const res = await fetch(`/api/v1/campaigns/${campaignSlug}/members/${memberId}`, { method: "DELETE" });
         if (res.ok || res.status === 204) {
             router.refresh();
-            onClose();
+            onClose(true);
         } else {
             const j = await res.json().catch(() => ({}));
             setError(j.error ?? "Remove failed.");

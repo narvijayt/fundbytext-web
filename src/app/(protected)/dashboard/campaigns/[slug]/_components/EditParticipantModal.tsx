@@ -7,7 +7,9 @@ import { useDismissGuard } from "@/components/useDismissGuard";
 type Props = {
     memberId:     string;
     campaignSlug: string;
-    onClose:      () => void;
+    /** `changed` is true only when a save actually happened — cancel/dismiss passes
+     *  false, so the caller can skip refetching (and its skeleton) on a no-op close. */
+    onClose:      (changed?: boolean) => void;
 };
 
 const INPUT     = "w-full rounded-[12px] border border-[#d4dee7] bg-white px-4 py-2.5 text-[15px] text-[#003060] placeholder:text-[#9aa7b8] transition-colors focus:border-[#0268c0] focus:outline-none focus:ring-2 focus:ring-[#0268c0]/20";
@@ -70,7 +72,7 @@ export default function EditParticipantModal({ memberId, campaignSlug, onClose }
 
     function close() {
         setShown(false);
-        window.setTimeout(onClose, 170);
+        window.setTimeout(() => onClose(false), 170);
     }
 
     async function handleSubmit(e: React.FormEvent) {
@@ -95,8 +97,11 @@ export default function EditParticipantModal({ memberId, campaignSlug, onClose }
         });
 
         if (res.ok) {
+            // router.refresh() keeps cross-component views fresh (e.g. a donor's
+            // assigned-participant name in the donors table); onClose(true) tells the
+            // participants table a real change happened so it silently refetches.
             router.refresh();
-            onClose();
+            onClose(true);
         } else {
             const j = await res.json().catch(() => ({}));
             setError(j.error ?? "Failed to save changes.");

@@ -17,7 +17,9 @@ export type SelfPrefill = {
 
 type Props = {
     campaignSlug: string;
-    onClose:      () => void;
+    /** `changed` is true only when a participant was actually added — cancel/dismiss
+     *  passes false, so the caller can skip refetching (and its skeleton) on a no-op close. */
+    onClose:      (changed?: boolean) => void;
     selfPrefill?: SelfPrefill | null;
 };
 
@@ -62,7 +64,7 @@ export default function AddParticipantModal({ campaignSlug, onClose, selfPrefill
 
     function close() {
         setShown(false);
-        window.setTimeout(onClose, 170);
+        window.setTimeout(() => onClose(false), 170);
     }
 
     // When the email belongs to a registered account that already has a profile
@@ -156,7 +158,7 @@ export default function AddParticipantModal({ campaignSlug, onClose, selfPrefill
 
         if (res.ok) {
             router.refresh();
-            onClose();
+            onClose(true);
         } else {
             const j = await res.json().catch(() => ({}));
             setError(j.error ?? "Failed to add participant.");

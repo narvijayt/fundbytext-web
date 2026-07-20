@@ -129,9 +129,29 @@ export default function ParticipantsTable({ participants: initialParticipants, i
     const [mounted,      setMounted]      = useState(false);
     useEffect(() => { setMounted(true); }, []);
 
+    // Snapshots taken when a View/Remove modal opens, so a background (donation)
+    // refetch that reorders the page and drops the target row off the current slice
+    // can't blank the open modal — it keeps the amount / target it opened with.
+    const [viewRaised,   setViewRaised]   = useState(0);
+    const [removeTarget, setRemoveTarget] = useState<ParticipantRow | null>(null);
+    // Monotonic fetch token — only the most recently ISSUED fetch may write its
+    // result, so a slow response can't clobber a newer one (out-of-order donation
+    // refetches, or a donation refetch landing after the user has paginated away).
+    const reqSeq = useRef(0);
+
     // Server-side pagination — each page is fetched (like the donors table).
-    async function fetchPage(p: number, q: string = search, desc: boolean = sortDesc, size: number = pageSize) {
-        setLoading(true);
+    //
+    // `silent` refetches in the background WITHOUT the skeleton. The skeleton is for
+    // when the user asked for a different set of rows (paginate / search / sort) or
+    // added someone — you expect a beat there. It's jarring for an in-place update
+    // that leaves the same rows on screen: editing a participant, removing one, or a
+    // realtime donation nudging the amounts. Those refetch silently.
+    async function fetchPage(
+        p: number, q: string = search, desc: boolean = sortDesc, size: number = pageSize,
+        opts: { silent?: boolean } = {},
+    ) {
+        if (!opts.silent) setLoading(true);
+        const seq = ++reqSeq.current;
         try {
             const params = new URLSearchParams({
                 skip:   String((p - 1) * size),
@@ -141,11 +161,23 @@ export default function ParticipantsTable({ participants: initialParticipants, i
             });
             const res  = await fetch(`/api/v1/campaigns/${campaignSlug}/members?${params}`);
             const data = await res.json() as { participants: ParticipantRow[]; total: number; maxRaised: number };
+            if (seq !== reqSeq.current) return; // a newer fetch was issued — drop this stale result
+            // If this page overshot a now-smaller total (e.g. the last row on the last
+            // page was just removed), drop to the real last page and refetch it rather
+            // than stranding the user on an empty page with a false "no matches" state.
+            const lastPage = Math.max(1, Math.ceil(data.total / size));
+            if (p > lastPage) {
+                setPage(lastPage);
+                return fetchPage(lastPage, q, desc, size, opts);
+            }
             setRows(data.participants);
             setTotal(data.total);
             setMaxRaised(data.maxRaised);
         } finally {
-            setLoading(false);
+            // Only the latest fetch owns the loading flag (clearing it even from a
+            // silent fetch, in case it superseded a loud one that set it) — a
+            // superseded loud fetch must not clear a newer one's skeleton.
+            if (seq === reqSeq.current) setLoading(false);
         }
     }
 
@@ -222,7 +254,30 @@ export default function ParticipantsTable({ participants: initialParticipants, i
     }
 
     // Refetch the current page after add/edit/remove so the list stays fresh.
-    function refresh() { fetchPage(pageClamped); }
+    // Refetch the CURRENT view (same page / search / sort) after a mutation. `silent`
+    // keeps the rows on screen with no skeleton — for edit/remove and realtime
+    // donations; add and the query controls refetch loudly.
+    function refresh(opts: { silent?: boolean } = {}) { fetchPage(pageClamped, search, sortDesc, pageSize, opts); }
+
+    // Live leaderboard: a realtime donation refreshes each participant's amount and
+    // rank, but SILENTLY — a skeleton flash every time money comes in would be
+    // maddening on an active campaign. The ref is repointed every render so the
+    // listener always refetches the view the user is currently looking at, and a
+    // short debounce coalesces bursts of donations into one refetch.
+    const donationTimer   = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const silentRefreshRef = useRef<() => void>(() => {});
+    useEffect(() => { silentRefreshRef.current = () => refresh({ silent: true }); });
+    useEffect(() => {
+        const onDonation = () => {
+            if (donationTimer.current) clearTimeout(donationTimer.current);
+            donationTimer.current = setTimeout(() => silentRefreshRef.current(), 400);
+        };
+        window.addEventListener("dashboard:donation", onDonation);
+        return () => {
+            window.removeEventListener("dashboard:donation", onDonation);
+            if (donationTimer.current) clearTimeout(donationTimer.current);
+        };
+    }, []);
 
     function Avatar({ p, size }: { p: ParticipantRow; size: string }) {
         return (
@@ -456,7 +511,7 @@ export default function ParticipantsTable({ participants: initialParticipants, i
             )}
 
             {isOrganizer && addOpen && (
-                <AddParticipantModal campaignSlug={campaignSlug} selfPrefill={selfPrefill} onClose={() => { setAddOpen(false); refresh(); }} />
+                <AddParticipantModal campaignSlug={campaignSlug} selfPrefill={selfPrefill} onClose={(changed) => { setAddOpen(false); if (changed) refresh(); }} />
             )}
             {/* Row action menu — portalled so the table's overflow doesn't clip it */}
             {!readOnly && mounted && menuFor && (() => {
@@ -466,7 +521,7 @@ export default function ParticipantsTable({ participants: initialParticipants, i
                 return createPortal(
                     <div role="menu" onMouseDown={(e) => e.stopPropagation()} style={{ position: "fixed", top: menuPos.top, right: menuPos.right, zIndex: 90 }}
                         className="w-56 overflow-hidden rounded-xl border border-[#e7e9eb] bg-white py-1.5 shadow-[0px_12px_32px_-8px_rgba(15,29,67,0.25)]">
-                        <button role="menuitem" onClick={() => { setViewMemberId(p.id); setMenuFor(null); }} className={`${item} text-[#003060] hover:bg-[#f4f8f9]`}>
+                        <button role="menuitem" onClick={() => { setViewMemberId(p.id); setViewRaised(p.raised); setMenuFor(null); }} className={`${item} text-[#003060] hover:bg-[#f4f8f9]`}>
                             <svg className="h-[18px] w-[18px] text-[#9aa7b8]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z" /><circle cx="12" cy="12" r="2.6" /></svg>
                             View Participant
                         </button>
@@ -477,7 +532,7 @@ export default function ParticipantsTable({ participants: initialParticipants, i
                             </button>
                         )}
                         {isOrganizer && !isCompleted && (
-                            <button role="menuitem" onClick={() => { setRemoveId(p.id); setMenuFor(null); }} className={`${item} text-red-600 hover:bg-red-50`}>
+                            <button role="menuitem" onClick={() => { setRemoveId(p.id); setRemoveTarget(p); setMenuFor(null); }} className={`${item} text-red-600 hover:bg-red-50`}>
                                 <svg className="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6M10 11v6M14 11v6" /></svg>
                                 Remove
                             </button>
@@ -492,15 +547,19 @@ export default function ParticipantsTable({ participants: initialParticipants, i
                     memberId={viewMemberId}
                     myMemberId={myMemberId}
                     campaignSlug={campaignSlug}
-                    raised={viewedParticipant?.raised ?? 0}
+                    raised={viewedParticipant?.raised ?? viewRaised}
                     onClose={() => setViewMemberId(null)}
                 />
             )}
             {editMemberId && (
-                <EditParticipantModal memberId={editMemberId} campaignSlug={campaignSlug} onClose={() => { setEditMemberId(null); refresh(); }} />
+                <EditParticipantModal memberId={editMemberId} campaignSlug={campaignSlug} onClose={(changed) => { setEditMemberId(null); if (changed) refresh({ silent: true }); }} />
             )}
             {removeId && (() => {
-                const p = rows.find((x) => x.id === removeId);
+                // Fall back to the snapshot taken at open, so a background refetch that
+                // reorders the page off this row can't blank the confirmation dialog
+                // (name → "this participant", raised → 0, which would also wrongly
+                // un-block removal of someone who just received money).
+                const p = rows.find((x) => x.id === removeId) ?? removeTarget;
                 return (
                     <RemoveParticipantModal
                         memberId={removeId}
@@ -508,7 +567,7 @@ export default function ParticipantsTable({ participants: initialParticipants, i
                         name={p?.name ?? "this participant"}
                         raised={p?.raised ?? 0}
                         isSelf={removeId === myMemberId}
-                        onClose={() => { setRemoveId(null); refresh(); }}
+                        onClose={(changed) => { setRemoveId(null); setRemoveTarget(null); if (changed) refresh({ silent: true }); }}
                     />
                 );
             })()}
