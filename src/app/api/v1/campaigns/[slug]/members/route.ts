@@ -178,15 +178,17 @@ export async function POST(req: NextRequest, ctx: Ctx) {
                     const organizerName = myMember
                         ? `${myMember.first_name} ${myMember.last_name}`
                         : "Your organizer";
-                    notifyParticipantAdded(
+                    // Awaited, not fire-and-forget — a route handler can be frozen the
+                    // instant it responds, so work started after `return` may never run.
+                    await notifyParticipantAdded(
                         campaign.id,
                         existing.id,
                         organizerName,
                         campaign.name ?? "the campaign",
-                    ).catch(console.error);
+                    ).catch((err) => console.error("[POST members] notify error", err));
 
                     if (existing.email) {
-                        sendParticipantInviteEmail({
+                        await sendParticipantInviteEmail({
                             to:             existing.email,
                             firstName:      first_name,
                             campaignName:   campaign.name ?? "a campaign",
@@ -197,7 +199,7 @@ export async function POST(req: NextRequest, ctx: Ctx) {
                             timezone:       campaign.timezone,
                             loginUrl:       `${APP_URL}/login`,
                             campaignUrl:    `${APP_URL}/campaigns/${slug}`,
-                        }).catch(console.error);
+                        }).catch((err) => console.error("[POST members] email error", err));
                     }
                 }
 
@@ -211,7 +213,7 @@ export async function POST(req: NextRequest, ctx: Ctx) {
 
         const inviteToken = crypto.randomBytes(32).toString("hex");
 
-        const member = await prisma.campaignMember.create({
+        let member = await prisma.campaignMember.create({
             data: {
                 campaign_id:  campaign.id,
                 first_name,
@@ -227,83 +229,91 @@ export async function POST(req: NextRequest, ctx: Ctx) {
             include: { roles: { select: { role: true } } },
         });
 
-        // Send account + invite emails only after launch — not during draft wizard
+        // After launch (not during the draft wizard, which defers all of this to the
+        // launch route), resolve the participant's account and send their emails.
+        //
+        // This is AWAITED, not fire-and-forget. A route handler's execution can be
+        // frozen the instant it returns a response, so work started in a detached
+        // `(async () => …)()` after `return` may never run in production — which is
+        // exactly why participants added from the dashboard were left with a member
+        // row but no account and no invite email. Awaiting also lets the response
+        // carry the linked user_id instead of the pre-link null.
+        //
+        // Email is required by the schema, so `email` is always set here; the guard
+        // is really just "campaign is live" (matching the old separate check that
+        // fired the notification).
         if (email && campaign.status !== "draft") {
             const organizerName = myMember
                 ? `${myMember.first_name} ${myMember.last_name}`
                 : "Campaign Organizer";
-            const loginUrl  = `${APP_URL}/login`;
+            const loginUrl   = `${APP_URL}/login`;
             const goalAmount = campaign.goal_amount ? Number(campaign.goal_amount) : null;
 
-            (async () => {
-                try {
-                    // Check if a user account already exists for this email
-                    const existingUser = await prisma.user.findUnique({ where: { email } });
+            // Password is only generated for a brand-new account; its presence below
+            // is what decides whether a credentials email goes out.
+            let generatedPassword: string | null = null;
 
-                    let sendCredentials = false;
-                    let generatedPassword: string | null = null;
-
-                    if (existingUser) {
-                        // Link the member to the existing account if not already linked
-                        if (!member.user_id) {
-                            await prisma.campaignMember.update({
-                                where: { id: member.id },
-                                data:  { user_id: existingUser.id, joined_at: new Date() },
-                            });
-                        }
-                        // Existing user — they know their password, no credentials email
-                    } else {
-                        // Create a new account
-                        generatedPassword = generatePassword();
-                        const password_hash = await bcrypt.hash(generatedPassword, 12);
-                        const username = await generateUsername(first_name, last_name);
-                        const newUser = await prisma.user.create({
-                            data: { first_name, last_name, email, password_hash, username, profile_photo_url: profile_photo_url ?? null },
-                        });
-                        await prisma.campaignMember.update({
-                            where: { id: member.id },
-                            data:  { user_id: newUser.id, joined_at: new Date() },
-                        });
-                        sendCredentials = true;
-                    }
-
-                    if (sendCredentials) {
-                        await sendParticipantCredentialsEmail({
-                            to:        email,
-                            firstName: first_name,
-                            password:  generatedPassword,
-                            loginUrl,
+            try {
+                const existingUser = await prisma.user.findUnique({ where: { email } });
+                if (existingUser) {
+                    // Existing account — link it (if not already) and skip the
+                    // credentials email; they already know their password.
+                    if (!member.user_id) {
+                        member = await prisma.campaignMember.update({
+                            where:   { id: member.id },
+                            data:    { user_id: existingUser.id, joined_at: new Date() },
+                            include: { roles: { select: { role: true } } },
                         });
                     }
-
-                    await sendParticipantInviteEmail({
-                        to:             email,
-                        firstName:      first_name,
-                        campaignName:   campaign.name ?? "a campaign",
-                        organizerName,
-                        orgDisplayName: campaign.org_display_name,
-                        goalAmount,
-                        endDate:        campaign.end_date?.toISOString() ?? null,
-                        timezone:       campaign.timezone,
-                        loginUrl,
-                        campaignUrl:    `${APP_URL}/campaigns/${slug}`,
+                } else {
+                    // Brand-new participant — create their account and link it.
+                    generatedPassword = generatePassword();
+                    const password_hash = await bcrypt.hash(generatedPassword, 12);
+                    const username = await generateUsername(first_name, last_name);
+                    const newUser = await prisma.user.create({
+                        data: { first_name, last_name, email, password_hash, username, profile_photo_url: profile_photo_url ?? null },
                     });
-                } catch (err) {
-                    console.error("[POST members] email error", err);
+                    member = await prisma.campaignMember.update({
+                        where:   { id: member.id },
+                        data:    { user_id: newUser.id, joined_at: new Date() },
+                        include: { roles: { select: { role: true } } },
+                    });
                 }
-            })();
-        }
+            } catch (err) {
+                // A member row already exists; don't fail the add over account setup.
+                console.error("[POST members] account error", err);
+            }
 
-        if (campaign.status !== "draft") {
-            const organizerName = myMember
-                ? `${myMember.first_name} ${myMember.last_name}`
-                : "Your organizer";
-            notifyParticipantAdded(
-                campaign.id,
-                member.id,
+            // Emails are awaited for the same teardown reason, but must NOT fail the
+            // request — the member (and account) already exist, so a mail hiccup
+            // shouldn't turn a successful add into a 500.
+            const emailTasks: Promise<unknown>[] = [];
+            if (generatedPassword) {
+                emailTasks.push(sendParticipantCredentialsEmail({
+                    to: email, firstName: first_name, password: generatedPassword, loginUrl,
+                }));
+            }
+            emailTasks.push(sendParticipantInviteEmail({
+                to:             email,
+                firstName:      first_name,
+                campaignName:   campaign.name ?? "a campaign",
                 organizerName,
-                campaign.name ?? "the campaign",
-            ).catch(console.error);
+                orgDisplayName: campaign.org_display_name,
+                goalAmount,
+                endDate:        campaign.end_date?.toISOString() ?? null,
+                timezone:       campaign.timezone,
+                loginUrl,
+                campaignUrl:    `${APP_URL}/campaigns/${slug}`,
+            }));
+            const results = await Promise.allSettled(emailTasks);
+            for (const r of results) {
+                if (r.status === "rejected") console.error("[POST members] email error", r.reason);
+            }
+
+            // The participant's in-app "you've been added" notification — also awaited.
+            await notifyParticipantAdded(
+                campaign.id, member.id, organizerName, campaign.name ?? "the campaign",
+            ).catch((err) => console.error("[POST members] notify error", err));
         }
 
         return NextResponse.json({ member: JSON.parse(JSON.stringify(member)) }, { status: 201 });
