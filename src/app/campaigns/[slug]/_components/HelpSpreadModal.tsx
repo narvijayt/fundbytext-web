@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { QRCodeCanvas } from "qrcode.react";
 import { SAMPLE_VIDEO } from "./MarketingShareables";
 
 const M = "/assets/marketing";
@@ -38,10 +39,9 @@ export default function HelpSpreadModal({ isOpen, onClose, slug, campaignName, h
     const [copied, setCopied] = useState(false);
     const [playing, setPlaying] = useState(false);
     const videoSrc = videoUrl?.trim() || SAMPLE_VIDEO;
-    // Only a real, campaign-uploaded video is downloadable — never the bundled
-    // sample clip the tile falls back to for preview.
-    const hasVideo = !!videoUrl?.trim();
     const poster   = videoPoster ?? heroUrl;
+    // Holds the off-screen QR canvas the Download button exports (see downloadQr).
+    const qrRef    = useRef<HTMLDivElement>(null);
     useEffect(() => { setUrl(`${window.location.origin}/campaigns/${slug}`); }, [slug]);
     useEffect(() => { document.body.style.overflow = isOpen ? "hidden" : ""; return () => { document.body.style.overflow = ""; }; }, [isOpen]);
     useEffect(() => {
@@ -78,21 +78,17 @@ export default function HelpSpreadModal({ isOpen, onClose, slug, campaignName, h
     const text = encodeURIComponent(`Support ${campaignName}`);
     const isMobile = typeof navigator !== "undefined" && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
-    // Download the campaign video so supporters can re-post it (reels/stories).
-    // The blob URL is cross-origin, so `download` on a plain <a> is ignored —
-    // fetch the bytes and trigger a real download instead.
-    const download = async () => {
-        if (!hasVideo || !videoUrl) return;
-        try {
-            const res  = await fetch(videoUrl);
-            const blob = await res.blob();
-            const obj  = URL.createObjectURL(blob);
-            const a    = document.createElement("a");
-            a.href = obj;
-            a.download = `${slug}.${(blob.type.split("/")[1] || "mp4")}`;
-            document.body.appendChild(a); a.click(); a.remove();
-            URL.revokeObjectURL(obj);
-        } catch { open(videoUrl); }
+    // Download this campaign's QR code as a PNG so supporters can print it or drop
+    // it into a post. The code is rendered once, off-screen, on a <canvas> at print
+    // resolution; here we just read that canvas out to a data URL and save it. Always
+    // available (no dependency on a campaign video).
+    const downloadQr = () => {
+        const canvas = qrRef.current?.querySelector("canvas");
+        if (!canvas) return;
+        const a = document.createElement("a");
+        a.href = canvas.toDataURL("image/png");
+        a.download = `${slug}-qr.png`;
+        document.body.appendChild(a); a.click(); a.remove();
     };
 
     const NETWORKS: { key: string; label: string; onClick: () => void }[] = [
@@ -189,14 +185,23 @@ export default function HelpSpreadModal({ isOpen, onClose, slug, campaignName, h
                                 <img src={ICONS[n.key]} alt="" className="size-[18px] shrink-0" />{n.label}
                             </button>
                         ))}
-                        <button type="button" onClick={download} disabled={!hasVideo} title={hasVideo ? "Download campaign video" : "No campaign video to download"} className={`${pill} col-span-2 gap-3 disabled:cursor-not-allowed disabled:opacity-50 sm:col-span-3`}>
+                        <button type="button" onClick={downloadQr} title="Download this campaign's QR code" className={`${pill} col-span-2 gap-3 sm:col-span-3`}>
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img src={`${SHARE}/download.svg`} alt="" className="size-[18px] shrink-0" />
-                            Download
+                            Download QR Code
                         </button>
                     </div>
                 </div>
               </div>
+            </div>
+
+            {/* Off-screen QR canvas the Download button exports. Rendered at print
+                resolution (a display:none canvas would work, but keeping it laid out
+                off-screen avoids any browser quirk in reading back a hidden canvas).
+                Navy on white with a quiet-zone margin so it scans reliably when
+                printed, independent of the campaign's accent tint. */}
+            <div ref={qrRef} aria-hidden className="pointer-events-none fixed left-[-9999px] top-0">
+                <QRCodeCanvas value={url} size={1024} level="M" marginSize={4} fgColor="#003060" bgColor="#ffffff" />
             </div>
         </div>
     );
