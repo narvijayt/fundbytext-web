@@ -26,7 +26,8 @@ export default async function AdminCampaignsPage({
     return (
         <div>
             <div className="flex flex-wrap items-center justify-between gap-3">
-                <h1 className="text-[22px] font-black text-[#003060]">Campaigns</h1>
+                {/* Matches the sidebar link, so the nav item and the page agree. */}
+                <h1 className="text-[22px] font-black text-[#003060]">My Campaigns</h1>
                 <GlobalCampaignVideo currentUrl={defaultVideo} currentThumbnailUrl={defaultVideoThumb} />
             </div>
             <AdminCampaignsTable
