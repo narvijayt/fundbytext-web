@@ -467,13 +467,18 @@ export async function sendDonorInviteEmail({
 
 export async function sendContactEmail({
     to,
+    cc,
+    bcc,
     inquiryType,
     firstName,
     lastName,
     email,
     message,
 }: {
-    to: string;
+    /** One or many addresses — the recipient lists are admin-configurable. */
+    to: string | string[];
+    cc?: string | string[];
+    bcc?: string | string[];
     inquiryType: string;
     firstName: string;
     lastName: string;
@@ -481,9 +486,15 @@ export async function sendContactEmail({
     message: string;
 }) {
     const esc = (s: string) => s.replace(/[<>&]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;" }[c] as string));
+    // Omit cc/bcc entirely when empty — nodemailer treats [] as "no header",
+    // but leaving them undefined keeps the sent message cleaner.
+    const hasCc  = Array.isArray(cc)  ? cc.length  > 0 : Boolean(cc);
+    const hasBcc = Array.isArray(bcc) ? bcc.length > 0 : Boolean(bcc);
     await transporter.sendMail({
         from,
         to,
+        ...(hasCc  ? { cc }  : {}),
+        ...(hasBcc ? { bcc } : {}),
         replyTo: `"${firstName} ${lastName}" <${email}>`,
         subject: `New contact form submission — ${inquiryType}`,
         html: emailLayout(`

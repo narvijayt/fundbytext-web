@@ -2,9 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { sendContactEmail } from "@/lib/mail";
-
-// All contact submissions are emailed here (overridable via env).
-const CONTACT_RECIPIENT = process.env.CONTACT_RECIPIENT ?? "agd.abhaykumar@gmail.com";
+import { getContactRecipients } from "@/lib/settings";
 
 const INQUIRY_TYPES = [
     "General Inquiry",
@@ -39,10 +37,15 @@ export async function POST(req: NextRequest) {
     // 1) Persist the submission so it's never lost (even if email delivery fails).
     const submission = await prisma.contactSubmission.create({ data });
 
-    // 2) Notify the contact inbox. Email failures must not fail the submission.
+    // 2) Notify the contact inbox. Recipients are admin-configurable
+    //    (/admin/contact); `to` falls back to the built-in address if cleared.
+    //    Email failures must not fail the submission.
     try {
+        const { to, cc, bcc } = await getContactRecipients();
         await sendContactEmail({
-            to: CONTACT_RECIPIENT,
+            to,
+            cc,
+            bcc,
             inquiryType: data.inquiry_type,
             firstName: data.first_name,
             lastName: data.last_name,
