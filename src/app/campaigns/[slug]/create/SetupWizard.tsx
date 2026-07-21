@@ -74,6 +74,33 @@ function localToUTCISO(localStr: string, tz: string): string {
 const fmtUsd = (n: number) =>
     new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(n);
 
+/* The API reports per-field problems as a zod error tree —
+   { error: { properties: { org_display_name: { errors: ["…"] } } } } — for both
+   422 validation failures and the 409 org-name conflict. Flatten it to the
+   wizard's fieldErrors shape so a rejected save lands under the input that
+   caused it, instead of as a generic "Failed to save." dialog with no clue
+   which field was at fault. Returns {} for a plain string error. */
+function fieldErrorsFromPayload(payload: unknown): Record<string, string> {
+    const props = (payload as { properties?: Record<string, { errors?: unknown }> } | null)?.properties;
+    if (!props || typeof props !== "object") return {};
+    const out: Record<string, string> = {};
+    for (const [field, node] of Object.entries(props)) {
+        const first = Array.isArray(node?.errors) ? node.errors[0] : null;
+        if (typeof first === "string" && first) out[field] = first;
+    }
+    return out;
+}
+
+/* Only these render an inline message next to their input. The API can reject
+   fields with no such slot (story, thank_you_message, media, the colours), and
+   filing an error under one of those would show the user nothing at all while
+   the save silently failed — so anything outside this set falls back to the
+   alert dialog. Keys match the API's field names. */
+const INLINE_ERROR_FIELDS = new Set([
+    "name", "org_display_name", "start_date", "end_date",
+    "goal_type", "goal_amount", "donors_per_participant",
+]);
+
 // ── Main component ─────────────────────────────────────────────────────────
 
 export default function SetupWizard({
@@ -251,10 +278,17 @@ export default function SetupWizard({
     // Only a fresh org campaign can pick a name: once an account owns one the
     // field is pre-filled and locked, which is how an owner reuses their own.
     const checkOrgName = isOrg && !orgDisplayNameLocked && orgDisplayName.trim().length > 0;
-    const [orgNameTakenRaw, setOrgNameTakenRaw] = useState(false);
+    // Store WHICH name came back taken, not a bare boolean. A boolean outlives the
+    // value it described: after editing a rejected name into a free one, it stayed
+    // true until the next debounced check returned, so pressing Next in that window
+    // was wrongly blocked as "already taken". Comparing names means a result only
+    // applies to the text it was fetched for, and a stale response for a name the
+    // user has since changed is ignored in both directions.
+    const [orgNameTakenFor, setOrgNameTakenFor] = useState<string | null>(null);
     // Derived rather than reset through setState — clearing it in the effect
     // would be a synchronous setState during an effect (cascading renders).
-    const orgNameTaken = checkOrgName && orgNameTakenRaw;
+    const orgNameTaken = checkOrgName && orgNameTakenFor !== null
+        && orgNameTakenFor === orgDisplayName.trim().toLowerCase();
 
     useEffect(() => {
         if (!checkOrgName) return;
@@ -265,7 +299,7 @@ export default function SetupWizard({
                 const res = await fetch(`/api/v1/organizations/check-name?name=${encodeURIComponent(name)}`);
                 if (!res.ok) return;
                 const { taken } = await res.json() as { taken: boolean };
-                setOrgNameTakenRaw(taken);
+                setOrgNameTakenFor(taken ? name.toLowerCase() : null);
                 if (taken) {
                     setFieldErrors((prev) => ({ ...prev, org_display_name: ORG_NAME_TAKEN }));
                 }
@@ -335,9 +369,33 @@ export default function SetupWizard({
             if (!res.ok) {
                 if (res.status === 409 && json.code === "name_taken") {
                     setFieldErrors((p) => ({ ...p, name: "A campaign with this name already exists." }));
-                } else {
-                    setAlertMsg(typeof json.error === "string" ? json.error : "Failed to save.");
+                    scrollToFirstError();
+                    return false;
                 }
+                // A field-scoped rejection (409 org-name conflict, or a 422 the
+                // client-side rules didn't catch) belongs under its input, not in
+                // an alert that doesn't say which field is wrong.
+                const all = fieldErrorsFromPayload(json.error);
+                const inline = Object.fromEntries(
+                    Object.entries(all).filter(([f]) => INLINE_ERROR_FIELDS.has(f)),
+                );
+                if (inline.org_display_name) {
+                    // Record it so the guard blocks resubmitting the same name even
+                    // if the debounced check never ran (e.g. Next pressed straight
+                    // after typing, which is how this slipped through to begin with).
+                    setOrgNameTakenFor(orgDisplayName.trim().toLowerCase());
+                    inline.org_display_name = ORG_NAME_TAKEN;
+                }
+                if (Object.keys(inline).length > 0) {
+                    setFieldErrors((p) => ({ ...p, ...inline }));
+                    scrollToFirstError();
+                    return false;
+                }
+                // No inline slot for it — say something rather than fail silently.
+                const firstMsg = Object.values(all)[0];
+                setAlertMsg(
+                    typeof json.error === "string" ? json.error : (firstMsg ?? "Failed to save."),
+                );
                 return false;
             }
             return true;
@@ -621,7 +679,27 @@ export default function SetupWizard({
                 // Surface it. This used to swallow every failure and navigate
                 // away anyway, so a rejected edit looked exactly like a saved
                 // one — the user only found out by coming back to stale values.
-                setAlertMsg(typeof json?.error === "string" ? json.error : "Couldn't save your changes. Please try again.");
+                const all = fieldErrorsFromPayload(json?.error);
+                const inline = Object.fromEntries(
+                    Object.entries(all).filter(([f]) => INLINE_ERROR_FIELDS.has(f)),
+                );
+                if (inline.org_display_name) {
+                    setOrgNameTakenFor(orgDisplayName.trim().toLowerCase());
+                    inline.org_display_name = ORG_NAME_TAKEN;
+                }
+                if (Object.keys(inline).length > 0) {
+                    // Mark the field AND say so plainly — exiting is a deliberate
+                    // "save my work" action, so an inline error on a step they may
+                    // not be looking at wouldn't register on its own.
+                    setFieldErrors((p) => ({ ...p, ...inline }));
+                    scrollToFirstError();
+                }
+                setAlertMsg(
+                    Object.values(inline)[0]
+                    ?? (typeof json?.error === "string" ? json.error : null)
+                    ?? Object.values(all)[0]
+                    ?? "Couldn't save your changes. Please try again.",
+                );
                 return false;
             }
             return true;
