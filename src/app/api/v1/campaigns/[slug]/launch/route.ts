@@ -13,11 +13,20 @@ import { sendParticipantCredentialsEmail, sendParticipantInviteEmail, sendDonorI
 import { notifyCampaignLaunched, notifyCampaignActive, notifyParticipantAdded, broadcastCampaignActive } from "@/lib/notifications";
 import { publishStatusChange } from "@/lib/ably";
 
+/* Same shape as the members route's copy, and module-scope for the same reason:
+   a local `const chars` captured by a `.map()` arrow got dropped by the
+   production minifier there, throwing "ReferenceError: chars is not defined".
+   This copy happened to survive minification, but it was the identical pattern
+   — so it's fixed here too rather than left as a latent bug. */
+const PASSWORD_CHARS = "ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz0123456789!@#$%^&*";
+
 function generatePassword(): string {
-    const chars = "ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz0123456789!@#$%^&*";
-    return Array.from(crypto.randomBytes(10))
-        .map((b) => chars[b % chars.length])
-        .join("");
+    const bytes = crypto.randomBytes(10);
+    let out = "";
+    for (let i = 0; i < bytes.length; i++) {
+        out += PASSWORD_CHARS[bytes[i] % PASSWORD_CHARS.length];
+    }
+    return out;
 }
 
 type Ctx = { params: Promise<{ slug: string }> };

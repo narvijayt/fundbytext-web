@@ -19,6 +19,9 @@ import { getAuthUserFromRequest } from "@/lib/session";
 import { sendParticipantCredentialsEmail } from "@/lib/mail";
 import { generateUsername } from "@/lib/username";
 
+/* Module scope on purpose — see the generated-password block below. */
+const PASSWORD_CHARS = "ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz0123456789!@#$%^&*";
+
 const schema = z.object({
     campaign_type: z.enum(["individual", "organization"]),
     name:          z.string().min(1).max(50).optional(),
@@ -102,8 +105,19 @@ export async function POST(req: NextRequest) {
                 );
             }
 
-            const chars = "ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz0123456789!@#$%^&*";
-            generatedPassword = Array.from(crypto.randomBytes(10)).map((b) => chars[(b as number) % chars.length]).join("");
+            // Built from the module-scope charset with a plain loop, NOT a local
+            // `const chars` captured by a `.map()` arrow: the production minifier
+            // dropped exactly that binding in the members route and threw
+            // "ReferenceError: chars is not defined", silently killing account
+            // creation on Vercel while working fine in dev.
+            {
+                const bytes = crypto.randomBytes(10);
+                let pw = "";
+                for (let i = 0; i < bytes.length; i++) {
+                    pw += PASSWORD_CHARS[bytes[i] % PASSWORD_CHARS.length];
+                }
+                generatedPassword = pw;
+            }
             const password_hash = await bcrypt.hash(generatedPassword, 12);
 
             // If an old soft-deleted record still holds this email (pre-mangling),

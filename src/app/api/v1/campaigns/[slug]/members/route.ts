@@ -14,11 +14,24 @@ import { generateUsername } from "@/lib/username";
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 
+/* Module scope, and no closure — both deliberate.
+   This used to be a local `const chars` captured by a `.map()` arrow. The
+   production minifier dropped that binding, so the deployed build threw
+   "ReferenceError: chars is not defined" from inside generatePassword(). The
+   caller catches account errors, so the failure was silent: the participant got
+   a member row and the invite email, but no account and no credentials (the
+   credentials email is gated on the password this returns). It only ever failed
+   on the minified Vercel build, never in dev. Keep the constant at module scope
+   and index it in a plain loop. */
+const PASSWORD_CHARS = "ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz0123456789!@#$%^&*";
+
 function generatePassword(): string {
-    const chars = "ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz0123456789!@#$%^&*";
-    return Array.from(crypto.randomBytes(10))
-        .map((b) => chars[b % chars.length])
-        .join("");
+    const bytes = crypto.randomBytes(10);
+    let out = "";
+    for (let i = 0; i < bytes.length; i++) {
+        out += PASSWORD_CHARS[bytes[i] % PASSWORD_CHARS.length];
+    }
+    return out;
 }
 
 type Ctx = { params: Promise<{ slug: string }> };
