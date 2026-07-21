@@ -169,17 +169,42 @@ function YouBadge({ onDark, secondary }: { onDark?: boolean; secondary: string }
    "Goal in Progress" rows — the Figma's 177×32 `goal-progress-bar`). Members see
    dollar amounts + the per-participant goal; the public sees "N% Raised" with no
    dollar figures (per the Figma "Organization view" leaderboard variant). */
-function Bar({ raised, pct, glow, showAmounts = true, showPercent = false, hasPct = true }: { raised: number; pct: number; glow?: boolean; showAmounts?: boolean; showPercent?: boolean; hasPct?: boolean }) {
+function Bar({ raised, pct, goal, glow, showAmounts = true, showPercent = false, hasPct = true }: { raised: number; pct: number; goal?: number | null; glow?: boolean; showAmounts?: boolean; showPercent?: boolean; hasPct?: boolean }) {
     // Members always get a "$X Raised" label; the public gets "N% Raised" only when a
     // real goal exists to be a percentage of (hasPct). With no goal, the public bar is a
     // bare relative ranking — no untruthful percentage. A $0 participant still gets a
-    // label ("$0 Raised" / "0% Raised") so the bar is never blank; with no green fill
-    // behind it the text drops to a readable muted grey on the track.
+    // label ("$0 Raised" / "0% Raised") so the bar is never blank.
     const filled = raised > 0;
     const showLabel = showAmounts || hasPct;
+    // Where each participant carries their OWN target (participant-goal campaigns),
+    // the label reads "$600 / $1,000" — the goal is the whole point of the row, and
+    // it says more than the "· 50%" it replaces (the percentage is now implicit in
+    // how far the fill has travelled).
+    const showGoal = showAmounts && !!goal && goal > 0;
+    const label = showLabel ? (
+        <>
+            <span className="font-black" style={{ lineHeight: 1.25 }}>{showAmounts ? fmt(raised) : `${Math.round(pct)}%`}</span>
+            {showGoal ? (
+                <span className="font-medium leading-none"> / {fmt(goal!)}</span>
+            ) : (
+                <>
+                    <span className="font-medium leading-none"> Raised</span>
+                    {/* Organizers see the dollar amount AND the percentage of goal. */}
+                    {showAmounts && showPercent && hasPct && filled && <span className="font-semibold"> · {Math.round(pct)}%</span>}
+                </>
+            )}
+        </>
+    ) : null;
+    const labelPos = "absolute left-[12px] top-1/2 -translate-y-1/2 text-[12px] md:text-[14px] whitespace-nowrap";
     return (
         <div className="flex-1 h-[32px] min-w-0 relative rounded-full overflow-hidden" style={{ background: TRACK_BG }}>
             <style>{`@keyframes lb-shimmer{0%{transform:translateX(-120%)}100%{transform:translateX(400%)}}`}</style>
+            {/* The label is drawn TWICE and each copy is clipped to the surface it sits
+                on: this dark copy reads against the grey track, and the white copy below
+                lives inside the fill so it's clipped exactly at the fill's edge. A long
+                label that outruns the green (e.g. "$600 / $1,000" on a half-filled bar)
+                used to be white-on-light-grey from that point on — invisible. */}
+            {label && <p className={`${labelPos} text-[#6b7684]`}>{label}</p>}
             <div
                 className="absolute left-0 top-0 h-full overflow-hidden rounded-full"
                 style={{ width: `${Math.max(pct, raised > 0 ? 12 : 0)}%`, background: GREEN_STRIPES, boxShadow: glow ? "0px 0px 12px 0px rgba(40,196,93,0.5)" : undefined }}
@@ -190,15 +215,8 @@ function Bar({ raised, pct, glow, showAmounts = true, showPercent = false, hasPc
                     className="absolute inset-y-0 left-0 w-[35%]"
                     style={{ background: "linear-gradient(90deg,transparent,rgba(255,255,255,0.5) 50%,transparent)", animation: "lb-shimmer 2.2s ease-in-out infinite" }}
                 />
+                {label && <p aria-hidden className={`${labelPos} text-white drop-shadow`}>{label}</p>}
             </div>
-            {showLabel && (
-                <p className={`absolute left-[12px] top-1/2 -translate-y-1/2 text-[12px] md:text-[14px] whitespace-nowrap ${filled ? "text-white drop-shadow" : "text-[#6b7684]"}`}>
-                    <span className="font-black" style={{ lineHeight: 1.25 }}>{showAmounts ? fmt(raised) : `${Math.round(pct)}%`}</span>
-                    <span className="font-medium leading-none"> Raised</span>
-                    {/* Organizers see the dollar amount AND the percentage of goal. */}
-                    {showAmounts && showPercent && hasPct && filled && <span className="font-semibold text-white/85"> · {Math.round(pct)}%</span>}
-                </p>
-            )}
             <span aria-hidden className="absolute inset-0 pointer-events-none rounded-[inherit]" style={{ boxShadow: "inset 0px 2px 8px 0px rgba(0,48,96,0.08)" }} />
         </div>
     );
@@ -206,7 +224,7 @@ function Bar({ raised, pct, glow, showAmounts = true, showPercent = false, hasPc
 
 // ── Layout A panel (Goal Achievers / Goal in Progress) ──────────────────────────
 function AchieverPanel({
-    title, medal, rows, mode, showAmounts, showPercent, pctOf, highlightMemberId, onDonate, hlRow, youMemberId, secondary,
+    title, medal, rows, mode, showAmounts, showPercent, pctOf, perGoal, highlightMemberId, onDonate, hlRow, youMemberId, secondary,
 }: {
     title: string;
     medal: string;
@@ -215,6 +233,10 @@ function AchieverPanel({
     showAmounts: boolean;
     showPercent: boolean;
     pctOf: (raised: number) => number;
+    /* Each participant's own target. Stated once under the panel title rather than
+       repeated on every row, and shown only to members — the public view hides
+       dollar figures throughout this section. */
+    perGoal: number | null;
     highlightMemberId: string | null;
     onDonate: ((id: string) => void) | null;
     hlRow: string;
@@ -244,8 +266,16 @@ function AchieverPanel({
             {/* Title + list sit ABOVE the medal so it never covers a participant; the
                 medal still reads crisply because the top fade (the only thing that would
                 wash it out) is now only rendered while the list is scrolled. */}
-            <div className="relative z-10 flex items-center justify-center py-[24px] md:py-[32px]">
+            <div className="relative z-10 flex flex-col items-center gap-[6px] py-[24px] md:py-[32px]">
                 <h3 className="font-black text-[22px] md:text-[28px] text-[#003060] tracking-[-0.25px] leading-none">{title}</h3>
+                {showAmounts && !!perGoal && perGoal > 0 && (
+                    /* Stated on BOTH panels: on "in progress" it's the target being
+                       worked toward, on "achievers" it's the bar they cleared. */
+                    <p className="text-[13px] md:text-[15px] text-[#7e8a96] leading-none">
+                        <span className="font-medium">Goal per participant: </span>
+                        <span className="font-black text-[#003060]">{fmt(perGoal)}</span>
+                    </p>
+                )}
             </div>
             <div className="relative z-10 flex flex-1 flex-col">
                 {rows.length === 0 ? (
@@ -265,8 +295,12 @@ function AchieverPanel({
                                 const clickable = !!onDonate;
                                 // Phones: the bar wraps under the name; md+ sits inline (Figma desktop).
                                 const bar = mode === "progress" && showAmounts && (
-                                    <span className="flex basis-full md:basis-auto md:w-[177px] md:shrink-0 min-w-0">
-                                        <Bar raised={p.total_raised} pct={pctOf(p.total_raised)} showAmounts showPercent={showPercent} />
+                                    /* Wider than the Figma's 177px, which was sized for "$600
+                                       Raised" and clipped anything longer. Held to ~190px so
+                                       "$4,500 / $5,000" fits with room to spare while the name
+                                       beside it keeps enough width to avoid truncating. */
+                                    <span className="flex basis-full md:basis-auto md:w-[190px] xl:w-[210px] md:shrink-0 min-w-0">
+                                        <Bar raised={p.total_raised} pct={pctOf(p.total_raised)} goal={perGoal} showAmounts showPercent={showPercent} />
                                     </span>
                                 );
                                 const inner = hl ? (
@@ -405,8 +439,8 @@ export default function MarketingLeaderboard({
                        items-stretch keeps the two cards the same height side-by-side (as in
                        the Figma) instead of each sizing to its own row count. */
                     <div className="flex w-full max-w-[1152px] flex-col gap-[24px] xl:flex-row xl:items-stretch">
-                        <AchieverPanel title="Goal Achievers" medal="medal-star-gold" rows={achievers} mode="achievers" showAmounts={showAmounts} showPercent={isOrganizer} pctOf={barPct} highlightMemberId={activeId} onDonate={onSelect} hlRow={HL.rowA} youMemberId={youMemberId} secondary={secondary} />
-                        <AchieverPanel title="Goal in Progress" medal="medal-star-silver" rows={inProgress} mode="progress" showAmounts={showAmounts} showPercent={isOrganizer} pctOf={barPct} highlightMemberId={activeId} onDonate={onSelect} hlRow={HL.rowA} youMemberId={youMemberId} secondary={secondary} />
+                        <AchieverPanel title="Goal Achievers" medal="medal-star-gold" rows={achievers} mode="achievers" showAmounts={showAmounts} showPercent={isOrganizer} pctOf={barPct} perGoal={perParticipantGoal} highlightMemberId={activeId} onDonate={onSelect} hlRow={HL.rowA} youMemberId={youMemberId} secondary={secondary} />
+                        <AchieverPanel title="Goal in Progress" medal="medal-star-silver" rows={inProgress} mode="progress" showAmounts={showAmounts} showPercent={isOrganizer} pctOf={barPct} perGoal={perParticipantGoal} highlightMemberId={activeId} onDonate={onSelect} hlRow={HL.rowA} youMemberId={youMemberId} secondary={secondary} />
                     </div>
                 ) : (
                     /* ── Layout B — podium + Other Participants table ── */
