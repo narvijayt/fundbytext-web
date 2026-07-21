@@ -607,6 +607,12 @@ export default function SetupWizard({
         // navigating away would discard them and imply the save worked.
         if (!ok) { setExiting(false); return; }
         router.push(isEditMode || isLaunched ? `/dashboard/campaigns/${slug}` : "/dashboard");
+        // Drop the client router cache, as the launch path already does. The
+        // sidebar's "Edit Campaign" link is a prefetching <Link>, so the wizard's
+        // RSC payload is cached from BEFORE this save — without this, reopening
+        // the editor rendered the old values, and saving again wrote those stale
+        // values back, silently undoing the edit that was just made.
+        router.refresh();
         // `exiting` stays true so the loader persists until navigation completes.
     }
 
@@ -955,7 +961,13 @@ export default function SetupWizard({
                     <div className="h-full max-w-5xl mx-auto flex items-center justify-between px-4 md:px-10">
                         <button
                             type="button"
-                            onClick={() => router.push(isEditMode || isLaunched ? `/dashboard/campaigns/${slug}` : "/dashboard")}
+                            // Refresh for the same reason as exitAndSave: autosave may
+                            // have persisted edits, so the cached wizard payload would
+                            // otherwise be stale next time it's opened.
+                            onClick={() => {
+                                router.push(isEditMode || isLaunched ? `/dashboard/campaigns/${slug}` : "/dashboard");
+                                router.refresh();
+                            }}
                             className="flex items-center transition-opacity hover:opacity-70 shrink-0"
                         >
                             <Image
