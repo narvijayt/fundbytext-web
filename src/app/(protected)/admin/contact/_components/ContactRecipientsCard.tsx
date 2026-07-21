@@ -1,7 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
+import { useDismissGuard } from "@/components/useDismissGuard";
 
 /* Who gets emailed when someone submits the contact form.
    This is a rarely-touched setting, so it lives behind a compact header button
@@ -89,13 +91,26 @@ function RecipientsModal({
     const [error, setError] = useState<string | null>(null);
     const [ok, setOk] = useState<string | null>(null);
 
-    function close() { setShown(false); window.setTimeout(onClose, 170); }
+    function close() { if (saving) return; setShown(false); window.setTimeout(onClose, 170); }
+
+    // Unsaved edits shouldn't be thrown away by a stray click or Escape — the
+    // shared guard shakes the card instead, as the other form modals do. The ✕
+    // and Cancel still dismiss outright.
+    const dirty =
+        !saving && !ok &&
+        (to !== saved.to.join(", ") || cc !== saved.cc.join(", ") || bcc !== saved.bcc.join(", "));
+    const { nudge, requestClose } = useDismissGuard(dirty, close);
+
+    // Only treat a click as a backdrop dismissal when the press STARTED on the
+    // backdrop. Without this, drag-selecting text in an input and releasing
+    // outside the card closes the modal mid-edit.
+    const downOnBackdrop = useRef(false);
 
     useEffect(() => {
         const raf = requestAnimationFrame(() => setShown(true));
         const prev = document.body.style.overflow;
         document.body.style.overflow = "hidden";
-        function onKey(e: KeyboardEvent) { if (e.key === "Escape") close(); }
+        function onKey(e: KeyboardEvent) { if (e.key === "Escape") requestClose(); }
         document.addEventListener("keydown", onKey);
         return () => { cancelAnimationFrame(raf); document.body.style.overflow = prev; document.removeEventListener("keydown", onKey); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -126,15 +141,21 @@ function RecipientsModal({
         setSaving(false);
     }
 
-    return (
+    // Portalled to <body>, like the other modals: rendered in place it sits inside
+    // the page's heading row, so any transformed/filtered ancestor would break the
+    // fixed overlay and the header's stacking context could clip it.
+    // No `mounted` guard needed — the parent only renders this once `open` is true,
+    // which can't happen during SSR, so document.body always exists here.
+    return createPortal(
         <div
             className={`fixed inset-0 z-[100] flex items-center justify-center bg-[#0f1d43]/45 p-4 backdrop-blur-sm transition-opacity duration-200 motion-reduce:transition-none ${shown ? "opacity-100" : "opacity-0"}`}
-            onClick={close}
+            onMouseDown={(e) => { downOnBackdrop.current = e.target === e.currentTarget; }}
+            onClick={(e) => { if (downOnBackdrop.current && e.target === e.currentTarget) requestClose(); }}
         >
             <div
                 role="dialog" aria-modal="true" aria-labelledby="recipients-title"
                 onClick={(e) => e.stopPropagation()}
-                className={`flex max-h-[calc(100dvh-2rem)] w-full max-w-lg flex-col overflow-hidden rounded-2xl bg-white shadow-[0px_16px_40px_-8px_rgba(15,29,67,0.3)] transition-transform duration-200 motion-reduce:transition-none ${shown ? "scale-100" : "scale-95"}`}
+                className={`flex max-h-[calc(100dvh-2rem)] w-full max-w-lg flex-col overflow-hidden rounded-2xl bg-white shadow-[0px_16px_40px_-8px_rgba(15,29,67,0.3)] transition-transform duration-200 motion-reduce:transition-none ${nudge ? "modal-nudge" : ""} ${shown ? "scale-100" : "scale-95"}`}
             >
                 {/* Header */}
                 <div className="flex shrink-0 items-center justify-between gap-3 bg-[#0268c0] px-5 py-4 text-white">
@@ -203,6 +224,7 @@ function RecipientsModal({
                     </button>
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body,
     );
 }
