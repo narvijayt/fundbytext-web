@@ -13,6 +13,7 @@ import { sendParticipantCredentialsEmail, sendParticipantInviteEmail, sendDonorI
 import { notifyCampaignLaunched, notifyCampaignActive, notifyParticipantAdded, broadcastCampaignActive } from "@/lib/notifications";
 import { publishStatusChange } from "@/lib/ably";
 import { APP_URL } from "@/lib/app-url";
+import { isOrgNameTaken } from "@/lib/org-name";
 
 /* Same shape as the members route's copy, and module-scope for the same reason:
    a local `const chars` captured by a `.map()` arrow got dropped by the
@@ -108,6 +109,15 @@ export async function POST(req: NextRequest, ctx: Ctx) {
             if (existingOrg) {
                 organizationId = existingOrg.id;
             } else {
+                // Last line of defence before the name becomes a real organization:
+                // `organizations.name` has no DB uniqueness, so without this two
+                // accounts could launch under the same name.
+                if (await isOrgNameTaken(campaign.org_display_name, user.id)) {
+                    return NextResponse.json(
+                        { error: "That organization name is already taken. Please choose another." },
+                        { status: 409 },
+                    );
+                }
                 const newOrg = await prisma.organization.create({
                     data: {
                         created_by:   user.id,

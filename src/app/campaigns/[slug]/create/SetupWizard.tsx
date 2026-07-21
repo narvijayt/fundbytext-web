@@ -14,6 +14,10 @@ import StepParticipants from "./_components/StepParticipants";
 import StepThankYou     from "./_components/StepThankYou";
 import { downscaleImage, DOWNSCALE_PRESETS } from "./_components/downscaleImage";
 
+/** Shared between the live availability check and the save-time validation so
+    the field never flips between two different wordings. */
+const ORG_NAME_TAKEN = "That organization name is already taken.";
+
 // ── Helpers ────────────────────────────────────────────────────────────────
 
 function getMediaUrl(media: Campaign["media"], type: string): string | null {
@@ -240,6 +244,36 @@ export default function SetupWizard({
     const [alertMsg, setAlertMsg]   = useState<string | null>(null);
     const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
+    /* Organization names are one-per-account: an account that already owns a name
+       keeps reusing it for its own campaigns, but nobody else can claim it. This
+       is the live hint while typing — the save and launch routes re-check, so a
+       stale or skipped result here can't let a duplicate through. */
+    // Only a fresh org campaign can pick a name: once an account owns one the
+    // field is pre-filled and locked, which is how an owner reuses their own.
+    const checkOrgName = isOrg && !orgDisplayNameLocked && orgDisplayName.trim().length > 0;
+    const [orgNameTakenRaw, setOrgNameTakenRaw] = useState(false);
+    // Derived rather than reset through setState — clearing it in the effect
+    // would be a synchronous setState during an effect (cascading renders).
+    const orgNameTaken = checkOrgName && orgNameTakenRaw;
+
+    useEffect(() => {
+        if (!checkOrgName) return;
+        const name = orgDisplayName.trim();
+        // Debounced so a check doesn't fire on every keystroke.
+        const t = setTimeout(async () => {
+            try {
+                const res = await fetch(`/api/v1/organizations/check-name?name=${encodeURIComponent(name)}`);
+                if (!res.ok) return;
+                const { taken } = await res.json() as { taken: boolean };
+                setOrgNameTakenRaw(taken);
+                if (taken) {
+                    setFieldErrors((prev) => ({ ...prev, org_display_name: ORG_NAME_TAKEN }));
+                }
+            } catch { /* offline — the save-time check still guards it */ }
+        }, 400);
+        return () => clearTimeout(t);
+    }, [checkOrgName, orgDisplayName]);
+
     const topRef = useRef<HTMLDivElement>(null);
 
     // ── Step 3 auto-save — visuals (photos, colours, theme) are persisted on
@@ -399,6 +433,7 @@ export default function SetupWizard({
         const errs: Record<string, string> = {};
         if (!name.trim()) errs.name     = "Campaign name is required.";
         if (isOrg && !orgDisplayName.trim()) errs.org_display_name = "Organization display name is required.";
+        else if (isOrg && orgNameTaken)       errs.org_display_name = ORG_NAME_TAKEN;
         if (!startDate)                                  errs.start_date = "Start date is required.";
         if (!endDate)                                    errs.end_date = "End date is required.";
         else if (startDate && endDate <= startDate)      errs.end_date = "End date must be after the start date.";
@@ -630,6 +665,7 @@ export default function SetupWizard({
         const errs: Record<string, string> = {};
         if (!name.trim())                 errs.name        = "Campaign name is required.";
         if (isOrg && !orgDisplayName.trim()) errs.org_display_name = "Organization display name is required.";
+        else if (isOrg && orgNameTaken)       errs.org_display_name = ORG_NAME_TAKEN;
         if (!startDate)                   errs.start_date  = "Start date is required.";
         if (!endDate)                     errs.end_date    = "End date is required.";
         else if (startDate && endDate <= startDate) errs.end_date = "End date must be after the start date.";

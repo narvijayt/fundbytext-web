@@ -21,6 +21,7 @@ import {
     notifyStartDateChanged,
 } from "@/lib/notifications";
 import { publishControlsChanged, publishStatusChange } from "@/lib/ably";
+import { isOrgNameTaken } from "@/lib/org-name";
 import {
     MemberRole,
     GoalType,
@@ -162,6 +163,18 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
         }
 
         const { payout, media, ...campaignFields } = parsed.data;
+
+        // An organization name already owned by another account can't be reused.
+        // The wizard checks this while typing, but that's only a hint — this is
+        // the guard, so it can't be bypassed by posting straight to the API.
+        if (campaignFields.org_display_name) {
+            if (await isOrgNameTaken(campaignFields.org_display_name, user.id)) {
+                return NextResponse.json(
+                    { error: { properties: { org_display_name: { errors: ["That organization name is already taken."] } } } },
+                    { status: 409 },
+                );
+            }
+        }
 
         // Normalise date strings → Date objects (or null)
         const data: Record<string, unknown> = { ...campaignFields };
