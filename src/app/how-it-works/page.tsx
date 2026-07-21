@@ -110,10 +110,15 @@ export default async function HowItWorksPage() {
     ]);
 
     const STATS = [
-        { img: A_STAT_CAMPAIGNS, imgH: 96, imgW: 80,  smH: 60, smW: 50, value: "200+",   label: "Campaigns Launched" },
-        { img: A_STAT_GOALS,     imgH: 70, imgW: 77,  smH: 44, smW: 48, value: "97%",    label: "Goals Met" },
-        { img: A_STAT_ORGS,      imgH: 96, imgW: 114, smH: 60, smW: 72, value: "34+",    label: "Organizations" },
-        { img: A_STAT_RAISED,    imgH: 88, imgW: 82,  smH: 55, smW: 52, value: "$5.2M+", label: "Raised & Counting" },
+        // xs* is the below-sm tier. The grid is 2-up until md and the section adds
+        // its own px-4, so a cell is only ~137px on a 339px phone — at the tablet
+        // icon + 22px type there was nothing left for the value and "34+" / "$5.2M+"
+        // clipped to "3…" / "$5…". Below sm the icon drops to ~0.68x and the number
+        // to 17px so every figure fits whole; sm restores these sizes.
+        { img: A_STAT_CAMPAIGNS, imgH: 96, imgW: 80,  smH: 60, smW: 50, xsH: 41, xsW: 34, value: "200+",   label: "Campaigns Launched" },
+        { img: A_STAT_GOALS,     imgH: 70, imgW: 77,  smH: 44, smW: 48, xsH: 30, xsW: 33, value: "97%",    label: "Goals Met" },
+        { img: A_STAT_ORGS,      imgH: 96, imgW: 114, smH: 60, smW: 72, xsH: 41, xsW: 49, value: "34+",    label: "Organizations" },
+        { img: A_STAT_RAISED,    imgH: 88, imgW: 82,  smH: 55, smW: 52, xsH: 37, xsW: 35, value: "$5.2M+", label: "Raised & Counting" },
     ];
 
     return (
@@ -186,16 +191,26 @@ export default async function HowItWorksPage() {
             ═══════════════════════════════════════════════════════════ */}
             <section className="bg-white pb-4 lg:pb-6 px-4 md:px-6 lg:px-10">
                 <div className="grid grid-cols-2 md:flex md:items-center md:justify-center max-w-[1200px] mx-auto">
+                    {/* lg:px-4 (not px-8): at exactly lg the four cells sit at their
+                        min-width, and the wider padding left the 28px figures without
+                        room — "34+" and "$5.2M+" clipped. xl has the space for px-8. */}
                     {STATS.map((s) => (
-                        <div key={s.label} className="flex items-center gap-3 lg:gap-5 px-4 md:px-3 lg:px-8 py-3 lg:py-4 lg:min-w-[230px] xl:min-w-[260px]">
+                        <div key={s.label} className="flex items-center gap-2 sm:gap-3 lg:gap-5 px-2 sm:px-4 md:px-3 lg:px-4 xl:px-8 py-3 lg:py-4 lg:min-w-[230px] xl:min-w-[260px]">
                             <div className="shrink-0">
+                                {/* Sizes ride on inline CSS vars so the Tailwind classes stay
+                                    static literals — arbitrary classes built from template
+                                    literals get purged from the prod CSS (see VectorWallpaper). */}
                                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                                <img alt="" src={s.img} className="object-contain lg:hidden" style={{ width: s.smW, height: s.smH }} />
-                                {/* eslint-disable-next-line @next/next/no-img-element */}
-                                <img alt="" src={s.img} className="object-contain hidden lg:block" style={{ width: s.imgW, height: s.imgH }} />
+                                <img alt="" src={s.img}
+                                    className="object-contain w-(--iw) h-(--ih) sm:w-(--iw-sm) sm:h-(--ih-sm) lg:w-(--iw-lg) lg:h-(--ih-lg)"
+                                    style={{
+                                        "--iw": `${s.xsW}px`,     "--ih": `${s.xsH}px`,
+                                        "--iw-sm": `${s.smW}px`,  "--ih-sm": `${s.smH}px`,
+                                        "--iw-lg": `${s.imgW}px`, "--ih-lg": `${s.imgH}px`,
+                                    } as React.CSSProperties} />
                             </div>
                             <div className="flex flex-col gap-1 lg:gap-2 min-w-0">
-                                <p className="font-black text-[#0268c0] text-[22px] lg:text-[28px] leading-snug truncate">{s.value}</p>
+                                <p className="font-black text-[#0268c0] text-[17px] sm:text-[22px] lg:text-[28px] leading-snug truncate">{s.value}</p>
                                 <p className="font-black text-[#aeb5bd] text-[8px] lg:text-xs tracking-[1px] uppercase leading-tight">{s.label}</p>
                             </div>
                         </div>
