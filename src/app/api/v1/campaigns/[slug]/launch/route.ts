@@ -12,6 +12,7 @@ import { MemberRole, CampaignStatus } from "@/generated/prisma/enums";
 import { sendParticipantCredentialsEmail, sendParticipantInviteEmail, sendDonorInviteEmail } from "@/lib/mail";
 import { notifyCampaignLaunched, notifyCampaignActive, notifyParticipantAdded, broadcastCampaignActive } from "@/lib/notifications";
 import { publishStatusChange } from "@/lib/ably";
+import { APP_URL } from "@/lib/app-url";
 
 /* Same shape as the members route's copy, and module-scope for the same reason:
    a local `const chars` captured by a `.map()` arrow got dropped by the
@@ -30,8 +31,6 @@ function generatePassword(): string {
 }
 
 type Ctx = { params: Promise<{ slug: string }> };
-
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 
 export async function POST(req: NextRequest, ctx: Ctx) {
     try {

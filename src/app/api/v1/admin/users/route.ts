@@ -10,6 +10,7 @@ import { getAuthUserFromRequest } from "@/lib/session";
 import { sendParticipantCredentialsEmail } from "@/lib/mail";
 import { generateUsername } from "@/lib/username";
 import { queryAdminUsers } from "@/app/(protected)/admin/users/_lib/query";
+import { APP_URL } from "@/lib/app-url";
 
 export async function GET(req: NextRequest) {
     try {
@@ -33,8 +34,6 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ error: "Internal server error" }, { status: 500 });
     }
 }
-
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 
 const PASS_CHARS = "ABCDEFGHIJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz0123456789!@#$%^&*";
 

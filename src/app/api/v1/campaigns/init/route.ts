@@ -18,6 +18,7 @@ import { signToken, setAuthCookie } from "@/lib/auth";
 import { getAuthUserFromRequest } from "@/lib/session";
 import { sendParticipantCredentialsEmail } from "@/lib/mail";
 import { generateUsername } from "@/lib/username";
+import { APP_URL } from "@/lib/app-url";
 
 /* Module scope on purpose — see the generated-password block below. */
 const PASSWORD_CHARS = "ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz0123456789!@#$%^&*";
@@ -197,7 +198,7 @@ export async function POST(req: NextRequest) {
 
         // Send login credentials email
         try {
-            const loginUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"}/login`;
+            const loginUrl = `${APP_URL}/login`;
             await sendParticipantCredentialsEmail({
                 to:        memberEmail,
                 firstName: memberFirstName,

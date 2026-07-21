@@ -18,6 +18,7 @@ import {
     checkGoalsAfterDonation,
 } from "@/lib/notifications";
 import { publishDonation } from "@/lib/ably";
+import { APP_URL } from "@/lib/app-url";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET!, { apiVersion: "2026-03-25.dahlia" });
 
@@ -226,8 +227,6 @@ export async function POST(req: NextRequest) {
                         signerPhotoUrl = participant.profile_photo_url ?? participant.user?.profile_photo_url ?? null;
                     }
                 }
-
-                const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 
                 // Awaited before returning — an un-awaited send is lost under
                 // serverless teardown, so the donor never got their thank-you.

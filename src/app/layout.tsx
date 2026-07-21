@@ -5,7 +5,10 @@ import GlobalEffects from "./_components/GlobalEffects";
 export const metadata: Metadata = {
     // Absolute URLs (Open Graph, canonical) resolve against this. Falls back to the
     // Vercel domain when NEXT_PUBLIC_APP_URL isn't set (e.g. a bare build).
-    metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? "https://fundbytext-web.vercel.app"),
+    // Trailing slash stripped for the same reason as lib/app-url: the env value is
+    // commonly configured with one. (Keeps its own production fallback — a bare
+    // build should not advertise localhost as the canonical origin.)
+    metadataBase: new URL((process.env.NEXT_PUBLIC_APP_URL ?? "https://fundbytext-web.vercel.app").replace(/\/+$/, "")),
     // `default` is the home title; every other page sets a short `title` that the
     // template suffixes ("About Us · FundByText").
     title: {

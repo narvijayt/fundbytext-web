@@ -4,6 +4,7 @@ import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
 import { getAuthUserFromRequest } from "@/lib/session";
 import { sendEmailVerificationEmail } from "@/lib/mail";
+import { APP_URL } from "@/lib/app-url";
 
 // Send a verification link to the signed-in user's current email address.
 export async function POST(req: NextRequest) {
@@ -32,7 +33,7 @@ export async function POST(req: NextRequest) {
         data: { email_verification_token: tokenHash, email_verification_expires: expires },
     });
 
-    const verifyUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"}/verify-email?token=${rawToken}&email=${encodeURIComponent(user.email)}`;
+    const verifyUrl = `${APP_URL}/verify-email?token=${rawToken}&email=${encodeURIComponent(user.email)}`;
 
     try {
         await sendEmailVerificationEmail(user.email, user.first_name, verifyUrl);

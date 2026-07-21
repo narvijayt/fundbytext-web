@@ -7,8 +7,7 @@ import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
 import { signToken, setAuthCookie } from "@/lib/auth";
-
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+import { APP_URL } from "@/lib/app-url";
 
 export async function GET(req: NextRequest) {
     const token = req.nextUrl.searchParams.get("token");

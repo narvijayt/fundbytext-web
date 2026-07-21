@@ -1,7 +1,8 @@
 import type { MetadataRoute } from "next";
+import { APP_URL } from "@/lib/app-url";
 
 // Same base URL the root metadata uses, falling back to the Vercel domain.
-const BASE = process.env.NEXT_PUBLIC_APP_URL ?? "https://fundbytext-web.vercel.app";
+const BASE = APP_URL;
 
 export default function robots(): MetadataRoute.Robots {
     return {

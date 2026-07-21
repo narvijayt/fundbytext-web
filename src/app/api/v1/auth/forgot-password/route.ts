@@ -4,6 +4,7 @@ import { z } from "zod";
 import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
 import { sendPasswordResetEmail } from "@/lib/mail";
+import { APP_URL } from "@/lib/app-url";
 
 const schema = z.object({
     email: z.string().email().transform(s => s.toLowerCase().trim()),
@@ -41,7 +42,7 @@ export async function POST(req: NextRequest) {
         },
     });
 
-    const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"}/reset-password?token=${rawToken}&email=${encodeURIComponent(email)}`;
+    const resetUrl = `${APP_URL}/reset-password?token=${rawToken}&email=${encodeURIComponent(email)}`;
 
     await sendPasswordResetEmail(email, resetUrl);
 

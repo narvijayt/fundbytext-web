@@ -1,4 +1,5 @@
 import nodemailer from "nodemailer";
+import { APP_URL } from "@/lib/app-url";
 
 const transporter = nodemailer.createTransport({
     host: process.env.MAIL_HOST,
@@ -11,7 +12,6 @@ const transporter = nodemailer.createTransport({
 });
 
 const from = `"${process.env.MAIL_FROM_NAME ?? "FundbyText"}" <${process.env.MAIL_FROM_ADDRESS}>`;
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 
 /* ── Brand system ───────────────────────────────────────────────────────────
    These are the marketing site's real tokens, not email-only approximations —
@@ -37,6 +37,45 @@ function esc(value: string | number | null | undefined): string {
     return String(value).replace(/[&<>"']/g, (c) => (
         { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c] as string
     ));
+}
+
+/**
+ * Flatten rich-text HTML (the TipTap campaign story) to plain text.
+ *
+ * The story is stored as HTML. It used to be sliced raw and then run through
+ * esc(), so recipients saw the markup as literal text — and because the slice
+ * was a blind character cut it could land mid-tag, e.g. "…One Promise</str…".
+ * Flattening first means no tags leak, and truncation happens on real text.
+ *
+ * Block-level tags become line breaks so paragraphs stay readable, list items
+ * get a bullet, and the handful of entities TipTap emits are decoded. The result
+ * is plain text, so callers still esc() it before putting it in HTML.
+ */
+function htmlToText(html: string): string {
+    return html
+        .replace(/<\s*br\s*\/?\s*>/gi, "\n")
+        .replace(/<\s*li[^>]*>/gi, "\n• ")
+        .replace(/<\s*\/\s*(p|div|h[1-6]|li|blockquote|tr)\s*>/gi, "\n")
+        .replace(/<[^>]*>/g, "")            // strip every remaining tag
+        .replace(/&nbsp;/gi, " ")
+        .replace(/&amp;/gi, "&")
+        .replace(/&lt;/gi, "<")
+        .replace(/&gt;/gi, ">")
+        .replace(/&quot;/gi, '"')
+        .replace(/&#0?39;|&apos;|&rsquo;/gi, "'")
+        .replace(/&[a-z]+;|&#\d+;/gi, " ")  // anything else → space, never raw
+        .replace(/[ \t]+/g, " ")
+        .replace(/ *\n */g, "\n")
+        .replace(/\n{3,}/g, "\n\n")
+        .trim();
+}
+
+/** Truncate plain text at a word boundary so excerpts don't cut mid-word. */
+function excerpt(text: string, max = 300): string {
+    if (text.length <= max) return text;
+    const cut = text.slice(0, max - 1);
+    const lastSpace = cut.lastIndexOf(" ");
+    return `${(lastSpace > max * 0.6 ? cut.slice(0, lastSpace) : cut).trimEnd()}…`;
 }
 
 // ── Building blocks ────────────────────────────────────────────────────────
@@ -540,7 +579,11 @@ export async function sendDonorInviteEmail({
     const formattedGoal = goalAmount ? usd(goalAmount) : null;
     const formattedSuggested = suggestedAmount != null && suggestedAmount > 0 ? usd(suggestedAmount, 2) : null;
     const formattedEnd = endDate ? longDate(endDate, timezone) : null;
-    const trimmedStory = story ? (story.length > 300 ? `${story.slice(0, 297)}…` : story) : null;
+    // Flatten the stored HTML to text BEFORE truncating: slicing the markup
+    // could cut a tag in half, and esc()-ing it below would render the tags
+    // as literal text in the email.
+    const storyText    = story ? htmlToText(story) : "";
+    const trimmedStory = storyText ? excerpt(storyText, 300) : null;
 
     await transporter.sendMail({
         from,
@@ -589,7 +632,7 @@ export async function sendDonorInviteEmail({
             ${trimmedStory ? `
             ${eyebrow("About this campaign")}
             <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin:10px 0 28px"><tr>
-              <td style="border-left:3px solid ${RULE};padding:2px 0 2px 18px;font-family:${FONT};font-size:16px;color:${INK};line-height:1.65;mso-line-height-rule:exactly">${esc(trimmedStory)}</td>
+              <td style="border-left:3px solid ${RULE};padding:2px 0 2px 18px;font-family:${FONT};font-size:16px;color:${INK};line-height:1.65;mso-line-height-rule:exactly">${esc(trimmedStory).replace(/\n/g, "<br>")}</td>
             </tr></table>` : ""}
 
             ${formattedSuggested ? `

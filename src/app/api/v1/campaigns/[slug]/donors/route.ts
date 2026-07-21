@@ -8,10 +8,9 @@ import { prisma } from "@/lib/prisma";
 import { getAuthUserFromRequest } from "@/lib/session";
 import { MemberRole, DonorStatus, PaymentStatus } from "@/generated/prisma/enums";
 import { sendDonorInviteEmail } from "@/lib/mail";
+import { APP_URL } from "@/lib/app-url";
 
 type Ctx = { params: Promise<{ slug: string }> };
-
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 
 async function generateShortCode(): Promise<string> {
     for (let i = 0; i < 10; i++) {

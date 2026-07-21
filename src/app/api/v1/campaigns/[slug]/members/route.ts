@@ -11,8 +11,7 @@ import { MemberRole, PaymentStatus } from "@/generated/prisma/enums";
 import { sendParticipantCredentialsEmail, sendParticipantInviteEmail } from "@/lib/mail";
 import { notifyParticipantAdded } from "@/lib/notifications";
 import { generateUsername } from "@/lib/username";
-
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+import { APP_URL } from "@/lib/app-url";
 
 /* Module scope, and no closure — both deliberate.
    This used to be a local `const chars` captured by a `.map()` arrow. The

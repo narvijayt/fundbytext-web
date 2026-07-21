@@ -1,8 +1,9 @@
 import type { MetadataRoute } from "next";
 import { prisma } from "@/lib/prisma";
 import { CampaignStatus } from "@/generated/prisma/enums";
+import { APP_URL } from "@/lib/app-url";
 
-const BASE = process.env.NEXT_PUBLIC_APP_URL ?? "https://fundbytext-web.vercel.app";
+const BASE = APP_URL;
 
 // Static marketing routes. /test-home is a scratch page and the auth/dashboard/
 // admin trees are noindex, so none of those appear here.
