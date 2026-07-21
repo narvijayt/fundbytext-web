@@ -402,7 +402,11 @@ export default function SetupWizard({
         if (!startDate)                                  errs.start_date = "Start date is required.";
         if (!endDate)                                    errs.end_date = "End date is required.";
         else if (startDate && endDate <= startDate)      errs.end_date = "End date must be after the start date.";
-        else if (endInPast(endDate))                     errs.end_date = "End date can't be in the past.";
+        // A past end date is only invalid before launch — you can't launch a
+        // campaign that's already over. On a live campaign, moving the end date
+        // back is how you wind it down early: the cron completes it on the next
+        // tick. Blocking it here made "shorten the end date" silently impossible.
+        else if (!isLaunched && endInPast(endDate))      errs.end_date = "End date can't be in the past.";
         if (Object.keys(errs).length) { setFieldErrors(errs); scrollToFirstError(); return; }
         setFieldErrors({});
         const ok = await patch({
@@ -485,7 +489,7 @@ export default function SetupWizard({
         if (ok) advance();
     }
 
-    async function saveAllDraft() {
+    async function saveAllDraft(): Promise<boolean> {
         cancelAutosave();
         // In edit/launched mode, mandatory fields that already have a saved value
         // must not be cleared — restore from the original campaign if the user emptied them.
@@ -579,8 +583,17 @@ export default function SetupWizard({
             if (!res.ok) {
                 const json = await res.json().catch(() => null);
                 console.error("[saveAllDraft] failed:", res.status, JSON.stringify(json));
+                // Surface it. This used to swallow every failure and navigate
+                // away anyway, so a rejected edit looked exactly like a saved
+                // one — the user only found out by coming back to stale values.
+                setAlertMsg(typeof json?.error === "string" ? json.error : "Couldn't save your changes. Please try again.");
+                return false;
             }
-        } catch { /* ignore */ }
+            return true;
+        } catch {
+            setAlertMsg("Network error. Your changes weren't saved.");
+            return false;
+        }
     }
 
     async function exitAndSave() {
@@ -589,7 +602,10 @@ export default function SetupWizard({
         // Wait for the draft to finish saving before leaving — and keep the
         // loader visible for a beat even when the save is instant, so the user
         // sees their progress is being saved rather than a jarring redirect.
-        await Promise.all([saveAllDraft(), new Promise((r) => setTimeout(r, 700))]);
+        const [ok] = await Promise.all([saveAllDraft(), new Promise((r) => setTimeout(r, 700))]);
+        // Stay put on failure so the alert is readable and the edits survive —
+        // navigating away would discard them and imply the save worked.
+        if (!ok) { setExiting(false); return; }
         router.push(isEditMode || isLaunched ? `/dashboard/campaigns/${slug}` : "/dashboard");
         // `exiting` stays true so the loader persists until navigation completes.
     }
