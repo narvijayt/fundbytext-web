@@ -283,6 +283,7 @@ export default async function CampaignPublicPage({
                 pct={pct}
                 daysLeft={daysLeft}
                 recentDonations={recentDonations}
+                campaignSlug={slug}
                 story={campaign.story}
                 organizerName={organizerName}
                 organizerPhotoUrl={organizerMember?.profile_photo_url ?? organizerMember?.user?.profile_photo_url ?? null}

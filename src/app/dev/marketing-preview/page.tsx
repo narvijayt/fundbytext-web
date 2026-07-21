@@ -48,6 +48,9 @@ export default function MarketingPreview() {
                 theme={theme}
                 totalRaised={4500} goalAmount={5000} initialGoalAmount={null} donorCount={16} pct={90} daysLeft={3}
                 recentDonations={recentDonations}
+                // Sandbox slug — the feed's paging fetch 404s here, which the
+                // component treats as "nothing more to load".
+                campaignSlug="preview"
                 story="<p>Help our soccer team get new uniforms and travel costs. This is for the upcoming regional tournament. Every little bit counts! Lorem ipsum dolor sit amet, consectetur adipiscing elit sed do eiusmod tempor incididunt ut. More text to trigger read more so we can see the clamp behaviour clearly across a few lines.</p>"
                 organizerName="Stephanie Smith" organizerPhotoUrl={null} orgBadge="ABC University"
                 endDateLabel="March 5, 2025" startDateLabel="January 1, 2025"

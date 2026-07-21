@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { DONATE_EVENT } from "./DonateNavButton";
 import CountdownBadge from "@/components/CountdownBadge";
@@ -47,6 +47,8 @@ type Props = {
     pct:               number;
     daysLeft:          number | null;
     recentDonations:   RecentDonation[];
+    /** Needed to page the live feed in as the visitor scrolls. */
+    campaignSlug:      string;
     story:             string | null;
     organizerName:     string | null;
     organizerPhotoUrl: string | null;
@@ -70,7 +72,7 @@ type Props = {
 
 export default function MarketingDetails({
     theme, totalRaised, goalAmount, initialGoalAmount, donorCount, pct, daysLeft, recentDonations,
-    story, organizerName, organizerPhotoUrl, orgBadge, endDateLabel, startDateLabel, startDate,
+    campaignSlug, story, organizerName, organizerPhotoUrl, orgBadge, endDateLabel, startDateLabel, startDate,
     status, donationsEnabled, donationsDisabledMessage, isFixedGoal, inlineRef,
 }: Props) {
     const { accent } = theme;
@@ -90,6 +92,75 @@ export default function MarketingDetails({
         window.addEventListener("campaign:donations_toggle", onToggle);
         return () => window.removeEventListener("campaign:donations_toggle", onToggle);
     }, []);
+
+    /* ── Live feed: scrolls, and pages more in as you reach the bottom ──────
+       The page server-renders the first batch; everything past that is fetched
+       from the public feed endpoint. Without this the panel was a fixed-height
+       overflow-hidden box, so it showed the first handful and simply stopped. */
+    const [feed, setFeed]       = useState<RecentDonation[]>(recentDonations);
+    const [feedTotal, setTotal] = useState<number | null>(null);
+    const [loadingMore, setLoadingMore] = useState(false);
+    const listRef   = useRef<HTMLDivElement>(null);
+    // A ref (not state) guards the fetch: onScroll fires far faster than React
+    // re-renders, so a state flag would let several requests through.
+    const busyRef   = useRef(false);
+    const exhausted = feedTotal !== null && feed.length >= feedTotal;
+
+    const loadMore = useCallback(async () => {
+        if (busyRef.current || exhausted) return;
+        busyRef.current = true;
+        setLoadingMore(true);
+        try {
+            const res = await fetch(
+                `/api/v1/campaigns/${campaignSlug}/public-donations?skip=${feed.length}&take=12`,
+            );
+            if (res.ok) {
+                const j = await res.json() as { donations: RecentDonation[]; total: number };
+                // Append only what we don't already have — a donation arriving via
+                // the realtime feed while paging would otherwise shift the window
+                // and duplicate a row.
+                const key   = (d: RecentDonation) => `${d.created_at}|${d.amount}|${d.display_name}`;
+                const seen  = new Set(feed.map(key));
+                const fresh = j.donations.filter((d) => !seen.has(key(d)));
+                if (fresh.length) {
+                    // Re-check inside the updater too, in case a realtime donation
+                    // landed between this render and the response.
+                    setFeed((prev) => {
+                        const have = new Set(prev.map(key));
+                        return [...prev, ...fresh.filter((d) => !have.has(key(d)))];
+                    });
+                }
+                // A page that yields nothing new ends the list even if `total`
+                // disagrees, so the auto-fill effect below can't ask forever.
+                setTotal(fresh.length === 0 ? feed.length : j.total);
+            } else {
+                // 404 (private/draft/unknown campaign) or a server error: stop asking.
+                setTotal(feed.length);
+            }
+        } catch { /* leave the list as-is; scrolling again retries */ }
+        busyRef.current = false;
+        setLoadingMore(false);
+    }, [campaignSlug, feed.length, exhausted]);
+
+    // Fade the top/bottom edges only while content is actually hidden that way,
+    // and pull the next page in once the scroll nears the end.
+    const [fade, setFade] = useState({ top: false, bottom: false });
+    const onFeedScroll = useCallback(() => {
+        const el = listRef.current;
+        if (!el) return;
+        const max = el.scrollHeight - el.clientHeight;
+        setFade({ top: el.scrollTop > 4, bottom: max > 4 && el.scrollTop < max - 4 });
+        if (max - el.scrollTop < 120) void loadMore();
+    }, [loadMore]);
+
+    // Seed the total (and fill the panel when the first batch doesn't overflow it,
+    // so there's something to scroll to).
+    useEffect(() => {
+        const el = listRef.current;
+        if (!el) return;
+        setFade({ top: false, bottom: el.scrollHeight - el.clientHeight > 4 });
+        if (el.scrollHeight <= el.clientHeight) void loadMore();
+    }, [feed.length, loadMore]);
 
     const raised      = totalRaised;
     const donors      = donorCount;
@@ -260,29 +331,41 @@ export default function MarketingDetails({
                     />
                 ) : (
                     <div
-                        className="bg-white flex flex-col gap-[24px] h-[516px] items-center overflow-hidden px-[32px] py-[28px] relative rounded-[24px] w-full"
+                        className="bg-white flex flex-col h-[516px] items-center overflow-hidden relative rounded-[24px] w-full"
                         style={{ boxShadow: "0px 12px 16px -8px rgba(0,48,96,0.08), 0px 28px 32px -8px rgba(2,104,192,0.16)" }}
                     >
-                        {recentDonations.length === 0 ? (
-                            <div className="flex flex-1 flex-col items-center justify-center text-center gap-2">
+                        {feed.length === 0 ? (
+                            <div className="flex flex-1 flex-col items-center justify-center text-center gap-2 px-[32px] py-[28px]">
                                 <Image src={`${A}/icons/heart.svg`} alt="" width={32} height={32} className="size-8 opacity-40" />
                                 <p className="font-bold text-[16px] text-[#003060]">Be the first to donate!</p>
                                 <p className="text-[14px] text-[#7e8a96]">Your support kicks things off.</p>
                             </div>
                         ) : (
-                            recentDonations.map((d, i) => (
-                                <div key={i} className="flex gap-[12px] items-center pr-[8px] w-full">
-                                    <Image src={`${A}/avatars/${GEMS[i % GEMS.length]}.png`} alt="" width={42} height={42} className="size-[42px] shrink-0 rounded-full" />
-                                    <div className="flex flex-1 flex-col items-start justify-center min-w-0">
-                                        <p className="font-bold text-[16px] text-[#003060] w-full truncate" style={{ lineHeight: 1.25 }}>{abbrevName(d.display_name)}</p>
-                                        <p className="font-medium text-[14px] text-[#7e8a96] w-full leading-none">{timeAgo(d.created_at)}</p>
+                            /* The scroller is the inner element so the fades can sit over
+                               it; padding moves here so rows scroll under the fades. */
+                            <div
+                                ref={listRef}
+                                onScroll={onFeedScroll}
+                                className="scrollbar-mobile-only flex w-full flex-1 flex-col gap-[24px] items-center overflow-y-auto px-[32px] py-[28px]"
+                            >
+                                {feed.map((d, i) => (
+                                    <div key={`${d.created_at}-${i}`} className="flex gap-[12px] items-center pr-[8px] w-full">
+                                        <Image src={`${A}/avatars/${GEMS[i % GEMS.length]}.png`} alt="" width={42} height={42} className="size-[42px] shrink-0 rounded-full" />
+                                        <div className="flex flex-1 flex-col items-start justify-center min-w-0">
+                                            <p className="font-bold text-[16px] text-[#003060] w-full truncate" style={{ lineHeight: 1.25 }}>{abbrevName(d.display_name)}</p>
+                                            <p className="font-medium text-[14px] text-[#7e8a96] w-full leading-none">{timeAgo(d.created_at)}</p>
+                                        </div>
+                                        <p className="font-medium text-[16px] text-[#003060] whitespace-nowrap" style={{ lineHeight: 1.4 }}>{fmtUSD(d.amount)}</p>
                                     </div>
-                                    <p className="font-medium text-[16px] text-[#003060] whitespace-nowrap" style={{ lineHeight: 1.4 }}>{fmtUSD(d.amount)}</p>
-                                </div>
-                            ))
+                                ))}
+                                {loadingMore && (
+                                    <p className="py-1 text-[13px] font-medium text-[#aeb5bd]">Loading more…</p>
+                                )}
+                            </div>
                         )}
-                        <div aria-hidden className="absolute inset-x-0 top-0 h-[80px] pointer-events-none" style={{ background: "linear-gradient(180deg, #fff 0%, rgba(255,255,255,0) 100%)" }} />
-                        <div aria-hidden className="absolute inset-x-0 bottom-0 h-[80px] pointer-events-none" style={{ background: "linear-gradient(0deg, #fff 0%, rgba(255,255,255,0) 100%)" }} />
+                        {/* Only shown while there's actually content hidden that way. */}
+                        <div aria-hidden className={`absolute inset-x-0 top-0 h-[80px] pointer-events-none transition-opacity duration-200 ${fade.top ? "opacity-100" : "opacity-0"}`} style={{ background: "linear-gradient(180deg, #fff 0%, rgba(255,255,255,0) 100%)" }} />
+                        <div aria-hidden className={`absolute inset-x-0 bottom-0 h-[80px] pointer-events-none transition-opacity duration-200 ${fade.bottom ? "opacity-100" : "opacity-0"}`} style={{ background: "linear-gradient(0deg, #fff 0%, rgba(255,255,255,0) 100%)" }} />
                     </div>
                 )}
             </div>
