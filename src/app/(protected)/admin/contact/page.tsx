@@ -24,8 +24,12 @@ export default async function AdminContactPage({
 
     return (
         <div>
-            <h1 className="mb-5 text-[22px] font-black text-[#003060]">Contact Submissions</h1>
-            <ContactRecipientsCard initial={recipients} fallback={DEFAULT_CONTACT_RECIPIENT} />
+            {/* Recipients is a rarely-touched setting, so it sits as a compact
+                action on the heading row — the listing keeps the top of the fold. */}
+            <div className="flex flex-wrap items-center justify-between gap-3">
+                <h1 className="text-[22px] font-black text-[#003060]">Contact Submissions</h1>
+                <ContactRecipientsCard initial={recipients} fallback={DEFAULT_CONTACT_RECIPIENT} />
+            </div>
             <AdminContactTable
                 initialSubmissions={submissions}
                 initialTotal={total}

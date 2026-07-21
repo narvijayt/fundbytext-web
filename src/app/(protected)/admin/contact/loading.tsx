@@ -4,9 +4,12 @@ import { Sk } from "@/app/(protected)/_components/Skeleton";
 export default function Loading() {
     return (
         <div className="space-y-5">
-            <div className="space-y-2">
-                <Sk className="h-7 w-60" />
-                <Sk className="h-4 w-40" />
+            <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="space-y-2">
+                    <Sk className="h-7 w-60" />
+                    <Sk className="h-4 w-40" />
+                </div>
+                <Sk className="h-9 w-52 rounded-[10px]" />
             </div>
             <Sk className="h-10 w-44 rounded-xl" />
             <div className="overflow-hidden rounded-2xl border border-[#e7e9eb] bg-white shadow-[0px_4px_30px_0px_rgba(0,91,172,0.08)]">
