@@ -257,8 +257,10 @@ export default async function CampaignDetailPage({
         }))
         .sort((a, b) => b.raised - a.raised);
 
+    // A participant-goal campaign with no participants yet has no total to aim at.
+    // Multiplying gave 0, which reads as a real goal of zero downstream.
     const effectiveGoalAmt = goalAmt && campaign.goal_type === "participant_goal"
-        ? goalAmt * participants.length
+        ? (participants.length > 0 ? goalAmt * participants.length : null)
         : goalAmt;
 
     // ── Notifications ────────────────────────────────────────────────────────

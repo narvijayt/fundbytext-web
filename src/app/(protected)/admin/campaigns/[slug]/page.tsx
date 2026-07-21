@@ -136,7 +136,11 @@ export default async function AdminCampaignDetailPage({ params }: Ctx) {
         .sort((a, b) => b.raised - a.raised);
 
     const organizer = campaign.members.find((m) => m.roles.some((r) => r.role === MemberRole.organizer));
-    const effectiveGoalAmt = goalAmt && campaign.goal_type === "participant_goal" ? goalAmt * participants.length : goalAmt;
+    // A participant-goal campaign with no participants yet has no total to aim at.
+    // Multiplying gave 0, which reads as a real goal of zero downstream.
+    const effectiveGoalAmt = goalAmt && campaign.goal_type === "participant_goal"
+        ? (participants.length > 0 ? goalAmt * participants.length : null)
+        : goalAmt;
 
     const chartDonations = campaign.donations.map((d) => ({ ts: d.created_at.getTime(), amount: parseFloat(d.amount.toString()) }));
     const feedDonations  = feedDonationsRaw.map((d) => ({

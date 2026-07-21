@@ -295,7 +295,7 @@ export default function InlineDonateForm({
             {/* Campaign progress summary */}
             <div className="bg-white rounded-2xl shadow-sm p-5">
                 <p className="text-2xl font-extrabold text-gray-900">{fmt(totalRaised)}</p>
-                {goalAmount && (
+                {!!goalAmount && (
                     <p className="text-sm text-gray-500 mt-0.5">
                         raised of <span className="font-semibold text-gray-700">{fmt(goalAmount)}</span> goal
                     </p>

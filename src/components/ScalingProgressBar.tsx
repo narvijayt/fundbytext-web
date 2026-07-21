@@ -81,7 +81,7 @@ export default function ScalingProgressBar({ raised, goalAmount, initialGoalAmou
                             <div style={{ width: `${goldPct}%` }}
                                 onMouseEnter={() => setTip({ text: `${fmtUSD(raised - (splitGoal ?? 0))} raised beyond goal`, pct: greenPct + goldPct / 2 })} />
                         )}
-                        {goalAmount && raised < goalAmount && (
+                        {!!goalAmount && raised < goalAmount && (
                             <div className="flex-1"
                                 onMouseEnter={() => setTip({ text: `${fmtUSD(goalAmount - raised)} remaining to reach goal`, pct: greenPct + goldPct + (100 - greenPct - goldPct) / 2 })} />
                         )}

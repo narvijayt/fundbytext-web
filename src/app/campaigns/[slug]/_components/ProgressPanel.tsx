@@ -118,14 +118,14 @@ export default function ProgressPanel({
                 <p className="text-3xl font-extrabold text-gray-900 tabular-nums">
                     {fmtUSD(displayAmt)}
                 </p>
-                {goalAmount && (
+                {!!goalAmount && (
                     <div className="mt-0.5">
                         <p className="text-sm text-gray-500">
                             raised of{" "}
                             <span className="font-semibold text-gray-700">{fmtUSD(initialGoalAmount ?? goalAmount)}</span>
                             {" "}{initialGoalAmount && initialGoalAmount !== goalAmount ? "initial goal" : "goal"}
                         </p>
-                        {initialGoalAmount && initialGoalAmount !== goalAmount && (
+                        {!!initialGoalAmount && initialGoalAmount !== goalAmount && (
                             <p className="text-xs text-amber-500 font-semibold mt-0.5">
                                 {fmtUSD(goalAmount)} current goal
                             </p>

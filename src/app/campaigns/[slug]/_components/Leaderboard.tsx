@@ -74,7 +74,7 @@ export default function Leaderboard({ participants, goalAmount, accent, donation
                 </div>
 
                 {/* ── Goal Achievers / Goal in Progress panels ────────── */}
-                {goalAmount && (
+                {!!goalAmount && (
                     <div className="grid sm:grid-cols-2 gap-6">
                         {/* Goal Achievers */}
                         <div className="bg-white rounded-2xl p-5 shadow-lg relative overflow-hidden">
@@ -209,7 +209,7 @@ export default function Leaderboard({ participants, goalAmount, accent, donation
                     <div className="bg-white rounded-2xl overflow-hidden shadow-xl">
                         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
                             <h3 className="font-bold text-gray-800 text-sm">Other Participants</h3>
-                            {goalAmount && (
+                            {!!goalAmount && (
                                 <span className="text-xs text-gray-400">
                                     Campaign Goal: <span className="font-semibold text-gray-600">{fmt(goalAmount)}</span>
                                 </span>
@@ -253,7 +253,7 @@ export default function Leaderboard({ participants, goalAmount, accent, donation
                                             </div>
                                             <div className="text-right shrink-0">
                                                 <p className="text-sm font-bold text-gray-800">{fmt(p.total_raised)}</p>
-                                                {goalAmount && (
+                                                {!!goalAmount && (
                                                     <p className="text-[10px] text-gray-400">{fmt(goalAmount)} goal</p>
                                                 )}
                                             </div>

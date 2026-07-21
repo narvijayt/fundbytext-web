@@ -92,7 +92,7 @@ export default function CampaignProgressBar({ raisedAmt, goalAmt, initialGoalAmt
                             <p className="text-sm font-semibold text-green-700">Initial goal reached!</p>
                             <p className="text-xs text-green-600">{fmtUSD(initialGoalAmt)} goal · keep going!</p>
                         </div>
-                        {goalAmt && goalAmt > initialGoalAmt && (
+                        {!!goalAmt && goalAmt > initialGoalAmt && (
                             <p className="text-xs text-green-600 ml-auto">
                                 New goal: {fmtUSD(goalAmt)}
                             </p>

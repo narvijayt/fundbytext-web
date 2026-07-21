@@ -24,7 +24,7 @@ export default function CampaignStatsRow({ raisedAmt, goalAmt, donationCount, da
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
                 <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-1">Amount Raised</p>
                 <p className="text-2xl font-bold text-gray-900">{fmt(raisedAmt)}</p>
-                {goalAmt && (
+                {!!goalAmt && (
                     <p className="text-xs text-gray-400 mt-0.5">of {fmt(goalAmt)} goal</p>
                 )}
             </div>
