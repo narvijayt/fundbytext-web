@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { DONATE_EVENT } from "./DonateNavButton";
 import CountdownBadge from "@/components/CountdownBadge";
@@ -37,6 +37,10 @@ function timeAgo(iso: string): string {
     if (w < 5) return `${w}w ago`;
     return `${Math.floor(d / 30)}mo ago`;
 }
+
+/* Identity for a feed row. Donations have no client-visible id, so this stands
+   in for one when merging the paged-in list with fresh server data. */
+const feedKey = (d: RecentDonation) => `${d.created_at}|${d.amount}|${d.display_name}`;
 
 type Props = {
     theme:             MarketingTheme;
@@ -96,9 +100,25 @@ export default function MarketingDetails({
     /* ── Live feed: scrolls, and pages more in as you reach the bottom ──────
        The page server-renders the first batch; everything past that is fetched
        from the public feed endpoint. Without this the panel was a fixed-height
-       overflow-hidden box, so it showed the first handful and simply stopped. */
-    const [feed, setFeed]       = useState<RecentDonation[]>(recentDonations);
+       overflow-hidden box, so it showed the first handful and simply stopped.
+
+       Only those fetched pages live in state; the rendered list is DERIVED —
+       server rows first, then the extras. It used to be one
+       `useState(recentDonations)`, which seeds on the first mount and never
+       again, so when a donation fired the Ably event and CampaignUpdater's
+       router.refresh() delivered a fresh `recentDonations`, the progress bar
+       moved (it reads its props directly) but the feed stayed frozen and the
+       donor never saw their own name appear. Deriving rather than copying means
+       new donations show up on their own, with no prop→state sync to keep
+       correct. Extras are de-duped in case the server batch grows to cover a
+       row that was already paged in. */
+    const [extra, setExtra]     = useState<RecentDonation[]>([]);
     const [feedTotal, setTotal] = useState<number | null>(null);
+    const feed = useMemo(() => {
+        if (extra.length === 0) return recentDonations;
+        const seen = new Set(recentDonations.map(feedKey));
+        return [...recentDonations, ...extra.filter((d) => !seen.has(feedKey(d)))];
+    }, [recentDonations, extra]);
     const [loadingMore, setLoadingMore] = useState(false);
     const listRef   = useRef<HTMLDivElement>(null);
     // A ref (not state) guards the fetch: onScroll fires far faster than React
@@ -119,15 +139,14 @@ export default function MarketingDetails({
                 // Append only what we don't already have — a donation arriving via
                 // the realtime feed while paging would otherwise shift the window
                 // and duplicate a row.
-                const key   = (d: RecentDonation) => `${d.created_at}|${d.amount}|${d.display_name}`;
-                const seen  = new Set(feed.map(key));
-                const fresh = j.donations.filter((d) => !seen.has(key(d)));
+                const seen  = new Set(feed.map(feedKey));
+                const fresh = j.donations.filter((d) => !seen.has(feedKey(d)));
                 if (fresh.length) {
                     // Re-check inside the updater too, in case a realtime donation
                     // landed between this render and the response.
-                    setFeed((prev) => {
-                        const have = new Set(prev.map(key));
-                        return [...prev, ...fresh.filter((d) => !have.has(key(d)))];
+                    setExtra((prev) => {
+                        const have = new Set(prev.map(feedKey));
+                        return [...prev, ...fresh.filter((d) => !have.has(feedKey(d)))];
                     });
                 }
                 // A page that yields nothing new ends the list even if `total`
