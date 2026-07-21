@@ -118,13 +118,18 @@ function ViewButton({ href }: { href: string }) {
  *  - "public" — the same card on the public browse page: links to the public
  *    campaign page, no Edit, and no organizer-only counts. Drafts never reach it.
  */
-export default function CampaignCard({ campaign, variant = "dashboard" }: {
+export default function CampaignCard({ campaign, variant = "dashboard", organizer }: {
     campaign: CampaignCardData;
-    variant?: "dashboard" | "public";
+    variant?: "dashboard" | "public" | "admin";
+    /** Admin listing only — the campaign's organizer, shown under the title. */
+    organizer?: { user_id: string | null; first_name: string; last_name: string; email: string | null } | null;
 }) {
     const status = campaign.status as CampaignStatus;
     const isPublic = variant === "public";
-    const isOrganizer = !isPublic && campaign.myRoles.includes(MemberRole.organizer);
+    const isAdmin  = variant === "admin";
+    // The admin isn't a member of these campaigns, so role-derived views never
+    // apply — they always see the campaign's real totals.
+    const isOrganizer = !isPublic && !isAdmin && campaign.myRoles.includes(MemberRole.organizer);
     const heroUrl = campaign.media.find((m) => m.media_type === "hero")?.url ?? null;
     const location = campaign.payout
         ? [campaign.payout.city, campaign.payout.state].map((s) => (s ?? "").trim()).filter(Boolean).join(", ")
@@ -146,13 +151,18 @@ export default function CampaignCard({ campaign, variant = "dashboard" }: {
 
     const detailHref = `/dashboard/campaigns/${campaign.slug}`;
     const wizardHref = `/campaigns/${campaign.slug}/create`;
-    const viewHref = isPublic ? `/campaigns/${campaign.slug}` : (status === CampaignStatus.draft ? wizardHref : detailHref);
+    // Admin always lands on the admin detail page — including for drafts, which
+    // it can inspect but must not be dropped into someone else's wizard.
+    const viewHref = isAdmin  ? `/admin/campaigns/${campaign.slug}`
+        : isPublic            ? `/campaigns/${campaign.slug}`
+        : status === CampaignStatus.draft ? wizardHref
+        : detailHref;
     const draftStep = status === CampaignStatus.draft ? currentDraftStep(campaign) : null;
 
     const participants = campaign._count.members;
     // Public browse shows the campaign's real donor total; inside the dashboard a
     // participant only ever sees their own donors, and an organizer sees all.
-    const donorsCount = isPublic || isOrganizer ? campaign._count.donors : campaign.myDonorCount;
+    const donorsCount = isPublic || isAdmin || isOrganizer ? campaign._count.donors : campaign.myDonorCount;
 
     return (
         <div className="flex flex-col overflow-hidden rounded-2xl border border-[#e7e9eb] bg-white shadow-[0px_12px_12px_-8px_rgba(0,48,96,0.04),0px_32px_40px_-16px_rgba(2,104,192,0.16)]">
@@ -191,6 +201,27 @@ export default function CampaignCard({ campaign, variant = "dashboard" }: {
                     <h3 className="text-[16px] font-bold leading-[1.25] text-[#003060] line-clamp-2">
                         {campaign.name ?? <span className="italic text-gray-400">Untitled campaign</span>}
                     </h3>
+                    {/* Admin listing only — who runs this campaign. The table this
+                        replaced had an Organizer column, so the detail stays. */}
+                    {isAdmin && organizer && (
+                        <div className="min-w-0">
+                            {organizer.user_id ? (
+                                <Link href={`/admin/users/${organizer.user_id}`} className="group block min-w-0">
+                                    <p className="truncate text-[13px] font-medium text-[#0268c0] group-hover:underline">
+                                        {organizer.first_name} {organizer.last_name}
+                                    </p>
+                                    {organizer.email && <p className="truncate text-xs text-[#9aa7b8]">{organizer.email}</p>}
+                                </Link>
+                            ) : (
+                                <>
+                                    <p className="truncate text-[13px] font-medium text-[#003060]">
+                                        {organizer.first_name} {organizer.last_name}
+                                    </p>
+                                    {organizer.email && <p className="truncate text-xs text-[#9aa7b8]">{organizer.email}</p>}
+                                </>
+                            )}
+                        </div>
+                    )}
                     {(status === CampaignStatus.active || status === CampaignStatus.upcoming) ? (
                         <div className="flex items-center gap-1.5">
                             <Flag className="h-10 w-auto" />

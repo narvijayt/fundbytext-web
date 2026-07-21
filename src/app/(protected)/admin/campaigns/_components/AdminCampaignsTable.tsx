@@ -1,28 +1,13 @@
 "use client";
 
 import { useRef, useState } from "react";
-import Link from "next/link";
 import type { AdminCampaignRow } from "../_lib/query";
+import CampaignCard, { type CampaignCardData } from "@/app/(protected)/dashboard/_components/CampaignCard";
 
 const PAGE_SIZE_OPTIONS = [5, 10, 25, 50, 100];
 const STATUS_FILTERS = ["all", "active", "upcoming", "draft", "completed"] as const;
 
-const STATUS_COLORS: Record<string, string> = {
-    active:    "bg-green-100 text-green-700",
-    upcoming:  "bg-blue-100 text-blue-700",
-    draft:     "bg-gray-100 text-gray-500",
-    completed: "bg-purple-100 text-purple-700",
-};
-
-const TH_CLS     = "px-4 py-3.5 text-left text-[13px] font-semibold";
 const SELECT_CLS = "rounded-xl border border-[#e7e9eb] bg-white px-3 py-2.5 text-[13px] font-medium text-[#003060] shadow-[0px_1px_2px_0px_rgba(0,48,96,0.04)] transition-colors focus:border-[#0268c0] focus:outline-none focus:ring-2 focus:ring-[#0268c0]/20";
-
-function fmtUSD(n: number) {
-    return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(n);
-}
-function fmtDate(iso: string) {
-    return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
-}
 
 // Compact numbered pager: 1 … around-current … N
 function pageList(current: number, total: number): (number | "…")[] {
@@ -35,23 +20,49 @@ function pageList(current: number, total: number): (number | "…")[] {
     return out;
 }
 
-const Bar = ({ w }: { w: string }) => <div className={`h-3.5 ${w} rounded-full bg-gray-200`} />;
-function SkeletonRow() {
+/* The admin query returns a serialized row (ISO dates, plain numbers, a single
+   hero url). CampaignCard wants the dashboard shape, so map across here rather
+   than widening the card's type for one caller. myRoles/myDonorCount are the
+   viewer's own role data, which an admin has none of — the "admin" variant
+   ignores both and shows the campaign's real totals. */
+function toCardData(c: AdminCampaignRow): CampaignCardData {
+    return {
+        id:                  c.id,
+        slug:                c.slug,
+        name:                c.name,
+        status:              c.status,
+        campaign_type:       c.campaign_type,
+        current_step:        c.current_step,
+        goal_type:           c.goal_type,
+        goal_amount:         c.goal_amount,
+        initial_goal_amount: c.initial_goal_amount,
+        total_raised:        c.total_raised,
+        start_date:          c.start_date ? new Date(c.start_date) : null,
+        end_date:            c.end_date   ? new Date(c.end_date)   : null,
+        created_at:          new Date(c.created_at),
+        timezone:            c.timezone,
+        myRoles:             [],
+        myDonorCount:        0,
+        media:               c.hero_url ? [{ media_type: "hero", url: c.hero_url }] : [],
+        payout:              c.payout,
+        _count:              { members: c.members_count, donors: c.donors_count, donations: c.donations_count },
+    };
+}
+
+/* Matches the card's silhouette (hero band + body) so the grid doesn't jump
+   when a page lands. */
+function CardSkeleton() {
     return (
-        <tr className="border-b border-[#eef1f4] last:border-0">
-            <td className="py-4 pl-5 pr-4">
-                <div className="flex items-center gap-3 animate-pulse">
-                    <div className="h-10 w-10 shrink-0 rounded-lg bg-gray-200" />
-                    <div className="space-y-1.5"><Bar w="w-32" /><Bar w="w-14" /></div>
-                </div>
-            </td>
-            <td className="px-4 py-4"><div className="animate-pulse space-y-1.5"><Bar w="w-28" /><Bar w="w-20" /></div></td>
-            <td className="px-4 py-4"><div className="h-5 w-16 animate-pulse rounded-full bg-gray-200" /></td>
-            <td className="px-4 py-4"><div className="ml-auto animate-pulse"><Bar w="w-16" /></div></td>
-            <td className="px-4 py-4"><div className="ml-auto animate-pulse"><Bar w="w-8" /></div></td>
-            <td className="px-4 py-4"><div className="animate-pulse"><Bar w="w-20" /></div></td>
-            <td className="py-4 pl-4 pr-5"><div className="ml-auto h-3.5 w-10 animate-pulse rounded-full bg-gray-200" /></td>
-        </tr>
+        <div className="overflow-hidden rounded-2xl border border-[#e7e9eb] bg-white">
+            <div className="h-[200px] animate-pulse bg-gray-100" />
+            <div className="flex flex-col gap-3 px-4 pt-4 pb-5">
+                <div className="h-5 w-20 animate-pulse rounded-full bg-gray-100" />
+                <div className="h-4 w-3/4 animate-pulse rounded bg-gray-100" />
+                <div className="h-3 w-1/2 animate-pulse rounded bg-gray-100" />
+                <div className="mt-2 h-2.5 w-full animate-pulse rounded-full bg-gray-100" />
+                <div className="mt-2 h-9 w-full animate-pulse rounded-xl bg-gray-100" />
+            </div>
+        </div>
     );
 }
 
@@ -195,87 +206,35 @@ export default function AdminCampaignsTable(props: Props) {
                 </select>
             </div>
 
-            {/* Table */}
-            <div className="overflow-hidden rounded-2xl border border-[#e7e9eb] bg-white shadow-[0px_4px_30px_0px_rgba(0,91,172,0.08)]">
-                <div className="overflow-x-auto">
-                    <table className="w-full min-w-[820px] text-sm">
-                        <thead>
-                            <tr className="bg-[#0268c0] text-white">
-                                <th className={`${TH_CLS} pl-5`}>Campaign</th>
-                                <th className={TH_CLS}>Organizer</th>
-                                <th className={TH_CLS}>Status</th>
-                                <th className={`${TH_CLS} text-right`}>Raised</th>
-                                <th className={`${TH_CLS} text-right`}>Donations</th>
-                                <th className={TH_CLS}>Created</th>
-                                <th className={`${TH_CLS} pr-5`} />
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {loading ? (
-                                Array.from({ length: Math.min(pageSize, 8) }).map((_, i) => <SkeletonRow key={`sk${i}`} />)
-                            ) : rows.length === 0 ? (
-                                <tr>
-                                    <td colSpan={7} className="px-5 py-14 text-center text-sm italic text-[#9aa7b8]">
-                                        {search.trim() || filter !== "all" ? "No campaigns match your filters." : "No campaigns found."}
-                                    </td>
-                                </tr>
-                            ) : (
-                                rows.map((c) => {
-                                    const organizer = c.organizer;
-                                    return (
-                                        <tr key={c.id} className="border-b border-[#eef1f4] transition-colors last:border-0 hover:bg-[#f7f9fb]">
-                                            <td className="py-3.5 pl-5 pr-4">
-                                                <div className="flex items-center gap-3">
-                                                    {c.hero_url ? (
-                                                        // eslint-disable-next-line @next/next/no-img-element
-                                                        <img src={c.hero_url} alt="" className="h-10 w-10 shrink-0 rounded-lg border border-[#e7e9eb] object-cover" />
-                                                    ) : (
-                                                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#eef2f7]">
-                                                            <svg className="h-5 w-5 text-[#9aa7b8]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                                            </svg>
-                                                        </div>
-                                                    )}
-                                                    <div className="min-w-0">
-                                                        <p className="truncate text-[13px] font-semibold text-[#003060]">{c.name ?? <span className="font-medium italic text-[#9aa7b8]">Untitled</span>}</p>
-                                                        <p className="text-xs capitalize text-[#9aa7b8]">{c.campaign_type}</p>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td className="px-4 py-3.5 text-[#7e8a96]">
-                                                {organizer ? (
-                                                    organizer.user_id ? (
-                                                        <Link href={`/admin/users/${organizer.user_id}`} className="group">
-                                                            <p className="text-[13px] font-medium text-[#0268c0] group-hover:underline">{organizer.first_name} {organizer.last_name}</p>
-                                                            <p className="text-xs text-[#9aa7b8]">{organizer.email}</p>
-                                                        </Link>
-                                                    ) : (
-                                                        <>
-                                                            <p className="text-[13px] font-medium text-[#003060]">{organizer.first_name} {organizer.last_name}</p>
-                                                            <p className="text-xs text-[#9aa7b8]">{organizer.email}</p>
-                                                        </>
-                                                    )
-                                                ) : <span className="text-gray-300">—</span>}
-                                            </td>
-                                            <td className="px-4 py-3.5">
-                                                <span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold capitalize ${STATUS_COLORS[c.status] ?? "bg-gray-100 text-gray-500"}`}>
-                                                    {c.status}
-                                                </span>
-                                            </td>
-                                            <td className="px-4 py-3.5 text-right text-[13px] font-bold text-[#003060]">{fmtUSD(c.total_raised)}</td>
-                                            <td className="px-4 py-3.5 text-right text-[13px] text-[#7e8a96]">{c.donations_count}</td>
-                                            <td className="px-4 py-3.5 text-[13px] text-[#9aa7b8]">{fmtDate(c.created_at)}</td>
-                                            <td className="py-3.5 pl-4 pr-5 text-right">
-                                                <Link href={`/admin/campaigns/${c.slug}`} className="text-[13px] font-semibold text-[#0268c0] hover:underline">View</Link>
-                                            </td>
-                                        </tr>
-                                    );
-                                })
-                            )}
-                        </tbody>
-                    </table>
+            {/* Card grid — the same CampaignCard the dashboard and public browse
+                use, in its "admin" variant (admin links, real totals, organizer
+                shown under the title). Replaces the bespoke table so the three
+                listings stay visually identical. */}
+            {loading ? (
+                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
+                    {Array.from({ length: Math.min(pageSize, 6) }).map((_, i) => <CardSkeleton key={`sk${i}`} />)}
                 </div>
-            </div>
+            ) : rows.length === 0 ? (
+                <div className="flex flex-col items-center justify-center rounded-2xl border border-[#e7e9eb] bg-white py-20 text-center">
+                    <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#eef2f6]">
+                        <svg className="h-7 w-7 text-[#9aa7b8]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
+                        </svg>
+                    </div>
+                    <p className="font-semibold text-[#003060]">
+                        {search.trim() || filter !== "all" ? "No campaigns match your filters" : "No campaigns yet"}
+                    </p>
+                    <p className="mt-1 text-sm text-[#9aa7b8]">
+                        {search.trim() || filter !== "all" ? "Try a different search or filter." : "Campaigns will appear here once they are created."}
+                    </p>
+                </div>
+            ) : (
+                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
+                    {rows.map((c) => (
+                        <CampaignCard key={c.id} variant="admin" organizer={c.organizer} campaign={toCardData(c)} />
+                    ))}
+                </div>
+            )}
 
             {/* Footer: page size + range + numbered pager */}
             <div className="mt-4 flex flex-wrap items-center justify-between gap-3">

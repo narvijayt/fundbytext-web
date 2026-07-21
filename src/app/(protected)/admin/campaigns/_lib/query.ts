@@ -28,6 +28,17 @@ export type AdminCampaignRow = {
     donors_count:    number;
     organizer:       { user_id: string | null; first_name: string; last_name: string; email: string | null } | null;
     hero_url:        string | null;
+    /* Below: everything the shared dashboard CampaignCard renders, so the admin
+       listing can use the same card instead of a bespoke row. */
+    goal_type:           string | null;
+    goal_amount:         number | null;
+    initial_goal_amount: number | null;
+    start_date:          string | null;  // ISO
+    end_date:            string | null;  // ISO
+    timezone:            string | null;
+    current_step:        number;
+    members_count:       number;
+    payout:              { city: string; state: string } | null;
 };
 
 export function normalizeFilter(v: string | null | undefined): StatusFilter {
@@ -84,7 +95,15 @@ export async function queryAdminCampaigns(
                 campaign_type: true,
                 total_raised:  true,
                 created_at:    true,
-                _count: { select: { donations: true, donors: true } },
+                goal_type:           true,
+                goal_amount:         true,
+                initial_goal_amount: true,
+                start_date:          true,
+                end_date:            true,
+                timezone:            true,
+                current_step:        true,
+                payout: { select: { city: true, state: true } },
+                _count: { select: { donations: true, donors: true, members: true } },
                 members: {
                     where:  { roles: { some: { role: "organizer" } } },
                     take:   1,
@@ -117,6 +136,15 @@ export async function queryAdminCampaigns(
             donors_count:    c._count.donors,
             organizer:       o ? { user_id: o.user_id, first_name: o.first_name, last_name: o.last_name, email: o.email } : null,
             hero_url:        c.media[0]?.url ?? null,
+            goal_type:           c.goal_type,
+            goal_amount:         c.goal_amount ? parseFloat(c.goal_amount.toString()) : null,
+            initial_goal_amount: c.initial_goal_amount ? parseFloat(c.initial_goal_amount.toString()) : null,
+            start_date:          c.start_date?.toISOString() ?? null,
+            end_date:            c.end_date?.toISOString() ?? null,
+            timezone:            c.timezone,
+            current_step:        c.current_step,
+            members_count:       c._count.members,
+            payout:              c.payout ? { city: c.payout.city ?? "", state: c.payout.state ?? "" } : null,
         };
     });
 
